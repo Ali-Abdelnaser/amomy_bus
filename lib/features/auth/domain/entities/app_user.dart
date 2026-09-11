@@ -27,6 +27,23 @@ class AppUser extends Equatable {
     this.isEmailVerified = false,
   });
 
+  /// First name of the user, falling back to 'Commuter' if empty
+  String get firstName {
+    final trimmed = fullName.trim();
+    if (trimmed.isEmpty) return 'Commuter';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    return parts.first;
+  }
+
+  /// Initials derived from the user's full name
+  String get initials {
+    final trimmed = fullName.trim();
+    if (trimmed.isEmpty) return 'A';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
   /// Required fields for passenger profile completion
   static const List<String> requiredProfileFields = [
     'full_name',

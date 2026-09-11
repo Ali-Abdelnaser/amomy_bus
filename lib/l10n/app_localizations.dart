@@ -607,6 +607,732 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get dismiss;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navMyTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get navMyTrips;
+
+  /// No description provided for @navWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get navWallet;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @greetingMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning,'**
+  String get greetingMorning;
+
+  /// No description provided for @greetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon,'**
+  String get greetingAfternoon;
+
+  /// No description provided for @greetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening,'**
+  String get greetingEvening;
+
+  /// No description provided for @pointsBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Balance'**
+  String get pointsBalance;
+
+  /// No description provided for @pointsUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get pointsUnit;
+
+  /// No description provided for @addPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Points'**
+  String get addPoints;
+
+  /// No description provided for @walletDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get walletDetails;
+
+  /// No description provided for @cashPointsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash points'**
+  String get cashPointsPrefix;
+
+  /// No description provided for @subscriptionPointsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription points'**
+  String get subscriptionPointsPrefix;
+
+  /// No description provided for @bookRideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Your Ride'**
+  String get bookRideTitle;
+
+  /// No description provided for @bookRideSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your departure time and preferred seat.'**
+  String get bookRideSubtitle;
+
+  /// No description provided for @bookNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Now'**
+  String get bookNow;
+
+  /// No description provided for @upcomingTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Trip'**
+  String get upcomingTrip;
+
+  /// No description provided for @noUpcomingTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming trip'**
+  String get noUpcomingTrip;
+
+  /// No description provided for @bookTripCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a Ride'**
+  String get bookTripCta;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActions;
+
+  /// No description provided for @actionAddPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Points'**
+  String get actionAddPoints;
+
+  /// No description provided for @actionMyTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get actionMyTrips;
+
+  /// No description provided for @actionSubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get actionSubscriptions;
+
+  /// No description provided for @actionSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get actionSupport;
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get support;
+
+  /// No description provided for @upcomingTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcomingTab;
+
+  /// No description provided for @historyTab.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get historyTab;
+
+  /// No description provided for @noTripsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips yet'**
+  String get noTripsFound;
+
+  /// No description provided for @noTripsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When you book a trip, it will appear right here.'**
+  String get noTripsSubtitle;
+
+  /// No description provided for @transactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions'**
+  String get transactions;
+
+  /// No description provided for @noTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet'**
+  String get noTransactions;
+
+  /// No description provided for @noTransactionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your points recharge and trip payments will show here.'**
+  String get noTransactionsSubtitle;
+
+  /// No description provided for @personalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInfo;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @aboutAmomy.
+  ///
+  /// In en, this message translates to:
+  /// **'About AMOMY'**
+  String get aboutAmomy;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsAndConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Conditions'**
+  String get termsAndConditions;
+
+  /// No description provided for @signOutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get signOutConfirmTitle;
+
+  /// No description provided for @signOutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out from AMOMY?'**
+  String get signOutConfirmMessage;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @featureUnderDevelopment.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Under Development'**
+  String get featureUnderDevelopment;
+
+  /// No description provided for @bookingComingSoonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip booking and seat selection is currently under development.'**
+  String get bookingComingSoonDesc;
+
+  /// No description provided for @subscriptionsComingSoonDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription plans will be available soon.'**
+  String get subscriptionsComingSoonDesc;
+
+  /// No description provided for @supportDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AMOMY Customer Support'**
+  String get supportDialogTitle;
+
+  /// No description provided for @supportDialogDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Our support team is available 24/7 to assist you with your trips and account.'**
+  String get supportDialogDesc;
+
+  /// No description provided for @quickBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast & Direct'**
+  String get quickBooking;
+
+  /// No description provided for @directionOutbound.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound'**
+  String get directionOutbound;
+
+  /// No description provided for @directionReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Return'**
+  String get directionReturn;
+
+  /// No description provided for @selectDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Direction'**
+  String get selectDirection;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDate;
+
+  /// No description provided for @selectTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Time'**
+  String get selectTime;
+
+  /// No description provided for @selectSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Seat'**
+  String get selectSeat;
+
+  /// No description provided for @reviewBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Booking'**
+  String get reviewBooking;
+
+  /// No description provided for @confirmBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Booking'**
+  String get confirmBooking;
+
+  /// No description provided for @seatsAvailableCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seats available'**
+  String seatsAvailableCount(int count);
+
+  /// No description provided for @seatStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get seatStatusAvailable;
+
+  /// No description provided for @seatStatusHeld.
+  ///
+  /// In en, this message translates to:
+  /// **'Held'**
+  String get seatStatusHeld;
+
+  /// No description provided for @seatStatusBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked'**
+  String get seatStatusBooked;
+
+  /// No description provided for @seatStatusSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get seatStatusSelected;
+
+  /// No description provided for @driverFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Front / Driver'**
+  String get driverFront;
+
+  /// No description provided for @holdCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat hold expires in {time}'**
+  String holdCountdown(String time);
+
+  /// No description provided for @holdExpiredNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your seat hold has expired. Please select a seat again.'**
+  String get holdExpiredNotice;
+
+  /// No description provided for @seatUnavailableNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This seat is no longer available. Please select another seat.'**
+  String get seatUnavailableNotice;
+
+  /// No description provided for @insufficientPointsNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient points balance. Please recharge your points to continue.'**
+  String get insufficientPointsNotice;
+
+  /// No description provided for @bookingSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Confirmed!'**
+  String get bookingSuccessTitle;
+
+  /// No description provided for @bookingSuccessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trip seat is successfully reserved.'**
+  String get bookingSuccessSubtitle;
+
+  /// No description provided for @qrTicketInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Present this QR code to the driver or scanner upon boarding.'**
+  String get qrTicketInstruction;
+
+  /// No description provided for @viewMyTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'View My Trips'**
+  String get viewMyTrips;
+
+  /// No description provided for @tripDetailsDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'Direction'**
+  String get tripDetailsDirection;
+
+  /// No description provided for @tripDetailsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get tripDetailsDate;
+
+  /// No description provided for @tripDetailsTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure Time'**
+  String get tripDetailsTime;
+
+  /// No description provided for @tripDetailsSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat Number'**
+  String get tripDetailsSeat;
+
+  /// No description provided for @tripDetailsFare.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Fare'**
+  String get tripDetailsFare;
+
+  /// No description provided for @tripDetailsRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get tripDetailsRoute;
+
+  /// No description provided for @tripStatusScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get tripStatusScheduled;
+
+  /// No description provided for @tripStatusBoarding.
+  ///
+  /// In en, this message translates to:
+  /// **'Boarding'**
+  String get tripStatusBoarding;
+
+  /// No description provided for @tripStatusDeparted.
+  ///
+  /// In en, this message translates to:
+  /// **'Departed'**
+  String get tripStatusDeparted;
+
+  /// No description provided for @tripStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get tripStatusCompleted;
+
+  /// No description provided for @tripStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get tripStatusCancelled;
+
+  /// No description provided for @bookingStatusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get bookingStatusConfirmed;
+
+  /// No description provided for @bookingStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get bookingStatusCancelled;
+
+  /// No description provided for @pointsBalanceAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Points'**
+  String get pointsBalanceAvailable;
+
+  /// No description provided for @completeProfileToBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your profile to book trips.'**
+  String get completeProfileToBook;
+
+  /// No description provided for @topUpAmountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get topUpAmountTitle;
+
+  /// No description provided for @topUpAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter amount in EGP'**
+  String get topUpAmountHint;
+
+  /// No description provided for @topUpPointsRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'1 EGP ≈ 1 Point'**
+  String get topUpPointsRatio;
+
+  /// No description provided for @topUpSelectMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Method'**
+  String get topUpSelectMethod;
+
+  /// No description provided for @topUpInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Instructions'**
+  String get topUpInstructions;
+
+  /// No description provided for @topUpRecipientAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient Account / Number'**
+  String get topUpRecipientAccount;
+
+  /// No description provided for @topUpCopyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Number'**
+  String get topUpCopyAccount;
+
+  /// No description provided for @topUpCopiedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Account number copied to clipboard'**
+  String get topUpCopiedToast;
+
+  /// No description provided for @topUpTransactionReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Reference'**
+  String get topUpTransactionReference;
+
+  /// No description provided for @topUpTransactionReferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter transaction or transfer reference'**
+  String get topUpTransactionReferenceHint;
+
+  /// No description provided for @topUpTransactionReferenceHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the transfer reference to help us verify your payment quickly.'**
+  String get topUpTransactionReferenceHelper;
+
+  /// No description provided for @topUpPaymentProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Proof Screenshot'**
+  String get topUpPaymentProof;
+
+  /// No description provided for @topUpUploadScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Screenshot'**
+  String get topUpUploadScreenshot;
+
+  /// No description provided for @topUpChangeScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Screenshot'**
+  String get topUpChangeScreenshot;
+
+  /// No description provided for @topUpReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Top-Up Request'**
+  String get topUpReviewTitle;
+
+  /// No description provided for @topUpExpectedPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected Cash Points'**
+  String get topUpExpectedPoints;
+
+  /// No description provided for @topUpSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Top-Up Request'**
+  String get topUpSubmitButton;
+
+  /// No description provided for @topUpSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting...'**
+  String get topUpSubmitting;
+
+  /// No description provided for @topUpPendingSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-up request submitted'**
+  String get topUpPendingSuccessTitle;
+
+  /// No description provided for @topUpPendingSuccessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request is under review.\nPoints will be added to your wallet after approval.'**
+  String get topUpPendingSuccessDesc;
+
+  /// No description provided for @topUpBackToWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to Wallet'**
+  String get topUpBackToWallet;
+
+  /// No description provided for @topUpManualNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual review: This is not an instant gateway. Our team verifies transfers before crediting points.'**
+  String get topUpManualNotice;
+
+  /// No description provided for @topUpHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-Up Requests'**
+  String get topUpHistoryTitle;
+
+  /// No description provided for @topUpStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Under Review'**
+  String get topUpStatusPending;
+
+  /// No description provided for @topUpStatusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get topUpStatusApproved;
+
+  /// No description provided for @topUpStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get topUpStatusRejected;
+
+  /// No description provided for @topUpRejectionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejection Reason'**
+  String get topUpRejectionReason;
+
+  /// No description provided for @topUpEmptyHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No top-up requests yet.'**
+  String get topUpEmptyHistory;
+
+  /// No description provided for @topUpErrorInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid amount greater than 0.'**
+  String get topUpErrorInvalidAmount;
+
+  /// No description provided for @topUpErrorSelectMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a payment method.'**
+  String get topUpErrorSelectMethod;
+
+  /// No description provided for @topUpErrorEnterReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the transaction reference.'**
+  String get topUpErrorEnterReference;
+
+  /// No description provided for @topUpErrorAttachProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload a payment screenshot receipt.'**
+  String get topUpErrorAttachProof;
+
+  /// No description provided for @topUpErrorDuplicateRef.
+  ///
+  /// In en, this message translates to:
+  /// **'A top-up request with this payment reference is already active or approved.'**
+  String get topUpErrorDuplicateRef;
+
+  /// No description provided for @topUpErrorUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload payment proof. Please try again.'**
+  String get topUpErrorUploadFailed;
+
+  /// No description provided for @topUpErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-up request not found.'**
+  String get topUpErrorNotFound;
+
+  /// No description provided for @topUpErrorAlreadyReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'This top-up request has already been reviewed.'**
+  String get topUpErrorAlreadyReviewed;
+
+  /// No description provided for @continueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueAction;
+
+  /// No description provided for @backAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backAction;
 }
 
 class _AppLocalizationsDelegate

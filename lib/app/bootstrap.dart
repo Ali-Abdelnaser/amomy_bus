@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -91,6 +92,24 @@ Future<void> _initializeBackendServicesIfConfigured() async {
     }
   } else {
     developer.log('Running with mock/offline backend placeholders (no Supabase keys set).', name: 'BOOTSTRAP');
+  }
+
+  // Debug-only safe auth config log
+  if (kDebugMode) {
+    developer.log(
+      '[AUTH CONFIG] Web Client ID configured: ${AuthConfig.hasGoogleWebClientId}',
+      name: 'AUTH CONFIG',
+    );
+    if (AuthConfig.hasGoogleWebClientId) {
+      final webId = AuthConfig.googleWebClientId;
+      final suffix = webId.endsWith('.apps.googleusercontent.com')
+          ? '...apps.googleusercontent.com'
+          : (webId.length > 28 ? '...${webId.substring(webId.length - 28)}' : webId);
+      developer.log(
+        '[AUTH CONFIG] Web Client ID suffix: $suffix',
+        name: 'AUTH CONFIG',
+      );
+    }
   }
 
   // Initialize Google Sign-In instance once

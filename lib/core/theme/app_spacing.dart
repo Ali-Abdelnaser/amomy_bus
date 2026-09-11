@@ -92,4 +92,8 @@ abstract final class AppSpacing {
   static const SizedBox gapH32 = SizedBox(height: s32);
   static const SizedBox gapH40 = SizedBox(height: s40);
   static const SizedBox gapH48 = SizedBox(height: s48);
+
+  /// Centralized bottom clearance for scroll views above the floating navigation bar.
+  static const double bottomNavClearance = 96.0;
+  static const SizedBox gapBottomNav = SizedBox(height: bottomNavClearance);
 }

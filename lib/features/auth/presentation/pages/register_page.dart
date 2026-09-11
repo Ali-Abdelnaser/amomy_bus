@@ -81,7 +81,10 @@ class _RegisterPageState extends State<RegisterPage> {
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Form(
@@ -176,7 +179,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             // Create Account Button
                             AppButton(
                               label: l10n.createAccount,
-                              icon: AppIcons.check,
+
                               isFullWidth: true,
                               isLoading: isLoading,
                               onPressed: _onRegisterPressed,

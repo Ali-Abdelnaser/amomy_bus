@@ -261,3 +261,23 @@ Future<void> showSuccessDialog({
     ),
   );
 }
+
+Future<void> showInfoDialog({
+  required BuildContext context,
+  required String title,
+  required String message,
+  String buttonText = 'OK',
+  VoidCallback? onConfirm,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AppAlertDialog(
+      title: title,
+      message: message,
+      icon: AppIcons.info,
+      iconColor: AppColors.primary,
+      buttonText: buttonText,
+      onConfirm: onConfirm,
+    ),
+  );
+}

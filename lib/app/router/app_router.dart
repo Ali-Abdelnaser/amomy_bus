@@ -10,12 +10,18 @@ import '../../features/auth/presentation/pages/complete_profile_page.dart';
 import '../../features/auth/presentation/pages/email_verification_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/passenger_home_placeholder_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
+import '../../features/booking/presentation/pages/book_trip_page.dart';
 import '../../features/debug/presentation/pages/design_system_preview_page.dart';
+import '../../features/home/presentation/pages/passenger_home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/shell/presentation/pages/passenger_shell_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
+import '../../features/topup/presentation/pages/add_points_page.dart';
+import '../../features/trips/presentation/pages/my_trips_page.dart';
+import '../../features/wallet/presentation/pages/wallet_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
 
@@ -140,18 +146,97 @@ class AppRouter {
         ),
       ),
 
-      // Home (Placeholder for Session Proof)
+      // Passenger Navigation Shell (Persistent tabs: Home, Trips, Wallet, Profile)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return PassengerShellPage(navigationShell: navigationShell);
+        },
+        branches: [
+          // Branch 0: Home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.home,
+                name: RouteNames.home,
+                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                  key: state.pageKey,
+                  name: state.name,
+                  child: const PassengerHomePage(),
+                ),
+              ),
+            ],
+          ),
+
+          // Branch 1: My Trips
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.trips,
+                name: RouteNames.trips,
+                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                  key: state.pageKey,
+                  name: state.name,
+                  child: const MyTripsPage(),
+                ),
+              ),
+            ],
+          ),
+
+          // Branch 2: Wallet
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.wallet,
+                name: RouteNames.wallet,
+                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                  key: state.pageKey,
+                  name: state.name,
+                  child: const WalletPage(),
+                ),
+              ),
+            ],
+          ),
+
+          // Branch 3: Profile
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.profile,
+                name: RouteNames.profile,
+                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                  key: state.pageKey,
+                  name: state.name,
+                  child: const ProfilePage(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // Booking entry route
       GoRoute(
-        path: RoutePaths.home,
-        name: RouteNames.home,
+        path: RoutePaths.bookTrip,
+        name: RouteNames.bookTrip,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
           key: state.pageKey,
           name: state.name,
-          child: const PassengerHomePlaceholderPage(),
+          child: const BookTripPage(),
         ),
       ),
 
-      // Debug: Design System Gallery
+      // Add Points route
+      GoRoute(
+        path: RoutePaths.addPoints,
+        name: RouteNames.addPoints,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const AddPointsPage(),
+        ),
+      ),
+
+      // Debug: Design System Gallery (ONLY in debug mode)
       if (kDebugMode)
         GoRoute(
           path: RoutePaths.designSystemPreview,

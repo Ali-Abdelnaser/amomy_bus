@@ -100,12 +100,12 @@ The passenger application uses a **6-digit verification code UX** ([AppOtpField]
    - **Client Secret**: Configured **strictly** in Supabase dashboard. NEVER placed in Flutter code.
 3. Create **Android** client ID:
    - Package name: `com.aliabdelnaser.amomy`
-   - SHA-1 certificate fingerprint: `72:AF:04:4E:E5:61:80:FD:B9:CF:7F:BB:3B:52:3E:DC:5D:3B:2D:E5`
+   - SHA-1 certificate fingerprint: `AF:0E:E4:D5:54:C9:8E:B3:94:7D:98:70:37:E0:65:D8:1D:66:24:82` (or machine debug keystore SHA-1)
    - *(Note: Android uses package name + SHA-1 fingerprint registration; no Dart client ID is needed on Android)*.
 4. Create **iOS** client ID:
    - Bundle ID: `com.aliabdelnaser.amomy`
-   - **Client ID**: `614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg.apps.googleusercontent.com`
-   - **Reversed Client ID URL Scheme**: `com.googleusercontent.apps.614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg`
+   - **Client ID**: `133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com`
+   - **Reversed Client ID URL Scheme**: `com.googleusercontent.apps.133458950988-t4vgheihpqper0v884pv1vmckeknqdcg`
    - Configured directly into `ios/Runner/Info.plist` under `CFBundleURLSchemes` and `GIDClientID`.
 
 ### Running with Public OAuth Client IDs:

@@ -57,4 +57,14 @@ abstract final class AppIcons {
   static const IconData steeringWheel = LucideIcons.compass;
   static const IconData ticket = LucideIcons.ticket;
   static const IconData receipt = LucideIcons.receipt;
+
+  // Profile, Support & Settings
+  static const IconData chevronRight = LucideIcons.chevronRight;
+  static const IconData chevronLeft = LucideIcons.chevronLeft;
+  static const IconData headphones = LucideIcons.headphones;
+  static const IconData globe = LucideIcons.globe;
+  static const IconData shield = LucideIcons.shieldCheck;
+  static const IconData fileText = LucideIcons.fileText;
+  static const IconData logOut = LucideIcons.logOut;
+  static const IconData repeat = LucideIcons.repeat;
 }

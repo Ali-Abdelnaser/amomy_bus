@@ -12,12 +12,12 @@ abstract final class AuthConfig {
   static const googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
     defaultValue:
-        '614005330939-til537iblassb8apl3o2smsen51jkssk.apps.googleusercontent.com',
+        '133458950988-a5ut57fdab99ndq59dg1p7ojdqlt7vc5.apps.googleusercontent.com',
   );
   static const googleIosClientId = String.fromEnvironment(
     'GOOGLE_IOS_CLIENT_ID',
     defaultValue:
-        '614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg.apps.googleusercontent.com',
+        '133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com',
   );
 
   /// Whether the public Google Web Client ID is provided

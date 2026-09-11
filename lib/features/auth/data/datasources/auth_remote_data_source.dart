@@ -314,12 +314,48 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final data = await _supabase
           .from('wallets')
-          .select('id, user_id, cash_points, subscription_points, held_points')
+          .select('id, user_id, cached_available_balance, cached_held_balance')
           .eq('user_id', userId)
           .maybeSingle();
 
       if (data == null) return null;
-      return WalletPreviewModel.fromJson(data);
+
+      int cashPoints = (data['cached_available_balance'] as num?)?.toInt() ?? 0;
+      int subscriptionPoints = 0;
+
+      try {
+        final batches = await _supabase
+            .from('point_batches')
+            .select('source_type, remaining_amount')
+            .eq('user_id', userId)
+            .gt('remaining_amount', 0);
+
+        if (batches.isNotEmpty) {
+          int batchCash = 0;
+          int batchSub = 0;
+          for (final b in batches) {
+            final st = b['source_type'] as String?;
+            final amt = (b['remaining_amount'] as num?)?.toInt() ?? 0;
+            if (st == 'subscription') {
+              batchSub += amt;
+            } else {
+              batchCash += amt;
+            }
+          }
+          cashPoints = batchCash;
+          subscriptionPoints = batchSub;
+        }
+      } catch (_) {
+        // Fallback: cached_available_balance serves as total points
+      }
+
+      return WalletPreviewModel(
+        id: data['id'] as String? ?? '',
+        userId: data['user_id'] as String? ?? userId,
+        cashPoints: cashPoints,
+        subscriptionPoints: subscriptionPoints,
+        heldPoints: (data['cached_held_balance'] as num?)?.toInt() ?? 0,
+      );
     } catch (_) {
       return null;
     }

@@ -14,12 +14,14 @@ class RouteNames {
   static const String resetPassword = 'resetPassword';
   static const String home = 'home';
   static const String trips = 'trips';
+  static const String bookTrip = 'bookTrip';
   static const String tripDetails = 'tripDetails';
   static const String seatSelection = 'seatSelection';
   static const String bookingConfirmation = 'bookingConfirmation';
   static const String myBookings = 'myBookings';
   static const String bookingQr = 'bookingQr';
   static const String wallet = 'wallet';
+  static const String addPoints = 'addPoints';
   static const String subscriptions = 'subscriptions';
   static const String profile = 'profile';
   static const String liveTracking = 'liveTracking';

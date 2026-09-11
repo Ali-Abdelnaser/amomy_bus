@@ -14,12 +14,14 @@ class RoutePaths {
   static const String resetPassword = '/reset-password';
   static const String home = '/home';
   static const String trips = '/trips';
+  static const String bookTrip = '/book-trip';
   static const String tripDetails = '/trips/:tripId';
   static const String seatSelection = '/trips/:tripId/seats';
   static const String bookingConfirmation = '/booking/confirmation';
   static const String myBookings = '/my-bookings';
   static const String bookingQr = '/bookings/:bookingId/qr';
   static const String wallet = '/wallet';
+  static const String addPoints = '/add-points';
   static const String subscriptions = '/subscriptions';
   static const String profile = '/profile';
   static const String liveTracking = '/trips/:tripId/tracking';

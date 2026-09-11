@@ -18,4 +18,10 @@ abstract final class AppAssets {
   static const String onboarding1 = 'assets/onboarding_1.png';
   static const String onboarding2 = 'assets/onboarding_2.png';
   static const String onboarding3 = 'assets/onboarding_3.png';
+
+  /// Navigation Bar SVG Icons
+  static const String navHomeSvg = 'assets/home.svg';
+  static const String navTripSvg = 'assets/trip.svg';
+  static const String navWalletSvg = 'assets/wallet.svg';
+  static const String navProfileSvg = 'assets/profile.svg';
 }

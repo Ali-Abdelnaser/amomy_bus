@@ -69,6 +69,41 @@ class CacheFailure extends Failure {
   });
 }
 
+class InvalidAmountFailure extends Failure {
+  const InvalidAmountFailure({
+    super.message = 'Requested amount must be greater than zero.',
+    super.statusCode,
+  });
+}
+
+class DuplicatePaymentReferenceFailure extends Failure {
+  const DuplicatePaymentReferenceFailure({
+    super.message = 'A top-up request with this payment reference is already active or approved.',
+    super.statusCode,
+  });
+}
+
+class ProofUploadFailedFailure extends Failure {
+  const ProofUploadFailedFailure({
+    super.message = 'Failed to upload payment proof. Please try again.',
+    super.statusCode,
+  });
+}
+
+class RequestNotFoundFailure extends Failure {
+  const RequestNotFoundFailure({
+    super.message = 'Top-up request was not found.',
+    super.statusCode,
+  });
+}
+
+class RequestAlreadyReviewedFailure extends Failure {
+  const RequestAlreadyReviewedFailure({
+    super.message = 'This top-up request has already been reviewed.',
+    super.statusCode,
+  });
+}
+
 class UnknownFailure extends Failure {
   const UnknownFailure({
     super.message = 'An unexpected error occurred. Please try again.',

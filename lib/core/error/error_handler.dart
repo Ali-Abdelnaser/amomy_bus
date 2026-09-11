@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../localization/app_locale_controller.dart';
 import 'exceptions.dart';
 import 'failures.dart';
 
@@ -33,7 +35,41 @@ class ErrorHandler {
       );
     }
 
+    // GoogleSignInException specific handling
+    if (error is GoogleSignInException) {
+      final desc = error.description ?? '';
+      final isError16 = desc.contains('Account reauth failed') ||
+          desc.contains('[16]') ||
+          desc.contains('16');
+
+      if (isError16) {
+        final message = AppLocaleController.instance.isArabic
+            ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
+            : 'Google sign-in could not be completed. Please try again.';
+        return AuthenticationFailure(message: message);
+      }
+
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        return const AuthCancelledFailure();
+      }
+
+      final message = AppLocaleController.instance.isArabic
+          ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
+          : 'Google sign-in could not be completed. Please try again.';
+      return AuthenticationFailure(message: message);
+    }
+
     final errorStr = error?.toString() ?? '';
+    final isGoogleError16 = errorStr.contains('Account reauth failed') ||
+        (errorStr.contains('[16]') && errorStr.contains('GoogleSignIn'));
+
+    if (isGoogleError16) {
+      final message = AppLocaleController.instance.isArabic
+          ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
+          : 'Google sign-in could not be completed. Please try again.';
+      return AuthenticationFailure(message: message);
+    }
+
     final isGoogleCancellation = errorStr.contains('sign_in_canceled') ||
         errorStr.contains('popup_closed_by_user') ||
         errorStr.contains('User canceled Google Sign-In') ||

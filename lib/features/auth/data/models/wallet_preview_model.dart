@@ -10,12 +10,18 @@ class WalletPreviewModel extends WalletPreview {
   });
 
   factory WalletPreviewModel.fromJson(Map<String, dynamic> json) {
+    final availableBalance = (json['cached_available_balance'] as num?)?.toInt();
+    final heldBalance = (json['cached_held_balance'] as num?)?.toInt();
+    final cashPoints = (json['cash_points'] as num?)?.toInt() ?? availableBalance ?? 0;
+    final subscriptionPoints = (json['subscription_points'] as num?)?.toInt() ?? 0;
+    final heldPoints = (json['held_points'] as num?)?.toInt() ?? heldBalance ?? 0;
+
     return WalletPreviewModel(
       id: json['id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
-      cashPoints: (json['cash_points'] as num?)?.toInt() ?? 0,
-      subscriptionPoints: (json['subscription_points'] as num?)?.toInt() ?? 0,
-      heldPoints: (json['held_points'] as num?)?.toInt() ?? 0,
+      cashPoints: cashPoints,
+      subscriptionPoints: subscriptionPoints,
+      heldPoints: heldPoints,
     );
   }
 

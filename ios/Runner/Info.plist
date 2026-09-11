@@ -89,11 +89,13 @@
 				<string>google-reversed-client-id</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>com.googleusercontent.apps.614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg</string>
+					<string>com.googleusercontent.apps.133458950988-t4vgheihpqper0v884pv1vmckeknqdcg</string>
 				</array>
 			</dict>
 		</array>
 		<key>GIDClientID</key>
-		<string>614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg.apps.googleusercontent.com</string>
+		<string>133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>AMOMY needs access to your photos to upload payment proof screenshots for top-up verification.</string>
 	</dict>
 </plist>

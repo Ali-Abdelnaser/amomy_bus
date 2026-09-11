@@ -36,13 +36,19 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     Widget? effectiveLeading = leading;
     if (effectiveLeading == null && showBackButton && onBackPressed != null) {
       effectiveLeading = IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+        icon: const Icon(
+          Icons.arrow_back_ios_new,
+          size: 20,
+          color: AppColors.textPrimary,
+        ),
         onPressed: onBackPressed,
       );
     }
 
     return AppBar(
-      title: titleWidget ??
+      scrolledUnderElevation: 0,
+      title:
+          titleWidget ??
           (title != null
               ? Text(
                   title!,
@@ -57,15 +63,14 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: centerTitle,
       backgroundColor: backgroundColor ?? AppColors.surface,
       elevation: elevation,
-      scrolledUnderElevation: 1,
+
       bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        kToolbarHeight + (bottom?.preferredSize.height ?? 0.0),
-      );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 }
 
 /// Reusable Scaffold providing consistent background, safe areas, and optional app bar.
@@ -97,10 +102,9 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveAppBar = appBar ??
-        (title != null
-            ? AppAppBar(title: title, actions: actions)
-            : null);
+    final effectiveAppBar =
+        appBar ??
+        (title != null ? AppAppBar(title: title, actions: actions) : null);
 
     return Scaffold(
       backgroundColor: backgroundColor ?? AppColors.background,
@@ -108,11 +112,7 @@ class AppScaffold extends StatelessWidget {
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      body: SafeArea(
-        top: safeAreaTop,
-        bottom: safeAreaBottom,
-        child: body,
-      ),
+      body: SafeArea(top: safeAreaTop, bottom: false, child: body),
     );
   }
 }

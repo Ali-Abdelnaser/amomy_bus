@@ -278,4 +278,389 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dismiss => 'إغلاق';
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navMyTrips => 'رحلاتي';
+
+  @override
+  String get navWallet => 'المحفظة';
+
+  @override
+  String get navProfile => 'حسابي';
+
+  @override
+  String get greetingMorning => 'صباح الخير،';
+
+  @override
+  String get greetingAfternoon => 'مساء الخير،';
+
+  @override
+  String get greetingEvening => 'مساء الخير،';
+
+  @override
+  String get pointsBalance => 'رصيد النقاط';
+
+  @override
+  String get pointsUnit => 'نقطة';
+
+  @override
+  String get addPoints => 'شحن النقاط';
+
+  @override
+  String get walletDetails => 'التفاصيل';
+
+  @override
+  String get cashPointsPrefix => 'نقاط نقدية';
+
+  @override
+  String get subscriptionPointsPrefix => 'نقاط الاشتراك';
+
+  @override
+  String get bookRideTitle => 'احجز رحلتك';
+
+  @override
+  String get bookRideSubtitle => 'اختار المعاد والمقعد المناسب ليك.';
+
+  @override
+  String get bookNow => 'احجز الآن';
+
+  @override
+  String get upcomingTrip => 'رحلتك القادمة';
+
+  @override
+  String get noUpcomingTrip => 'مفيش رحلة محجوزة حاليًا';
+
+  @override
+  String get bookTripCta => 'احجز رحلة';
+
+  @override
+  String get quickActions => 'خدمات سريعة';
+
+  @override
+  String get actionAddPoints => 'شحن نقاط';
+
+  @override
+  String get actionMyTrips => 'رحلاتي';
+
+  @override
+  String get actionSubscriptions => 'الاشتراكات';
+
+  @override
+  String get actionSupport => 'الدعم';
+
+  @override
+  String get support => 'الدعم';
+
+  @override
+  String get upcomingTab => 'القادمة';
+
+  @override
+  String get historyTab => 'السابقة';
+
+  @override
+  String get noTripsFound => 'لا توجد رحلات حتى الآن';
+
+  @override
+  String get noTripsSubtitle => 'عند حجز رحلة جديدة ستظهر بياناتها هنا مباشرة.';
+
+  @override
+  String get transactions => 'سجل المعاملات';
+
+  @override
+  String get noTransactions => 'لا توجد معاملات سابقة';
+
+  @override
+  String get noTransactionsSubtitle =>
+      'عمليات شحن النقاط ودفع الرحلات ستظهر هنا.';
+
+  @override
+  String get personalInfo => 'البيانات الشخصية';
+
+  @override
+  String get language => 'اللغة';
+
+  @override
+  String get aboutAmomy => 'عن AMOMY';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get termsAndConditions => 'الشروط والأحكام';
+
+  @override
+  String get signOutConfirmTitle => 'تسجيل الخروج';
+
+  @override
+  String get signOutConfirmMessage =>
+      'هل أنت متأكد من رغبتك في تسجيل الخروج من AMOMY؟';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get featureUnderDevelopment => 'هذه الميزة قيد التطوير';
+
+  @override
+  String get bookingComingSoonDesc =>
+      'حجز الرحلات واختيار المقاعد قيد التطوير وسيكون متاحًا قريبًا.';
+
+  @override
+  String get subscriptionsComingSoonDesc =>
+      'باقات واشتراكات AMOMY ستكون متاحة قريبًا.';
+
+  @override
+  String get supportDialogTitle => 'خدمة عملاء AMOMY';
+
+  @override
+  String get supportDialogDesc =>
+      'فريق الدعم متواجد على مدار الساعة لمساعدتك في رحلاتك وحسابك.';
+
+  @override
+  String get quickBooking => 'حجز سريع ومباشر';
+
+  @override
+  String get directionOutbound => 'ذهاب';
+
+  @override
+  String get directionReturn => 'عودة';
+
+  @override
+  String get selectDirection => 'اختر اتجاه الرحلة';
+
+  @override
+  String get selectDate => 'اختر تاريخ الرحلة';
+
+  @override
+  String get selectTime => 'اختر موعد الرحلة';
+
+  @override
+  String get selectSeat => 'اختر المقعد';
+
+  @override
+  String get reviewBooking => 'مراجعة تفاصيل الحجز';
+
+  @override
+  String get confirmBooking => 'تأكيد الحجز';
+
+  @override
+  String seatsAvailableCount(int count) {
+    return '$count مقعد متاح';
+  }
+
+  @override
+  String get seatStatusAvailable => 'متاح';
+
+  @override
+  String get seatStatusHeld => 'محجوز مؤقتًا';
+
+  @override
+  String get seatStatusBooked => 'محجوز';
+
+  @override
+  String get seatStatusSelected => 'مقعدك المختار';
+
+  @override
+  String get driverFront => 'المقدمة / السائق';
+
+  @override
+  String holdCountdown(String time) {
+    return 'ينتهي حجز المقعد المؤقت خلال $time';
+  }
+
+  @override
+  String get holdExpiredNotice =>
+      'انتهت مدة الحجز المؤقت للمقعد. يُرجى اختياره مرة أخرى.';
+
+  @override
+  String get seatUnavailableNotice =>
+      'هذا المقعد لم يعد متاحًا. يُرجى اختيار مقعد آخر.';
+
+  @override
+  String get insufficientPointsNotice =>
+      'رصيد النقاط غير كافٍ. يُرجى شحن رصيدك للمتابعة.';
+
+  @override
+  String get bookingSuccessTitle => 'تم تأكيد الحجز بنجاح!';
+
+  @override
+  String get bookingSuccessSubtitle =>
+      'تم حجز مقعدك بنجاح وجاهز لرحلتك القادمة.';
+
+  @override
+  String get qrTicketInstruction =>
+      'قم بإبراز رمز الـ QR هذا للمسؤول أو الماسح الضوئي عند صعود الحافلة.';
+
+  @override
+  String get viewMyTrips => 'عرض رحلاتي';
+
+  @override
+  String get tripDetailsDirection => 'اتجاه الرحلة';
+
+  @override
+  String get tripDetailsDate => 'تاريخ الرحلة';
+
+  @override
+  String get tripDetailsTime => 'موعد التحرك';
+
+  @override
+  String get tripDetailsSeat => 'رقم المقعد';
+
+  @override
+  String get tripDetailsFare => 'تكلفة الرحلة';
+
+  @override
+  String get tripDetailsRoute => 'خط السير';
+
+  @override
+  String get tripStatusScheduled => 'مجدولة';
+
+  @override
+  String get tripStatusBoarding => 'صعود الركاب';
+
+  @override
+  String get tripStatusDeparted => 'انطلقت';
+
+  @override
+  String get tripStatusCompleted => 'مكتملة';
+
+  @override
+  String get tripStatusCancelled => 'ملغاة';
+
+  @override
+  String get bookingStatusConfirmed => 'مؤكد';
+
+  @override
+  String get bookingStatusCancelled => 'ملغي';
+
+  @override
+  String get pointsBalanceAvailable => 'النقاط المتاحة';
+
+  @override
+  String get completeProfileToBook =>
+      'يُرجى إكمال بيانات ملفك الشخصي لتتمكن من حجز الرحلات.';
+
+  @override
+  String get topUpAmountTitle => 'المبلغ';
+
+  @override
+  String get topUpAmountHint => 'أدخل المبلغ بالجنيه المصري';
+
+  @override
+  String get topUpPointsRatio => '1 جنيه ≈ 1 نقطة';
+
+  @override
+  String get topUpSelectMethod => 'اختر طريقة الدفع';
+
+  @override
+  String get topUpInstructions => 'تعليمات التحويل';
+
+  @override
+  String get topUpRecipientAccount => 'رقم الحساب / المحفظة المستلمة';
+
+  @override
+  String get topUpCopyAccount => 'نسخ الرقم';
+
+  @override
+  String get topUpCopiedToast => 'تم نسخ الرقم إلى الحافظة';
+
+  @override
+  String get topUpTransactionReference => 'رقم العملية / مرجع التحويل';
+
+  @override
+  String get topUpTransactionReferenceHint =>
+      'أدخل رقم العملية أو مرجع التحويل';
+
+  @override
+  String get topUpTransactionReferenceHelper =>
+      'أدخل مرجع التحويل لمساعدتنا في تأكيد دفعك بسرعة.';
+
+  @override
+  String get topUpPaymentProof => 'صورة إيصال التحويل';
+
+  @override
+  String get topUpUploadScreenshot => 'إرفاق صورة الإيصال';
+
+  @override
+  String get topUpChangeScreenshot => 'تغيير الصورة';
+
+  @override
+  String get topUpReviewTitle => 'مراجعة طلب الشحن';
+
+  @override
+  String get topUpExpectedPoints => 'النقاط النقدية المتوقعة';
+
+  @override
+  String get topUpSubmitButton => 'إرسال طلب الشحن';
+
+  @override
+  String get topUpSubmitting => 'جارٍ الإرسال...';
+
+  @override
+  String get topUpPendingSuccessTitle => 'تم إرسال طلب الشحن';
+
+  @override
+  String get topUpPendingSuccessDesc =>
+      'طلبك قيد المراجعة.\nسيتم إضافة النقاط إلى محفظتك بعد الموافقة.';
+
+  @override
+  String get topUpBackToWallet => 'العودة إلى المحفظة';
+
+  @override
+  String get topUpManualNotice =>
+      'ملاحظة: يتم شحن النقاط بمراجعة يدوية وليس عبر بوابة دفع إلكترونية فورية.';
+
+  @override
+  String get topUpHistoryTitle => 'طلبات الشحن';
+
+  @override
+  String get topUpStatusPending => 'قيد المراجعة';
+
+  @override
+  String get topUpStatusApproved => 'تمت الموافقة';
+
+  @override
+  String get topUpStatusRejected => 'مرفوض';
+
+  @override
+  String get topUpRejectionReason => 'سبب الرفض';
+
+  @override
+  String get topUpEmptyHistory => 'لا توجد طلبات شحن سابقة.';
+
+  @override
+  String get topUpErrorInvalidAmount => 'يرجى إدخال مبلغ صحيح أكبر من الصفر.';
+
+  @override
+  String get topUpErrorSelectMethod => 'يرجى اختيار طريقة الدفع.';
+
+  @override
+  String get topUpErrorEnterReference =>
+      'يرجى إدخال رقم العملية / مرجع التحويل.';
+
+  @override
+  String get topUpErrorAttachProof => 'يرجى إرفاق صورة إيصال التحويل.';
+
+  @override
+  String get topUpErrorDuplicateRef =>
+      'يوجد طلب شحن نشط أو معتمد مسبقاً بنفس رقم العملية.';
+
+  @override
+  String get topUpErrorUploadFailed =>
+      'فشل رفع صورة الإيصال. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get topUpErrorNotFound => 'لم يتم العثور على طلب الشحن.';
+
+  @override
+  String get topUpErrorAlreadyReviewed => 'تمت مراجعة هذا الطلب بالفعل.';
+
+  @override
+  String get continueAction => 'المتابعة';
+
+  @override
+  String get backAction => 'رجوع';
 }
