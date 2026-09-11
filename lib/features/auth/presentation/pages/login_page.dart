@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/animations/app_animations.dart';
-import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,6 +16,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/auth_header_widget.dart';
 import '../widgets/google_sign_in_button.dart';
 
 class LoginPage extends StatefulWidget {
@@ -41,11 +41,11 @@ class _LoginPageState extends State<LoginPage> {
   void _onLoginPressed() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            SignInWithEmailRequested(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
+        SignInWithEmailRequested(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
     }
   }
 
@@ -78,46 +78,25 @@ class _LoginPageState extends State<LoginPage> {
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
+                    constraints: const BoxConstraints(maxWidth: 420),
                     child: Form(
                       key: _formKey,
                       child: AutofillGroup(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Brand Logo
-                            Center(
-                              child: Hero(
-                                tag: 'app_logo',
-                                child: Image.asset(
-                                  AppAssets.logoTransparent,
-                                  height: 80,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
+                            // Standardized Brand Header
+                            AuthHeaderWidget(
+                              title: l10n.loginTitle,
+                              subtitle: l10n.loginSubtitle,
+                              logoHeight: 230,
                             ).appFadeIn(),
-                            AppSpacing.gapH24,
-
-                            // Header
-                            Text(
-                              l10n.loginTitle,
-                              style: AppTextStyles.headlineLarge.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ).appFadeIn(delay: const Duration(milliseconds: 100)),
-                            AppSpacing.gapH8,
-                            Text(
-                              l10n.loginSubtitle,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ).appFadeIn(delay: const Duration(milliseconds: 150)),
-                            AppSpacing.gapH32,
+                            AppSpacing.gapH20,
 
                             // Email Field
                             AppTextField(
@@ -135,8 +114,10 @@ class _LoginPageState extends State<LoginPage> {
                                 requiredMessage: l10n.validationRequired,
                                 invalidMessage: l10n.validationEmailInvalid,
                               ),
-                            ).appSlideUp(delay: const Duration(milliseconds: 200)),
-                            AppSpacing.gapH16,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 200),
+                            ),
+                            AppSpacing.gapH12,
 
                             // Password Field
                             AppPasswordField(
@@ -150,16 +131,22 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                                 return null;
                               },
-                            ).appSlideUp(delay: const Duration(milliseconds: 250)),
-                            AppSpacing.gapH8,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 250),
+                            ),
 
+                            AppSpacing.gapH12,
                             // Forgot Password Link
                             Align(
-                              alignment: AlignmentDirectional.centerEnd,
+                              alignment: AlignmentDirectional.centerStart,
                               child: TextButton(
-                                onPressed: () => context.push('/forgot-password'),
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
                                 style: TextButton.styleFrom(
-                                  padding: AppSpacing.edgeInsetsH8,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                   foregroundColor: AppColors.primary,
                                 ),
                                 child: Text(
@@ -173,20 +160,29 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             AppSpacing.gapH16,
 
-                            // Login Button
+                            // Login Button (no arrow, larger text)
                             AppButton(
                               label: l10n.login,
-                              icon: AppIcons.arrowForward,
                               isFullWidth: true,
+                              height: 50,
+                              textStyle: AppTextStyles.titleMedium.copyWith(
+                                color: AppColors.textOnPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                              ),
                               isLoading: isLoading,
                               onPressed: _onLoginPressed,
-                            ).appSlideUp(delay: const Duration(milliseconds: 300)),
-                            AppSpacing.gapH24,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 300),
+                            ),
+                            AppSpacing.gapH12,
 
                             // Divider: OR
                             Row(
                               children: [
-                                const Expanded(child: Divider(color: AppColors.border)),
+                                const Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                                 Padding(
                                   padding: AppSpacing.edgeInsetsH16,
                                   child: Text(
@@ -196,18 +192,22 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 ),
-                                const Expanded(child: Divider(color: AppColors.border)),
+                                const Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
                               ],
                             ),
-                            AppSpacing.gapH24,
+                            AppSpacing.gapH12,
 
                             // Google Sign-In Button
                             GoogleSignInButton(
                               label: l10n.continueWithGoogle,
                               isLoading: isLoading,
                               onPressed: _onGooglePressed,
-                            ).appSlideUp(delay: const Duration(milliseconds: 350)),
-                            AppSpacing.gapH32,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 350),
+                            ),
+                            AppSpacing.gapH12,
 
                             // Don't have an account? Register Link
                             Row(

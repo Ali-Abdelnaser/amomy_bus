@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/animations/app_animations.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/validation/app_validators.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_loading.dart';
@@ -16,6 +14,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/auth_header_widget.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -65,15 +64,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         return AppLoadingOverlay(
           isLoading: isLoading,
           child: AppScaffold(
-            appBar: AppAppBar(
-              title: l10n.resetPasswordTitle,
-              showBackButton: true,
-              onBackPressed: () => context.go('/login'),
-            ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Form(
@@ -81,40 +78,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Center(
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryLight,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                AppIcons.lock,
-                                size: 40,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ).appScaleIn(),
-                          AppSpacing.gapH24,
-
-                          Text(
-                            l10n.resetPasswordTitle,
-                            style: AppTextStyles.headlineLarge.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).appFadeIn(delay: const Duration(milliseconds: 100)),
-                          AppSpacing.gapH8,
-                          Text(
-                            l10n.resetPasswordSubtitle,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).appFadeIn(delay: const Duration(milliseconds: 150)),
-                          AppSpacing.gapH32,
+                          // Standardized Brand Header
+                          AuthHeaderWidget(
+                            title: l10n.resetPasswordTitle,
+                            subtitle: l10n.resetPasswordSubtitle,
+                            logoHeight: 220,
+                          ).appFadeIn(),
+                          AppSpacing.gapH20,
 
                           // New Password
                           AppPasswordField(

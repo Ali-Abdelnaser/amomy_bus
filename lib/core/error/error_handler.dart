@@ -33,6 +33,24 @@ class ErrorHandler {
       );
     }
 
+    final errorStr = error?.toString() ?? '';
+    final isGoogleCancellation = errorStr.contains('sign_in_canceled') ||
+        errorStr.contains('popup_closed_by_user') ||
+        errorStr.contains('User canceled Google Sign-In') ||
+        errorStr.contains('The user canceled the sign-in flow');
+
+    if (isGoogleCancellation) {
+      return const AuthCancelledFailure();
+    }
+
+    if (errorStr.contains('AuthConfigurationException') ||
+        errorStr.contains('GOOGLE_WEB_CLIENT_ID') ||
+        errorStr.contains('GOOGLE_IOS_CLIENT_ID')) {
+      return ConfigurationFailure(
+        message: errorStr.replaceFirst('AuthConfigurationException: ', ''),
+      );
+    }
+
     return UnknownFailure(
       message: error?.toString() ?? 'An unexpected error occurred.',
     );

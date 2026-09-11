@@ -222,4 +222,60 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get validationOtpInvalid =>
       'يرجى إدخال رمز تأكيد صحيح مكون من 6 أرقام';
+
+  @override
+  String get skip => 'تخطي';
+
+  @override
+  String get next => 'التالي';
+
+  @override
+  String get getStarted => 'ابدأ الآن';
+
+  @override
+  String get languageSwitchLabel => 'EN';
+
+  @override
+  String get onboardingBookingTitle => 'احجز رحلتك بسهولة';
+
+  @override
+  String get onboardingBookingSubtitle =>
+      'اختر معاد الرحلة والمقعد المناسب ليك في ثواني.';
+
+  @override
+  String get onboardingTrackingTitle => 'تابع رحلتك لحظة بلحظة';
+
+  @override
+  String get onboardingTrackingSubtitle =>
+      'اعرف موقع الباص وموعد وصوله وخليك دايمًا على استعداد.';
+
+  @override
+  String get onboardingBoardingTitle => 'اركب بسرعة وأمان';
+
+  @override
+  String get onboardingBoardingSubtitle =>
+      'استخدم الـ QR أو كارتك للصعود بسهولة وتأكيد حضورك.';
+
+  @override
+  String get completeProfileReminderTitle => 'أكمل بيانات حسابك';
+
+  @override
+  String get completeProfileReminderSubtitle =>
+      'أكمل ملفك الشخصي للاستفادة من جميع خدمات AMOMY.';
+
+  @override
+  String get completeNow => 'أكمل الآن';
+
+  @override
+  String get bookingGuardTitle => 'أكمل بيانات حسابك أولًا';
+
+  @override
+  String get bookingGuardSubtitle =>
+      'نحتاج رقم الهاتف والنوع وتاريخ الميلاد قبل حجز رحلتك.';
+
+  @override
+  String get completeProfileCta => 'إكمال البيانات';
+
+  @override
+  String get dismiss => 'إغلاق';
 }

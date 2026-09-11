@@ -16,6 +16,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/auth_header_widget.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -37,10 +38,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   void _onSendResetPressed() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            SendPasswordResetRequested(
-              email: _emailController.text.trim(),
-            ),
-          );
+        SendPasswordResetRequested(email: _emailController.text.trim()),
+      );
     }
   }
 
@@ -63,56 +62,27 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         return AppLoadingOverlay(
           isLoading: isLoading,
           child: AppScaffold(
-            appBar: AppAppBar(
-              title: l10n.forgotPasswordTitle,
-              showBackButton: true,
-              onBackPressed: () => context.pop(),
-            ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
+                    constraints: const BoxConstraints(maxWidth: 420),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Center(
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryLight,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                AppIcons.lock,
-                                size: 40,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ).appScaleIn(),
-                          AppSpacing.gapH24,
-
-                          Text(
-                            l10n.forgotPasswordTitle,
-                            style: AppTextStyles.headlineLarge.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).appFadeIn(delay: const Duration(milliseconds: 100)),
-                          AppSpacing.gapH8,
-                          Text(
-                            l10n.forgotPasswordSubtitle,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).appFadeIn(delay: const Duration(milliseconds: 150)),
-                          AppSpacing.gapH32,
+                          // Standardized Brand Header
+                          AuthHeaderWidget(
+                            title: l10n.forgotPasswordTitle,
+                            subtitle: l10n.forgotPasswordSubtitle,
+                            logoHeight: 220,
+                          ).appFadeIn(),
+                          AppSpacing.gapH20,
 
                           // Email field
                           AppTextField(
@@ -126,31 +96,43 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               requiredMessage: l10n.validationRequired,
                               invalidMessage: l10n.validationEmailInvalid,
                             ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 200)),
-                          AppSpacing.gapH24,
+                          ).appSlideUp(
+                            delay: const Duration(milliseconds: 200),
+                          ),
+                          AppSpacing.gapH16,
 
                           // Send button
                           AppButton(
                             label: l10n.sendResetInstructions,
-                            icon: AppIcons.arrowForward,
                             isFullWidth: true,
                             isLoading: isLoading,
                             onPressed: _onSendResetPressed,
-                          ).appSlideUp(delay: const Duration(milliseconds: 250)),
-                          AppSpacing.gapH24,
+                          ).appSlideUp(
+                            delay: const Duration(milliseconds: 250),
+                          ),
+                          AppSpacing.gapH16,
 
                           // Back to login
-                          Center(
-                            child: TextButton(
-                              onPressed: () => context.pop(),
-                              child: Text(
-                                l10n.backToLogin,
-                                style: AppTextStyles.labelLarge.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                l10n.alreadyHaveAccount,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                            ),
+                              TextButton(
+                                onPressed: () => context.go('/login'),
+                                child: Text(
+                                  l10n.signInNow,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

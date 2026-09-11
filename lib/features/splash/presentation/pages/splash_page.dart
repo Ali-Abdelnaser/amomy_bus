@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/assets/app_assets.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -37,7 +38,11 @@ class _SplashView extends StatelessWidget {
       body: BlocConsumer<SplashBloc, SplashState>(
         listener: (context, state) {
           if (state is SplashLoaded) {
-            context.read<AuthBloc>().add(const AuthCheckRequested());
+            if (!state.status.isOnboardingCompleted) {
+              context.go('/onboarding');
+            } else {
+              context.read<AuthBloc>().add(const AuthCheckRequested());
+            }
           }
         },
         builder: (context, state) {

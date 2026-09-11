@@ -16,6 +16,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/auth_header_widget.dart';
 
 class EmailVerificationPage extends StatefulWidget {
   final String? email;
@@ -125,47 +126,20 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         return AppLoadingOverlay(
           isLoading: isLoading,
           child: AppScaffold(
-            appBar: AppAppBar(
-              title: l10n.verifyEmailTitle,
-              showBackButton: true,
-              onBackPressed: () => context.go('/login'),
-            ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
+                    constraints: const BoxConstraints(maxWidth: 420),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Mail Duotone Icon Badge
-                        Center(
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryLight,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              AppIcons.email,
-                              size: 40,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ).appScaleIn(),
-                        AppSpacing.gapH24,
-
-                        // Header Text
-                        Text(
-                          l10n.verifyEmailTitle,
-                          style: AppTextStyles.headlineLarge.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ).appFadeIn(delay: const Duration(milliseconds: 100)),
+                        // Standardized Brand Header
+                        AuthHeaderWidget(
+                          title: l10n.verifyEmailTitle,
+                          logoHeight: 200,
+                        ).appFadeIn(),
                         AppSpacing.gapH8,
 
                         // Subtitle with Email
@@ -186,7 +160,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           textAlign: TextAlign.center,
                           textDirection: TextDirection.ltr,
                         ).appFadeIn(delay: const Duration(milliseconds: 200)),
-                        AppSpacing.gapH32,
+                        AppSpacing.gapH20,
 
                         // 6-digit OTP Field
                         AppOtpField(
@@ -197,7 +171,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                             _onVerifyPressed();
                           },
                         ).appSlideUp(delay: const Duration(milliseconds: 250)),
-                        AppSpacing.gapH32,
+                        AppSpacing.gapH20,
 
                         // Verify Button
                         AppButton(

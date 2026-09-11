@@ -14,6 +14,7 @@ import '../../features/auth/presentation/pages/passenger_home_placeholder_page.d
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/debug/presentation/pages/design_system_preview_page.dart';
+import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
@@ -57,6 +58,17 @@ class AppRouter {
           key: state.pageKey,
           name: state.name,
           child: const SplashPage(),
+        ),
+      ),
+
+      // Onboarding
+      GoRoute(
+        path: RoutePaths.onboarding,
+        name: RouteNames.onboarding,
+        pageBuilder: (context, state) => AppPageTransitions.fadePage(
+          key: state.pageKey,
+          name: state.name,
+          child: const OnboardingPage(),
         ),
       ),
 
@@ -156,25 +168,25 @@ class AppRouter {
       final location = state.matchedLocation;
 
       final isSplash = location == RoutePaths.splash;
+      final isOnboarding = location == RoutePaths.onboarding;
       final isDesignSystem = location == RoutePaths.designSystemPreview;
       final isAuthRoute = location == RoutePaths.login ||
           location == RoutePaths.register ||
           location == RoutePaths.forgotPassword ||
           location == RoutePaths.resetPassword;
       final isVerifyEmail = location == RoutePaths.emailVerification;
-      final isCompleteProfile = location == RoutePaths.completeProfile;
 
       // Always permit design system preview in debug
       if (isDesignSystem) return null;
 
-      // On initial launch, allow splash to run its intro sequence
+      // Allow onboarding and splash on initial launch / unauthenticated
       if (authState is AuthInitial) {
         return null;
       }
 
       // If user is unauthenticated or has auth failure
       if (authState is Unauthenticated || authState is AuthFailureState) {
-        if (isAuthRoute) return null;
+        if (isOnboarding || isAuthRoute) return null;
         return RoutePaths.login;
       }
 
@@ -184,17 +196,12 @@ class AppRouter {
         return RoutePaths.emailVerification;
       }
 
-      // If profile completeness is required
-      if (authState is ProfileCompletionRequired) {
-        if (isCompleteProfile) return null;
-        return RoutePaths.completeProfile;
-      }
-
-      // If user is fully authenticated
+      // If user is authenticated (incomplete profile does NOT block Home)
       if (authState is Authenticated) {
-        if (isSplash || isAuthRoute || isVerifyEmail || isCompleteProfile) {
+        if (isSplash || isAuthRoute || isVerifyEmail) {
           return RoutePaths.home;
         }
+        // Permitted routes: /home, /complete-profile, etc.
         return null;
       }
 

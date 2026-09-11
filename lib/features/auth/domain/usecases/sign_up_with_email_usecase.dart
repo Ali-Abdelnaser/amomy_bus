@@ -13,9 +13,9 @@ class SignUpWithEmailUseCase {
     required String email,
     required String password,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) {
     return _repository.signUpWithEmail(
       email: email,

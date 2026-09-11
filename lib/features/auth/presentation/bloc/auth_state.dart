@@ -57,6 +57,11 @@ final class Authenticated extends AuthState {
     this.wallet,
   });
 
+  bool get isProfileComplete => user.isProfileComplete;
+  double get profileCompletionPercentage => user.profileCompletionPercentage;
+  int get profileCompletionPercent => user.profileCompletionPercent;
+  List<String> get missingProfileFields => user.missingProfileFields;
+
   @override
   List<Object?> get props => [user, wallet];
 }

@@ -223,4 +223,60 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get validationOtpInvalid =>
       'Please enter a valid 6-digit verification code';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get languageSwitchLabel => 'عربي';
+
+  @override
+  String get onboardingBookingTitle => 'Book Your Ride Easily';
+
+  @override
+  String get onboardingBookingSubtitle =>
+      'Choose your trip time and preferred seat in just a few taps.';
+
+  @override
+  String get onboardingTrackingTitle => 'Track Your Bus Live';
+
+  @override
+  String get onboardingTrackingSubtitle =>
+      'Follow your bus location and arrival time in real time.';
+
+  @override
+  String get onboardingBoardingTitle => 'Board Quickly & Securely';
+
+  @override
+  String get onboardingBoardingSubtitle =>
+      'Use your QR code or card for fast and simple boarding.';
+
+  @override
+  String get completeProfileReminderTitle => 'Complete your profile';
+
+  @override
+  String get completeProfileReminderSubtitle =>
+      'Finish your profile to access all AMOMY services.';
+
+  @override
+  String get completeNow => 'Complete now';
+
+  @override
+  String get bookingGuardTitle => 'Complete your profile first';
+
+  @override
+  String get bookingGuardSubtitle =>
+      'We need your phone number, gender, and date of birth before booking your trip.';
+
+  @override
+  String get completeProfileCta => 'Complete Profile';
+
+  @override
+  String get dismiss => 'Dismiss';
 }

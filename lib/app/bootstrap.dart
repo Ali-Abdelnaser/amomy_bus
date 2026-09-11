@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/config/app_config.dart';
+import '../core/config/auth_config.dart';
 import '../core/config/environment.dart';
 import '../core/constants/api_constants.dart';
 import '../core/constants/app_constants.dart';
+import '../core/localization/app_locale_controller.dart';
 import '../core/utils/app_bloc_observer.dart';
 import 'app.dart';
 import 'di/injection.dart';
@@ -47,7 +52,15 @@ Future<void> bootstrap({
       // Initialize Dependency Injection
       await configureDependencies();
 
-      runApp(const AmomyApp());
+      // Initialize App Locale Controller
+      await AppLocaleController.instance.init();
+
+      runApp(
+        DevicePreview(
+          enabled: true,
+          builder: (context) => const AmomyApp(),
+        ),
+      );
     },
     (error, stackTrace) {
       developer.log(
@@ -78,5 +91,23 @@ Future<void> _initializeBackendServicesIfConfigured() async {
     }
   } else {
     developer.log('Running with mock/offline backend placeholders (no Supabase keys set).', name: 'BOOTSTRAP');
+  }
+
+  // Initialize Google Sign-In instance once
+  try {
+    if (AuthConfig.hasGoogleWebClientId) {
+      final googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.initialize(
+        serverClientId: AuthConfig.googleWebClientId,
+        clientId: Platform.isIOS && AuthConfig.hasGoogleIosClientId
+            ? AuthConfig.googleIosClientId
+            : null,
+      );
+      developer.log('GoogleSignIn initialized once (serverClientId audience set).', name: 'BOOTSTRAP');
+    } else {
+      developer.log('GOOGLE_WEB_CLIENT_ID not provided. Google Sign-In will validate upon button press.', name: 'BOOTSTRAP');
+    }
+  } catch (e) {
+    developer.log('GoogleSignIn initialization warning: $e', name: 'BOOTSTRAP');
   }
 }

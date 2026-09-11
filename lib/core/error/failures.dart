@@ -34,6 +34,20 @@ class AuthenticationFailure extends Failure {
   });
 }
 
+class AuthCancelledFailure extends Failure {
+  const AuthCancelledFailure({
+    super.message = 'Authentication was cancelled.',
+    super.statusCode,
+  });
+}
+
+class ConfigurationFailure extends Failure {
+  const ConfigurationFailure({
+    required super.message,
+    super.statusCode,
+  });
+}
+
 class ValidationFailure extends Failure {
   const ValidationFailure({
     required super.message,

@@ -75,11 +75,25 @@
 			<dict>
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>amomy-auth-callback</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>com.aliabdelnaser.amomy</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>google-reversed-client-id</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg</string>
+				</array>
+			</dict>
 		</array>
+		<key>GIDClientID</key>
+		<string>614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg.apps.googleusercontent.com</string>
 	</dict>
 </plist>

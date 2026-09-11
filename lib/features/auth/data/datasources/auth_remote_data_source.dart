@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:injectable/injectable.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/config/auth_config.dart';
 import '../models/app_user_model.dart';
 import '../models/wallet_preview_model.dart';
 
@@ -16,9 +19,9 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String password,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   });
 
   Future<AppUserModel> verifyEmailOtp({
@@ -99,21 +102,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String email,
     required String password,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
-    final dobFormatted = DateFormat('yyyy-MM-dd').format(dateOfBirth);
+    final Map<String, dynamic> metadata = {
+      'full_name': fullName.trim(),
+    };
+    if (phone != null && phone.trim().isNotEmpty) {
+      metadata['phone'] = phone.trim();
+    }
+    if (gender != null && gender.trim().isNotEmpty) {
+      metadata['gender'] = gender.trim().toLowerCase();
+    }
+    if (dateOfBirth != null) {
+      metadata['date_of_birth'] = DateFormat('yyyy-MM-dd').format(dateOfBirth);
+    }
 
     final response = await _supabase.auth.signUp(
       email: email.trim(),
       password: password,
-      data: {
-        'full_name': fullName.trim(),
-        'phone': phone.trim(),
-        'gender': gender.trim().toLowerCase(),
-        'date_of_birth': dobFormatted,
-      },
+      data: metadata,
       emailRedirectTo: redirectUrl,
     );
 
@@ -159,28 +168,76 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AppUserModel> signInWithGoogle({
     String? webClientId,
   }) async {
-    if (webClientId != null && webClientId.isNotEmpty) {
-      await _googleSignIn.initialize(serverClientId: webClientId);
+    final effectiveWebClientId = (webClientId != null && webClientId.isNotEmpty)
+        ? webClientId
+        : AuthConfig.googleWebClientId;
+
+    if (effectiveWebClientId.isEmpty) {
+      developer.log('Missing GOOGLE_WEB_CLIENT_ID configuration', name: 'AUTH');
+      throw const AuthConfigurationException(
+        'Missing GOOGLE_WEB_CLIENT_ID. Please run the app with --dart-define=GOOGLE_WEB_CLIENT_ID=<your-web-client-id>',
+      );
     }
 
-    final googleAccount = await _googleSignIn.authenticate();
+    if (Platform.isIOS && !AuthConfig.hasGoogleIosClientId) {
+      developer.log('Missing GOOGLE_IOS_CLIENT_ID configuration', name: 'AUTH');
+      throw const AuthConfigurationException(
+        'Missing GOOGLE_IOS_CLIENT_ID. Please run the app with --dart-define=GOOGLE_IOS_CLIENT_ID=<your-ios-client-id>',
+      );
+    }
+
+    // Attempt native Google authentication
+    final GoogleSignInAccount googleAccount;
+    try {
+      developer.log('Initiating native Google authentication...', name: 'AUTH');
+      googleAccount = await _googleSignIn.authenticate();
+      developer.log(
+        'Google account selected successfully: ${googleAccount.email}',
+        name: 'AUTH',
+      );
+    } catch (e, st) {
+      developer.log(
+        'Google native authentication failed or was cancelled: $e',
+        name: 'AUTH',
+        error: e,
+        stackTrace: st,
+      );
+      // Re-throw so ErrorHandler maps user cancellation or PlatformException
+      rethrow;
+    }
+
     final googleAuth = googleAccount.authentication;
     final idToken = googleAuth.idToken;
 
     if (idToken == null || idToken.isEmpty) {
+      developer.log('Failed to retrieve Google ID Token (idToken is null or empty)', name: 'AUTH');
       throw const AuthException('Failed to retrieve Google ID Token.');
     }
 
-    final response = await _supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-    );
+    developer.log('Exchanging Google ID token with Supabase (token length: ${idToken.length})...', name: 'AUTH');
+    final AuthResponse response;
+    try {
+      response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+    } catch (e, st) {
+      developer.log(
+        'Supabase signInWithIdToken threw exception: $e',
+        name: 'AUTH',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
 
     final user = response.user;
     if (user == null) {
+      developer.log('Supabase returned null user session after Google ID token exchange', name: 'AUTH');
       throw const AuthException('Google Sign-In failed: no Supabase user session created.');
     }
 
+    developer.log('Supabase user session authenticated: ${user.id} (${user.email})', name: 'AUTH');
     return _fetchFullUserModel(user);
   }
 
@@ -307,10 +364,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // Default to passenger
     }
 
-    return AppUserModel.fromSupabase(
+    final model = AppUserModel.fromSupabase(
       user: user,
       profileData: profileData,
       roleStrings: roles,
     );
+
+    // If profile row exists but has no avatar_url and user has an avatar from provider metadata, persist it
+    if (profileData != null && (profileData['avatar_url'] as String?) == null && model.avatarUrl != null) {
+      try {
+        await _supabase.from('profiles').update({
+          'avatar_url': model.avatarUrl,
+        }).eq('id', user.id);
+      } catch (_) {
+        // Non-critical background update
+      }
+    }
+
+    return model;
   }
 }

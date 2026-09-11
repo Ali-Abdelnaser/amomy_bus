@@ -45,7 +45,8 @@ class AppUserModel extends AppUser {
     }
 
     final avatarUrl = (profileData?['avatar_url'] as String?) ??
-        (meta['avatar_url'] as String?);
+        (meta['avatar_url'] as String?) ??
+        (meta['picture'] as String?);
 
     final parsedRoles = roleStrings != null && roleStrings.isNotEmpty
         ? roleStrings.map(AppRole.fromString).toList()

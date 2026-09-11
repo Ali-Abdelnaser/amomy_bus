@@ -49,6 +49,8 @@ import '../../features/auth/domain/usecases/update_password_usecase.dart'
     as _i387;
 import '../../features/auth/domain/usecases/verify_otp_usecase.dart' as _i503;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
+import '../../features/onboarding/data/onboarding_local_data_source.dart'
+    as _i657;
 import '../../features/splash/data/datasources/splash_local_data_source.dart'
     as _i240;
 import '../../features/splash/data/repositories/splash_repository_impl.dart'
@@ -96,6 +98,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i787.AuthRepository>(
       () => _i153.AuthRepositoryImpl(gh<_i107.AuthRemoteDataSource>()),
+    );
+    gh.lazySingleton<_i657.OnboardingLocalDataSource>(
+      () => _i657.OnboardingLocalDataSourceImpl(gh<_i54.StorageService>()),
     );
     gh.lazySingleton<_i240.SplashLocalDataSource>(
       () => _i240.SplashLocalDataSourceImpl(

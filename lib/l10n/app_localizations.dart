@@ -505,6 +505,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter a valid 6-digit verification code'**
   String get validationOtpInvalid;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @languageSwitchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'عربي'**
+  String get languageSwitchLabel;
+
+  /// No description provided for @onboardingBookingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Your Ride Easily'**
+  String get onboardingBookingTitle;
+
+  /// No description provided for @onboardingBookingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your trip time and preferred seat in just a few taps.'**
+  String get onboardingBookingSubtitle;
+
+  /// No description provided for @onboardingTrackingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Your Bus Live'**
+  String get onboardingTrackingTitle;
+
+  /// No description provided for @onboardingTrackingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow your bus location and arrival time in real time.'**
+  String get onboardingTrackingSubtitle;
+
+  /// No description provided for @onboardingBoardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Board Quickly & Securely'**
+  String get onboardingBoardingTitle;
+
+  /// No description provided for @onboardingBoardingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your QR code or card for fast and simple boarding.'**
+  String get onboardingBoardingSubtitle;
+
+  /// No description provided for @completeProfileReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get completeProfileReminderTitle;
+
+  /// No description provided for @completeProfileReminderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish your profile to access all AMOMY services.'**
+  String get completeProfileReminderSubtitle;
+
+  /// No description provided for @completeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete now'**
+  String get completeNow;
+
+  /// No description provided for @bookingGuardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile first'**
+  String get bookingGuardTitle;
+
+  /// No description provided for @bookingGuardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We need your phone number, gender, and date of birth before booking your trip.'**
+  String get bookingGuardSubtitle;
+
+  /// No description provided for @completeProfileCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Profile'**
+  String get completeProfileCta;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
 }
 
 class _AppLocalizationsDelegate

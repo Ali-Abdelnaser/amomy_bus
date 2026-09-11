@@ -9,14 +9,14 @@ abstract class AuthRepository {
     required String password,
   });
 
-  /// Sign up with email, password and profile metadata
+  /// Sign up with email, password and full name (phone, gender, dob optional at registration)
   ResultFuture<AppUser> signUpWithEmail({
     required String email,
     required String password,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   });
 
   /// Verify 6-digit email OTP (signup or recovery)

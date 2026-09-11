@@ -92,11 +92,12 @@ abstract final class AppTheme {
           disabledBackgroundColor: AppColors.disabledBackground,
           disabledForegroundColor: AppColors.disabled,
           textStyle: AppTextStyles.labelLarge,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s20, vertical: AppSpacing.s12),
-          minimumSize: const Size.fromHeight(48),
-          shape: const RoundedRectangleBorder(
-            borderRadius: AppRadius.radiusMd,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s20,
+            vertical: AppSpacing.s12,
           ),
+          minimumSize: const Size(0, 48),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
           elevation: 0,
         ),
       ),
@@ -107,12 +108,13 @@ abstract final class AppTheme {
           foregroundColor: AppColors.primary,
           disabledForegroundColor: AppColors.disabled,
           textStyle: AppTextStyles.labelLarge,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s20, vertical: AppSpacing.s12),
-          minimumSize: const Size.fromHeight(48),
-          side: const BorderSide(color: AppColors.border, width: 1.5),
-          shape: const RoundedRectangleBorder(
-            borderRadius: AppRadius.radiusMd,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s20,
+            vertical: AppSpacing.s12,
           ),
+          minimumSize: const Size(0, 48),
+          side: const BorderSide(color: AppColors.border, width: 1.5),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
         ),
       ),
 
@@ -122,47 +124,55 @@ abstract final class AppTheme {
           foregroundColor: AppColors.primary,
           disabledForegroundColor: AppColors.disabled,
           textStyle: AppTextStyles.labelLarge,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
-          shape: const RoundedRectangleBorder(
-            borderRadius: AppRadius.radiusSm,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s12,
+            vertical: AppSpacing.s8,
           ),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusSm),
         ),
       ),
 
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: const Color(0xFFF8FAFC),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.s16,
-          vertical: AppSpacing.s12,
+          vertical: AppSpacing.s16,
         ),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-        errorStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-        border: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.border, width: 1),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: const Color(0xFF94A3B8),
         ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.border, width: 1),
+        labelStyle: AppTextStyles.labelMedium.copyWith(
+          color: AppColors.textSecondary,
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        errorStyle: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.error,
+          fontSize: 12,
         ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.error, width: 1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.error, width: 2),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
-        disabledBorder: const OutlineInputBorder(
-          borderRadius: AppRadius.radiusMd,
-          borderSide: BorderSide(color: AppColors.disabled, width: 1),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFF1F5F9), width: 1.2),
         ),
       ),
 
@@ -171,9 +181,7 @@ abstract final class AppTheme {
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 16,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.topXxl,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.topXxl),
         showDragHandle: true,
         dragHandleColor: AppColors.disabled,
         dragHandleSize: Size(36, 4),
@@ -183,9 +191,7 @@ abstract final class AppTheme {
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.surface,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.radiusXxl,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusXxl),
         titleTextStyle: AppTextStyles.headlineSmall,
         contentTextStyle: AppTextStyles.bodyMedium,
       ),
@@ -196,7 +202,10 @@ abstract final class AppTheme {
         disabledColor: AppColors.disabledBackground,
         selectedColor: AppColors.primaryLight,
         secondarySelectedColor: AppColors.primary,
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: AppSpacing.s4),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.s8,
+          vertical: AppSpacing.s4,
+        ),
         labelStyle: AppTextStyles.labelMedium,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.radiusSm,
@@ -214,10 +223,10 @@ abstract final class AppTheme {
       // SnackBar Theme
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.radiusMd,
+        contentTextStyle: AppTextStyles.bodyMedium.copyWith(
+          color: Colors.white,
         ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
         behavior: SnackBarBehavior.floating,
         elevation: 4,
       ),

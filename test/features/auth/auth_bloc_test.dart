@@ -47,9 +47,9 @@ class FakeAuthRepository implements AuthRepository {
     required String email,
     required String password,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
     if (failure != null) return Error(failure!);
     return Success(currentUserResult!);
@@ -225,11 +225,19 @@ void main() {
     authBloc.add(const AuthCheckRequested());
   });
 
-  test('emits [AuthLoading, ProfileCompletionRequired] when profile fields are missing', () async {
+  test('emits [AuthLoading, Authenticated] even when profile fields are missing (incomplete profile does NOT block Home)', () async {
     fakeRepo.currentUserResult = tIncompleteUser;
     final expected = [
       const AuthLoading(),
-      ProfileCompletionRequired(tIncompleteUser),
+      Authenticated(
+        user: tIncompleteUser,
+        wallet: const WalletPreview(
+          id: 'w-1',
+          userId: 'u-1',
+          cashPoints: 100,
+          subscriptionPoints: 50,
+        ),
+      ),
     ];
     expectLater(authBloc.stream, emitsInOrder(expected));
     authBloc.add(const AuthCheckRequested());
@@ -269,6 +277,88 @@ void main() {
       email: 'passenger@amomy.com',
       password: 'ValidPassword123',
     ));
+  });
+
+  test('email registration succeeds without phone, gender, or date of birth', () async {
+    fakeRepo.currentUserResult = tIncompleteUser;
+    fakeRepo.failure = null;
+    final expected = [
+      const AuthLoading(),
+      Authenticated(
+        user: tIncompleteUser,
+        wallet: const WalletPreview(
+          id: 'w-1',
+          userId: 'u-1',
+          cashPoints: 100,
+          subscriptionPoints: 50,
+        ),
+      ),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignUpWithEmailRequested(
+      email: 'test@example.com',
+      password: 'ValidPassword123',
+      fullName: 'Test User',
+    ));
+  });
+
+  test('emits [AuthLoading, Authenticated] on successful SignInWithGoogleRequested', () async {
+    fakeRepo.currentUserResult = tUser;
+    fakeRepo.failure = null;
+    final expected = [
+      const AuthLoading(),
+      Authenticated(
+        user: tUser,
+        wallet: const WalletPreview(
+          id: 'w-1',
+          userId: 'u-1',
+          cashPoints: 100,
+          subscriptionPoints: 50,
+        ),
+      ),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignInWithGoogleRequested());
+  });
+
+  test('reverts to [AuthLoading, Unauthenticated] without error when user cancels Google Sign-In', () async {
+    fakeRepo.failure = const AuthCancelledFailure();
+    final expected = [
+      const AuthLoading(),
+      const Unauthenticated(),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignInWithGoogleRequested());
+  });
+
+  test('emits [AuthLoading, Authenticated] when Google user has missing profile fields (does NOT block Home)', () async {
+    fakeRepo.currentUserResult = tIncompleteUser;
+    fakeRepo.failure = null;
+    final expected = [
+      const AuthLoading(),
+      Authenticated(
+        user: tIncompleteUser,
+        wallet: const WalletPreview(
+          id: 'w-1',
+          userId: 'u-1',
+          cashPoints: 100,
+          subscriptionPoints: 50,
+        ),
+      ),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignInWithGoogleRequested());
+  });
+
+  test('emits [AuthLoading, AuthFailureState] when Google Sign-In encounters unexpected error (no silent Unauthenticated)', () async {
+    const serverFailure = ServerFailure(message: 'Google Sign-In failed: no Supabase user session created.');
+    fakeRepo.failure = serverFailure;
+    final expected = [
+      const AuthLoading(),
+      const AuthFailureState(serverFailure),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignInWithGoogleRequested());
   });
 
   test('emits [AuthLoading, Unauthenticated] on SignOutRequested', () async {

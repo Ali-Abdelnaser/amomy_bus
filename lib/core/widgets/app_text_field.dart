@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../icons/app_icons.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// Reusable form text field with brand styling, prefix/suffix icons, validation, and clear error handling.
@@ -54,7 +53,7 @@ class AppTextField extends StatelessWidget {
     if (icon == null) return null;
     if (icon is Widget) return icon;
     if (icon is IconData) {
-      return Icon(icon, color: AppColors.textSecondary, size: 20);
+      return Icon(icon, color: const Color(0xFF64748B), size: 20);
     }
     return null;
   }
@@ -68,9 +67,12 @@ class AppTextField extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.labelMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          AppSpacing.gapH8,
+          const SizedBox(height: 6),
         ],
         TextFormField(
           controller: controller,
@@ -90,6 +92,7 @@ class AppTextField extends StatelessWidget {
           focusNode: focusNode,
           style: AppTextStyles.bodyMedium.copyWith(
             color: enabled ? AppColors.textPrimary : AppColors.disabled,
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hint,
@@ -145,13 +148,14 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       textInputAction: widget.textInputAction,
       autofillHints: widget.autofillHints,
       keyboardType: TextInputType.visiblePassword,
-      prefixIcon: const Icon(AppIcons.lock, color: AppColors.textSecondary, size: 20),
+      prefixIcon: const Icon(AppIcons.lock, color: Color(0xFF64748B), size: 20),
       suffixIcon: IconButton(
         icon: Icon(
           _obscure ? AppIcons.eye : AppIcons.eyeOff,
-          color: AppColors.textSecondary,
+          color: const Color(0xFF64748B),
           size: 20,
         ),
+        splashRadius: 20,
         onPressed: () => setState(() => _obscure = !_obscure),
       ),
     );

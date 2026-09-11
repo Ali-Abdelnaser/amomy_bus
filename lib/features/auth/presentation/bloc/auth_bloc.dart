@@ -1,7 +1,9 @@
 // ignore_for_file: prefer_initializing_formals
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/wallet_preview.dart';
 import '../../domain/usecases/complete_profile_usecase.dart';
@@ -170,12 +172,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
+    developer.log('AuthBloc: Starting Google Sign-In flow', name: 'AUTH');
     final result = await _signInWithGoogleUseCase(
       webClientId: event.webClientId,
     );
     await result.fold(
-      onError: (failure) async => emit(AuthFailureState(failure)),
-      onSuccess: (user) async => _routeUser(user, emit),
+      onError: (failure) async {
+        developer.log(
+          'AuthBloc: Google Sign-In failed: ${failure.runtimeType} (${failure.message})',
+          name: 'AUTH',
+        );
+        if (failure is AuthCancelledFailure) {
+          // User cancelled/closed Google account selector - return to Unauthenticated cleanly
+          emit(const Unauthenticated());
+        } else {
+          emit(AuthFailureState(failure));
+        }
+      },
+      onSuccess: (user) async {
+        developer.log(
+          'AuthBloc: Google Sign-In successful for user ${user.id} (${user.email})',
+          name: 'AUTH',
+        );
+        await _routeUser(user, emit);
+      },
     );
   }
 
@@ -183,11 +203,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     CompleteProfileRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final currentUser = state is ProfileCompletionRequired
-        ? (state as ProfileCompletionRequired).user
-        : null;
+    final currentUser = switch (state) {
+      Authenticated(:final user) => user,
+      ProfileCompletionRequired(:final user) => user,
+      _ => null,
+    };
 
     if (currentUser == null) {
+      developer.log(
+        'AuthBloc: CompleteProfileRequested with no active user session',
+        name: 'AUTH',
+      );
       emit(const Unauthenticated());
       return;
     }
@@ -245,6 +271,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final user = event.user;
     if (user == null) {
+      // If a login/auth operation is actively loading, do NOT cancel it with Unauthenticated
+      if (state is AuthLoading) {
+        developer.log(
+          'AuthBloc: Received null auth stream event while in AuthLoading - preserving active auth flow',
+          name: 'AUTH',
+        );
+        return;
+      }
       if (state is! Unauthenticated && state is! AuthInitial) {
         emit(const Unauthenticated());
       }
@@ -259,12 +293,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    if (!user.isProfileComplete) {
-      emit(ProfileCompletionRequired(user));
-      return;
-    }
-
-    // Fetch wallet to prove RLS and backend trigger integrity
+    // Profile completion is no longer a blocking startup state.
+    // Incomplete users enter Home directly, and profile completion is guarded before booking.
     WalletPreview? wallet;
     final walletResult = await _getWalletPreviewUseCase(user.id);
     wallet = walletResult.dataOrNull;

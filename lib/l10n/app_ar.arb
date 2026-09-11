@@ -74,5 +74,22 @@
   "validationPasswordLength": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
   "validationPasswordComplexity": "يجب أن تحتوي كلمة المرور على حرف واحد ورقم واحد على الأقل",
   "validationPasswordMismatch": "كلمتا المرور غير متطابقتين",
-  "validationOtpInvalid": "يرجى إدخال رمز تأكيد صحيح مكون من 6 أرقام"
+  "validationOtpInvalid": "يرجى إدخال رمز تأكيد صحيح مكون من 6 أرقام",
+  "skip": "تخطي",
+  "next": "التالي",
+  "getStarted": "ابدأ الآن",
+  "languageSwitchLabel": "EN",
+  "onboardingBookingTitle": "احجز رحلتك بسهولة",
+  "onboardingBookingSubtitle": "اختر معاد الرحلة والمقعد المناسب ليك في ثواني.",
+  "onboardingTrackingTitle": "تابع رحلتك لحظة بلحظة",
+  "onboardingTrackingSubtitle": "اعرف موقع الباص وموعد وصوله وخليك دايمًا على استعداد.",
+  "onboardingBoardingTitle": "اركب بسرعة وأمان",
+  "onboardingBoardingSubtitle": "استخدم الـ QR أو كارتك للصعود بسهولة وتأكيد حضورك.",
+  "completeProfileReminderTitle": "أكمل بيانات حسابك",
+  "completeProfileReminderSubtitle": "أكمل ملفك الشخصي للاستفادة من جميع خدمات AMOMY.",
+  "completeNow": "أكمل الآن",
+  "bookingGuardTitle": "أكمل بيانات حسابك أولًا",
+  "bookingGuardSubtitle": "نحتاج رقم الهاتف والنوع وتاريخ الميلاد قبل حجز رحلتك.",
+  "completeProfileCta": "إكمال البيانات",
+  "dismiss": "إغلاق"
 }

@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../domain/entities/app_user.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -29,10 +30,12 @@ class CompleteProfilePage extends StatefulWidget {
 class _CompleteProfilePageState extends State<CompleteProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
 
   String? _selectedGender;
   DateTime? _selectedDateOfBirth;
+  String? _avatarUrl;
   bool _initialized = false;
 
   @override
@@ -40,9 +43,16 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     super.didChangeDependencies();
     if (!_initialized) {
       final state = context.read<AuthBloc>().state;
-      if (state is ProfileCompletionRequired) {
-        final user = state.user;
+      AppUser? user;
+      if (state is Authenticated) {
+        user = state.user;
+      } else if (state is ProfileCompletionRequired) {
+        user = state.user;
+      }
+
+      if (user != null) {
         _fullNameController.text = user.fullName;
+        _emailController.text = user.email;
         if (user.phone != null && user.phone!.isNotEmpty) {
           _phoneController.text = user.phone!;
         }
@@ -52,6 +62,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
         if (user.dateOfBirth != null) {
           _selectedDateOfBirth = user.dateOfBirth;
         }
+        _avatarUrl = user.avatarUrl;
       }
       _initialized = true;
     }
@@ -60,6 +71,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   @override
   void dispose() {
     _fullNameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -89,13 +101,18 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final canPop = Navigator.of(context).canPop();
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthFailureState) {
           AppSnackBar.showError(context, state.failure.message);
         } else if (state is Authenticated) {
-          context.go('/home');
+          if (canPop) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
         }
       },
       builder: (context, state) {
@@ -106,12 +123,12 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
           child: AppScaffold(
             appBar: AppAppBar(
               title: l10n.completeProfileTitle,
-              showBackButton: false,
+              showBackButton: canPop,
             ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Form(
@@ -119,33 +136,52 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Top Icon Badge
+                          // Profile Photo / Google Avatar Display
                           Center(
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryLight,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                AppIcons.user,
-                                size: 36,
-                                color: AppColors.primary,
-                              ),
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                CircleAvatar(
+                                  radius: 46,
+                                  backgroundColor: AppColors.primaryLight,
+                                  backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                                      ? NetworkImage(_avatarUrl!)
+                                      : null,
+                                  child: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                                      ? const Icon(
+                                          AppIcons.user,
+                                          size: 46,
+                                          color: AppColors.primary,
+                                        )
+                                      : null,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    AppIcons.camera,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
                           ).appScaleIn(),
-                          AppSpacing.gapH24,
+                          AppSpacing.gapH12,
 
                           Text(
                             l10n.completeProfileTitle,
-                            style: AppTextStyles.headlineLarge.copyWith(
+                            style: AppTextStyles.headlineMedium.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
                           ).appFadeIn(delay: const Duration(milliseconds: 100)),
-                          AppSpacing.gapH8,
+                          AppSpacing.gapH4,
                           Text(
                             l10n.completeProfileSubtitle,
                             style: AppTextStyles.bodyMedium.copyWith(
@@ -153,7 +189,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                             ),
                             textAlign: TextAlign.center,
                           ).appFadeIn(delay: const Duration(milliseconds: 150)),
-                          AppSpacing.gapH32,
+                          AppSpacing.gapH20,
 
                           // Full Name
                           AppTextField(
@@ -166,7 +202,17 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               requiredMessage: l10n.validationRequired,
                             ),
                           ).appSlideUp(delay: const Duration(milliseconds: 200)),
-                          AppSpacing.gapH16,
+                          AppSpacing.gapH12,
+
+                          // Email (Displayed according to security rules - disabled/read-only)
+                          AppTextField(
+                            controller: _emailController,
+                            label: l10n.email,
+                            hint: l10n.emailHint,
+                            enabled: false,
+                            prefixIcon: AppIcons.email,
+                          ).appSlideUp(delay: const Duration(milliseconds: 220)),
+                          AppSpacing.gapH12,
 
                           // Phone
                           AppTextField(
@@ -181,7 +227,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               invalidMessage: l10n.validationPhoneInvalid,
                             ),
                           ).appSlideUp(delay: const Duration(milliseconds: 250)),
-                          AppSpacing.gapH16,
+                          AppSpacing.gapH12,
 
                           // Gender & Date of Birth Row
                           Row(
@@ -197,7 +243,11 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                                   rawItems: const ['male', 'female'],
                                   itemLabel: (val) =>
                                       val == 'male' ? l10n.male : l10n.female,
-                                  prefixIcon: const Icon(AppIcons.gender, color: AppColors.textSecondary, size: 20),
+                                  prefixIcon: const Icon(
+                                    AppIcons.gender,
+                                    color: AppColors.textSecondary,
+                                    size: 20,
+                                  ),
                                   onChanged: (val) {
                                     setState(() => _selectedGender = val);
                                   },
@@ -219,7 +269,11 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                                   initialDate: DateTime(2000, 1, 1),
                                   firstDate: DateTime(1920),
                                   lastDate: DateTime.now(),
-                                  prefixIcon: const Icon(AppIcons.birthday, color: AppColors.textSecondary, size: 20),
+                                  prefixIcon: const Icon(
+                                    AppIcons.birthday,
+                                    color: AppColors.textSecondary,
+                                    size: 20,
+                                  ),
                                   onDateSelected: (date) {
                                     setState(() => _selectedDateOfBirth = date);
                                   },
@@ -231,12 +285,12 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               ),
                             ],
                           ).appSlideUp(delay: const Duration(milliseconds: 300)),
-                          AppSpacing.gapH32,
+                          AppSpacing.gapH24,
 
                           // Submit Button
                           AppButton(
                             label: l10n.saveAndContinue,
-                            icon: AppIcons.arrowForward,
+                            icon: AppIcons.check,
                             isFullWidth: true,
                             isLoading: isLoading,
                             onPressed: _onSavePressed,

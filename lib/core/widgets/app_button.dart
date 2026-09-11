@@ -4,13 +4,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
-enum ButtonVariant {
-  primary,
-  secondary,
-  outline,
-  text,
-  danger,
-}
+enum ButtonVariant { primary, secondary, outline, text, danger }
 
 typedef AppButtonVariant = ButtonVariant;
 
@@ -26,6 +20,7 @@ class AppButton extends StatelessWidget {
   final double? width;
   final double height;
   final bool isFullWidth;
+  final TextStyle? textStyle;
 
   const AppButton({
     super.key,
@@ -38,7 +33,11 @@ class AppButton extends StatelessWidget {
     this.width,
     this.height = 48.0,
     this.isFullWidth = false,
-  }) : assert(label != null || text != null, 'Either label or text must be provided');
+    this.textStyle,
+  }) : assert(
+         label != null || text != null,
+         'Either label or text must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -79,11 +78,8 @@ class AppButton extends StatelessWidget {
             ),
           )
         else ...[
-          if (iconWidget != null) ...[
-            iconWidget,
-            AppSpacing.gapW8,
-          ],
-          Text(displayLabel),
+          if (iconWidget != null) ...[iconWidget, AppSpacing.gapW8],
+          Text(displayLabel, style: textStyle),
         ],
       ],
     );
@@ -101,7 +97,7 @@ class AppButton extends StatelessWidget {
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
             shape: const RoundedRectangleBorder(
-              borderRadius: AppRadius.radiusMd,
+              borderRadius: AppRadius.radiusLg,
             ),
             elevation: 0,
           ),
@@ -174,25 +170,14 @@ class AppButton extends StatelessWidget {
     }
 
     if (isFullWidth) {
-      return SizedBox(
-        width: double.infinity,
-        height: height,
-        child: button,
-      );
+      return SizedBox(width: double.infinity, height: height, child: button);
     }
 
     if (width != null) {
-      return SizedBox(
-        width: width,
-        height: height,
-        child: button,
-      );
+      return SizedBox(width: width, height: height, child: button);
     }
 
-    return SizedBox(
-      height: height,
-      child: button,
-    );
+    return SizedBox(height: height, child: button);
   }
 }
 

@@ -11,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../domain/entities/app_user.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -74,11 +75,18 @@ class PassengerHomePlaceholderPage extends StatelessWidget {
                             CircleAvatar(
                               radius: 28,
                               backgroundColor: AppColors.primaryLight,
-                              child: const Icon(
-                                AppIcons.user,
-                                size: 30,
-                                color: AppColors.primary,
-                              ),
+                              backgroundImage: (user.avatarUrl != null &&
+                                      user.avatarUrl!.isNotEmpty)
+                                  ? NetworkImage(user.avatarUrl!)
+                                  : null,
+                              child: (user.avatarUrl == null ||
+                                      user.avatarUrl!.isEmpty)
+                                  ? const Icon(
+                                      AppIcons.user,
+                                      size: 30,
+                                      color: AppColors.primary,
+                                    )
+                                  : null,
                             ),
                             AppSpacing.gapW16,
                             Expanded(
@@ -145,6 +153,14 @@ class PassengerHomePlaceholderPage extends StatelessWidget {
                       ],
                     ),
                   ).appSlideUp(),
+
+                  // Profile Completion Reminder Card (Non-blocking banner)
+                  if (!user.isProfileComplete) ...[
+                    AppSpacing.gapH20,
+                    _ProfileReminderCard(user: user).appSlideUp(
+                      delay: const Duration(milliseconds: 100),
+                    ),
+                  ],
                   AppSpacing.gapH24,
 
                   // Wallet Points Verification Card
@@ -279,6 +295,102 @@ class _WalletMetricTile extends StatelessWidget {
             style: AppTextStyles.headlineMedium.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Clean non-blocking profile completion banner displayed when passenger profile is incomplete
+class _ProfileReminderCard extends StatelessWidget {
+  final AppUser user;
+
+  const _ProfileReminderCard({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return AppCard(
+      padding: AppSpacing.edgeInsetsA20,
+      backgroundColor: const Color(0xFFF7FAFD),
+      border: const BorderSide(color: Color(0xFFD0E2F2), width: 1.2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  AppIcons.user,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              AppSpacing.gapW12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.completeProfileReminderTitle,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    AppSpacing.gapH4,
+                    Text(
+                      l10n.completeProfileReminderSubtitle,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${user.profileCompletionPercent}%',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.gapH16,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: user.profileCompletionPercentage,
+              minHeight: 8,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          AppSpacing.gapH16,
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: AppButton(
+              label: l10n.completeNow,
+              icon: AppIcons.arrowForward,
+              height: 40,
+              onPressed: () => context.push('/complete-profile'),
             ),
           ),
         ],

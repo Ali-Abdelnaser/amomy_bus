@@ -96,14 +96,25 @@ The passenger application uses a **6-digit verification code UX** ([AppOtpField]
 2. Create **Web application** client ID:
    - Name: `Amomy Supabase Web Client`
    - Authorized redirect URIs: `https://vexqglrlwfallmjfhisv.supabase.co/auth/v1/callback`
-   - **Client ID**: Used as `serverClientId` in Flutter and configured in Supabase.
-   - **Client Secret**: Configured **only** in Supabase dashboard.
+   - **Client ID**: Used as `GOOGLE_WEB_CLIENT_ID` in Flutter `--dart-define` and configured in Supabase.
+   - **Client Secret**: Configured **strictly** in Supabase dashboard. NEVER placed in Flutter code.
 3. Create **Android** client ID:
    - Package name: `com.aliabdelnaser.amomy`
    - SHA-1 certificate fingerprint: `72:AF:04:4E:E5:61:80:FD:B9:CF:7F:BB:3B:52:3E:DC:5D:3B:2D:E5`
+   - *(Note: Android uses package name + SHA-1 fingerprint registration; no Dart client ID is needed on Android)*.
 4. Create **iOS** client ID:
    - Bundle ID: `com.aliabdelnaser.amomy`
-   - Copy the generated `REVERSED_CLIENT_ID` into `ios/Runner/Info.plist` under `CFBundleURLSchemes`.
+   - **Client ID**: `614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg.apps.googleusercontent.com`
+   - **Reversed Client ID URL Scheme**: `com.googleusercontent.apps.614005330939-9kvm72ogcnd4seaa0lk38luv45usmrrg`
+   - Configured directly into `ios/Runner/Info.plist` under `CFBundleURLSchemes` and `GIDClientID`.
+
+### Running with Public OAuth Client IDs:
+Pass the public IDs via `--dart-define`:
+```bash
+flutter run \
+  --dart-define=GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com \
+  --dart-define=GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+```
 
 ### Supabase Google Provider Setup:
 1. Open [Supabase Dashboard](https://supabase.com/dashboard/project/vexqglrlwfallmjfhisv) → **Authentication** → **Providers** → **Google**.
@@ -111,7 +122,8 @@ The passenger application uses a **6-digit verification code UX** ([AppOtpField]
 3. Paste:
    - **Client ID**: (Web Application Client ID)
    - **Client Secret**: (Web Application Client Secret)
-4. Save.
+4. Enable **Skip nonce check** for native mobile SDK tokens (`signInWithIdToken`).
+5. Save.
 
 ---
 

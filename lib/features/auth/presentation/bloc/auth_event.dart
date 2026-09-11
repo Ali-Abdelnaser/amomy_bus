@@ -29,17 +29,17 @@ final class SignUpWithEmailRequested extends AuthEvent {
   final String email;
   final String password;
   final String fullName;
-  final String phone;
-  final String gender;
-  final DateTime dateOfBirth;
+  final String? phone;
+  final String? gender;
+  final DateTime? dateOfBirth;
 
   const SignUpWithEmailRequested({
     required this.email,
     required this.password,
     required this.fullName,
-    required this.phone,
-    required this.gender,
-    required this.dateOfBirth,
+    this.phone,
+    this.gender,
+    this.dateOfBirth,
   });
 
   @override

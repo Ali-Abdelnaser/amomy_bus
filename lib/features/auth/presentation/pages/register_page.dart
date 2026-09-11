@@ -9,8 +9,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/validation/app_validators.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_date_picker_field.dart';
-import '../../../../core/widgets/app_dropdown.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/app_snack_bar.dart';
@@ -18,6 +16,8 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/auth_header_widget.dart';
+import '../widgets/google_sign_in_button.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -30,17 +30,13 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _selectedGender;
-  DateTime? _selectedDateOfBirth;
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -48,26 +44,18 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _onRegisterPressed() {
     if (_formKey.currentState?.validate() ?? false) {
-      if (_selectedGender == null) {
-        AppSnackBar.showWarning(context, context.l10n.selectGender);
-        return;
-      }
-      if (_selectedDateOfBirth == null) {
-        AppSnackBar.showWarning(context, context.l10n.selectDateOfBirth);
-        return;
-      }
-
       context.read<AuthBloc>().add(
         SignUpWithEmailRequested(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           fullName: _fullNameController.text.trim(),
-          phone: AppValidators.normalizeEgyptianPhone(_phoneController.text),
-          gender: _selectedGender!,
-          dateOfBirth: _selectedDateOfBirth!,
         ),
       );
     }
+  }
+
+  void _onGooglePressed() {
+    context.read<AuthBloc>().add(const SignInWithGoogleRequested());
   }
 
   @override
@@ -90,31 +78,25 @@ class _RegisterPageState extends State<RegisterPage> {
         return AppLoadingOverlay(
           isLoading: isLoading,
           child: AppScaffold(
-            appBar: AppAppBar(
-              title: l10n.registerTitle,
-              showBackButton: true,
-              onBackPressed: () => context.pop(),
-            ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: AppSpacing.edgeInsetsA24,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
+                    constraints: const BoxConstraints(maxWidth: 440),
                     child: Form(
                       key: _formKey,
                       child: AutofillGroup(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              l10n.registerSubtitle,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
+                            // Standardized Brand Header
+                            AuthHeaderWidget(
+                              title: l10n.registerTitle,
+                              subtitle: l10n.registerSubtitle,
+                              logoHeight: 200,
                             ).appFadeIn(),
-                            AppSpacing.gapH24,
+                            AppSpacing.gapH20,
 
                             // Full Name
                             AppTextField(
@@ -132,7 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ).appSlideUp(
                               delay: const Duration(milliseconds: 100),
                             ),
-                            AppSpacing.gapH16,
+                            AppSpacing.gapH12,
 
                             // Email
                             AppTextField(
@@ -150,85 +132,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ).appSlideUp(
                               delay: const Duration(milliseconds: 150),
                             ),
-                            AppSpacing.gapH16,
-
-                            // Phone
-                            AppTextField(
-                              controller: _phoneController,
-                              label: l10n.phone,
-                              hint: l10n.phoneHint,
-                              keyboardType: TextInputType.phone,
-                              prefixIcon: AppIcons.phone,
-                              autofillHints: const [
-                                AutofillHints.telephoneNumber,
-                              ],
-                              validator: (val) => AppValidators.validatePhone(
-                                val,
-                                requiredMessage: l10n.validationRequired,
-                                invalidMessage: l10n.validationPhoneInvalid,
-                              ),
-                            ).appSlideUp(
-                              delay: const Duration(milliseconds: 200),
-                            ),
-                            AppSpacing.gapH16,
-
-                            // Gender & Date of Birth Row
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Gender Dropdown
-                                Expanded(
-                                  flex: 5,
-                                  child: AppDropdown<String>(
-                                    label: l10n.gender,
-                                    hint: l10n.selectGender,
-                                    selectedValue: _selectedGender,
-                                    rawItems: const ['male', 'female'],
-                                    itemLabel: (val) =>
-                                        val == 'male' ? l10n.male : l10n.female,
-                                    prefixIcon: const Icon(AppIcons.gender, color: AppColors.textSecondary, size: 20),
-                                    onChanged: (val) {
-                                      setState(() => _selectedGender = val);
-                                    },
-                                    validator: (val) =>
-                                        AppValidators.validateGender(
-                                          val,
-                                          requiredMessage:
-                                              l10n.validationRequired,
-                                        ),
-                                  ),
-                                ),
-                                AppSpacing.gapW12,
-
-                                // Date of Birth Picker
-                                Expanded(
-                                  flex: 6,
-                                  child: AppDatePickerField(
-                                    label: l10n.dateOfBirth,
-                                    hint: l10n.selectDateOfBirth,
-                                    selectedDate: _selectedDateOfBirth,
-                                    initialDate: DateTime(2000, 1, 1),
-                                    firstDate: DateTime(1920),
-                                    lastDate: DateTime.now(),
-                                    prefixIcon: const Icon(AppIcons.birthday, color: AppColors.textSecondary, size: 20),
-                                    onDateSelected: (date) {
-                                      setState(
-                                        () => _selectedDateOfBirth = date,
-                                      );
-                                    },
-                                    validator: (val) =>
-                                        AppValidators.validateDateOfBirth(
-                                          val,
-                                          requiredMessage:
-                                              l10n.validationRequired,
-                                        ),
-                                  ),
-                                ),
-                              ],
-                            ).appSlideUp(
-                              delay: const Duration(milliseconds: 250),
-                            ),
-                            AppSpacing.gapH16,
+                            AppSpacing.gapH12,
 
                             // Password
                             AppPasswordField(
@@ -246,9 +150,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                         l10n.validationPasswordComplexity,
                                   ),
                             ).appSlideUp(
-                              delay: const Duration(milliseconds: 300),
+                              delay: const Duration(milliseconds: 200),
                             ),
-                            AppSpacing.gapH16,
+                            AppSpacing.gapH12,
 
                             // Confirm Password
                             AppPasswordField(
@@ -265,9 +169,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                         l10n.validationPasswordMismatch,
                                   ),
                             ).appSlideUp(
-                              delay: const Duration(milliseconds: 350),
+                              delay: const Duration(milliseconds: 250),
                             ),
-                            AppSpacing.gapH24,
+                            AppSpacing.gapH20,
 
                             // Create Account Button
                             AppButton(
@@ -277,9 +181,41 @@ class _RegisterPageState extends State<RegisterPage> {
                               isLoading: isLoading,
                               onPressed: _onRegisterPressed,
                             ).appSlideUp(
-                              delay: const Duration(milliseconds: 400),
+                              delay: const Duration(milliseconds: 300),
                             ),
-                            AppSpacing.gapH24,
+                            AppSpacing.gapH16,
+
+                            // "Or Continue With" Divider
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
+                                Padding(
+                                  padding: AppSpacing.edgeInsetsH16,
+                                  child: Text(
+                                    l10n.orDivider,
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(color: AppColors.border),
+                                ),
+                              ],
+                            ),
+                            AppSpacing.gapH12,
+
+                            // Google Sign-In Button
+                            GoogleSignInButton(
+                              label: l10n.continueWithGoogle,
+                              isLoading: isLoading,
+                              onPressed: _onGooglePressed,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 350),
+                            ),
+                            AppSpacing.gapH16,
 
                             // Already have account? Sign in
                             Row(
@@ -292,7 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () => context.pop(),
+                                  onPressed: () => context.go('/login'),
                                   child: Text(
                                     l10n.signInNow,
                                     style: AppTextStyles.bodyMedium.copyWith(

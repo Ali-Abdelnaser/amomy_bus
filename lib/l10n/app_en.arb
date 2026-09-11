@@ -77,5 +77,22 @@
   "validationPasswordLength": "Password must be at least 8 characters",
   "validationPasswordComplexity": "Password must contain at least one letter and one number",
   "validationPasswordMismatch": "Passwords do not match",
-  "validationOtpInvalid": "Please enter a valid 6-digit verification code"
+  "validationOtpInvalid": "Please enter a valid 6-digit verification code",
+  "skip": "Skip",
+  "next": "Next",
+  "getStarted": "Get Started",
+  "languageSwitchLabel": "عربي",
+  "onboardingBookingTitle": "Book Your Ride Easily",
+  "onboardingBookingSubtitle": "Choose your trip time and preferred seat in just a few taps.",
+  "onboardingTrackingTitle": "Track Your Bus Live",
+  "onboardingTrackingSubtitle": "Follow your bus location and arrival time in real time.",
+  "onboardingBoardingTitle": "Board Quickly & Securely",
+  "onboardingBoardingSubtitle": "Use your QR code or card for fast and simple boarding.",
+  "completeProfileReminderTitle": "Complete your profile",
+  "completeProfileReminderSubtitle": "Finish your profile to access all AMOMY services.",
+  "completeNow": "Complete now",
+  "bookingGuardTitle": "Complete your profile first",
+  "bookingGuardSubtitle": "We need your phone number, gender, and date of birth before booking your trip.",
+  "completeProfileCta": "Complete Profile",
+  "dismiss": "Dismiss"
 }
