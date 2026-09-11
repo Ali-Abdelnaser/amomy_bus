@@ -313,10 +313,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get walletDetails => 'التفاصيل';
 
   @override
-  String get cashPointsPrefix => 'نقاط نقدية';
+  String get cashPointsPrefix => 'نقدية';
 
   @override
-  String get subscriptionPointsPrefix => 'نقاط الاشتراك';
+  String get subscriptionPointsPrefix => 'اشتراك';
 
   @override
   String get bookRideTitle => 'احجز رحلتك';

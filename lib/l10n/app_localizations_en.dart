@@ -314,10 +314,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletDetails => 'Details';
 
   @override
-  String get cashPointsPrefix => 'Cash points';
+  String get cashPointsPrefix => 'Cash ';
 
   @override
-  String get subscriptionPointsPrefix => 'Subscription points';
+  String get subscriptionPointsPrefix => 'Subscription ';
 
   @override
   String get bookRideTitle => 'Book Your Ride';

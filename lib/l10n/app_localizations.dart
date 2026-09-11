@@ -677,13 +677,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashPointsPrefix.
   ///
   /// In en, this message translates to:
-  /// **'Cash points'**
+  /// **'Cash '**
   String get cashPointsPrefix;
 
   /// No description provided for @subscriptionPointsPrefix.
   ///
   /// In en, this message translates to:
-  /// **'Subscription points'**
+  /// **'Subscription '**
   String get subscriptionPointsPrefix;
 
   /// No description provided for @bookRideTitle.
