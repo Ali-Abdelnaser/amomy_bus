@@ -78,7 +78,7 @@ Future<void> bootstrap({
 
       runApp(
         DevicePreview(
-          enabled: true,
+          enabled: kDebugMode,
           builder: (context) => const AmomyApp(),
         ),
       );
