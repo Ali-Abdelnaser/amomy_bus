@@ -70,7 +70,7 @@ workflows:
           echo "Required iOS secrets are configured."
 
       # ============================================================
-      # 3. GENERATE LOCAL iOS SECRET CONFIG
+      # 3. SET UP iOS SECRETS
       # ============================================================
       - name: Set up iOS Secrets
         script: |
@@ -97,7 +97,7 @@ workflows:
           fi
 
       # ============================================================
-      # 4. FLUTTER DEPENDENCIES
+      # 4. INSTALL FLUTTER DEPENDENCIES
       # ============================================================
       - name: Install Flutter Dependencies
         script: |
@@ -105,7 +105,7 @@ workflows:
           flutter pub get
 
       # ============================================================
-      # 5. COCOAPODS
+      # 5. INSTALL COCOAPODS
       # ============================================================
       - name: Install CocoaPods Dependencies
         script: |
@@ -132,7 +132,7 @@ workflows:
           flutter test
 
       # ============================================================
-      # 8. CODE SIGNING
+      # 8. SET UP CODE SIGNING
       # ============================================================
       - name: Set up Code Signing
         script: |
@@ -151,43 +151,38 @@ workflows:
           echo "========================================"
 
           echo "App ID: $APP_STORE_APPLE_ID"
-          echo "Version: $APP_STORE_VERSION"
-          echo "Platform: IOS"
+          echo "Marketing version: $APP_STORE_VERSION"
 
-          TF_BUILD=$(app-store-connect get-latest-testflight-build-number \
-            "$APP_STORE_APPLE_ID" \
-            --app-store-version="$APP_STORE_VERSION" \
-            --platform=IOS)
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID")
 
-          TF_BUILD=$(printf '%s' "$TF_BUILD" | tr -d '[:space:]')
+          LATEST_BUILD=$(printf '%s' "$LATEST_BUILD" | tr -d '[:space:]')
 
-          case "$TF_BUILD" in
+          case "$LATEST_BUILD" in
             ''|*[!0-9]*)
-              echo "ERROR: Could not determine the latest TestFlight build number."
+              echo "ERROR: Could not determine latest TestFlight build number."
               echo "Returned value was not a valid integer."
               exit 1
               ;;
           esac
 
-          echo "Latest TestFlight build: $TF_BUILD"
+          echo "Latest TestFlight build: $LATEST_BUILD"
 
-          NEXT_BUILD_NUMBER=$((TF_BUILD + 1))
+          IOS_BUILD_NUMBER=$((LATEST_BUILD + 1))
 
-          if [ "$NEXT_BUILD_NUMBER" -le "$TF_BUILD" ]; then
+          if [ "$IOS_BUILD_NUMBER" -le "$LATEST_BUILD" ]; then
             echo "ERROR: Invalid build-number calculation."
             exit 1
           fi
 
-          # Build 1 has already been consumed.
-          if [ "$NEXT_BUILD_NUMBER" -le 1 ]; then
-            echo "ERROR: Calculated build number is invalid."
+          if [ "$IOS_BUILD_NUMBER" -le 1 ]; then
+            echo "ERROR: Invalid next build number: $IOS_BUILD_NUMBER"
             echo "Build 1 has already been used."
             exit 1
           fi
 
-          echo "Next TestFlight build: $NEXT_BUILD_NUMBER"
+          echo "Next TestFlight build: $IOS_BUILD_NUMBER"
 
-          echo "IOS_BUILD_NUMBER=$NEXT_BUILD_NUMBER" >> "$CM_ENV"
+          echo "IOS_BUILD_NUMBER=$IOS_BUILD_NUMBER" >> "$CM_ENV"
 
       # ============================================================
       # 10. BUILD SIGNED IPA
@@ -216,7 +211,7 @@ workflows:
             --export-options-plist=/Users/builder/export_options.plist
 
       # ============================================================
-      # 11. VERIFY IPA
+      # 11. VERIFY IPA OUTPUT
       # ============================================================
       - name: Verify IPA Output
         script: |
@@ -247,10 +242,5 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-
-        # Upload the IPA to App Store Connect.
-        # Do NOT automatically submit it to Beta App Review.
         submit_to_testflight: false
-
-        # Do NOT submit to public App Store review.
         submit_to_app_store: false
