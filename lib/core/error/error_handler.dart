@@ -53,6 +53,15 @@ class ErrorHandler {
         return const AuthCancelledFailure();
       }
 
+      if (error.code == GoogleSignInExceptionCode.clientConfigurationError ||
+          desc.contains('DEVELOPER_ERROR') ||
+          desc.contains('10')) {
+        final message = AppLocaleController.instance.isArabic
+            ? 'خطأ في إعدادات تسجيل الدخول بواسطة Google.'
+            : 'Google Sign-In configuration error (DEVELOPER_ERROR/code 10).';
+        return ConfigurationFailure(message: message);
+      }
+
       final message = AppLocaleController.instance.isArabic
           ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
           : 'Google sign-in could not be completed. Please try again.';

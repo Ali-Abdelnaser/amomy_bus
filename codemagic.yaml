@@ -21,66 +21,223 @@ workflows:
 
       vars:
         APP_STORE_APPLE_ID: "6811922711"
+        APP_STORE_VERSION: "1.0.0"
 
     scripts:
+      # ============================================================
+      # 1. VERIFY ENVIRONMENT
+      # ============================================================
       - name: Verify Flutter & Environment
         script: |
+          set -e
+
+          echo "========================================"
+          echo "Flutter"
+          echo "========================================"
           flutter --version
+
+          echo ""
+          echo "========================================"
+          echo "Xcode"
+          echo "========================================"
           xcodebuild -version
 
+          echo ""
+          echo "========================================"
+          echo "App Store configuration"
+          echo "========================================"
+          echo "Apple App ID: $APP_STORE_APPLE_ID"
+          echo "Marketing Version: $APP_STORE_VERSION"
+
+      # ============================================================
+      # 2. VERIFY REQUIRED SECRETS
+      # ============================================================
+      - name: Verify Required Secrets
+        script: |
+          set -e
+
+          if [ -z "${GOOGLE_MAPS_IOS_API_KEY:-}" ]; then
+            echo "ERROR: GOOGLE_MAPS_IOS_API_KEY is not configured."
+            exit 1
+          fi
+
+          if [ -z "${GOOGLE_WEB_CLIENT_ID:-}" ]; then
+            echo "ERROR: GOOGLE_WEB_CLIENT_ID is not configured."
+            echo "Google Native Sign-In with Supabase requires the Web OAuth Client ID."
+            exit 1
+          fi
+
+          echo "Required iOS secrets are configured."
+
+      # ============================================================
+      # 3. GENERATE LOCAL iOS SECRET CONFIG
+      # ============================================================
       - name: Set up iOS Secrets
         script: |
           set -e
-          mkdir -p ios/Flutter
 
-          if [ -z "$GOOGLE_MAPS_IOS_API_KEY" ]; then
-            echo "GOOGLE_MAPS_IOS_API_KEY is not configured"
-            exit 1
-          fi
+          mkdir -p ios/Flutter
 
           cat > ios/Flutter/Secrets.xcconfig <<EOF
           GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_IOS_API_KEY
           EOF
 
-          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+          echo "Generated ios/Flutter/Secrets.xcconfig"
+
+          if [ -n "${GOOGLE_SERVICE_INFO_PLIST:-}" ]; then
             echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+            echo "GoogleService-Info.plist injected from Codemagic secret."
+          else
+            if [ -f "ios/Runner/GoogleService-Info.plist" ]; then
+              echo "Using existing ios/Runner/GoogleService-Info.plist"
+            else
+              echo "ERROR: GoogleService-Info.plist was not found."
+              exit 1
+            fi
           fi
 
-      - name: Install Flutter dependencies
+      # ============================================================
+      # 4. FLUTTER DEPENDENCIES
+      # ============================================================
+      - name: Install Flutter Dependencies
         script: |
+          set -e
           flutter pub get
 
-      - name: Install CocoaPods dependencies
+      # ============================================================
+      # 5. COCOAPODS
+      # ============================================================
+      - name: Install CocoaPods Dependencies
         script: |
+          set -e
+
           cd ios
           pod install
           cd ..
 
+      # ============================================================
+      # 6. STATIC ANALYSIS
+      # ============================================================
       - name: Flutter Analyze
         script: |
+          set -e
           flutter analyze
 
+      # ============================================================
+      # 7. TESTS
+      # ============================================================
       - name: Flutter Test
         script: |
+          set -e
           flutter test
 
-      - name: Set up code signing
+      # ============================================================
+      # 8. CODE SIGNING
+      # ============================================================
+      - name: Set up Code Signing
         script: |
+          set -e
           xcode-project use-profiles
 
+      # ============================================================
+      # 9. RESOLVE NEXT TESTFLIGHT BUILD NUMBER
+      # ============================================================
+      - name: Resolve Next TestFlight Build Number
+        script: |
+          set -e
+
+          echo "========================================"
+          echo "Resolving TestFlight build number"
+          echo "========================================"
+
+          echo "App ID: $APP_STORE_APPLE_ID"
+          echo "Version: $APP_STORE_VERSION"
+          echo "Platform: IOS"
+
+          TF_BUILD=$(app-store-connect get-latest-testflight-build-number \
+            "$APP_STORE_APPLE_ID" \
+            --app-store-version="$APP_STORE_VERSION" \
+            --platform=IOS)
+
+          TF_BUILD=$(printf '%s' "$TF_BUILD" | tr -d '[:space:]')
+
+          case "$TF_BUILD" in
+            ''|*[!0-9]*)
+              echo "ERROR: Could not determine the latest TestFlight build number."
+              echo "Returned value was not a valid integer."
+              exit 1
+              ;;
+          esac
+
+          echo "Latest TestFlight build: $TF_BUILD"
+
+          NEXT_BUILD_NUMBER=$((TF_BUILD + 1))
+
+          if [ "$NEXT_BUILD_NUMBER" -le "$TF_BUILD" ]; then
+            echo "ERROR: Invalid build-number calculation."
+            exit 1
+          fi
+
+          # Build 1 has already been consumed.
+          if [ "$NEXT_BUILD_NUMBER" -le 1 ]; then
+            echo "ERROR: Calculated build number is invalid."
+            echo "Build 1 has already been used."
+            exit 1
+          fi
+
+          echo "Next TestFlight build: $NEXT_BUILD_NUMBER"
+
+          echo "IOS_BUILD_NUMBER=$NEXT_BUILD_NUMBER" >> "$CM_ENV"
+
+      # ============================================================
+      # 10. BUILD SIGNED IPA
+      # ============================================================
       - name: Build iOS IPA
         script: |
           set -e
 
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
-          BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+          if [ -z "${IOS_BUILD_NUMBER:-}" ]; then
+            echo "ERROR: IOS_BUILD_NUMBER was not generated."
+            exit 1
+          fi
 
-          echo "Building AMOMY iOS 1.0.0 build $BUILD_NUMBER"
+          echo "========================================"
+          echo "Building AMOMY iOS"
+          echo "========================================"
+          echo "Marketing version: $APP_STORE_VERSION"
+          echo "Build number: $IOS_BUILD_NUMBER"
+          echo "Bundle ID: com.aliabdelnaser.amomy"
 
-          flutter build ipa --release \
-            --build-name=1.0.0 \
-            --build-number=$BUILD_NUMBER \
+          flutter build ipa \
+            --release \
+            --build-name="$APP_STORE_VERSION" \
+            --build-number="$IOS_BUILD_NUMBER" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
             --export-options-plist=/Users/builder/export_options.plist
+
+      # ============================================================
+      # 11. VERIFY IPA
+      # ============================================================
+      - name: Verify IPA Output
+        script: |
+          set -e
+
+          echo "========================================"
+          echo "Verifying IPA"
+          echo "========================================"
+
+          IPA_FILE=$(find build/ios/ipa -maxdepth 1 -name "*.ipa" | head -n 1)
+
+          if [ -z "$IPA_FILE" ]; then
+            echo "ERROR: No IPA was generated."
+            exit 1
+          fi
+
+          echo "IPA generated successfully:"
+          echo "$IPA_FILE"
+
+          echo "Marketing version: $APP_STORE_VERSION"
+          echo "Build number: $IOS_BUILD_NUMBER"
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -90,5 +247,10 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+
+        # Upload the IPA to App Store Connect.
+        # Do NOT automatically submit it to Beta App Review.
         submit_to_testflight: false
+
+        # Do NOT submit to public App Store review.
         submit_to_app_store: false
