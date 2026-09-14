@@ -4,32 +4,50 @@
 
 ## Platform
 
-adaptive
+Cross-platform Flutter (Android & iOS)
 
 ## Users
 
-Primary users are Egyptian daily commuters, students, and intercity travelers seeking dependable, dignified, and comfortable scheduled bus transportation. They need predictable departure schedules, guaranteed seat reservations, cashless payment, live vehicle tracking, and rapid QR/card boarding without boarding chaos or cash hassles.
+Primary users are Egyptian daily commuters, university students, and workers seeking dependable, dignified, and comfortable scheduled bus transportation on the Mit Ghamr / Mit Fadala – Mansoura corridor. They need predictable departure schedules, guaranteed seat reservations, cashless payment, live vehicle tracking, and rapid QR boarding without boarding chaos or cash hassles.
 
 ## Product Purpose
 
-AMOMY elevates mass transit in Egypt into a smart, predictable, and stress-free passenger service. It empowers commuters to reserve guaranteed seats ahead of time, track their bus in real time, and pay smoothly using a points-based wallet system, replacing uncertainty and crowding with structured reliability.
+AMOMY elevates mass transit in Egypt into a smart, predictable, and stress-free passenger service. It empowers commuters to reserve guaranteed seats on scheduled daily departures, track their bus in real time on Google Maps with authoritative road geometry, and pay smoothly using a points-based wallet system, replacing uncertainty and crowding with structured reliability.
 
 ## Positioning
 
-Unlike uncoordinated public transport or ride-hailing cars with surging prices, AMOMY offers premium, scheduled, reserved-seat bus commuting with live tracking and an integrated dual-source points economy (Cash Points and Subscription Points).
+Unlike uncoordinated public transport or ride-hailing cars with surging prices, AMOMY offers premium, scheduled, reserved-seat bus commuting with live hardware GPS tracking and an integrated points economy (Cash Points and Subscription Points).
 
 ## Operating Context
 
-- **Environment**: High-density Egyptian urban routes and intercity transit corridors. Commuters frequently interact with the app in transit, on sunny street corners, or walking to stations.
-- **Visual & Cultural Context**: Full bilingual Arabic (RTL primary) and English (LTR secondary) support. High contrast, readable typography, and thumb-friendly controls are vital.
-- **Physical Touchpoints**: Boarding validation via digital QR code scanner or NFC/smart cards, physical bus seat numbering, and local transit stations.
+- **Environment**: 34 designated passenger stops along the Mit Ghamr / Mit Fadala to Mansoura transit corridor.
+- **Service Windows & Schedule**:
+  - Outbound Trips: 08:00, 09:00, 10:00, 11:00
+  - Return Trips: 13:00, 14:00, 15:00, 16:00
+  - Live Tracking Active Windows: 08:00–12:00 and 13:00–17:00 (outside these hours, the tracking service displays OFFLINE / Service Resumes).
+- **Visual & Cultural Context**: Full bilingual Arabic (RTL primary) and English (LTR secondary) support. High contrast, readable typography, and thumb-friendly controls tailored for outdoor mobile use under bright sunlight.
+- **Physical Touchpoints**: Boarding validation via digital QR code scanner or NFC/smart cards, physical 28-seat bus cabin numbering, and local transit landmarks.
 
-## Capabilities and Constraints
+## Capabilities and Business Invariants
 
 - **Mobile Architecture**: Cross-platform Flutter (Android & iOS) with Clean Architecture (Domain, Data, Presentation), BLoC state management, and GoRouter shell navigation.
-- **Authentication**: Email/Password + OTP and native Google Sign-In with automated backend user provisioning via Supabase.
-- **Economy Model**: Strict points-based ledger ("رصيد النقاط" / "Points Balance") with distinct Cash Points and Subscription Points. No raw cash/money labels or exposed ledger batch IDs in passenger UI.
-- **Profile Gate**: Passengers can explore the app and manage their wallet with basic credentials, but full profile completion (phone, gender, date of birth) is mandatory prior to trip seat booking.
+- **Authentication**: Email/Password with 6-digit verification code and native Google Sign-In with automated backend user provisioning via Supabase.
+- **Economy Model**: Strict points-based ledger ("رصيد النقاط" / "Points Balance") with Cash Points (non-expiring, minimum 200 PTS top-up) and Subscription Points (monthly expiring). 1 Point = 1 EGP for top-up accounting. No raw cash/money labels in passenger UI.
+- **Profile Gate**: Full profile completion (Full Name, Phone, Gender, Date of Birth) is strictly enforced prior to seat hold and booking.
+- **Booking Rules**:
+  - Regular booking is **today-only** (based on Africa/Cairo timezone).
+  - Physical bus capacity is **28 seats** (1 front single + 12 left + 10 right + 5 rear bench).
+  - Dynamic stop pricing based on boarding stop only:
+    - Stops 1–5: 30 Points
+    - Stops 6–17: 25 Points
+    - Stops 18–34: 20 Points
+  - Duplicate-trip booking protection prevents booking multiple seats on the same trip by the same passenger.
+  - Cancellations and seat swaps permitted up to **30 minutes prior to trip departure**; cancellations issue an exact batch refund to the passenger's points wallet.
+- **Live Bus Tracking**:
+  - Telemetry source is **physical ETrack hardware IoT trackers** only (scope: Amomy 1 and Amomy 2 only).
+  - Passenger and staff phones are **never** used as GPS tracking sources.
+  - Rendered on **Google Maps Platform** with stored road-following Google Routes geometry.
+  - Real-time stop semantics: Last Stop (yellow, actual arrival timestamp formatted as "Arrived at <time>" / "وصل الساعة <time>"), Next Stop (blue with ETA), Future Stops (white), and older passed stops (muted).
 - **Navigation Shell**: 4 persistent tabs — Home (الرئيسية), My Trips (رحلاتي), Wallet (المحفظة), and Profile (حسابي).
 
 ## Brand Commitments
@@ -39,12 +57,6 @@ Unlike uncoordinated public transport or ride-hailing cars with surging prices, 
 - **Background & Surfaces**: Crisp white `#FFFFFF` dominant surfaces, soft blue/gray container accents `#F7FAFD` / `#EBF3FA`, and neutral borders `#E2E8F0`.
 - **Voice & Tone**: Respectful, modern, friendly, clear, and reassuring Egyptian Arabic tone paired with crisp English.
 - **Visual Personality**: Modern consumer transport app — clean, fast, and accessible; strictly avoiding admin dashboard aesthetics.
-
-## Evidence on Hand
-
-- Onboarding illustrations and brand identity assets located in `assets/images/`.
-- Full localization strings in `lib/l10n/app_en.arb` and `lib/l10n/app_ar.arb`.
-- Production-tested Design System foundation in `lib/core/theme/` and `lib/core/widgets/`.
 
 ## Product Principles
 
@@ -58,3 +70,7 @@ Unlike uncoordinated public transport or ride-hailing cars with surging prices, 
 - Adherence to WCAG 2.2 AA standards for minimum 4.5:1 text contrast on primary blue and neutral surfaces.
 - Minimum 44x44pt interactive touch targets throughout all mobile flows.
 - Respect for device safe areas, gesture bars, and dynamic OS text scaling.
+
+---
+**Last Updated**: 2026-09-14
+

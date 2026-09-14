@@ -1,0 +1,94 @@
+workflows:
+  amomy-ios-testflight:
+    name: AMOMY iOS — TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: AMOMY Codemagic
+
+    environment:
+      groups:
+        - amomy_secrets
+
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.aliabdelnaser.amomy
+
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+
+      vars:
+        APP_STORE_APPLE_ID: "6811922711"
+
+    scripts:
+      - name: Verify Flutter & Environment
+        script: |
+          flutter --version
+          xcodebuild -version
+
+      - name: Set up iOS Secrets
+        script: |
+          set -e
+          mkdir -p ios/Flutter
+
+          if [ -z "$GOOGLE_MAPS_IOS_API_KEY" ]; then
+            echo "GOOGLE_MAPS_IOS_API_KEY is not configured"
+            exit 1
+          fi
+
+          cat > ios/Flutter/Secrets.xcconfig <<EOF
+          GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_IOS_API_KEY
+          EOF
+
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+          fi
+
+      - name: Install Flutter dependencies
+        script: |
+          flutter pub get
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Flutter Analyze
+        script: |
+          flutter analyze
+
+      - name: Flutter Test
+        script: |
+          flutter test
+
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Build iOS IPA
+        script: |
+          set -e
+
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+
+          echo "Building AMOMY iOS 1.0.0 build $BUILD_NUMBER"
+
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/archive/*.xcarchive
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false

@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import '../../../../core/typedefs/typedefs.dart';
+import '../entities/topup_entities.dart';
 import '../repositories/topup_repository.dart';
 
 @lazySingleton
@@ -8,10 +9,10 @@ class CreateTopUpRequestUseCase {
 
   const CreateTopUpRequestUseCase(this._repository);
 
-  ResultFuture<String> call({
+  ResultFuture<TopUpCreatedResponse> call({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
   }) {
     return _repository.createTopUpRequest(
       amount: amount,

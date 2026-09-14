@@ -85,6 +85,7 @@ class TripSeat extends Equatable {
   final SeatAvailabilityStatus status;
   final bool isMine;
   final String? passengerGender;
+  final DateTime? heldExpiresAt;
 
   const TripSeat({
     required this.seatId,
@@ -95,6 +96,7 @@ class TripSeat extends Equatable {
     required this.status,
     required this.isMine,
     this.passengerGender,
+    this.heldExpiresAt,
   });
 
   bool get isAvailable => status == SeatAvailabilityStatus.available;
@@ -111,6 +113,63 @@ class TripSeat extends Equatable {
         status,
         isMine,
         passengerGender,
+        heldExpiresAt,
+      ];
+}
+
+class RouteStop extends Equatable {
+  final String routeStopId;
+  final String stopId;
+  final int stopOrder;
+  final String stopNameAr;
+  final String? stopNameEn;
+  final String localityAr;
+  final String? localityEn;
+  final String fareZoneId;
+  final double farePoints;
+
+  const RouteStop({
+    required this.routeStopId,
+    required this.stopId,
+    required this.stopOrder,
+    required this.stopNameAr,
+    this.stopNameEn,
+    required this.localityAr,
+    this.localityEn,
+    required this.fareZoneId,
+    required this.farePoints,
+  });
+
+  String stopName(String locale) =>
+      (locale.startsWith('ar') || stopNameEn == null || stopNameEn!.isEmpty)
+          ? stopNameAr
+          : stopNameEn!;
+
+  String locality(String locale) =>
+      (locale.startsWith('ar') || localityEn == null || localityEn!.isEmpty)
+          ? localityAr
+          : localityEn!;
+
+  String displayName(String locale) {
+    final name = stopName(locale);
+    final loc = locality(locale);
+    if (loc.isNotEmpty && name != loc) {
+      return '$name — $loc';
+    }
+    return name;
+  }
+
+  @override
+  List<Object?> get props => [
+        routeStopId,
+        stopId,
+        stopOrder,
+        stopNameAr,
+        stopNameEn,
+        localityAr,
+        localityEn,
+        fareZoneId,
+        farePoints,
       ];
 }
 
@@ -122,6 +181,12 @@ class BookingHold extends Equatable {
   final double farePoints;
   final DateTime expiresAt;
   final DateTime serverTime;
+  final String? routeStopId;
+  final String? destinationRouteStopId;
+  final String? stopName;
+  final String? destinationStopName;
+  final String? locality;
+  final String? fareZoneId;
 
   const BookingHold({
     required this.holdId,
@@ -131,6 +196,12 @@ class BookingHold extends Equatable {
     required this.farePoints,
     required this.expiresAt,
     required this.serverTime,
+    this.routeStopId,
+    this.destinationRouteStopId,
+    this.stopName,
+    this.destinationStopName,
+    this.locality,
+    this.fareZoneId,
   });
 
   /// Seconds remaining calculated relative to server time anchor
@@ -151,6 +222,12 @@ class BookingHold extends Equatable {
         farePoints,
         expiresAt,
         serverTime,
+        routeStopId,
+        destinationRouteStopId,
+        stopName,
+        destinationStopName,
+        locality,
+        fareZoneId,
       ];
 }
 
@@ -170,6 +247,9 @@ class PassengerBooking extends Equatable {
   final String status;
   final String qrToken;
   final DateTime bookedAt;
+  final String? routeStopId;
+  final String? stopName;
+  final String? locality;
 
   const PassengerBooking({
     required this.bookingId,
@@ -187,6 +267,9 @@ class PassengerBooking extends Equatable {
     required this.status,
     required this.qrToken,
     required this.bookedAt,
+    this.routeStopId,
+    this.stopName,
+    this.locality,
   });
 
   bool get isUpcoming =>
@@ -212,5 +295,190 @@ class PassengerBooking extends Equatable {
         status,
         qrToken,
         bookedAt,
+        routeStopId,
+        stopName,
+        locality,
       ];
 }
+
+enum TodayTripAvailabilityStatus {
+  available,
+  alreadyBooked,
+  full,
+  bookingClosed,
+  departed,
+  cancelled,
+  unavailable;
+
+  static TodayTripAvailabilityStatus fromString(String val) {
+    switch (val.toUpperCase()) {
+      case 'ALREADY_BOOKED':
+        return TodayTripAvailabilityStatus.alreadyBooked;
+      case 'FULL':
+        return TodayTripAvailabilityStatus.full;
+      case 'BOOKING_CLOSED':
+        return TodayTripAvailabilityStatus.bookingClosed;
+      case 'DEPARTED':
+        return TodayTripAvailabilityStatus.departed;
+      case 'CANCELLED':
+        return TodayTripAvailabilityStatus.cancelled;
+      case 'AVAILABLE':
+        return TodayTripAvailabilityStatus.available;
+      default:
+        return TodayTripAvailabilityStatus.unavailable;
+    }
+  }
+}
+
+class PassengerTodayTrip extends Equatable {
+  final String tripId;
+  final String routeId;
+  final BookingDirection direction;
+  final DateTime serviceDate;
+  final String originNameAr;
+  final String originNameEn;
+  final String destinationNameAr;
+  final String destinationNameEn;
+  final String departureTime;
+  final DateTime departureAt;
+  final DateTime bookingCloseAt;
+  final double farePoints;
+  final int totalSeats;
+  final int availableSeats;
+  final String status;
+  final bool alreadyBooked;
+  final String? bookingId;
+  final String? seatNumber;
+  final String? qrToken;
+  final TodayTripAvailabilityStatus availabilityStatus;
+  final bool isBookable;
+
+  const PassengerTodayTrip({
+    required this.tripId,
+    required this.routeId,
+    required this.direction,
+    required this.serviceDate,
+    required this.originNameAr,
+    required this.originNameEn,
+    required this.destinationNameAr,
+    required this.destinationNameEn,
+    required this.departureTime,
+    required this.departureAt,
+    required this.bookingCloseAt,
+    required this.farePoints,
+    required this.totalSeats,
+    required this.availableSeats,
+    required this.status,
+    required this.alreadyBooked,
+    this.bookingId,
+    this.seatNumber,
+    this.qrToken,
+    required this.availabilityStatus,
+    required this.isBookable,
+  });
+
+  String originName(String locale) {
+    if (locale.startsWith('ar')) {
+      return originNameAr.trim().isNotEmpty ? originNameAr : originNameEn;
+    }
+    return originNameEn.trim().isNotEmpty ? originNameEn : originNameAr;
+  }
+
+  String destinationName(String locale) {
+    if (locale.startsWith('ar')) {
+      return destinationNameAr.trim().isNotEmpty ? destinationNameAr : destinationNameEn;
+    }
+    return destinationNameEn.trim().isNotEmpty ? destinationNameEn : destinationNameAr;
+  }
+
+  bool get isUrgentSeats => availableSeats > 0 && availableSeats <= 3;
+
+  @override
+  List<Object?> get props => [
+        tripId,
+        routeId,
+        direction,
+        serviceDate,
+        originNameAr,
+        originNameEn,
+        destinationNameAr,
+        destinationNameEn,
+        departureTime,
+        departureAt,
+        bookingCloseAt,
+        farePoints,
+        totalSeats,
+        availableSeats,
+        status,
+        alreadyBooked,
+        bookingId,
+        seatNumber,
+        qrToken,
+        availabilityStatus,
+        isBookable,
+      ];
+}
+
+class PassengerTripPreference extends Equatable {
+  final String originStopId;
+  final String destinationStopId;
+  final String? originRouteStopId;
+  final String? destinationRouteStopId;
+  final String originNameAr;
+  final String originNameEn;
+  final String originLocalityAr;
+  final String originLocalityEn;
+  final String destinationNameAr;
+  final String destinationNameEn;
+  final String destinationLocalityAr;
+  final String destinationLocalityEn;
+  final DateTime updatedAt;
+
+  const PassengerTripPreference({
+    required this.originStopId,
+    required this.destinationStopId,
+    this.originRouteStopId,
+    this.destinationRouteStopId,
+    required this.originNameAr,
+    required this.originNameEn,
+    required this.originLocalityAr,
+    required this.originLocalityEn,
+    required this.destinationNameAr,
+    required this.destinationNameEn,
+    required this.destinationLocalityAr,
+    required this.destinationLocalityEn,
+    required this.updatedAt,
+  });
+
+  String originName(String locale) {
+    if (locale.startsWith('ar')) {
+      return originNameAr.trim().isNotEmpty ? originNameAr : originNameEn;
+    }
+    return originNameEn.trim().isNotEmpty ? originNameEn : originNameAr;
+  }
+
+  String destinationName(String locale) {
+    if (locale.startsWith('ar')) {
+      return destinationNameAr.trim().isNotEmpty ? destinationNameAr : destinationNameEn;
+    }
+    return destinationNameEn.trim().isNotEmpty ? destinationNameEn : destinationNameAr;
+  }
+
+  @override
+  List<Object?> get props => [
+        originStopId,
+        destinationStopId,
+        originRouteStopId,
+        destinationRouteStopId,
+        originNameAr,
+        originNameEn,
+        originLocalityAr,
+        originLocalityEn,
+        destinationNameAr,
+        destinationNameEn,
+        destinationLocalityAr,
+        destinationLocalityEn,
+        updatedAt,
+      ];
+}
+

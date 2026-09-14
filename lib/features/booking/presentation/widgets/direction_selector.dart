@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_card.dart';
 import '../../domain/entities/booking_entities.dart';
 
+/// Premium sliding capsule direction selector (Outbound / Return).
+/// Features a smooth sliding selection pill between Outbound (#01589F) and Return (#FFC928).
 class DirectionSelector extends StatelessWidget {
   final BookingDirection selectedDirection;
   final ValueChanged<BookingDirection> onDirectionChanged;
@@ -19,115 +16,166 @@ class DirectionSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final isOutbound = selectedDirection == BookingDirection.outbound;
+    final disableAnimations =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.selectDirection,
-          style: AppTextStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+    final outboundLabel = isAr ? 'ذهاب' : 'Outbound';
+    final returnLabel = isAr ? 'عودة' : 'Return';
+
+    const pillHeight = 50.0;
+    const cornerRadius = 16.0;
+
+    return Container(
+      height: pillHeight,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(cornerRadius),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1.2,
         ),
-        AppSpacing.gapH12,
-        Row(
-          children: [
-            Expanded(
-              child: _DirectionOptionCard(
-                title: l10n.directionOutbound,
-                subtitle: 'القاهرة → العاصمة',
-                icon: AppIcons.arrowForward,
-                isSelected: selectedDirection == BookingDirection.outbound,
-                onTap: () => onDirectionChanged(BookingDirection.outbound),
-              ),
-            ),
-            AppSpacing.gapW12,
-            Expanded(
-              child: _DirectionOptionCard(
-                title: l10n.directionReturn,
-                subtitle: 'العاصمة → القاهرة',
-                icon: AppIcons.arrowBack,
-                isSelected: selectedDirection == BookingDirection.returnTrip,
-                onTap: () => onDirectionChanged(BookingDirection.returnTrip),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DirectionOptionCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _DirectionOptionCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: AppSpacing.edgeInsetsA16,
-      backgroundColor: isSelected ? AppColors.primaryLight : AppColors.surface,
-      border: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.border,
-        width: isSelected ? 2.0 : 1.0,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final halfWidth = (constraints.maxWidth - 6) / 2;
+
+          return Stack(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : AppColors.surfaceSoft,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+              // 1. Sliding Selected Capsule Pill
+              AnimatedAlign(
+                duration: disableAnimations
+                    ? Duration.zero
+                    : const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                alignment: isAr
+                    ? (isOutbound ? Alignment.centerRight : Alignment.centerLeft)
+                    : (isOutbound ? Alignment.centerLeft : Alignment.centerRight),
+                child: Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: Container(
+                    width: halfWidth,
+                    height: pillHeight - 6,
+                    decoration: BoxDecoration(
+                      color: isOutbound
+                          ? AppColors.primary
+                          : const Color(0xFFFFC928),
+                      borderRadius: BorderRadius.circular(cornerRadius - 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isOutbound
+                              ? AppColors.primary.withValues(alpha: 0.28)
+                              : const Color(0xFFFFC928).withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              if (isSelected)
-                const Icon(
-                  AppIcons.check,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
+
+              // 2. Interactive Touch Labels
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // OUTBOUND
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: isOutbound
+                            ? null
+                            : () => onDirectionChanged(BookingDirection.outbound),
+                        borderRadius: BorderRadius.horizontal(
+                          left: isAr ? Radius.zero : const Radius.circular(cornerRadius),
+                          right: isAr ? const Radius.circular(cornerRadius) : Radius.zero,
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isAr
+                                    ? Icons.arrow_back_rounded
+                                    : Icons.arrow_forward_rounded,
+                                size: 16,
+                                color: isOutbound
+                                    ? Colors.white
+                                    : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                outboundLabel,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: isOutbound
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: isOutbound
+                                      ? Colors.white
+                                      : const Color(0xFF64748B),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // RETURN
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: !isOutbound
+                            ? null
+                            : () => onDirectionChanged(BookingDirection.returnTrip),
+                        borderRadius: BorderRadius.horizontal(
+                          left: isAr ? const Radius.circular(cornerRadius) : Radius.zero,
+                          right: isAr ? Radius.zero : const Radius.circular(cornerRadius),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isAr
+                                    ? Icons.arrow_forward_rounded
+                                    : Icons.arrow_back_rounded,
+                                size: 16,
+                                color: !isOutbound
+                                    ? const Color(0xFF101828)
+                                    : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                returnLabel,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: !isOutbound
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: !isOutbound
+                                      ? const Color(0xFF101828)
+                                      : const Color(0xFF64748B),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-          AppSpacing.gapH12,
-          Text(
-            title,
-            style: AppTextStyles.titleMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isSelected ? AppColors.primary : AppColors.textPrimary,
-            ),
-          ),
-          AppSpacing.gapH4,
-          Text(
-            subtitle,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

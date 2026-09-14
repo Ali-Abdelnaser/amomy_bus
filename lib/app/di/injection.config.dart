@@ -57,6 +57,12 @@ import '../../features/booking/domain/repositories/booking_repository.dart'
     as _i912;
 import '../../features/booking/domain/usecases/booking_usecases.dart' as _i1015;
 import '../../features/booking/presentation/cubit/booking_cubit.dart' as _i329;
+import '../../features/home/data/datasources/home_remote_data_source.dart'
+    as _i362;
+import '../../features/home/data/repositories/home_repository_impl.dart'
+    as _i76;
+import '../../features/home/domain/repositories/home_repository.dart' as _i0;
+import '../../features/home/presentation/cubit/home_cubit.dart' as _i9;
 import '../../features/onboarding/data/onboarding_local_data_source.dart'
     as _i657;
 import '../../features/splash/data/datasources/splash_local_data_source.dart'
@@ -80,6 +86,10 @@ import '../../features/topup/domain/usecases/get_active_payment_methods_usecase.
     as _i170;
 import '../../features/topup/domain/usecases/get_my_topup_requests_usecase.dart'
     as _i317;
+import '../../features/topup/domain/usecases/get_payment_config_usecase.dart'
+    as _i567;
+import '../../features/topup/domain/usecases/submit_topup_proof_usecase.dart'
+    as _i27;
 import '../../features/topup/domain/usecases/upload_topup_proof_usecase.dart'
     as _i542;
 import '../../features/topup/presentation/cubit/topup_cubit.dart' as _i809;
@@ -95,6 +105,8 @@ import '../../features/wallet/domain/repositories/wallet_repository.dart'
     as _i571;
 import '../../features/wallet/domain/usecases/get_wallet_summary_usecase.dart'
     as _i280;
+import '../../features/wallet/domain/usecases/get_wallet_transactions_usecase.dart'
+    as _i831;
 import '../../features/wallet/presentation/cubit/wallet_cubit.dart' as _i101;
 import '../router/app_router.dart' as _i81;
 import 'register_module.dart' as _i291;
@@ -123,6 +135,21 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i54.StorageService>(
       () => _i54.SharedPreferencesStorageService(gh<_i460.SharedPreferences>()),
     );
+    gh.factory<_i101.WalletCubit>(
+      () => _i101.WalletCubit(
+        gh<_i280.GetWalletSummaryUseCase>(),
+        gh<_i831.GetWalletTransactionsUseCase>(),
+      ),
+    );
+    gh.factory<_i568.PassengerTripsCubit>(
+      () => _i568.PassengerTripsCubit(
+        gh<_i1015.GetPassengerBookingsUseCase>(),
+        gh<_i912.BookingRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i362.HomeRemoteDataSource>(
+      () => _i362.HomeRemoteDataSourceImpl(gh<_i454.SupabaseClient>()),
+    );
     gh.lazySingleton<_i224.WalletRemoteDataSource>(
       () => _i224.WalletRemoteDataSourceImpl(gh<_i454.SupabaseClient>()),
     );
@@ -144,14 +171,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i280.GetWalletSummaryUseCase>(
       () => _i280.GetWalletSummaryUseCase(gh<_i571.WalletRepository>()),
     );
+    gh.lazySingleton<_i831.GetWalletTransactionsUseCase>(
+      () => _i831.GetWalletTransactionsUseCase(gh<_i571.WalletRepository>()),
+    );
     gh.lazySingleton<_i820.ConnectivityService>(
       () => _i820.ConnectivityServiceImpl(gh<_i895.Connectivity>()),
     );
+    gh.factory<_i9.HomeCubit>(() => _i9.HomeCubit(gh<_i0.HomeRepository>()));
     gh.lazySingleton<_i787.AuthRepository>(
       () => _i153.AuthRepositoryImpl(gh<_i107.AuthRemoteDataSource>()),
-    );
-    gh.factory<_i101.WalletCubit>(
-      () => _i101.WalletCubit(gh<_i280.GetWalletSummaryUseCase>()),
     );
     gh.lazySingleton<_i657.OnboardingLocalDataSource>(
       () => _i657.OnboardingLocalDataSourceImpl(gh<_i54.StorageService>()),
@@ -159,8 +187,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i806.TopUpRepository>(
       () => _i775.TopUpRepositoryImpl(gh<_i130.TopUpRemoteDataSource>()),
     );
-    gh.factory<_i568.PassengerTripsCubit>(
-      () => _i568.PassengerTripsCubit(gh<_i1015.GetPassengerBookingsUseCase>()),
+    gh.lazySingleton<_i0.HomeRepository>(
+      () => _i76.HomeRepositoryImpl(gh<_i362.HomeRemoteDataSource>()),
     );
     gh.lazySingleton<_i240.SplashLocalDataSource>(
       () => _i240.SplashLocalDataSourceImpl(
@@ -179,6 +207,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i317.GetMyTopUpRequestsUseCase>(
       () => _i317.GetMyTopUpRequestsUseCase(gh<_i806.TopUpRepository>()),
+    );
+    gh.lazySingleton<_i567.GetPaymentConfigUseCase>(
+      () => _i567.GetPaymentConfigUseCase(gh<_i806.TopUpRepository>()),
+    );
+    gh.lazySingleton<_i27.SubmitTopUpProofUseCase>(
+      () => _i27.SubmitTopUpProofUseCase(gh<_i806.TopUpRepository>()),
     );
     gh.lazySingleton<_i542.UploadTopUpProofUseCase>(
       () => _i542.UploadTopUpProofUseCase(gh<_i806.TopUpRepository>()),
@@ -216,15 +250,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i503.VerifyOtpUseCase>(
       () => _i503.VerifyOtpUseCase(gh<_i787.AuthRepository>()),
     );
-    gh.factory<_i809.TopUpCubit>(
-      () => _i809.TopUpCubit(
-        gh<_i170.GetActivePaymentMethodsUseCase>(),
-        gh<_i688.CreateTopUpRequestUseCase>(),
-        gh<_i542.UploadTopUpProofUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i892.NetworkInfo>(
       () => _i892.NetworkInfoImpl(gh<_i820.ConnectivityService>()),
+    );
+    gh.factory<_i809.TopUpCubit>(
+      () => _i809.TopUpCubit(
+        gh<_i567.GetPaymentConfigUseCase>(),
+        gh<_i170.GetActivePaymentMethodsUseCase>(),
+        gh<_i688.CreateTopUpRequestUseCase>(),
+        gh<_i27.SubmitTopUpProofUseCase>(),
+      ),
     );
     gh.lazySingleton<_i797.AuthBloc>(
       () => _i797.AuthBloc(
@@ -259,6 +294,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i69.CheckAppStatusUseCase>(
       () => _i69.CheckAppStatusUseCase(gh<_i210.SplashRepository>()),
     );
+    gh.lazySingleton<_i1015.GetRouteStopsUseCase>(
+      () => _i1015.GetRouteStopsUseCase(gh<_i912.BookingRepository>()),
+    );
     gh.lazySingleton<_i1015.GetAvailableTripsUseCase>(
       () => _i1015.GetAvailableTripsUseCase(gh<_i912.BookingRepository>()),
     );
@@ -277,20 +315,38 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1015.GetPassengerBookingsUseCase>(
       () => _i1015.GetPassengerBookingsUseCase(gh<_i912.BookingRepository>()),
     );
-    gh.lazySingleton<_i81.AppRouter>(
-      () => _i81.AppRouter(gh<_i797.AuthBloc>()),
+    gh.lazySingleton<_i1015.GetPassengerTodayTripsUseCase>(
+      () => _i1015.GetPassengerTodayTripsUseCase(gh<_i912.BookingRepository>()),
     );
-    gh.factory<_i443.SplashBloc>(
-      () => _i443.SplashBloc(gh<_i69.CheckAppStatusUseCase>()),
+    gh.lazySingleton<_i1015.GetMyTripPreferencesUseCase>(
+      () => _i1015.GetMyTripPreferencesUseCase(gh<_i912.BookingRepository>()),
+    );
+    gh.lazySingleton<_i1015.SetMyTripPreferencesUseCase>(
+      () => _i1015.SetMyTripPreferencesUseCase(gh<_i912.BookingRepository>()),
+    );
+    gh.lazySingleton<_i1015.CancelBookingUseCase>(
+      () => _i1015.CancelBookingUseCase(gh<_i912.BookingRepository>()),
+    );
+    gh.lazySingleton<_i1015.ChangeBookingSeatUseCase>(
+      () => _i1015.ChangeBookingSeatUseCase(gh<_i912.BookingRepository>()),
     );
     gh.factory<_i329.BookingCubit>(
       () => _i329.BookingCubit(
+        getRouteStopsUseCase: gh<_i1015.GetRouteStopsUseCase>(),
         getAvailableTripsUseCase: gh<_i1015.GetAvailableTripsUseCase>(),
         getTripSeatMapUseCase: gh<_i1015.GetTripSeatMapUseCase>(),
         createBookingHoldUseCase: gh<_i1015.CreateBookingHoldUseCase>(),
         releaseBookingHoldUseCase: gh<_i1015.ReleaseBookingHoldUseCase>(),
         confirmBookingUseCase: gh<_i1015.ConfirmBookingUseCase>(),
+        getMyTripPreferencesUseCase: gh<_i1015.GetMyTripPreferencesUseCase>(),
+        getPassengerBookingsUseCase: gh<_i1015.GetPassengerBookingsUseCase>(),
       ),
+    );
+    gh.lazySingleton<_i81.AppRouter>(
+      () => _i81.AppRouter(gh<_i797.AuthBloc>()),
+    );
+    gh.factory<_i443.SplashBloc>(
+      () => _i443.SplashBloc(gh<_i69.CheckAppStatusUseCase>()),
     );
     return this;
   }

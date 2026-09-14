@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 620" width="320" height="620">
+  <defs>
+    <!-- Subtle drop shadow for bus shell -->
+    <filter id="busShadow" x="-10%" y="-5%" width="120%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.08" />
+    </filter>
+
+    <!-- Windshield gradient -->
+    <linearGradient id="windshieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.25" />
+      <stop offset="60%" stop-color="#0284C7" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#F1F5F9" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Floor subtle texture gradient -->
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F8FAFC" />
+    </linearGradient>
+
+    <!-- Steps gradient -->
+    <linearGradient id="stepGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="50%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+  </defs>
+
+  <!-- ========================================================================= -->
+  <!-- 1. EXTERIOR BUS BODY & CHASSIS                                            -->
+  <!-- ========================================================================= -->
+
+  <!-- Left Side Mirror -->
+  <path d="M 12 62 Q 2 64 3 78 Q 14 76 18 68 Z" fill="#94A3B8" stroke="#64748B" stroke-width="1.2" />
+  <circle cx="9" cy="71" r="2.5" fill="#38BDF8" opacity="0.8" />
+
+  <!-- Right Side Mirror -->
+  <path d="M 308 62 Q 318 64 317 78 Q 306 76 302 68 Z" fill="#94A3B8" stroke="#64748B" stroke-width="1.2" />
+  <circle cx="311" cy="71" r="2.5" fill="#38BDF8" opacity="0.8" />
+
+  <!-- Outer Bus Body Shell -->
+  <path d="M 32 50 
+           C 32 20, 288 20, 288 50 
+           L 294 130 
+           L 294 570 
+           C 294 606, 26 606, 26 570 
+           L 26 130 
+           Z" 
+        fill="url(#floorGrad)" 
+        stroke="#CBD5E1" 
+        stroke-width="2.5" 
+        filter="url(#busShadow)" />
+
+  <!-- Interior Wall Inset -->
+  <path d="M 38 56 
+           C 38 30, 282 30, 282 56 
+           L 287 130 
+           L 287 568 
+           C 287 598, 33 598, 33 568 
+           L 33 130 
+           Z" 
+        fill="#FAFCFF" 
+        stroke="#E2E8F0" 
+        stroke-width="1.2" />
+
+  <!-- Front Bumper Accent -->
+  <path d="M 64 24 Q 160 16 256 24" fill="none" stroke="#01589F" stroke-width="3" stroke-linecap="round" opacity="0.75" />
+
+  <!-- Front Curved Windshield Glass -->
+  <path d="M 44 54 
+           C 60 36, 260 36, 276 54 
+           L 272 74 
+           C 240 64, 80 64, 48 74 
+           Z" 
+        fill="url(#windshieldGrad)" 
+        stroke="#93C5FD" 
+        stroke-width="1" />
+
+  <!-- Dashboard / Instrument Panel -->
+  <rect x="46" y="74" width="228" height="12" rx="4" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1" />
+  <!-- Dashboard center vents / display hint -->
+  <rect x="144" y="77" width="32" height="5" rx="2" fill="#94A3B8" opacity="0.6" />
+
+  <!-- ========================================================================= -->
+  <!-- 2. FRONT DRIVER AREA (LEFT)                                               -->
+  <!-- ========================================================================= -->
+  <g id="driverArea">
+    <!-- Driver Seat Base -->
+    <rect x="52" y="94" width="38" height="34" rx="7" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.2" />
+    <!-- Driver Headrest -->
+    <rect x="58" y="90" width="26" height="7" rx="3.5" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1" />
+    
+    <!-- Steering Wheel Column -->
+    <circle cx="71" cy="98" r="10" fill="none" stroke="#475569" stroke-width="2.2" />
+    <!-- Steering Wheel Center Hub & Spokes -->
+    <circle cx="71" cy="98" r="3.2" fill="#475569" />
+    <line x1="71" y1="98" x2="62" y2="102" stroke="#475569" stroke-width="1.8" />
+    <line x1="71" y1="98" x2="80" y2="102" stroke="#475569" stroke-width="1.8" />
+    <line x1="71" y1="98" x2="71" y2="88" stroke="#475569" stroke-width="1.8" />
+
+    <!-- Driver Small Pedals / Floor Divider -->
+    <line x1="42" y1="136" x2="102" y2="136" stroke="#E2E8F0" stroke-width="1.5" stroke-dasharray="3 3" />
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 3. PASSENGER ENTRANCE / DOOR AREA (RIGHT)                                -->
+  <!-- ========================================================================= -->
+  <g id="doorArea">
+    <!-- Door Cutout / Threshold on Right Wall -->
+    <rect x="284" y="88" width="5" height="42" rx="2.5" fill="#01589F" opacity="0.8" />
+    
+    <!-- Entrance Stairwell Well -->
+    <rect x="236" y="90" width="46" height="38" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.2" />
+    
+    <!-- Step 1 -->
+    <rect x="240" y="94" width="38" height="8" rx="2" fill="url(#stepGrad)" stroke="#94A3B8" stroke-width="0.8" />
+    <!-- Step 2 -->
+    <rect x="240" y="105" width="38" height="8" rx="2" fill="url(#stepGrad)" stroke="#94A3B8" stroke-width="0.8" />
+    <!-- Step 3 -->
+    <rect x="240" y="116" width="38" height="8" rx="2" fill="url(#stepGrad)" stroke="#94A3B8" stroke-width="0.8" />
+
+    <!-- Entry Handle / Grab Rail -->
+    <circle cx="233" cy="94" r="2.5" fill="#94A3B8" />
+    <circle cx="233" cy="124" r="2.5" fill="#94A3B8" />
+    <line x1="233" y1="94" x2="233" y2="124" stroke="#94A3B8" stroke-width="1.5" />
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 4. CENTER WALKING AISLE RUNNER                                            -->
+  <!-- ========================================================================= -->
+  <g id="centerAisle">
+    <!-- Subtle Aisle Path -->
+    <rect x="126" y="132" width="68" height="376" rx="6" fill="#F8FAFC" />
+    <!-- Subtle Center Guide Dashes -->
+    <line x1="160" y1="140" x2="160" y2="495" stroke="#E2E8F0" stroke-width="1.8" stroke-dasharray="8 10" />
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- 5. REAR ENGINE BULKHEAD / WALL                                            -->
+  <!-- ========================================================================= -->
+  <g id="rearWall">
+    <!-- Back Interior Wall -->
+    <path d="M 40 572 Q 160 584 280 572" fill="none" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Rear Safety Bar -->
+    <path d="M 50 582 Q 160 592 270 582" fill="none" stroke="#E2E8F0" stroke-width="1.5" />
+    <!-- Rear Bumper Accent -->
+    <rect x="70" y="598" width="180" height="4" rx="2" fill="#CBD5E1" />
+  </g>
+</svg>

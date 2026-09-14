@@ -102,103 +102,26 @@ During seat selection:
 
 ---
 
-## 7. Specification: Future `spend_points_for_booking` Stored Procedure
+## 7. Dynamic Stop Pricing & Frozen Fare Snapshots
 
-```sql
--- Architectural Blueprint for Booking Phase
-CREATE OR REPLACE FUNCTION public.spend_points_for_booking(
-  p_booking_id uuid,
-  p_user_id uuid,
-  p_required_points numeric
-)
-RETURNS jsonb AS $$
-DECLARE
-  v_wallet RECORD;
-  v_remaining_to_deduct numeric := p_required_points;
-  v_batch RECORD;
-  v_deduct_amount numeric;
-  v_balance_before numeric;
-  v_balance_after numeric;
-BEGIN
-  -- 1. Lock user wallet
-  SELECT * INTO v_wallet
-  FROM public.wallets
-  WHERE user_id = p_user_id
-  FOR UPDATE;
+When a passenger reserves a seat:
+1. The boarding stop determines the zone fare (Zone 30: 30 PTS, Zone 25: 25 PTS, Zone 20: 20 PTS).
+2. `create_booking_hold` resolves the required points, records `fare_points_snapshot` in `seat_holds`, and creates a `point_holds` lock.
+3. Upon confirmation, `confirm_booking` deducts the frozen snapshot amount and stores it in `bookings.fare_points`.
+4. Legacy 50-point fallbacks have been completely purged from active production procedures.
 
-  IF v_wallet.cached_available_balance < p_required_points THEN
-    RAISE EXCEPTION 'INSUFFICIENT_POINTS';
-  END IF;
+---
 
-  v_balance_before := v_wallet.cached_available_balance;
-  v_balance_after := v_balance_before - p_required_points;
+## 8. Cancellation & Exact Batch Point Refund Architecture
 
-  -- 2. Consume from active Subscription Batches (earliest expiry first)
-  FOR v_batch IN
-    SELECT *
-    FROM public.point_batches
-    WHERE user_id = p_user_id
-      AND source_type = 'subscription'
-      AND (expires_at IS NULL OR expires_at > now())
-      AND remaining_amount > 0
-    ORDER BY expires_at ASC
-    FOR UPDATE
-  LOOP
-    EXIT WHEN v_remaining_to_deduct <= 0;
-    v_deduct_amount := LEAST(v_batch.remaining_amount, v_remaining_to_deduct);
+When a booking is cancelled via `cancel_passenger_booking` (permitted up to 30 minutes before departure):
+1. The function queries `point_transactions` for the original `debit` records associated with `reference_id = p_booking_id`.
+2. For each debit transaction, it identifies the exact `batch_id` from which points were drawn.
+3. It increments `point_batches.remaining_amount = remaining_amount + amount` on the original batch.
+4. It logs a corresponding `credit` transaction with `reference_type = 'booking_cancellation'`.
+5. It increments `wallets.cached_available_balance` atomically.
+6. This guarantees that unspent subscription points return to their subscription batch while cash points return to their cash batch without cross-contamination.
 
-    UPDATE public.point_batches
-    SET remaining_amount = remaining_amount - v_deduct_amount
-    WHERE id = v_batch.id;
+---
+**Last Updated**: 2026-09-14
 
-    INSERT INTO public.point_transactions (
-      user_id, wallet_id, batch_id, transaction_type, amount,
-      reference_type, reference_id, description
-    ) VALUES (
-      p_user_id, v_wallet.id, v_batch.id, 'debit', v_deduct_amount,
-      'bookings', p_booking_id, 'Trip booking seat payment (Subscription)'
-    );
-
-    v_remaining_to_deduct := v_remaining_to_deduct - v_deduct_amount;
-  END LOOP;
-
-  -- 3. Consume remaining needed points from Cash Batches (FIFO)
-  IF v_remaining_to_deduct > 0 THEN
-    FOR v_batch IN
-      SELECT *
-      FROM public.point_batches
-      WHERE user_id = p_user_id
-        AND source_type IN ('cash', 'manual_adjustment', 'refund', 'promo')
-        AND remaining_amount > 0
-      ORDER BY created_at ASC
-      FOR UPDATE
-    LOOP
-      EXIT WHEN v_remaining_to_deduct <= 0;
-      v_deduct_amount := LEAST(v_batch.remaining_amount, v_remaining_to_deduct);
-
-      UPDATE public.point_batches
-      SET remaining_amount = remaining_amount - v_deduct_amount
-      WHERE id = v_batch.id;
-
-      INSERT INTO public.point_transactions (
-        user_id, wallet_id, batch_id, transaction_type, amount,
-        reference_type, reference_id, description
-      ) VALUES (
-        p_user_id, v_wallet.id, v_batch.id, 'debit', v_deduct_amount,
-        'bookings', p_booking_id, 'Trip booking seat payment (Cash)'
-      );
-
-      v_remaining_to_deduct := v_remaining_to_deduct - v_deduct_amount;
-    END LOOP;
-  END IF;
-
-  -- 4. Update cached wallet balance
-  UPDATE public.wallets
-  SET cached_available_balance = v_balance_after,
-      updated_at = now()
-  WHERE id = v_wallet.id;
-
-  RETURN jsonb_build_object('success', true, 'new_balance', v_balance_after);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```

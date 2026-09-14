@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/amomy_bus_icon.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
-import '../../../booking/presentation/widgets/app_qr_ticket_widget.dart';
+import 'qr_ticket_modal.dart';
 
 class TripBookingCard extends StatelessWidget {
   final PassengerBooking booking;
@@ -20,12 +23,10 @@ class TripBookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final isUpcoming = booking.isUpcoming;
+    final isUpcoming = booking.status == 'confirmed' || booking.status == 'active';
 
     return AppCard(
       padding: AppSpacing.edgeInsetsA16,
-      backgroundColor: Colors.white,
-      border: const BorderSide(color: AppColors.border),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -42,10 +43,11 @@ class TripBookingCard extends StatelessWidget {
                       color: isUpcoming ? AppColors.primaryLight : AppColors.surfaceSoft,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      AppIcons.bus,
-                      size: 16,
-                      color: isUpcoming ? AppColors.primary : AppColors.textSecondary,
+                    child: Center(
+                      child: AmomyBusIcon(
+                        size: 16,
+                        color: isUpcoming ? AppColors.primary : AppColors.textSecondary,
+                      ),
                     ),
                   ),
                   AppSpacing.gapW8,
@@ -100,34 +102,70 @@ class TripBookingCard extends StatelessWidget {
 
           if (isUpcoming) ...[
             AppSpacing.gapH16,
-            InkWell(
-              onTap: () => _showQrModal(context),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      AppIcons.qrCode,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    AppSpacing.gapW8,
-                    Text(
-                      'عرض رمز الصعود (QR)',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _showQrModal(context),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            AppIcons.qrCode,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          AppSpacing.gapW8,
+                          Text(
+                            'عرض رمز الصعود (QR)',
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                AppSpacing.gapW8,
+                InkWell(
+                  onTap: () => _showTrackingModal(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const AmomyBusIcon(
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        AppSpacing.gapW6,
+                        Text(
+                          'تتبع الحافلة',
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],
@@ -135,55 +173,20 @@ class TripBookingCard extends StatelessWidget {
     );
   }
 
+  void _showTrackingModal(BuildContext context) {
+    context.push(RoutePaths.liveBusMap);
+  }
+
   void _showQrModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (modalContext) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                AppSpacing.gapH20,
-                Text(
-                  'تذكرة الصعود للحافلة',
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                AppSpacing.gapH16,
-                AppQrTicketWidget(
-                  data: booking.qrToken,
-                  size: 200,
-                ),
-                AppSpacing.gapH12,
-                Text(
-                  'المقعد: ${booking.seatNumber} | الموعد: ${booking.departureTime}',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                AppSpacing.gapH20,
-              ],
-            ),
-          ),
-        );
-      },
+    final locale = Localizations.localeOf(context).languageCode;
+    QrTicketModal.show(
+      context,
+      departureTime: booking.departureTime,
+      originName: booking.originName(locale),
+      destinationName: booking.destinationName(locale),
+      seatNumber: booking.seatNumber,
+      farePoints: booking.farePoints,
+      qrToken: booking.qrToken,
     );
   }
 }

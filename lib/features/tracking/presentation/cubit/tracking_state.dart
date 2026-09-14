@@ -1,0 +1,130 @@
+import 'package:equatable/equatable.dart';
+import '../../domain/models/bus_stop_model.dart';
+import '../../domain/models/bus_telemetry.dart';
+import '../../domain/models/live_tracking_status.dart';
+import '../../domain/models/route_geometry.dart';
+import '../../domain/models/stop_progression.dart';
+import '../../domain/models/tracking_summary.dart';
+import '../../domain/services/stop_eta_engine.dart';
+
+enum TrackingUiStatus {
+  initial,
+  loading,
+  loaded,
+  error,
+}
+
+class TrackingState extends Equatable {
+  final TrackingUiStatus uiStatus;
+  final TrackingSummary? summary;
+  final RouteGeometry? routeGeometry;
+  final BusTelemetry? latestTelemetry;
+  final StopProgression? progression;
+  final bool followBus;
+  final BusStopModel? selectedStop;
+  final bool approachAlertsEnabled;
+  final bool approachAlertDispatched;
+  final String? errorMessage;
+  final Map<String, StopTimingInfo> stopTimings;
+  final double effectiveSpeedKmh;
+
+  const TrackingState({
+    this.uiStatus = TrackingUiStatus.initial,
+    this.summary,
+    this.routeGeometry,
+    this.latestTelemetry,
+    this.progression,
+    this.followBus = true,
+    this.selectedStop,
+    this.approachAlertsEnabled = true,
+    this.approachAlertDispatched = false,
+    this.errorMessage,
+    this.stopTimings = const {},
+    this.effectiveSpeedKmh = 0.0,
+  });
+
+  bool get isLoading => uiStatus == TrackingUiStatus.loading;
+  bool get isLoaded => uiStatus == TrackingUiStatus.loaded;
+  bool get isError => uiStatus == TrackingUiStatus.error;
+
+  LiveTrackingStatus get trackingStatus {
+    if (summary == null) return LiveTrackingStatus.offline;
+    if (summary!.status == LiveTrackingStatus.qaPreview) {
+      return LiveTrackingStatus.qaPreview;
+    }
+    if (summary!.serviceState == 'between_runs') {
+      return LiveTrackingStatus.betweenRuns;
+    }
+    if (summary!.status == LiveTrackingStatus.offline) {
+      return LiveTrackingStatus.offline;
+    }
+    if (latestTelemetry != null && latestTelemetry!.isStale) {
+      return LiveTrackingStatus.stale;
+    }
+    return summary!.status;
+  }
+
+  bool get isOnline => trackingStatus == LiveTrackingStatus.online;
+  bool get isBetweenRuns => trackingStatus == LiveTrackingStatus.betweenRuns;
+  bool get isStale => trackingStatus == LiveTrackingStatus.stale;
+  bool get isOffline => trackingStatus == LiveTrackingStatus.offline;
+  bool get isQaPreview => trackingStatus == LiveTrackingStatus.qaPreview;
+
+  BusStopModel? get currentStop => summary?.currentStop;
+  BusStopModel? get nextStop => summary?.nextStop;
+  String get serviceState => summary?.serviceState ?? 'offline';
+  String get progressState => summary?.progressState ?? 'idle';
+  bool get hasStopCoordinates => summary?.hasStopCoordinates ?? false;
+  bool get isAtStop => progressState == 'at_stop' || latestTelemetry?.progressState == 'at_stop';
+
+  StopTimingInfo? get currentStopTiming => currentStop != null ? stopTimings[currentStop!.id] : null;
+  StopTimingInfo? get nextStopTiming => nextStop != null ? stopTimings[nextStop!.id] : null;
+  StopTimingInfo? get selectedStopTiming => selectedStop != null ? stopTimings[selectedStop!.id] : null;
+
+  TrackingState copyWith({
+    TrackingUiStatus? uiStatus,
+    TrackingSummary? summary,
+    RouteGeometry? routeGeometry,
+    BusTelemetry? latestTelemetry,
+    StopProgression? progression,
+    bool? followBus,
+    BusStopModel? selectedStop,
+    bool? clearSelectedStop,
+    bool? approachAlertsEnabled,
+    bool? approachAlertDispatched,
+    String? errorMessage,
+    Map<String, StopTimingInfo>? stopTimings,
+    double? effectiveSpeedKmh,
+  }) {
+    return TrackingState(
+      uiStatus: uiStatus ?? this.uiStatus,
+      summary: summary ?? this.summary,
+      routeGeometry: routeGeometry ?? this.routeGeometry,
+      latestTelemetry: latestTelemetry ?? this.latestTelemetry,
+      progression: progression ?? this.progression,
+      followBus: followBus ?? this.followBus,
+      selectedStop: clearSelectedStop == true ? null : (selectedStop ?? this.selectedStop),
+      approachAlertsEnabled: approachAlertsEnabled ?? this.approachAlertsEnabled,
+      approachAlertDispatched: approachAlertDispatched ?? this.approachAlertDispatched,
+      errorMessage: errorMessage ?? this.errorMessage,
+      stopTimings: stopTimings ?? this.stopTimings,
+      effectiveSpeedKmh: effectiveSpeedKmh ?? this.effectiveSpeedKmh,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        uiStatus,
+        summary,
+        routeGeometry,
+        latestTelemetry,
+        progression,
+        followBus,
+        selectedStop,
+        approachAlertsEnabled,
+        approachAlertDispatched,
+        errorMessage,
+        stopTimings,
+        effectiveSpeedKmh,
+      ];
+}

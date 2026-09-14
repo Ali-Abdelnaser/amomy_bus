@@ -61,6 +61,7 @@ abstract final class AppIcons {
   // Profile, Support & Settings
   static const IconData chevronRight = LucideIcons.chevronRight;
   static const IconData chevronLeft = LucideIcons.chevronLeft;
+  static const IconData chevronDown = LucideIcons.chevronDown;
   static const IconData headphones = LucideIcons.headphones;
   static const IconData globe = LucideIcons.globe;
   static const IconData shield = LucideIcons.shieldCheck;

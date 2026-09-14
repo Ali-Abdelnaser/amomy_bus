@@ -19,6 +19,8 @@ import '../../domain/usecases/update_password_usecase.dart';
 import '../../domain/usecases/verify_otp_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import '../../../../app/di/injection.dart';
+import '../../../notifications/presentation/services/notification_service.dart';
 
 @lazySingleton
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -261,6 +263,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
+    if (getIt.isRegistered<NotificationService>()) {
+      try {
+        await getIt<NotificationService>().deactivateCurrentToken();
+      } catch (_) {}
+    }
     await _signOutUseCase();
     emit(const Unauthenticated());
   }
@@ -303,6 +310,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       user: user,
       wallet: wallet,
     ));
+
+    if (getIt.isRegistered<NotificationService>()) {
+      unawaited(getIt<NotificationService>().syncDeviceToken());
+    }
   }
 
   @override

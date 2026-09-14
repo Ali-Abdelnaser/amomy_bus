@@ -158,12 +158,39 @@ AMOMY employs a crisp, flat-by-default architectural aesthetic with subtle tonal
 - **Destinations:** Home, My Trips, Wallet, Profile.
 - **Active State:** Tinted blue icon and bold label; inactive state text secondary `#667085`.
 
+### Live Google Map System (Silver / Monochrome Palette)
+- **Base Map Style**: Google Maps Platform Silver JSON styling (`#EBEBEB` land, `#C5CAD1` water, `#D6D6D6` roads) to create a clean, non-distracting background for route overlays.
+- **Route Polyline Progression**:
+  - Unreached / Upcoming road path: Official AMOMY Brand Blue `#01589F` (width: 5.5px, rounded cap).
+  - Traveled / Behind the bus: Soft muted slate `#94A3B8` (width: 4.5px, opacity: 0.6).
+- **Bus Marker**:
+  - Footprint: Circular upright 36x36 logical px (no SVG vehicle distortion, stays north-up).
+  - Normal/Live state: Solid AMOMY Blue `#01589F` with white border & centered white bus glyph.
+  - Reconnecting/Stale state: Amber outer ring `#F59E0B`.
+- **Stop Pins (Teardrop Geometry)**:
+  - Last Arrived Stop: Warm Accent Yellow `#FFC928` with white border.
+  - Immediate Next Stop: AMOMY Brand Blue `#01589F` with white inner dot.
+  - Future Stops: Clean White `#FFFFFF` with slate border `#94A3B8` and dark core dot.
+  - Older Passed Stops: Muted gray `#CBD5E1`.
+  - Selected Stop: Elevated 32x40px pin with primary fill.
+
+### 28-Seat Physical Bus Cabin Visualization
+- **Layout**: 1 front standalone seat + 12 left seats (6 rows × 2) + 10 right seats (5 rows × 2) + 5 rear connected bench seats.
+- **Seat States**:
+  - Available: Light container `#E7F2FA` with `#01589F` border.
+  - Selected (by user): High-contrast AMOMY Blue `#01589F` with white checkmark.
+  - Held (by user): Active timer with countdown indicator.
+  - Booked Male: Gender avatar (Male) with subtle neutral background.
+  - Booked Female: Gender avatar (Female) with subtle neutral background.
+  - Unavailable: Soft disabled gray `#E4E7EC`.
+
 ## Do's and Don'ts
 
 ### Do:
 - **Do** keep "Book Your Ride" / "احجز رحلتك" the single most prominent action on the Home screen.
 - **Do** use Skeletonizer for loading states instead of full-screen blocking spinners.
 - **Do** keep points balances labeled as Points ("نقطة"), never as cash currency.
+- **Do** format arrival copy as "Arrived at <time>" / "وصل الساعة <time>", avoiding raw backend terms like "Actual Arrival".
 - **Do** respect device gesture bars and system navigation on both iOS and Android.
 
 ### Don't:
@@ -171,3 +198,6 @@ AMOMY employs a crisp, flat-by-default architectural aesthetic with subtle tonal
 - **Don't** add random gradients, heavy glassmorphism, or noisy decorative animations.
 - **Don't** show user UUIDs, active roles, or debug information on production screens.
 - **Don't** place destructive Sign Out controls on the Home screen; keep them inside Profile.
+
+---
+**Last Updated**: 2026-09-14

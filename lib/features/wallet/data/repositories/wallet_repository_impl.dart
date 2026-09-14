@@ -1,3 +1,4 @@
+import 'package:amomy_bus/features/wallet/domain/entities/point_transaction.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/typedefs/typedefs.dart';
@@ -19,5 +20,23 @@ class WalletRepositoryImpl implements WalletRepository {
     } catch (e) {
       return Error(ErrorHandler.handle(e));
     }
+  }
+
+  @override
+  ResultFuture<List<PointTransaction>> getTransactions(
+    String userId, {
+    int limit = 20,
+  }) async {
+    try {
+      final result = await _remoteDataSource.getTransactions(userId, limit: limit);
+      return Success(result);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  Stream<int> subscribeToWalletBalance(String userId) {
+    return _remoteDataSource.subscribeToWalletBalance(userId);
   }
 }

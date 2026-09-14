@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/amomy_bus_icon.dart';
 import '../../domain/entities/onboarding_item.dart';
 
 /// Single page content for Onboarding:
@@ -37,10 +37,11 @@ class OnboardingContent extends StatelessWidget {
                       color: AppColors.primaryLight,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      AppIcons.bus,
-                      size: 80,
-                      color: AppColors.primary,
+                    child: const Center(
+                      child: AmomyBusIcon(
+                        size: 80,
+                        color: AppColors.primary,
+                      ),
                     ),
                   );
                 },

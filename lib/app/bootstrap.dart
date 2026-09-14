@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:device_preview/device_preview.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +16,7 @@ import '../core/constants/api_constants.dart';
 import '../core/constants/app_constants.dart';
 import '../core/localization/app_locale_controller.dart';
 import '../core/utils/app_bloc_observer.dart';
+import '../features/notifications/presentation/services/notification_service.dart';
 import 'app.dart';
 import 'di/injection.dart';
 
@@ -40,6 +43,14 @@ Future<void> bootstrap({
             defaultValue:
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZleHFnbHJsd2ZhbGxtamZoaXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNzg1MDUsImV4cCI6MjEwNDY1NDUwNX0.4uzClpl-IbE6fUtQT0WZV-UciAd1TLj9-P016vee9wM',
           ),
+          cartoBasemapKey: const String.fromEnvironment(
+            'CARTO_BASEMAP_KEY',
+            defaultValue: '',
+          ),
+          stadiaMapsApiKey: const String.fromEnvironment(
+            'STADIA_MAPS_API_KEY',
+            defaultValue: '',
+          ),
           enableLogging: environment.isDev,
         ),
       );
@@ -52,6 +63,15 @@ Future<void> bootstrap({
 
       // Initialize Dependency Injection
       await configureDependencies();
+
+      // Initialize Notification Service
+      if (getIt.isRegistered<NotificationService>()) {
+        try {
+          await getIt<NotificationService>().initialize();
+        } catch (e) {
+          developer.log('NotificationService init error: $e', name: 'BOOTSTRAP');
+        }
+      }
 
       // Initialize App Locale Controller
       await AppLocaleController.instance.init();
@@ -87,8 +107,17 @@ Future<void> _initializeBackendServicesIfConfigured() async {
         ),
       );
       developer.log('Supabase initialized with PKCE flow.', name: 'BOOTSTRAP');
+
+      // Initialize Firebase App exactly once
+      try {
+        await Firebase.initializeApp();
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        developer.log('Firebase initialized successfully.', name: 'BOOTSTRAP');
+      } catch (fe) {
+        developer.log('Firebase initialization skipped or error: $fe', name: 'BOOTSTRAP');
+      }
     } catch (e) {
-      developer.log('Supabase initialization warning: $e', name: 'BOOTSTRAP');
+      developer.log('Backend initialization warning: $e', name: 'BOOTSTRAP');
     }
   } else {
     developer.log('Running with mock/offline backend placeholders (no Supabase keys set).', name: 'BOOTSTRAP');

@@ -7,13 +7,17 @@ import '../theme/app_text_styles.dart';
 
 class AppEmptyView extends StatelessWidget {
   final String? message;
-  final IconData icon;
+  final IconData? icon;
+  final String? illustrationPath;
+  final double illustrationHeight;
   final Widget? action;
 
   const AppEmptyView({
     super.key,
     this.message,
     this.icon = AppIcons.info,
+    this.illustrationPath,
+    this.illustrationHeight = 140.0,
     this.action,
   });
 
@@ -28,11 +32,18 @@ class AppEmptyView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 56,
-              color: AppColors.disabled,
-            ),
+            if (illustrationPath != null)
+              Image.asset(
+                illustrationPath!,
+                height: illustrationHeight,
+                fit: BoxFit.contain,
+              )
+            else if (icon != null)
+              Icon(
+                icon,
+                size: 56,
+                color: AppColors.disabled,
+              ),
             AppSpacing.gapH16,
             Text(
               effectiveMessage,

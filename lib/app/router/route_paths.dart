@@ -22,9 +22,12 @@ class RoutePaths {
   static const String bookingQr = '/bookings/:bookingId/qr';
   static const String wallet = '/wallet';
   static const String addPoints = '/add-points';
+  static const String changeSeat = '/change-seat';
   static const String subscriptions = '/subscriptions';
   static const String profile = '/profile';
+  static const String notifications = '/notifications';
   static const String liveTracking = '/trips/:tripId/tracking';
+  static const String liveBusMap = '/live-map';
 
   // Admin paths
   static const String admin = '/admin';

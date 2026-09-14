@@ -36,7 +36,14 @@ The application follows a zero-trust model where client Flutter applications are
 
 ---
 
-## 5. Physical NFC & QR Security (Future Phases)
+## 5. Physical NFC, QR & Booking Security
 - NFC cards contain only a cryptographically secure random token (zero PII, zero sequential IDs).
-- Boarding QR passes are HMAC-signed payloads with expiration nonces.
+- Boarding QR passes are cryptographically random nonces validated server-side.
 - Passenger identity is masked on the seat map (shows only gender icons; passenger names and numbers are strictly redacted).
+- Duplicate booking prevention is enforced at the database level (`ALREADY_BOOKED_TRIP`).
+- 30-minute cancellation/change-seat cutoff enforced with server-side time checks against `public.get_effective_booking_now()`.
+- GPS telemetry ingestion is secured behind edge functions with dedicated service-role execution and vault credentials; direct client writes to telemetry tables are blocked.
+
+---
+**Last Updated**: 2026-09-14
+

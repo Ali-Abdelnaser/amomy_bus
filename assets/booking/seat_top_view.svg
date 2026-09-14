@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 48" width="42" height="48">
+  <defs>
+    <filter id="seatShadow" x="-20%" y="-10%" width="140%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.10" />
+    </filter>
+  </defs>
+
+  <!-- Outer Seat Cushion & Shell -->
+  <rect x="2" y="7" width="38" height="38" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" filter="url(#seatShadow)" />
+
+  <!-- Left Side Bolster Ridge -->
+  <path d="M 5 14 Q 8 26 5 38" fill="none" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" />
+
+  <!-- Right Side Bolster Ridge -->
+  <path d="M 37 14 Q 34 26 37 38" fill="none" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" />
+
+  <!-- Inner Cushion Center Contouring -->
+  <rect x="10" y="16" width="22" height="24" rx="5" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+
+  <!-- Backrest / Headrest (Top Pill) -->
+  <rect x="5" y="2" width="32" height="9" rx="4.5" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1.2" />
+</svg>

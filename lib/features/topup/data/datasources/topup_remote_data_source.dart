@@ -1,16 +1,29 @@
 import 'dart:typed_data';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/entities/topup_entities.dart';
+import '../models/payment_config_model.dart';
 import '../models/payment_method_model.dart';
 import '../models/topup_request_model.dart';
 
 abstract class TopUpRemoteDataSource {
+  Future<PaymentConfigModel> getPaymentConfig();
+
   Future<List<PaymentMethodModel>> getActivePaymentMethods();
 
-  Future<String> createTopUpRequest({
+  Future<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
+  });
+
+  Future<String> submitTopUpPaymentProof({
+    required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
   });
 
   Future<String> uploadTopUpProof({
@@ -31,6 +44,15 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
   TopUpRemoteDataSourceImpl(this._supabase);
 
   @override
+  Future<PaymentConfigModel> getPaymentConfig() async {
+    final response = await _supabase.rpc('get_payment_config');
+    if (response is Map) {
+      return PaymentConfigModel.fromJson(Map<String, dynamic>.from(response));
+    }
+    return const PaymentConfigModel();
+  }
+
+  @override
   Future<List<PaymentMethodModel>> getActivePaymentMethods() async {
     final response = await _supabase.rpc('get_active_payment_methods');
     if (response is List) {
@@ -42,10 +64,10 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
   }
 
   @override
-  Future<String> createTopUpRequest({
+  Future<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
   }) async {
     final response = await _supabase.rpc(
       'create_topup_request',
@@ -57,15 +79,27 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
       },
     );
 
-    if (response is Map && response['request_id'] != null) {
-      return response['request_id'] as String;
+    if (response is Map) {
+      final map = Map<String, dynamic>.from(response);
+      return TopUpCreatedResponse(
+        requestId: map['request_id'] as String,
+        publicId: map['public_id'] as String? ?? 'AMY-TOPUP',
+        requestedPoints: (map['requested_points'] as num?)?.toInt() ?? amount,
+        expectedAmountEgp: (map['expected_amount_egp'] as num?)?.toDouble() ?? amount.toDouble(),
+        receivingPhone: map['receiving_phone'] as String? ?? '01000000000',
+        conversionRate: (map['conversion_rate'] as num?)?.toDouble() ?? 1.0,
+        status: TopUpStatus.fromString(map['status'] as String?),
+      );
     }
-    throw const FormatException('Failed to obtain top-up request ID from backend.');
+    throw const FormatException('Failed to obtain top-up request details from backend.');
   }
 
   @override
-  Future<String> uploadTopUpProof({
+  Future<String> submitTopUpPaymentProof({
     required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
@@ -102,16 +136,33 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
           ),
         );
 
-    // 2. Attach payment proof to top-up request via hardened RPC
+    // 2. Submit payment proof to top-up request via server-validated RPC
     await _supabase.rpc(
-      'attach_topup_payment_proof',
+      'submit_topup_payment_proof',
       params: {
         'p_request_id': requestId,
+        'p_sender_phone': senderPhone,
+        'p_transfer_reference': transferReference,
+        'p_transferred_at': (transferredAt ?? DateTime.now()).toIso8601String(),
         'p_screenshot_path': storagePath,
       },
     );
 
     return storagePath;
+  }
+
+  @override
+  Future<String> uploadTopUpProof({
+    required String requestId,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    return submitTopUpPaymentProof(
+      requestId: requestId,
+      senderPhone: '01000000000',
+      fileBytes: fileBytes,
+      fileExtension: fileExtension,
+    );
   }
 
   @override

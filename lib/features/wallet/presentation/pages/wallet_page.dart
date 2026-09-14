@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../app/router/route_paths.dart';
@@ -10,18 +9,20 @@ import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/app_empty_view.dart';
-import '../../../../core/widgets/app_scaffold.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../topup/domain/entities/topup_entities.dart';
 import '../../../topup/presentation/cubit/topup_history_cubit.dart';
 import '../../../topup/presentation/cubit/topup_history_state.dart';
-import '../../../topup/presentation/widgets/topup_history_section.dart';
+import '../../domain/entities/point_transaction.dart';
 import '../cubit/wallet_cubit.dart';
 import '../cubit/wallet_state.dart';
+import '../widgets/wallet_card_widget.dart';
+import '../widgets/wallet_pending_points_section.dart';
+import '../widgets/wallet_points_summary_card.dart';
+import '../widgets/wallet_transaction_tile.dart';
 
-class WalletPage extends StatelessWidget {
+class WalletPage extends StatefulWidget {
   final WalletCubit? walletCubit;
   final TopUpHistoryCubit? topUpHistoryCubit;
 
@@ -32,32 +33,104 @@ class WalletPage extends StatelessWidget {
   });
 
   @override
+  State<WalletPage> createState() => _WalletPageState();
+}
+
+class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _cardFadeAnim;
+  late final Animation<Offset> _cardSlideAnim;
+  late final Animation<double> _contentFadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+    );
+
+    _cardFadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+    );
+
+    _cardSlideAnim = Tween<Offset>(
+      begin: const Offset(0.0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.0, 0.75, curve: Curves.easeOutCubic),
+    ));
+
+    _contentFadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: const Interval(0.25, 1.0, curve: Curves.easeOut),
+    );
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _navigateToAddPoints(BuildContext context, String userId) async {
+    final availablePoints = context.read<WalletCubit>().state.summary.totalAvailablePoints;
+    await context.push(RoutePaths.addPoints, extra: availablePoints);
+    if (context.mounted && userId.isNotEmpty) {
+      context.read<WalletCubit>().loadWalletSummary(userId);
+      context.read<TopUpHistoryCubit>().loadRequests();
+    }
+  }
+
+  Future<void> _navigateToResubmit(BuildContext context, TopUpRequest request, String userId) async {
+    await context.push(RoutePaths.addPoints, extra: request);
+    if (context.mounted && userId.isNotEmpty) {
+      context.read<WalletCubit>().loadWalletSummary(userId);
+      context.read<TopUpHistoryCubit>().loadRequests();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final formatter = NumberFormat('#,###');
+    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final disableAnim = MediaQuery.of(context).disableAnimations;
 
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         final userId = authState is Authenticated ? authState.user.id : '';
 
+        final parentWalletCubit = widget.walletCubit ?? () {
+          try {
+            return context.read<WalletCubit>();
+          } catch (_) {
+            return null;
+          }
+        }();
+
         return MultiBlocProvider(
           providers: [
-            BlocProvider(
-              create: (context) => walletCubit ??
-                  (getIt.isRegistered<WalletCubit>()
-                      ? (getIt<WalletCubit>()..loadWalletSummary(userId))
-                      : WalletCubit.idle()),
-            ),
+            if (parentWalletCubit != null)
+              BlocProvider<WalletCubit>.value(value: parentWalletCubit)
+            else
+              BlocProvider<WalletCubit>(
+                create: (context) => getIt.isRegistered<WalletCubit>()
+                    ? (getIt<WalletCubit>()..loadWalletSummary(userId))
+                    : WalletCubit.idle(),
+              ),
             BlocProvider(
               create: (context) {
-                final cubit = topUpHistoryCubit ??
+                final cubit = widget.topUpHistoryCubit ??
                     (getIt.isRegistered<TopUpHistoryCubit>()
                         ? (getIt<TopUpHistoryCubit>()
                           ..loadRequests()
                           ..startListeningToUpdates())
                         : TopUpHistoryCubit.idle());
                 cubit.onApprovedTopUpDetected = () {
-                  if (context.mounted) {
+                  if (context.mounted && userId.isNotEmpty) {
                     context.read<WalletCubit>().loadWalletSummary(userId);
                   }
                 };
@@ -70,264 +143,148 @@ class WalletPage extends StatelessWidget {
               return BlocBuilder<WalletCubit, WalletState>(
                 builder: (context, walletState) {
                   final isLoading = walletState.status == WalletStatus.loading;
+                  final isError = walletState.status == WalletStatus.error;
                   final summary = walletState.summary;
                   final fallbackWallet = authState is Authenticated ? authState.wallet : null;
 
+                  // Authoritative single points balance from backend/state
                   final totalPoints = walletState.status == WalletStatus.loaded
                       ? summary.totalAvailablePoints
                       : (fallbackWallet?.availablePoints ?? fallbackWallet?.totalPoints ?? 0);
-                  final cashPoints = walletState.status == WalletStatus.loaded
-                      ? summary.cashPoints
-                      : (fallbackWallet?.cashPoints ?? 0);
-                  final subscriptionPoints = walletState.status == WalletStatus.loaded
-                      ? summary.subscriptionPoints
-                      : (fallbackWallet?.subscriptionPoints ?? 0);
 
-                  return AppScaffold(
-                    appBar: AppAppBar(
-                      title: l10n.navWallet,
-                      showBackButton: false,
-                    ),
+                  final transactions = walletState.transactions;
+
+                  return Scaffold(
+                    backgroundColor: AppColors.background,
                     body: SafeArea(
-                      child: RefreshIndicator(
-                        onRefresh: () async {
-                          await Future.wait([
-                            context.read<WalletCubit>().loadWalletSummary(userId),
-                            context.read<TopUpHistoryCubit>().loadRequests(),
-                          ]);
-                        },
-                        child: Skeletonizer(
-                          enabled: isLoading,
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Main Points Hero Card
-                                AppCard(
-                                  padding: AppSpacing.edgeInsetsA24,
-                                  backgroundColor: AppColors.primary,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.pointsBalance,
-                                         style: AppTextStyles.labelMedium.copyWith(
-                                          color: Colors.white.withValues(alpha: 0.85),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      AppSpacing.gapH8,
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                                        textBaseline: TextBaseline.alphabetic,
-                                        children: [
-                                          Text(
-                                            formatter.format(totalPoints),
-                                            style: AppTextStyles.headlineLarge.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 36,
-                                            ),
-                                          ),
-                                          AppSpacing.gapW8,
-                                          Text(
-                                            l10n.pointsUnit,
-                                            style: AppTextStyles.titleMedium.copyWith(
-                                              color: Colors.white.withValues(alpha: 0.9),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      AppSpacing.gapH24,
-                                      ElevatedButton.icon(
-                                        onPressed: () async {
-                                          await context.push(RoutePaths.addPoints);
-                                          if (context.mounted) {
-                                            context.read<WalletCubit>().loadWalletSummary(userId);
-                                            context.read<TopUpHistoryCubit>().loadRequests();
-                                          }
-                                        },
-                                        icon: const Icon(AppIcons.add, size: 18, color: AppColors.primary),
-                                        label: Text(
-                                          l10n.addPoints,
-                                          style: AppTextStyles.labelLarge.copyWith(
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          foregroundColor: AppColors.primary,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                      bottom: false,
+                      child: Column(
+                        children: [
+                          // 1. TOP APP BAR: Matching "My Trips" Style & Hierarchy
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                            child: SizedBox(
+                              height: 48,
+                              child: Center(
+                                child: Text(
+                                  isAr ? 'المحفظة' : 'Wallet',
+                                  style: AppTextStyles.titleLarge.copyWith(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF101828),
+                                    letterSpacing: -0.4,
                                   ),
                                 ),
-                                AppSpacing.gapH20,
-
-                                // Points Breakdown Tiles
-                                Row(
-                                  children: [
-                                    // Cash Points Tile
-                                    Expanded(
-                                      child: AppCard(
-                                        padding: AppSpacing.edgeInsetsA16,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 10,
-                                                  height: 10,
-                                                  decoration: const BoxDecoration(
-                                                    color: AppColors.primary,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                                AppSpacing.gapW8,
-                                                Flexible(
-                                                  child: Text(
-                                                    l10n.cashPointsPrefix,
-                                                    style: AppTextStyles.labelSmall.copyWith(
-                                                      color: AppColors.textSecondary,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            AppSpacing.gapH8,
-                                            Text(
-                                              formatter.format(cashPoints),
-                                              style: AppTextStyles.headlineMedium.copyWith(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    AppSpacing.gapW12,
-
-                                    // Subscription Points Tile
-                                    Expanded(
-                                      child: AppCard(
-                                        padding: AppSpacing.edgeInsetsA16,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 10,
-                                                  height: 10,
-                                                  decoration: const BoxDecoration(
-                                                    color: AppColors.accentYellow,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                                AppSpacing.gapW8,
-                                                Flexible(
-                                                  child: Text(
-                                                    l10n.subscriptionPointsPrefix,
-                                                    style: AppTextStyles.labelSmall.copyWith(
-                                                      color: AppColors.textSecondary,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            AppSpacing.gapH8,
-                                            Text(
-                                              formatter.format(subscriptionPoints),
-                                              style: AppTextStyles.headlineMedium.copyWith(
-                                                color: const Color(0xFFB57D00),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AppSpacing.gapH24,
-
-                                // Top-Up Requests Section
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      l10n.topUpHistoryTitle,
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () async {
-                                        await context.push(RoutePaths.addPoints);
-                                        if (context.mounted) {
-                                          context.read<WalletCubit>().loadWalletSummary(userId);
-                                          context.read<TopUpHistoryCubit>().loadRequests();
-                                        }
-                                      },
-                                      child: Text(
-                                        l10n.addPoints,
-                                        style: AppTextStyles.labelMedium.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AppSpacing.gapH8,
-
-                                BlocBuilder<TopUpHistoryCubit, TopUpHistoryState>(
-                                  builder: (context, historyState) {
-                                    return TopUpHistorySection(
-                                      requests: historyState.requests,
-                                      isLoading: historyState.isLoading,
-                                    );
-                                  },
-                                ),
-                                AppSpacing.gapH24,
-
-                                // Transactions Section
-                                Text(
-                                  l10n.transactions,
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                AppSpacing.gapH12,
-
-                                // Clean empty state for transactions
-                                AppCard(
-                                  padding: AppSpacing.edgeInsetsA24,
-                                  child: AppEmptyView(
-                                    icon: AppIcons.receipt,
-                                    message: l10n.noTransactionsSubtitle,
-                                  ),
-                                ),
-                                AppSpacing.gapBottomNav,
-                              ],
+                              ),
                             ),
                           ),
-                        ),
+
+                          // 2. MAIN SCROLLABLE CONTENT
+                          Expanded(
+                            child: isError && walletState.summary.totalAvailablePoints == 0
+                                ? _buildErrorView(context, userId)
+                                : RefreshIndicator(
+                                    onRefresh: () async {
+                                      if (userId.isNotEmpty) {
+                                        await Future.wait([
+                                          context.read<WalletCubit>().loadWalletSummary(userId),
+                                          context.read<TopUpHistoryCubit>().loadRequests(),
+                                        ]);
+                                      }
+                                    },
+                                    child: Skeletonizer(
+                                      enabled: isLoading,
+                                      child: SingleChildScrollView(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: [
+                                            // A. Hero Wallet Card: Wide, almost full width
+                                            disableAnim
+                                                ? const WalletCardWidget()
+                                                : FadeTransition(
+                                                    opacity: _cardFadeAnim,
+                                                    child: SlideTransition(
+                                                      position: _cardSlideAnim,
+                                                      child: const WalletCardWidget(),
+                                                    ),
+                                                  ),
+
+                                            AppSpacing.gapH16,
+
+                                            // B. Separate Secondary Points Summary Card
+                                            disableAnim
+                                                ? WalletPointsSummaryCard(
+                                                    points: totalPoints,
+                                                    onAddPoints: () =>
+                                                        _navigateToAddPoints(context, userId),
+                                                  )
+                                                : FadeTransition(
+                                                    opacity: _contentFadeAnim,
+                                                    child: WalletPointsSummaryCard(
+                                                      points: totalPoints,
+                                                      onAddPoints: () =>
+                                                          _navigateToAddPoints(context, userId),
+                                                    ),
+                                                  ),
+
+                                            // C. Pending / Rejected Top-Ups Section
+                                            BlocBuilder<TopUpHistoryCubit, TopUpHistoryState>(
+                                              builder: (context, historyState) {
+                                                final requests = walletState.topUpRequests.isNotEmpty
+                                                    ? walletState.topUpRequests
+                                                    : historyState.requests;
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(top: 14),
+                                                  child: WalletPendingPointsSection(
+                                                    requests: requests,
+                                                    onResubmit: (req) =>
+                                                        _navigateToResubmit(context, req, userId),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
+                                            AppSpacing.gapH24,
+
+                                            // D. Recent Transactions Header
+                                            disableAnim
+                                                ? _buildTransactionsHeader(context)
+                                                : FadeTransition(
+                                                    opacity: _contentFadeAnim,
+                                                    child: _buildTransactionsHeader(context),
+                                                  ),
+
+                                            const SizedBox(height: 12),
+
+                                            // E. Transactions List or Empty State
+                                            disableAnim
+                                                ? _buildTransactionsContent(
+                                                    context,
+                                                    isLoading,
+                                                    transactions,
+                                                  )
+                                                : FadeTransition(
+                                                    opacity: _contentFadeAnim,
+                                                    child: _buildTransactionsContent(
+                                                      context,
+                                                      isLoading,
+                                                      transactions,
+                                                    ),
+                                                  ),
+
+                                            AppSpacing.gapBottomNav,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -337,6 +294,194 @@ class WalletPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTransactionsHeader(BuildContext context) {
+    final l10n = context.l10n;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          l10n.recentTransactions,
+          style: AppTextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF101828),
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionsContent(
+    BuildContext context,
+    bool isLoading,
+    List<PointTransaction> transactions,
+  ) {
+    final l10n = context.l10n;
+
+    // Loading skeleton placeholder items
+    if (isLoading && transactions.isEmpty) {
+      return Column(
+        children: List.generate(
+          4,
+          (index) => WalletTransactionTile(
+            transaction: PointTransaction(
+              id: 'skeleton_$index',
+              userId: 'skeleton',
+              walletId: 'skeleton',
+              transactionType:
+                  index.isEven ? PointTransactionType.debit : PointTransactionType.credit,
+              amount: index.isEven ? 30 : 500,
+              referenceType: index.isEven ? 'booking' : 'topup',
+              createdAt: DateTime.now(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Clean Empty State
+    if (transactions.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE4EBF2), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF101828).withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  AppIcons.receipt,
+                  size: 26,
+                  color: AppColors.primary,
+                ),
+              ),
+              AppSpacing.gapH16,
+              Text(
+                l10n.noTransactionsTitle,
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF101828),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.gapH8,
+              Text(
+                l10n.noTransactionsSubtitle,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Modern Banking Transaction List with clean hairline dividers
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4EBF2), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF101828).withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: transactions.length,
+        separatorBuilder: (context, index) => const Divider(
+          height: 1,
+          thickness: 0.75,
+          color: Color(0xFFF2F4F7),
+        ),
+        itemBuilder: (context, index) {
+          final tx = transactions[index];
+          return WalletTransactionTile(transaction: tx);
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, String userId) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: AppColors.error,
+            ),
+            AppSpacing.gapH16,
+            Text(
+              'Could not load wallet',
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            AppSpacing.gapH8,
+            Text(
+              'Please check your network connection and try again.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            AppSpacing.gapH24,
+            ElevatedButton(
+              onPressed: () {
+                if (userId.isNotEmpty) {
+                  context.read<WalletCubit>().loadWalletSummary(userId);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

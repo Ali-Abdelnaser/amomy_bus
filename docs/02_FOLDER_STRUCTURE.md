@@ -74,21 +74,21 @@ lib/
 │       └── app_skeleton.dart      # Standard Skeletonizer shimmer wrapper
 │
 ├── features/
-│   └── splash/                    # Scaffolded initial feature
-│       ├── data/
-│       │   ├── datasources/
-│       │   └── repositories/
-│       ├── domain/
-│       │   ├── entities/
-│       │   ├── repositories/
-│       │   └── usecases/
-│       └── presentation/
-│           ├── bloc/
-│           └── pages/
+│   ├── auth/                      # Authentication, registration, OTP, Google sign-in
+│   ├── booking/                   # Seat selection, 28-seat layout, atomic holds, review, QR ticket
+│   ├── home/                      # Passenger Home Hub, announcements, today hub, mini-map
+│   ├── onboarding/                # Onboarding carousel & introduction screens
+│   ├── profile/                   # Passenger profile, settings, locale & theme toggles
+│   ├── shell/                     # Persistent floating bottom navigation bar
+│   ├── splash/                    # Two-tier launch splash
+│   ├── topup/                     # Points recharge flow, payment methods, receipt upload, resubmission
+│   ├── tracking/                  # Live Google Maps bus tracking, road polylines, ETA engine
+│   ├── trips/                     # My Trips, booking history, seat change, cancellation
+│   └── wallet/                    # Points wallet, balance cards, double-entry ledger history
 │
 ├── l10n/
-│   ├── app_ar.arb                 # Arabic translations
-│   ├── app_en.arb                 # English translations
+│   ├── app_ar.arb                 # Arabic translations (RTL)
+│   ├── app_en.arb                 # English translations (LTR)
 │   └── app_localizations*.dart    # Generated localization classes
 │
 └── main.dart                      # Lean application entrypoint
@@ -96,16 +96,18 @@ lib/
 
 ---
 
-## 3. Planned Modular Features
-Future features follow the identical Clean Architecture structure (`data/`, `domain/`, `presentation/`):
+## 3. Implemented Feature Modules
+All features follow the identical Clean Architecture structure (`data/`, `domain/`, `presentation/`):
 
-- `features/auth/` — Authentication, registration, OTP, role loading, session persistence.
-- `features/profile/` — Passenger profile, settings, locale toggle, theme toggle.
-- `features/trips/` — Daily trip catalog, schedule browsing, route information.
-- `features/seats/` — Interactive 2D bus seat layout, atomic seat locking/holds.
-- `features/booking/` — Booking confirmation, reservation lifecycle, QR code pass.
-- `features/wallet/` — Cash & Subscription points balances, top-up requests, receipt uploads.
-- `features/subscriptions/` — Monthly subscription packages, renewal, NFC card eligibility.
-- `features/tracking/` — Live bus GPS tracking during active booking window.
-- `features/notifications/` — FCM push notification handling and inbox history.
-- `features/admin/` — Protected dashboard: topup screenshot verification, manual point grants, fleet audits.
+- `features/auth/` — Authentication, registration, OTP, Google Sign-in, Complete Profile Guard, Password Reset.
+- `features/booking/` — Interactive 28-seat physical layout, direction and stop selectors, dynamic fare zone calculation, 5-minute atomic holds, review card, and QR ticket generation.
+- `features/home/` — Passenger home hub, active trip banner, announcements carousel, today's schedule, and live mini-map.
+- `features/profile/` — Profile details, language switch (AR/EN), theme toggle, privacy, and terms.
+- `features/topup/` — Multi-step manual point top-up (Vodafone Cash, InstaPay), receipt image upload, status tracking, and request resubmission.
+- `features/tracking/` — Live Google Maps Platform tracking, road-following polylines, ETrack IoT GPS telemetry ingestion, stop ETAs, and arrival event detection.
+- `features/trips/` — Active and historical trips, QR boarding ticket modal, 30-minute cutoff cancellation with refund, and seat swap.
+- `features/wallet/` — Dual point balances, pending top-up points, and immutable transaction history.
+
+---
+**Last Updated**: 2026-09-14
+

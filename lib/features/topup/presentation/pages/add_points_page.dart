@@ -8,21 +8,25 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../domain/entities/topup_entities.dart';
 import '../cubit/topup_cubit.dart';
 import '../cubit/topup_state.dart';
 import '../widgets/amount_step_widget.dart';
-import '../widgets/payment_method_step_widget.dart';
+import '../widgets/instructions_step_widget.dart';
 import '../widgets/pending_success_step_widget.dart';
-import '../widgets/review_step_widget.dart';
 import '../widgets/topup_step_indicator.dart';
 import '../widgets/transfer_details_step_widget.dart';
 
 class AddPointsPage extends StatelessWidget {
   final TopUpCubit? topUpCubit;
+  final int initialAvailablePoints;
+  final TopUpRequest? resubmitRequest;
 
   const AddPointsPage({
     super.key,
     this.topUpCubit,
+    this.initialAvailablePoints = 0,
+    this.resubmitRequest,
   });
 
   @override
@@ -30,7 +34,15 @@ class AddPointsPage extends StatelessWidget {
     final l10n = context.l10n;
 
     return BlocProvider(
-      create: (context) => topUpCubit ?? (getIt<TopUpCubit>()..loadPaymentMethods()),
+      create: (context) {
+        final cubit = topUpCubit ?? getIt<TopUpCubit>();
+        if (resubmitRequest != null) {
+          cubit.initWithResubmit(resubmitRequest!);
+        } else {
+          cubit.init(availableBalance: initialAvailablePoints);
+        }
+        return cubit;
+      },
       child: BlocConsumer<TopUpCubit, TopUpState>(
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
@@ -39,7 +51,9 @@ class AddPointsPage extends StatelessWidget {
                 content: Text(state.errorMessage!),
                 backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             );
           }
@@ -49,14 +63,20 @@ class AddPointsPage extends StatelessWidget {
 
           return AppScaffold(
             appBar: AppBar(
-              title: Text(l10n.addPoints),
+              scrolledUnderElevation: 0,
+              title: Text(
+                state.isResubmit
+                    ? l10n.resubmitPaymentTitle
+                    : l10n.actionAddPoints,
+              ),
               centerTitle: true,
-              leading: state.currentStep == TopUpStep.pendingSuccess
+              leading: state.currentStep == TopUpStep.pendingReview
                   ? const SizedBox.shrink()
                   : IconButton(
                       icon: const Icon(AppIcons.arrowBack),
                       onPressed: () {
-                        if (state.currentStep == TopUpStep.amount) {
+                        if (state.isResubmit ||
+                            state.currentStep == TopUpStep.amount) {
                           context.pop();
                         } else {
                           cubit.previousStep();
@@ -64,62 +84,115 @@ class AddPointsPage extends StatelessWidget {
                       },
                     ),
             ),
-            body: state.isLoadingMethods
+            body: state.isLoadingConfig
                 ? const Center(child: AppLoading())
                 : SafeArea(
+                    bottom: false,
                     child: Padding(
                       padding: AppSpacing.edgeInsetsA16,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (state.currentStep != TopUpStep.pendingSuccess) ...[
+                          if (!state.isResubmit &&
+                              state.currentStep != TopUpStep.pendingReview) ...[
                             TopUpStepIndicator(currentStep: state.currentStep),
-                            AppSpacing.gapH20,
+                            AppSpacing.gapH16,
                           ],
                           Expanded(
-                            child: switch (state.currentStep) {
-                              TopUpStep.amount => AmountStepWidget(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 250),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.02),
+                                      end: Offset.zero,
+                                    ).animate(animation),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: switch (state.currentStep) {
+                                TopUpStep.amount => AmountStepWidget(
+                                  key: const ValueKey('amount_step'),
                                   initialAmount: state.amount,
+                                  availableBalance: state.availableBalance,
+                                  minimumPoints:
+                                      state.paymentConfig.minimumTopupPoints,
+                                  egpPerPoint: state.paymentConfig.egpPerPoint,
                                   onAmountChanged: cubit.setAmount,
-                                  onNext: cubit.nextStep,
+                                  onNext: cubit.proceedToInstructions,
                                 ),
-                              TopUpStep.paymentMethod => PaymentMethodStepWidget(
-                                  methods: state.paymentMethods,
-                                  selectedMethod: state.selectedMethod,
-                                  onMethodSelected: cubit.selectPaymentMethod,
-                                  onNext: cubit.nextStep,
-                                  onBack: cubit.previousStep,
-                                ),
-                              TopUpStep.transferDetails => TransferDetailsStepWidget(
+                                TopUpStep.instructions =>
+                                  InstructionsStepWidget(
+                                    key: const ValueKey('instructions_step'),
+                                    points: state.amount,
+                                    amountEgp: state.expectedAmountEgp,
+                                    receivingPhone:
+                                        state.effectiveReceivingNumber,
+                                    paymentMethods: state.paymentMethods,
+                                    selectedMethod: state.selectedMethod,
+                                    onMethodSelected: cubit.selectPaymentMethod,
+                                    methodName: state.selectedMethod
+                                        ?.localizedName(
+                                          Localizations.localeOf(
+                                                context,
+                                              ).languageCode ==
+                                              'ar',
+                                        ),
+                                    isSubmitting: state.isSubmitting,
+                                    onTransferred:
+                                        cubit.confirmTransferAndCreateRequest,
+                                    onBack: cubit.previousStep,
+                                  ),
+                                TopUpStep.details => TransferDetailsStepWidget(
+                                  key: const ValueKey('details_step'),
+                                  points: state.amount,
+                                  amountEgp: state.expectedAmountEgp,
+                                  publicId: state.createdPublicId,
+                                  initialSenderPhone: state.senderPhone,
                                   initialReference: state.paymentReference,
+                                  initialTransferredAt: state.transferredAt,
                                   proofBytes: state.proofBytes,
                                   proofFileName: state.proofFileName,
+                                  isSubmitting: state.isSubmitting,
+                                  isResubmit: state.isResubmit,
+                                  rejectionReason: state.rejectionReason,
+                                  onSenderPhoneChanged: cubit.setSenderPhone,
                                   onReferenceChanged: cubit.setPaymentReference,
+                                  onTransferredAtChanged:
+                                      cubit.setTransferredAt,
                                   onProofSelected: cubit.setProofImage,
                                   onClearProof: cubit.clearProofImage,
-                                  onNext: cubit.nextStep,
-                                  onBack: cubit.previousStep,
-                                ),
-                              TopUpStep.review => ReviewStepWidget(
-                                  amount: state.amount,
-                                  method: state.selectedMethod!,
-                                  reference: state.paymentReference,
-                                  proofBytes: state.proofBytes!,
-                                  isSubmitting: state.isSubmitting,
-                                  onSubmit: cubit.submitTopUpRequest,
-                                  onBack: cubit.previousStep,
-                                ),
-                              TopUpStep.pendingSuccess => PendingSuccessStepWidget(
-                                  requestId: state.submittedRequestId,
-                                  onReturnToWallet: () {
-                                    if (context.canPop()) {
-                                      context.pop(true);
+                                  onSubmit: cubit.submitPaymentProof,
+                                  onBack: () {
+                                    if (state.isResubmit) {
+                                      context.pop();
                                     } else {
-                                      context.go('/wallet');
+                                      cubit.previousStep();
                                     }
                                   },
                                 ),
-                            },
+                                TopUpStep.pendingReview =>
+                                  PendingSuccessStepWidget(
+                                    key: const ValueKey('pending_step'),
+                                    points: state.amount,
+                                    amountEgp: state.expectedAmountEgp,
+                                    publicId:
+                                        state.submittedPublicId ??
+                                        state.createdPublicId,
+                                    isResubmit: state.isResubmit,
+                                    onReturnToWallet: () {
+                                      if (context.canPop()) {
+                                        context.pop(true);
+                                      } else {
+                                        context.go('/wallet');
+                                      }
+                                    },
+                                  ),
+                              },
+                            ),
                           ),
                         ],
                       ),

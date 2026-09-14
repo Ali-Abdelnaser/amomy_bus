@@ -106,13 +106,13 @@
   "pointsUnit": "Points",
   "addPoints": "Add Points",
   "walletDetails": "Details",
-  "cashPointsPrefix": "Cash ",
-  "subscriptionPointsPrefix": "Subscription ",
+  "cashPointsPrefix": "Cash points",
+  "subscriptionPointsPrefix": "Subscription points",
   "bookRideTitle": "Book Your Ride",
   "bookRideSubtitle": "Choose your departure time and preferred seat.",
   "bookNow": "Book Now",
   "upcomingTrip": "Upcoming Trip",
-  "noUpcomingTrip": "No upcoming trip",
+  "noUpcomingTrip": "No upcoming trips",
   "bookTripCta": "Book a Ride",
   "quickActions": "Quick Actions",
   "actionAddPoints": "Add Points",
@@ -126,7 +126,7 @@
   "noTripsSubtitle": "When you book a trip, it will appear right here.",
   "transactions": "Transactions",
   "noTransactions": "No transactions yet",
-  "noTransactionsSubtitle": "Your points recharge and trip payments will show here.",
+  "noTransactionsSubtitle": "Your points activity will appear here.",
   "personalInfo": "Personal Information",
   "language": "Language",
   "aboutAmomy": "About AMOMY",
@@ -229,5 +229,129 @@
   "topUpErrorNotFound": "Top-up request not found.",
   "topUpErrorAlreadyReviewed": "This top-up request has already been reviewed.",
   "continueAction": "Continue",
-  "backAction": "Back"
+  "backAction": "Back",
+  "announcements": "Announcements",
+  "announcementBadge": "Announcement",
+  "offerBadge": "Offer",
+  "viewTicket": "View Ticket",
+  "yourActivity": "Your Activity",
+  "tripsThisMonth": "Trips This Month",
+  "completedTrips": "Completed Trips",
+  "pointsSpentThisMonth": "Points Spent This Month",
+  "missedTrips": "Missed Trips",
+  "noMissedTripsMessage": "No missed trips this month.",
+  "allTime": "All Time",
+  "thisMonth": "This Month",
+  "selectBoardingStop": "Select Boarding Stop",
+  "boardingStop": "Boarding Stop",
+  "noStopsAvailable": "No boarding stops available at this time",
+  "chooseSeatAgain": "Choose Seat Again",
+  "holdExpiredMessage": "Your seat hold has expired. Please choose a seat again.",
+  "seatHeldFor": "Seat held for {time}",
+  "@seatHeldFor": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bookingSummaryTitle": "Booking Summary",
+  "totalFare": "Total",
+  "availableBalanceLabel": "Available balance",
+  "afterBookingLabel": "After booking",
+  "notEnoughPointsDeficit": "Not enough points. You need {deficit} more points to complete this booking.",
+  "@notEnoughPointsDeficit": {
+    "placeholders": {
+      "deficit": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewTicketNotice": "You can review your ticket in My Trips after booking.",
+  "fromStop": "From",
+  "toStop": "To",
+  "departureTimeTitle": "Departure Time",
+  "departureSelected": "Selected",
+  "departureAvailableNow": "Available now",
+  "fewSeatsLeft": "Few seats left",
+  "alreadyBookedTrip": "You already have an active booking for this trip.",
+  "seatNumberSelected": "Seat {seatNumber} selected",
+  "@seatNumberSelected": {
+    "placeholders": {
+      "seatNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "noMoreAvailableTrips": "No more available trips for today",
+  "recentTransactions": "Recent Transactions",
+  "viewAll": "View All",
+  "noTransactionsTitle": "No transactions yet",
+  "cardTravelBalance": "Your travel balance",
+  "amomyWallet": "AMOMY Wallet",
+  "txTypeTrip": "Trip",
+  "txTypeTopUp": "Points Top-up",
+  "txTypeRefund": "Booking Refund",
+  "txTypeBonus": "Bonus",
+  "txTypeGift": "Gift",
+  "txTypeAdjustment": "Balance Adjustment",
+  "ptsUnit": "PTS",
+  "howManyPointsToAdd": "How many points would you like to add?",
+  "minTopupNotice": "Minimum top-up is 200 Points.",
+  "customAmount": "Custom Amount",
+  "pointsEquivalentEgp": "{points} Points = {egp} EGP",
+  "@pointsEquivalentEgp": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "egp": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileCash": "Mobile Cash",
+  "transferAmount": "Transfer Amount",
+  "transferTo": "Transfer To",
+  "copyNumber": "Copy",
+  "numberCopied": "Number copied to clipboard",
+  "instructionStep1": "1. Open your mobile wallet.",
+  "instructionStep2": "2. Transfer the exact amount.",
+  "instructionStep3": "3. Keep the confirmation message.",
+  "instructionStep4": "4. Return here and submit the transfer details.",
+  "iveTransferredCta": "I've Made the Transfer",
+  "senderPhoneLabel": "Sender Phone Number",
+  "senderPhoneHint": "01XXXXXXXXX",
+  "senderPhoneInvalid": "Please enter a valid Egyptian mobile number (01XXXXXXXXX)",
+  "transferReferenceLabel": "Reference / Transaction ID",
+  "transferReferenceOptional": "Optional if not provided by wallet",
+  "transferDateTimeLabel": "Transfer Date & Time",
+  "paymentScreenshotLabel": "Payment Screenshot",
+  "tapToUploadScreenshot": "Tap to upload screenshot",
+  "screenshotAttached": "Receipt attached",
+  "submitDetailsAction": "Submit Transfer Details",
+  "paymentSubmittedTitle": "Payment Submitted",
+  "paymentUnderReviewSubtitle": "Your transfer is under review.",
+  "statusPendingReview": "Under Review",
+  "statusAwaitingPayment": "Awaiting Payment",
+  "statusApproved": "Approved",
+  "statusRejected": "Rejected",
+  "requestIdLabel": "Request ID",
+  "backToWalletCta": "Back to Wallet",
+  "stepPoints": "Points",
+  "stepPayment": "Payment",
+  "stepConfirm": "Confirm",
+  "vodafoneCash": "Vodafone Cash",
+  "instapay": "InstaPay",
+  "choosePaymentMethod": "Choose payment method",
+  "instapayAccount": "InstaPay Account",
+  "txTypePointsAdjustment": "Points Adjustment",
+  "pendingPoints": "Pending Points",
+  "paymentCouldNotBeVerified": "Payment couldn't be verified",
+  "resubmit": "Resubmit",
+  "resubmitPaymentTitle": "Resubmit Payment",
+  "resubmitForReview": "Resubmit for Review",
+  "paymentResubmittedTitle": "Payment Resubmitted",
+  "submittedOn": "Submitted",
+  "viewAllPendingTopUps": "View all pending top-ups"
 }

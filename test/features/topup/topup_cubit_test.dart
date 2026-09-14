@@ -5,19 +5,36 @@ import 'package:amomy_bus/features/topup/domain/entities/topup_entities.dart';
 import 'package:amomy_bus/features/topup/domain/repositories/topup_repository.dart';
 import 'package:amomy_bus/features/topup/domain/usecases/create_topup_request_usecase.dart';
 import 'package:amomy_bus/features/topup/domain/usecases/get_active_payment_methods_usecase.dart';
-import 'package:amomy_bus/features/topup/domain/usecases/upload_topup_proof_usecase.dart';
+import 'package:amomy_bus/features/topup/domain/usecases/get_payment_config_usecase.dart';
+import 'package:amomy_bus/features/topup/domain/usecases/submit_topup_proof_usecase.dart';
 import 'package:amomy_bus/features/topup/presentation/cubit/topup_cubit.dart';
 import 'package:amomy_bus/features/topup/presentation/cubit/topup_state.dart';
 
 class FakeTopUpRepository implements TopUpRepository {
+  PaymentConfig config = const PaymentConfig(minimumTopupPoints: 200, egpPerPoint: 1.0);
   List<PaymentMethod> methods = [];
   List<TopUpRequest> requests = [];
-  String createdRequestId = 'req-123';
+  TopUpCreatedResponse createdResponse = const TopUpCreatedResponse(
+    requestId: 'req-123',
+    publicId: 'AMY-7K4F92',
+    requestedPoints: 500,
+    expectedAmountEgp: 500,
+    receivingPhone: '01000000000',
+    conversionRate: 1.0,
+    status: TopUpStatus.awaitingPayment,
+  );
   String uploadedProofPath = 'user-1/req-123/proof.jpg';
+  Failure? configFailure;
   Failure? methodsFailure;
   Failure? createFailure;
   Failure? uploadFailure;
   Failure? historyFailure;
+
+  @override
+  ResultFuture<PaymentConfig> getPaymentConfig() async {
+    if (configFailure != null) return Error(configFailure!);
+    return Success(config);
+  }
 
   @override
   ResultFuture<List<PaymentMethod>> getActivePaymentMethods() async {
@@ -26,13 +43,26 @@ class FakeTopUpRepository implements TopUpRepository {
   }
 
   @override
-  ResultFuture<String> createTopUpRequest({
+  ResultFuture<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
   }) async {
     if (createFailure != null) return Error(createFailure!);
-    return Success(createdRequestId);
+    return Success(createdResponse);
+  }
+
+  @override
+  ResultFuture<String> submitTopUpPaymentProof({
+    required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    if (uploadFailure != null) return Error(uploadFailure!);
+    return Success(uploadedProofPath);
   }
 
   @override
@@ -57,9 +87,10 @@ class FakeTopUpRepository implements TopUpRepository {
 
 void main() {
   late FakeTopUpRepository repository;
+  late GetPaymentConfigUseCase getPaymentConfigUseCase;
   late GetActivePaymentMethodsUseCase getActivePaymentMethodsUseCase;
   late CreateTopUpRequestUseCase createTopUpRequestUseCase;
-  late UploadTopUpProofUseCase uploadTopUpProofUseCase;
+  late SubmitTopUpProofUseCase submitTopUpProofUseCase;
   late TopUpCubit cubit;
 
   const testMethod = PaymentMethod(
@@ -77,13 +108,15 @@ void main() {
 
   setUp(() {
     repository = FakeTopUpRepository()..methods = [testMethod];
+    getPaymentConfigUseCase = GetPaymentConfigUseCase(repository);
     getActivePaymentMethodsUseCase = GetActivePaymentMethodsUseCase(repository);
     createTopUpRequestUseCase = CreateTopUpRequestUseCase(repository);
-    uploadTopUpProofUseCase = UploadTopUpProofUseCase(repository);
+    submitTopUpProofUseCase = SubmitTopUpProofUseCase(repository);
     cubit = TopUpCubit(
+      getPaymentConfigUseCase,
       getActivePaymentMethodsUseCase,
       createTopUpRequestUseCase,
-      uploadTopUpProofUseCase,
+      submitTopUpProofUseCase,
     );
   });
 
@@ -98,138 +131,90 @@ void main() {
       expect(cubit.state.isAmountValid, isFalse);
     });
 
-    test('loadPaymentMethods populates methods and selects the first one', () async {
-      await cubit.loadPaymentMethods();
+    test('init populates config, methods, default amount and expected EGP', () async {
+      await cubit.init(availableBalance: 150);
+      expect(cubit.state.availableBalance, equals(150));
+      expect(cubit.state.amount, equals(200));
+      expect(cubit.state.expectedAmountEgp, equals(200.0));
       expect(cubit.state.paymentMethods.length, equals(1));
       expect(cubit.state.selectedMethod, equals(testMethod));
-      expect(cubit.state.isLoadingMethods, isFalse);
-    });
-
-    test('loadPaymentMethods handles failure gracefully', () async {
-      repository.methodsFailure = const ServerFailure(message: 'Failed to load');
-      await cubit.loadPaymentMethods();
-      expect(cubit.state.errorMessage, equals('Failed to load'));
-      expect(cubit.state.isLoadingMethods, isFalse);
-    });
-
-    test('setAmount validates amount > 0', () {
-      cubit.setAmount(0);
-      expect(cubit.state.isAmountValid, isFalse);
-      expect(cubit.state.canProceedFromAmount, isFalse);
-
-      cubit.setAmount(500);
-      expect(cubit.state.amount, equals(500));
       expect(cubit.state.isAmountValid, isTrue);
       expect(cubit.state.canProceedFromAmount, isTrue);
     });
 
-    test('selectPaymentMethod updates selectedMethod', () {
-      cubit.selectPaymentMethod(testMethod);
-      expect(cubit.state.selectedMethod, equals(testMethod));
-      expect(cubit.state.canProceedFromMethod, isTrue);
+    test('enforces minimum 200 points hard rule', () {
+      cubit.setAmount(150);
+      expect(cubit.state.amount, equals(150));
+      expect(cubit.state.isAmountValid, isFalse);
+      expect(cubit.state.canProceedFromAmount, isFalse);
+
+      cubit.setAmount(200);
+      expect(cubit.state.isAmountValid, isTrue);
+      expect(cubit.state.canProceedFromAmount, isTrue);
     });
 
-    test('setPaymentReference trims input', () {
-      cubit.setPaymentReference('  REF_12345  ');
-      expect(cubit.state.paymentReference, equals('REF_12345'));
-      expect(cubit.state.isReferenceValid, isTrue);
-    });
-
-    test('setProofImage and clearProofImage manage proof state', () {
-      final bytes = [1, 2, 3, 4];
-      cubit.setProofImage(bytes: bytes, extension: 'png', fileName: 'receipt.png');
-      expect(cubit.state.proofBytes, equals(bytes));
-      expect(cubit.state.proofExtension, equals('png'));
-      expect(cubit.state.proofFileName, equals('receipt.png'));
-      expect(cubit.state.proofStatus, equals(ProofUploadStatus.selected));
-      expect(cubit.state.isProofValid, isTrue);
-
-      cubit.clearProofImage();
-      expect(cubit.state.proofBytes, isNull);
-      expect(cubit.state.proofStatus, equals(ProofUploadStatus.idle));
-      expect(cubit.state.isProofValid, isFalse);
-    });
-
-    test('nextStep and previousStep navigate flow conditionally', () {
-      // Cannot advance if amount is 0
-      cubit.nextStep();
+    test('proceedToInstructions validates min points before advancing', () {
+      cubit.setAmount(100);
+      cubit.proceedToInstructions();
       expect(cubit.state.currentStep, equals(TopUpStep.amount));
+      expect(cubit.state.errorMessage, contains('Minimum top-up is 200 Points'));
 
-      // Advance from amount to paymentMethod
-      cubit.setAmount(300);
-      cubit.nextStep();
-      expect(cubit.state.currentStep, equals(TopUpStep.paymentMethod));
-
-      // Advance to transferDetails
-      cubit.selectPaymentMethod(testMethod);
-      cubit.nextStep();
-      expect(cubit.state.currentStep, equals(TopUpStep.transferDetails));
-
-      // Cannot advance without reference and proof
-      cubit.nextStep();
-      expect(cubit.state.currentStep, equals(TopUpStep.transferDetails));
-
-      // Add reference and proof, then advance to review
-      cubit.setPaymentReference('REF999');
-      cubit.setProofImage(bytes: [1, 2], extension: 'jpg', fileName: 'p.jpg');
-      cubit.nextStep();
-      expect(cubit.state.currentStep, equals(TopUpStep.review));
-
-      // Previous step goes back to transferDetails
-      cubit.previousStep();
-      expect(cubit.state.currentStep, equals(TopUpStep.transferDetails));
+      cubit.setAmount(250);
+      cubit.proceedToInstructions();
+      expect(cubit.state.currentStep, equals(TopUpStep.instructions));
+      expect(cubit.state.errorMessage, isNull);
     });
 
-    test('submitTopUpRequest creates request and uploads proof successfully', () async {
+    test('confirmTransferAndCreateRequest freezes request and moves to details', () async {
       cubit.setAmount(500);
       cubit.selectPaymentMethod(testMethod);
-      cubit.setPaymentReference('VOD_102030');
-      cubit.setProofImage(bytes: [10, 20, 30], extension: 'png', fileName: 'proof.png');
-      cubit.goToStep(TopUpStep.review);
 
-      expect(cubit.state.canSubmit, isTrue);
+      await cubit.confirmTransferAndCreateRequest();
 
-      await cubit.submitTopUpRequest();
+      expect(cubit.state.currentStep, equals(TopUpStep.details));
+      expect(cubit.state.createdRequestId, equals('req-123'));
+      expect(cubit.state.createdPublicId, equals('AMY-7K4F92'));
+      expect(cubit.state.expectedAmountEgp, equals(500.0));
+      expect(cubit.state.receivingPhone, equals('01000000000'));
+    });
+
+    test('sender phone validation strictly enforces Egyptian format', () {
+      cubit.setSenderPhone('12345');
+      expect(cubit.state.isSenderPhoneValid, isFalse);
+
+      cubit.setSenderPhone('01012345678');
+      expect(cubit.state.isSenderPhoneValid, isTrue);
+
+      cubit.setSenderPhone('201012345678');
+      expect(cubit.state.isSenderPhoneValid, isTrue);
+    });
+
+    test('submitPaymentProof submits proof and moves to pendingReview', () async {
+      cubit.setAmount(500);
+      cubit.selectPaymentMethod(testMethod);
+      await cubit.confirmTransferAndCreateRequest();
+
+      cubit.setSenderPhone('01012345678');
+      cubit.setPaymentReference('REF_999');
+      cubit.setProofImage(bytes: [1, 2, 3], extension: 'jpg', fileName: 'proof.jpg');
+
+      expect(cubit.state.canSubmitDetails, isTrue);
+
+      await cubit.submitPaymentProof();
 
       expect(cubit.state.isSubmitting, isFalse);
       expect(cubit.state.isSuccess, isTrue);
-      expect(cubit.state.currentStep, equals(TopUpStep.pendingSuccess));
-      expect(cubit.state.submittedRequestId, equals('req-123'));
-      expect(cubit.state.proofStatus, equals(ProofUploadStatus.uploaded));
+      expect(cubit.state.currentStep, equals(TopUpStep.pendingReview));
+      expect(cubit.state.submittedPublicId, equals('AMY-7K4F92'));
     });
 
-    test('submitTopUpRequest maps duplicate reference error cleanly', () async {
-      repository.createFailure = const DuplicatePaymentReferenceFailure();
-
+    test('previousStep navigates backwards cleanly', () async {
       cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
-      cubit.setPaymentReference('DUPLICATE_REF');
-      cubit.setProofImage(bytes: [10, 20], extension: 'jpg', fileName: 'p.jpg');
-      cubit.goToStep(TopUpStep.review);
+      cubit.proceedToInstructions();
+      expect(cubit.state.currentStep, equals(TopUpStep.instructions));
 
-      await cubit.submitTopUpRequest();
-
-      expect(cubit.state.isSubmitting, isFalse);
-      expect(cubit.state.isSuccess, isFalse);
-      expect(cubit.state.proofStatus, equals(ProofUploadStatus.failed));
-      expect(cubit.state.errorMessage, contains('already active or approved'));
-    });
-
-    test('submitTopUpRequest handles proof upload failure cleanly', () async {
-      repository.uploadFailure = const ProofUploadFailedFailure();
-
-      cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
-      cubit.setPaymentReference('REF_VALID');
-      cubit.setProofImage(bytes: [10, 20], extension: 'jpg', fileName: 'p.jpg');
-      cubit.goToStep(TopUpStep.review);
-
-      await cubit.submitTopUpRequest();
-
-      expect(cubit.state.isSubmitting, isFalse);
-      expect(cubit.state.isSuccess, isFalse);
-      expect(cubit.state.proofStatus, equals(ProofUploadStatus.failed));
-      expect(cubit.state.errorMessage, contains('Failed to upload payment proof'));
+      cubit.previousStep();
+      expect(cubit.state.currentStep, equals(TopUpStep.amount));
     });
   });
 }

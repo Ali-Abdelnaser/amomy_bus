@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_locale_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_dialog.dart';
@@ -23,51 +25,61 @@ class ProfilePage extends StatelessWidget {
     final controller = AppLocaleController.instance;
     showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: AppSpacing.edgeInsetsA24,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                context.l10n.language,
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+      useRootNavigator: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      showDragHandle: false,
+      elevation: 0,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => AmomySheetContainer(
+        hasBottomNav: true,
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              context.l10n.language,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              AppSpacing.gapH16,
-              ListTile(
-                leading: const Icon(AppIcons.globe, color: AppColors.primary),
-                title: const Text('العربية'),
-                trailing: controller.isArabic
-                    ? const Icon(AppIcons.check, color: AppColors.primary)
-                    : null,
-                onTap: () {
-                  if (!controller.isArabic) {
-                    controller.toggleLocale();
-                  }
-                  Navigator.of(ctx).pop();
-                },
+            ),
+            AppSpacing.gapH12,
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              ListTile(
-                leading: const Icon(AppIcons.globe, color: AppColors.primary),
-                title: const Text('English'),
-                trailing: !controller.isArabic
-                    ? const Icon(AppIcons.check, color: AppColors.primary)
-                    : null,
-                onTap: () {
-                  if (controller.isArabic) {
-                    controller.toggleLocale();
-                  }
-                  Navigator.of(ctx).pop();
-                },
+              leading: const Icon(AppIcons.globe, color: AppColors.primary),
+              title: const Text('العربية'),
+              trailing: controller.isArabic
+                  ? const Icon(AppIcons.check, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                if (!controller.isArabic) {
+                  controller.toggleLocale();
+                }
+                Navigator.of(ctx).pop();
+              },
+            ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
+              leading: const Icon(AppIcons.globe, color: AppColors.primary),
+              title: const Text('English'),
+              trailing: !controller.isArabic
+                  ? const Icon(AppIcons.check, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                if (controller.isArabic) {
+                  controller.toggleLocale();
+                }
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -78,6 +90,7 @@ class ProfilePage extends StatelessWidget {
     showInfoDialog(
       context: context,
       title: l10n.aboutAmomy,
+      illustrationPath: AppAssets.busServiceIllustration,
       message: 'AMOMY Bus v1.0.0\nSmart, reliable bus transportation in Egypt.\n\n© 2026 AMOMY. All rights reserved.',
       buttonText: l10n.dismiss,
     );

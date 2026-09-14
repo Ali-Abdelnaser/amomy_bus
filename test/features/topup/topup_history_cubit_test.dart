@@ -12,21 +12,45 @@ class FakeHistoryRepository implements TopUpRepository {
   Failure? failure;
 
   @override
+  ResultFuture<PaymentConfig> getPaymentConfig() async => const Success(PaymentConfig());
+
+  @override
   ResultFuture<List<PaymentMethod>> getActivePaymentMethods() async => const Success([]);
 
   @override
-  ResultFuture<String> createTopUpRequest({
+  ResultFuture<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
-  }) async => const Success('req-1');
+    String? paymentReference,
+  }) async =>
+      const Success(TopUpCreatedResponse(
+        requestId: 'req-1',
+        publicId: 'AMY-123456',
+        requestedPoints: 300,
+        expectedAmountEgp: 300,
+        receivingPhone: '01000000000',
+        conversionRate: 1.0,
+        status: TopUpStatus.awaitingPayment,
+      ));
+
+  @override
+  ResultFuture<String> submitTopUpPaymentProof({
+    required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async =>
+      const Success('path/proof.jpg');
 
   @override
   ResultFuture<String> uploadTopUpProof({
     required String requestId,
     required List<int> fileBytes,
     required String fileExtension,
-  }) async => const Success('path');
+  }) async =>
+      const Success('path');
 
   @override
   ResultFuture<List<TopUpRequest>> getMyTopUpRequests() async {
@@ -64,7 +88,7 @@ void main() {
   final testRejectedReq = TopUpRequest(
     id: 'req-2',
     userId: 'u-1',
-    requestedAmount: 150,
+    requestedAmount: 200,
     paymentMethodCode: 'ORANGE_CASH',
     status: TopUpStatus.rejected,
     rejectionReason: 'Invalid reference',

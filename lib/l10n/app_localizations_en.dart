@@ -314,10 +314,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletDetails => 'Details';
 
   @override
-  String get cashPointsPrefix => 'Cash ';
+  String get cashPointsPrefix => 'Cash points';
 
   @override
-  String get subscriptionPointsPrefix => 'Subscription ';
+  String get subscriptionPointsPrefix => 'Subscription points';
 
   @override
   String get bookRideTitle => 'Book Your Ride';
@@ -333,7 +333,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upcomingTrip => 'Upcoming Trip';
 
   @override
-  String get noUpcomingTrip => 'No upcoming trip';
+  String get noUpcomingTrip => 'No upcoming trips';
 
   @override
   String get bookTripCta => 'Book a Ride';
@@ -376,8 +376,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactions => 'No transactions yet';
 
   @override
-  String get noTransactionsSubtitle =>
-      'Your points recharge and trip payments will show here.';
+  String get noTransactionsSubtitle => 'Your points activity will appear here.';
 
   @override
   String get personalInfo => 'Personal Information';
@@ -669,4 +668,296 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backAction => 'Back';
+
+  @override
+  String get announcements => 'Announcements';
+
+  @override
+  String get announcementBadge => 'Announcement';
+
+  @override
+  String get offerBadge => 'Offer';
+
+  @override
+  String get viewTicket => 'View Ticket';
+
+  @override
+  String get yourActivity => 'Your Activity';
+
+  @override
+  String get tripsThisMonth => 'Trips This Month';
+
+  @override
+  String get completedTrips => 'Completed Trips';
+
+  @override
+  String get pointsSpentThisMonth => 'Points Spent This Month';
+
+  @override
+  String get missedTrips => 'Missed Trips';
+
+  @override
+  String get noMissedTripsMessage => 'No missed trips this month.';
+
+  @override
+  String get allTime => 'All Time';
+
+  @override
+  String get thisMonth => 'This Month';
+
+  @override
+  String get selectBoardingStop => 'Select Boarding Stop';
+
+  @override
+  String get boardingStop => 'Boarding Stop';
+
+  @override
+  String get noStopsAvailable => 'No boarding stops available at this time';
+
+  @override
+  String get chooseSeatAgain => 'Choose Seat Again';
+
+  @override
+  String get holdExpiredMessage =>
+      'Your seat hold has expired. Please choose a seat again.';
+
+  @override
+  String seatHeldFor(String time) {
+    return 'Seat held for $time';
+  }
+
+  @override
+  String get bookingSummaryTitle => 'Booking Summary';
+
+  @override
+  String get totalFare => 'Total';
+
+  @override
+  String get availableBalanceLabel => 'Available balance';
+
+  @override
+  String get afterBookingLabel => 'After booking';
+
+  @override
+  String notEnoughPointsDeficit(int deficit) {
+    return 'Not enough points. You need $deficit more points to complete this booking.';
+  }
+
+  @override
+  String get reviewTicketNotice =>
+      'You can review your ticket in My Trips after booking.';
+
+  @override
+  String get fromStop => 'From';
+
+  @override
+  String get toStop => 'To';
+
+  @override
+  String get departureTimeTitle => 'Departure Time';
+
+  @override
+  String get departureSelected => 'Selected';
+
+  @override
+  String get departureAvailableNow => 'Available now';
+
+  @override
+  String get fewSeatsLeft => 'Few seats left';
+
+  @override
+  String get alreadyBookedTrip =>
+      'You already have an active booking for this trip.';
+
+  @override
+  String seatNumberSelected(String seatNumber) {
+    return 'Seat $seatNumber selected';
+  }
+
+  @override
+  String get noMoreAvailableTrips => 'No more available trips for today';
+
+  @override
+  String get recentTransactions => 'Recent Transactions';
+
+  @override
+  String get viewAll => 'View All';
+
+  @override
+  String get noTransactionsTitle => 'No transactions yet';
+
+  @override
+  String get cardTravelBalance => 'Your travel balance';
+
+  @override
+  String get amomyWallet => 'AMOMY Wallet';
+
+  @override
+  String get txTypeTrip => 'Trip';
+
+  @override
+  String get txTypeTopUp => 'Points Top-up';
+
+  @override
+  String get txTypeRefund => 'Booking Refund';
+
+  @override
+  String get txTypeBonus => 'Bonus';
+
+  @override
+  String get txTypeGift => 'Gift';
+
+  @override
+  String get txTypeAdjustment => 'Balance Adjustment';
+
+  @override
+  String get ptsUnit => 'PTS';
+
+  @override
+  String get howManyPointsToAdd => 'How many points would you like to add?';
+
+  @override
+  String get minTopupNotice => 'Minimum top-up is 200 Points.';
+
+  @override
+  String get customAmount => 'Custom Amount';
+
+  @override
+  String pointsEquivalentEgp(String points, String egp) {
+    return '$points Points = $egp EGP';
+  }
+
+  @override
+  String get mobileCash => 'Mobile Cash';
+
+  @override
+  String get transferAmount => 'Transfer Amount';
+
+  @override
+  String get transferTo => 'Transfer To';
+
+  @override
+  String get copyNumber => 'Copy';
+
+  @override
+  String get numberCopied => 'Number copied to clipboard';
+
+  @override
+  String get instructionStep1 => '1. Open your mobile wallet.';
+
+  @override
+  String get instructionStep2 => '2. Transfer the exact amount.';
+
+  @override
+  String get instructionStep3 => '3. Keep the confirmation message.';
+
+  @override
+  String get instructionStep4 =>
+      '4. Return here and submit the transfer details.';
+
+  @override
+  String get iveTransferredCta => 'I\'ve Made the Transfer';
+
+  @override
+  String get senderPhoneLabel => 'Sender Phone Number';
+
+  @override
+  String get senderPhoneHint => '01XXXXXXXXX';
+
+  @override
+  String get senderPhoneInvalid =>
+      'Please enter a valid Egyptian mobile number (01XXXXXXXXX)';
+
+  @override
+  String get transferReferenceLabel => 'Reference / Transaction ID';
+
+  @override
+  String get transferReferenceOptional => 'Optional if not provided by wallet';
+
+  @override
+  String get transferDateTimeLabel => 'Transfer Date & Time';
+
+  @override
+  String get paymentScreenshotLabel => 'Payment Screenshot';
+
+  @override
+  String get tapToUploadScreenshot => 'Tap to upload screenshot';
+
+  @override
+  String get screenshotAttached => 'Receipt attached';
+
+  @override
+  String get submitDetailsAction => 'Submit Transfer Details';
+
+  @override
+  String get paymentSubmittedTitle => 'Payment Submitted';
+
+  @override
+  String get paymentUnderReviewSubtitle => 'Your transfer is under review.';
+
+  @override
+  String get statusPendingReview => 'Under Review';
+
+  @override
+  String get statusAwaitingPayment => 'Awaiting Payment';
+
+  @override
+  String get statusApproved => 'Approved';
+
+  @override
+  String get statusRejected => 'Rejected';
+
+  @override
+  String get requestIdLabel => 'Request ID';
+
+  @override
+  String get backToWalletCta => 'Back to Wallet';
+
+  @override
+  String get stepPoints => 'Points';
+
+  @override
+  String get stepPayment => 'Payment';
+
+  @override
+  String get stepConfirm => 'Confirm';
+
+  @override
+  String get vodafoneCash => 'Vodafone Cash';
+
+  @override
+  String get instapay => 'InstaPay';
+
+  @override
+  String get choosePaymentMethod => 'Choose payment method';
+
+  @override
+  String get instapayAccount => 'InstaPay Account';
+
+  @override
+  String get txTypePointsAdjustment => 'Points Adjustment';
+
+  @override
+  String get pendingPoints => 'Pending Points';
+
+  @override
+  String get paymentCouldNotBeVerified => 'Payment couldn\'t be verified';
+
+  @override
+  String get resubmit => 'Resubmit';
+
+  @override
+  String get resubmitPaymentTitle => 'Resubmit Payment';
+
+  @override
+  String get resubmitForReview => 'Resubmit for Review';
+
+  @override
+  String get paymentResubmittedTitle => 'Payment Resubmitted';
+
+  @override
+  String get submittedOn => 'Submitted';
+
+  @override
+  String get viewAllPendingTopUps => 'View all pending top-ups';
 }

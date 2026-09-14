@@ -22,9 +22,12 @@ class RouteNames {
   static const String bookingQr = 'bookingQr';
   static const String wallet = 'wallet';
   static const String addPoints = 'addPoints';
+  static const String changeSeat = 'changeSeat';
   static const String subscriptions = 'subscriptions';
   static const String profile = 'profile';
+  static const String notifications = 'notifications';
   static const String liveTracking = 'liveTracking';
+  static const String liveBusMap = 'liveBusMap';
 
   // Admin routes
   static const String adminDashboard = 'adminDashboard';

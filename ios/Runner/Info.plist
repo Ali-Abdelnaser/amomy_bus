@@ -97,5 +97,12 @@
 		<string>133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>AMOMY needs access to your photos to upload payment proof screenshots for top-up verification.</string>
+		<key>GoogleMapsApiKey</key>
+		<string>$(GOOGLE_MAPS_API_KEY)</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
 	</dict>
 </plist>

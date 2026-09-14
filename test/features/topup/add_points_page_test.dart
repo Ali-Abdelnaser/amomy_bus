@@ -5,12 +5,13 @@ import 'package:amomy_bus/l10n/app_localizations.dart';
 import 'package:amomy_bus/features/topup/domain/entities/topup_entities.dart';
 import 'package:amomy_bus/features/topup/domain/usecases/create_topup_request_usecase.dart';
 import 'package:amomy_bus/features/topup/domain/usecases/get_active_payment_methods_usecase.dart';
-import 'package:amomy_bus/features/topup/domain/usecases/upload_topup_proof_usecase.dart';
+import 'package:amomy_bus/features/topup/domain/usecases/get_payment_config_usecase.dart';
+import 'package:amomy_bus/features/topup/domain/usecases/submit_topup_proof_usecase.dart';
 import 'package:amomy_bus/features/topup/presentation/cubit/topup_cubit.dart';
 import 'package:amomy_bus/features/topup/presentation/pages/add_points_page.dart';
 import 'package:amomy_bus/features/topup/presentation/widgets/amount_step_widget.dart';
-import 'package:amomy_bus/features/topup/presentation/widgets/payment_method_step_widget.dart';
-import 'package:amomy_bus/features/topup/presentation/widgets/review_step_widget.dart';
+import 'package:amomy_bus/features/topup/presentation/widgets/instructions_step_widget.dart';
+import 'package:amomy_bus/features/topup/presentation/widgets/transfer_details_step_widget.dart';
 import 'package:amomy_bus/features/topup/presentation/widgets/pending_success_step_widget.dart';
 import 'topup_cubit_test.dart';
 
@@ -43,7 +44,7 @@ void main() {
   );
 
   group('Add Points UI Steps', () {
-    testWidgets('AmountStepWidget displays 1:1 ratio, quick chips, and validates input', (tester) async {
+    testWidgets('AmountStepWidget displays presets, balance, and validates min 200', (tester) async {
       int changedAmount = 0;
       bool nextTapped = false;
 
@@ -51,7 +52,10 @@ void main() {
         buildTestableWidget(
           Scaffold(
             body: AmountStepWidget(
-              initialAmount: 0,
+              initialAmount: 200,
+              availableBalance: 0,
+              minimumPoints: 200,
+              egpPerPoint: 1.0,
               onAmountChanged: (val) => changedAmount = val,
               onNext: () => nextTapped = true,
             ),
@@ -60,15 +64,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Check ratio card
-      expect(find.text('1 EGP ≈ 1 Point'), findsOneWidget);
+      // Check presets and input
+      expect(find.text('200'), findsWidgets);
+      expect(find.text('500'), findsOneWidget);
 
-      // Check quick chips
-      expect(find.text('100 EGP'), findsOneWidget);
-      expect(find.text('500 EGP'), findsOneWidget);
-
-      // Tap quick chip 500 EGP
-      await tester.tap(find.text('500 EGP'));
+      // Tap preset 500 PTS
+      await tester.tap(find.text('500'));
       await tester.pumpAndSettle();
       expect(changedAmount, equals(500));
 
@@ -78,17 +79,19 @@ void main() {
       expect(nextTapped, isTrue);
     });
 
-    testWidgets('PaymentMethodStepWidget displays active method and copy account button', (tester) async {
-      bool nextTapped = false;
+    testWidgets('InstructionsStepWidget displays receiving phone and transfer instructions', (tester) async {
+      bool transferredTapped = false;
 
       await tester.pumpWidget(
         buildTestableWidget(
           Scaffold(
-            body: PaymentMethodStepWidget(
-              methods: const [testMethod],
-              selectedMethod: testMethod,
-              onMethodSelected: (_) {},
-              onNext: () => nextTapped = true,
+            body: InstructionsStepWidget(
+              points: 500,
+              amountEgp: 500,
+              receivingPhone: '01000000000',
+              methodName: 'Vodafone Cash',
+              isSubmitting: false,
+              onTransferred: () => transferredTapped = true,
               onBack: () {},
             ),
           ),
@@ -96,36 +99,127 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Vodafone Cash'), findsOneWidget);
-      expect(find.text('01000000000'), findsAtLeastNWidgets(1));
-      expect(find.text('Copy Number'), findsOneWidget);
-      expect(find.text('Transfer to Vodafone Cash number above'), findsOneWidget);
+      expect(find.text('01000000000'), findsOneWidget);
+      expect(find.text("I've Made the Transfer"), findsOneWidget);
 
-      await tester.tap(find.text('Continue'));
+      await tester.tap(find.text("I've Made the Transfer"));
       await tester.pumpAndSettle();
-      expect(nextTapped, isTrue);
+      expect(transferredTapped, isTrue);
     });
 
-    testWidgets('ReviewStepWidget displays summary and manual review disclaimer', (tester) async {
+    testWidgets('InstructionsStepWidget switches conditional details when selecting InstaPay', (tester) async {
+      PaymentMethod? selected;
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              return Scaffold(
+                body: InstructionsStepWidget(
+                  points: 500,
+                  amountEgp: 500,
+                  receivingPhone: '01000000000',
+                  selectedMethod: selected,
+                  onMethodSelected: (m) => setState(() => selected = m),
+                  isSubmitting: false,
+                  onTransferred: () {},
+                  onBack: () {},
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap InstaPay card
+      await tester.tap(find.text('InstaPay'));
+      await tester.pumpAndSettle();
+
+      expect(selected?.code, equals('INSTAPAY'));
+    });
+
+    testWidgets('InstructionsStepWidget renders real WEBP assets without generic icons and updates on selection', (tester) async {
+      PaymentMethod? selected;
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              return Scaffold(
+                body: InstructionsStepWidget(
+                  points: 500,
+                  amountEgp: 500,
+                  receivingPhone: '01000000000',
+                  selectedMethod: selected,
+                  onMethodSelected: (m) => setState(() => selected = m),
+                  isSubmitting: false,
+                  onTransferred: () {},
+                  onBack: () {},
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final images = tester.widgetList<Image>(find.byType(Image)).toList();
+      final assetNames = images
+          .where((img) => img.image is AssetImage)
+          .map((img) => (img.image as AssetImage).assetName)
+          .toList();
+
+      // Confirms Vodafone Image widget uses assets/vodafone_cash.webp
+      expect(assetNames, contains('assets/vodafone_cash.webp'));
+      // Confirms InstaPay Image widget uses assets/instapay.webp
+      expect(assetNames, contains('assets/instapay.webp'));
+
+      // Initially Vodafone Cash is default selected (2 vodafone images: 1 in selector card, 1 in details card)
+      final initialVodafoneCount = assetNames.where((a) => a == 'assets/vodafone_cash.webp').length;
+      expect(initialVodafoneCount, equals(2));
+
+      // Tap InstaPay card
+      await tester.tap(find.text('InstaPay'));
+      await tester.pumpAndSettle();
+
+      final updatedImages = tester.widgetList<Image>(find.byType(Image)).toList();
+      final updatedAssetNames = updatedImages
+          .where((img) => img.image is AssetImage)
+          .map((img) => (img.image as AssetImage).assetName)
+          .toList();
+
+      // Details card switched to InstaPay (2 instapay images: 1 in selector card, 1 in details card)
+      final updatedInstaCount = updatedAssetNames.where((a) => a == 'assets/instapay.webp').length;
+      expect(updatedInstaCount, equals(2));
+
+      // No generic icons used
+      expect(find.byIcon(Icons.wallet), findsNothing);
+      expect(find.byIcon(Icons.credit_card), findsNothing);
+      expect(find.byIcon(Icons.account_balance_wallet), findsNothing);
+      expect(find.byIcon(Icons.payment), findsNothing);
+    });
+
+    testWidgets('TransferDetailsStepWidget displays phone, ref, and submit button', (tester) async {
       bool submitTapped = false;
-      const validPngBytes = [
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
-        0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
-        0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
-        0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
-      ];
 
       await tester.pumpWidget(
         buildTestableWidget(
           Scaffold(
-            body: ReviewStepWidget(
-              amount: 500,
-              method: testMethod,
-              reference: 'VOD_12345',
-              proofBytes: validPngBytes,
+            body: TransferDetailsStepWidget(
+              points: 500,
+              amountEgp: 500,
+              publicId: 'AMY-7K4F92',
+              initialSenderPhone: '01012345678',
+              initialReference: 'REF12345',
+              proofBytes: null,
+              proofFileName: null,
               isSubmitting: false,
+              onSenderPhoneChanged: (_) {},
+              onReferenceChanged: (_) {},
+              onTransferredAtChanged: (_) {},
+              onProofSelected: ({required bytes, required extension, required fileName}) {},
+              onClearProof: () {},
               onSubmit: () => submitTapped = true,
               onBack: () {},
             ),
@@ -134,14 +228,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('500 EGP'), findsOneWidget);
-      expect(find.text('VOD_12345'), findsOneWidget);
-      expect(find.text('Vodafone Cash'), findsOneWidget);
-      expect(find.textContaining('not an instant gateway'), findsOneWidget);
-
-      await tester.tap(find.text('Submit Top-Up Request'));
-      await tester.pumpAndSettle();
-      expect(submitTapped, isTrue);
+      expect(find.text('01012345678'), findsOneWidget);
+      expect(find.text('REF12345'), findsOneWidget);
+      expect(submitTapped, isFalse);
     });
 
     testWidgets('PendingSuccessStepWidget displays reassurance and return CTA', (tester) async {
@@ -151,7 +240,9 @@ void main() {
         buildTestableWidget(
           Scaffold(
             body: PendingSuccessStepWidget(
-              requestId: 'req-test-12345678',
+              points: 500,
+              amountEgp: 500,
+              publicId: 'AMY-7K4F92',
               onReturnToWallet: () => returnTapped = true,
             ),
           ),
@@ -159,11 +250,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Top-up request submitted'), findsOneWidget);
+      expect(find.text('Payment Submitted'), findsOneWidget);
       expect(find.textContaining('under review'), findsOneWidget);
-      expect(find.text('Return to Wallet'), findsOneWidget);
+      expect(find.text('Back to Wallet'), findsOneWidget);
+      expect(find.text('AMY-7K4F92'), findsOneWidget);
 
-      await tester.tap(find.text('Return to Wallet'));
+      await tester.tap(find.text('Back to Wallet'));
       await tester.pumpAndSettle();
       expect(returnTapped, isTrue);
     });
@@ -174,6 +266,8 @@ void main() {
           Scaffold(
             body: AmountStepWidget(
               initialAmount: 200,
+              availableBalance: 0,
+              minimumPoints: 200,
               onAmountChanged: (_) {},
               onNext: () {},
             ),
@@ -183,8 +277,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('المبلغ'), findsAtLeastNWidgets(1));
-      expect(find.text('1 جنيه ≈ 1 نقطة'), findsOneWidget);
       expect(find.text('المتابعة'), findsOneWidget);
     });
   });
@@ -193,9 +285,10 @@ void main() {
     testWidgets('renders full page with topup cubit', (tester) async {
       final fakeRepo = FakeTopUpRepository()..methods = [testMethod];
       final cubit = TopUpCubit(
+        GetPaymentConfigUseCase(fakeRepo),
         GetActivePaymentMethodsUseCase(fakeRepo),
         CreateTopUpRequestUseCase(fakeRepo),
-        UploadTopUpProofUseCase(fakeRepo),
+        SubmitTopUpProofUseCase(fakeRepo),
       );
 
       await tester.pumpWidget(

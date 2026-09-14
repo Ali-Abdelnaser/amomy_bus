@@ -2,12 +2,23 @@ import '../../../../core/typedefs/typedefs.dart';
 import '../entities/topup_entities.dart';
 
 abstract class TopUpRepository {
+  ResultFuture<PaymentConfig> getPaymentConfig();
+
   ResultFuture<List<PaymentMethod>> getActivePaymentMethods();
 
-  ResultFuture<String> createTopUpRequest({
+  ResultFuture<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
+  });
+
+  ResultFuture<String> submitTopUpPaymentProof({
+    required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
   });
 
   ResultFuture<String> uploadTopUpProof({

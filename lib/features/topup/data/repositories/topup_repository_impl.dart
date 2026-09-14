@@ -14,6 +14,20 @@ class TopUpRepositoryImpl implements TopUpRepository {
   TopUpRepositoryImpl(this._remoteDataSource);
 
   @override
+  ResultFuture<PaymentConfig> getPaymentConfig() async {
+    try {
+      final config = await _remoteDataSource.getPaymentConfig();
+      return Success(config);
+    } on SocketException catch (_) {
+      return const Error(NetworkFailure());
+    } on PostgrestException catch (e) {
+      return Error(_mapPostgrestError(e));
+    } catch (e) {
+      return Error(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<List<PaymentMethod>> getActivePaymentMethods() async {
     try {
       final methods = await _remoteDataSource.getActivePaymentMethods();
@@ -28,21 +42,21 @@ class TopUpRepositoryImpl implements TopUpRepository {
   }
 
   @override
-  ResultFuture<String> createTopUpRequest({
+  ResultFuture<TopUpCreatedResponse> createTopUpRequest({
     required int amount,
     required String paymentMethodCode,
-    required String paymentReference,
+    String? paymentReference,
   }) async {
     try {
-      if (amount <= 0) {
-        return const Error(InvalidAmountFailure());
+      if (amount < 200) {
+        return const Error(ServerFailure(message: 'Minimum top-up is 200 Points.'));
       }
-      final requestId = await _remoteDataSource.createTopUpRequest(
+      final created = await _remoteDataSource.createTopUpRequest(
         amount: amount,
         paymentMethodCode: paymentMethodCode,
         paymentReference: paymentReference,
       );
-      return Success(requestId);
+      return Success(created);
     } on SocketException catch (_) {
       return const Error(NetworkFailure());
     } on PostgrestException catch (e) {
@@ -53,14 +67,20 @@ class TopUpRepositoryImpl implements TopUpRepository {
   }
 
   @override
-  ResultFuture<String> uploadTopUpProof({
+  ResultFuture<String> submitTopUpPaymentProof({
     required String requestId,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
     try {
-      final storedPath = await _remoteDataSource.uploadTopUpProof(
+      final storedPath = await _remoteDataSource.submitTopUpPaymentProof(
         requestId: requestId,
+        senderPhone: senderPhone,
+        transferReference: transferReference,
+        transferredAt: transferredAt,
         fileBytes: fileBytes,
         fileExtension: fileExtension,
       );
@@ -74,6 +94,20 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } catch (e) {
       return Error(ProofUploadFailedFailure(message: e.toString()));
     }
+  }
+
+  @override
+  ResultFuture<String> uploadTopUpProof({
+    required String requestId,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    return submitTopUpPaymentProof(
+      requestId: requestId,
+      senderPhone: '01000000000',
+      fileBytes: fileBytes,
+      fileExtension: fileExtension,
+    );
   }
 
   @override
@@ -97,6 +131,12 @@ class TopUpRepositoryImpl implements TopUpRepository {
 
   Failure _mapPostgrestError(PostgrestException e) {
     final msg = e.message.toLowerCase();
+    if (msg.contains('minimum_topup_points') || msg.contains('minimum top-up')) {
+      return const ServerFailure(message: 'Minimum top-up is 200 Points.');
+    }
+    if (msg.contains('invalid_egyptian_phone_number')) {
+      return const ServerFailure(message: 'Please enter a valid Egyptian mobile number (01XXXXXXXXX).');
+    }
     if (msg.contains('already active or approved') || msg.contains('duplicate')) {
       return const DuplicatePaymentReferenceFailure();
     }

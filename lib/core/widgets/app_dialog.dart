@@ -60,6 +60,7 @@ class AppAlertDialog extends StatelessWidget {
   final String message;
   final IconData? icon;
   final Color? iconColor;
+  final String? illustrationPath;
   final String buttonText;
   final VoidCallback? onConfirm;
 
@@ -69,6 +70,7 @@ class AppAlertDialog extends StatelessWidget {
     required this.message,
     this.icon,
     this.iconColor,
+    this.illustrationPath,
     this.buttonText = 'OK',
     this.onConfirm,
   });
@@ -84,7 +86,14 @@ class AppAlertDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
+            if (illustrationPath != null) ...[
+              Image.asset(
+                illustrationPath!,
+                height: 120,
+                fit: BoxFit.contain,
+              ),
+              AppSpacing.gapH16,
+            ] else if (icon != null) ...[
               Container(
                 width: 56,
                 height: 56,
@@ -266,6 +275,7 @@ Future<void> showInfoDialog({
   required BuildContext context,
   required String title,
   required String message,
+  String? illustrationPath,
   String buttonText = 'OK',
   VoidCallback? onConfirm,
 }) {
@@ -274,7 +284,8 @@ Future<void> showInfoDialog({
     builder: (context) => AppAlertDialog(
       title: title,
       message: message,
-      icon: AppIcons.info,
+      illustrationPath: illustrationPath,
+      icon: illustrationPath == null ? AppIcons.info : null,
       iconColor: AppColors.primary,
       buttonText: buttonText,
       onConfirm: onConfirm,

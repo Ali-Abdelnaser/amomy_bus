@@ -68,24 +68,38 @@ sequenceDiagram
 
 ---
 
-## 4. Authentication & Session Architecture (Day 2B)
+## 4. Feature Architecture & State Machines
 
-### 4.1. Supported Authentication Providers
-- **Email + Password**: Full Name, Email, Egyptian Phone, Gender, Date of Birth. Passes metadata to Supabase `signUp()`. Triggers backend `handle_new_user()` to instantiate profiles, wallets, and roles.
-- **Google Native Sign-In**: Native Google OAuth on Android and iOS exchanging ID Token with Supabase (`signInWithIdToken()`). If required profile fields (`phone`, `gender`, `date_of_birth`) are missing, routing intercepts to `CompleteProfilePage`.
-- **6-Digit Email OTP Verification**: Real token verification via Supabase `verifyOTP(email: ..., token: ..., type: OtpType.signup)`.
-- **Secure Password Recovery**: Deep-link token exchange (`com.aliabdelnaser.amomy://login-callback`) triggering `ResetPasswordPage`.
+### 4.1. Authentication State Machine
+- Handled by `AuthBloc`.
+- Flow: `SplashPage` -> `AuthCheckRequested` -> `Authenticated` / `Unauthenticated` / `EmailVerificationRequired` / `ProfileCompletionRequired`.
+- Session token persistence across app launches.
 
-### 4.2. Auth State Machine
-```
-[SplashPage] ─► AuthCheckRequested
-                     │
-         ┌───────────┴───────────┐
-         ▼                       ▼
-   [Unauthenticated]       [Authenticated] (or Incomplete)
-         │                       │
-   (Login / Register)            ├─► EmailUnverified ──► [EmailVerificationPage]
-                                 ├─► ProfileIncomplete ──► [CompleteProfilePage]
-                                 └─► Valid Session ──► [PassengerHomePlaceholder]
-```
+### 4.2. Booking & Seat Selection State Machine
+- Handled by `BookingCubit` & `SeatMapCubit`.
+- Flow:
+  1. Direction & Today Trip selection (Outbound / Return, Cairo timezone).
+  2. Boarding Stop Selection from 34 route stops (resolves dynamic fare zone 30/25/20 PTS).
+  3. Interactive 28-Seat Bus Map selection.
+  4. Atomic 5-Minute Hold Creation (`create_booking_hold` RPC locks seat and reserves points).
+  5. Booking Review & Confirmation (`confirm_booking` RPC permanently debits points with frozen snapshot).
+  6. QR Ticket Pass Generation (`BookingQrTicketCard`).
+
+### 4.3. Live GPS Tracking & Progression Engine
+- Handled by `TrackingCubit`, `LiveBusMapWidget`, and `StopEtaEngine`.
+- Realtime subscription on `bus_live_locations` and `trip_stop_events`.
+- Active operational windows: 08:00–12:00 and 13:00–17:00 (offline display outside windows).
+- Stored road-following polyline rendering from `route_geometries`.
+- Monotonic stop arrival detection and ETA calculation.
+- UI stop pin states: Last Stop (yellow), Next Stop (blue), Future (white), Older (muted).
+
+### 4.4. Points Wallet & Top-up Flow
+- Handled by `WalletCubit` and `TopupCubit`.
+- Realtime wallet balance caching (`wallets.cached_available_balance`).
+- Double-entry ledger history from `point_transactions`.
+- Manual top-up request with screenshot proof upload (`payment-proofs` private bucket) and resubmission support.
+
+---
+**Last Updated**: 2026-09-14
+
 

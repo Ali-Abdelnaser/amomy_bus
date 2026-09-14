@@ -5,34 +5,71 @@ enum PassengerTripsStatus { initial, loading, loaded, error }
 
 class PassengerTripsState extends Equatable {
   final PassengerTripsStatus status;
+  final List<PassengerTodayTrip> todayTrips;
+  final PassengerTripPreference? preferredJourney;
+  final List<PassengerBooking> historyTrips;
   final List<PassengerBooking> upcomingTrips;
-  final List<PassengerBooking> pastTrips;
+  final List<RouteStop> availableStops;
   final String? errorMessage;
 
   const PassengerTripsState({
     this.status = PassengerTripsStatus.initial,
+    this.todayTrips = const [],
+    this.preferredJourney,
+    this.historyTrips = const [],
     this.upcomingTrips = const [],
-    this.pastTrips = const [],
+    this.availableStops = const [],
     this.errorMessage,
   });
+
+  List<PassengerTodayTrip> get outboundTodayTrips =>
+      todayTrips.where((t) => t.direction == BookingDirection.outbound).toList();
+
+  List<PassengerTodayTrip> get returnTodayTrips =>
+      todayTrips.where((t) => t.direction == BookingDirection.returnTrip).toList();
+
+  PassengerTodayTrip? get nextAvailableTrip {
+    final available = todayTrips.where((t) => t.isBookable).toList();
+    if (available.isEmpty) return null;
+    available.sort((a, b) => a.departureAt.compareTo(b.departureAt));
+    return available.first;
+  }
 
   PassengerBooking? get nearestUpcomingTrip =>
       upcomingTrips.isNotEmpty ? upcomingTrips.first : null;
 
   PassengerTripsState copyWith({
     PassengerTripsStatus? status,
+    List<PassengerTodayTrip>? todayTrips,
+    PassengerTripPreference? preferredJourney,
+    bool clearPreferredJourney = false,
+    List<PassengerBooking>? historyTrips,
     List<PassengerBooking>? upcomingTrips,
-    List<PassengerBooking>? pastTrips,
+    List<RouteStop>? availableStops,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return PassengerTripsState(
       status: status ?? this.status,
+      todayTrips: todayTrips ?? this.todayTrips,
+      preferredJourney: clearPreferredJourney
+          ? null
+          : (preferredJourney ?? this.preferredJourney),
+      historyTrips: historyTrips ?? this.historyTrips,
       upcomingTrips: upcomingTrips ?? this.upcomingTrips,
-      pastTrips: pastTrips ?? this.pastTrips,
-      errorMessage: errorMessage ?? this.errorMessage,
+      availableStops: availableStops ?? this.availableStops,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
   @override
-  List<Object?> get props => [status, upcomingTrips, pastTrips, errorMessage];
+  List<Object?> get props => [
+        status,
+        todayTrips,
+        preferredJourney,
+        historyTrips,
+        upcomingTrips,
+        availableStops,
+        errorMessage,
+      ];
 }

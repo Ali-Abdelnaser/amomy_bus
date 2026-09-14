@@ -22,14 +22,15 @@ class AmomyApp extends StatelessWidget {
       child: ListenableBuilder(
         listenable: AppLocaleController.instance,
         builder: (context, _) {
+          final locale = AppLocaleController.instance.locale;
           return MaterialApp.router(
             title: AppConfig.instance.appTitle,
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.getTheme(locale),
+            darkTheme: AppTheme.getTheme(locale),
             themeMode: ThemeMode.system,
             routerConfig: appRouter.router,
-            locale: AppLocaleController.instance.locale,
+            locale: locale,
             builder: DevicePreview.appBuilder,
             supportedLocales: LocalizationHelper.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,

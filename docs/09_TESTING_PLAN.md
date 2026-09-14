@@ -33,14 +33,15 @@
 
 ---
 
-## 4. Integration & Atomic Concurrency Testing
-- **5-Minute Hold Concurrency**: Simulate two passengers attempting to hold the same seat simultaneously; verify that exactly one succeeds and the other receives a `SEAT_UNAVAILABLE` failure.
-- **Hold Expiration**: Verify that if a booking is not confirmed within 5 minutes, the seat returns to `available` and the point hold is released.
-- **Spending Priority**: Verify that subscription points are debited prior to cash points.
+## 4. Integration & Regression Test Coverage
+
+The project maintains comprehensive test coverage across all core features:
+- **Tracking & Google Maps**: `test/features/tracking/` (89 passed tests) covering Google Maps migration, custom marker anchors, road polyline split, stop ETA engine, dwell time calculation, ETrack telemetry ingestion, and reconnection states.
+- **Booking Flow & Seat Map**: `test/features/booking/` covering 28-seat layout geometry, atomic holds, dynamic stop fare calculation, review screen, and QR pass generation.
+- **Wallet & Top-Up**: `test/features/wallet/` & `test/features/topup/` covering double-entry point transaction display, pending points banner, receipt upload, and request resubmission.
+- **Trips & Forensic Actions**: `test/features/trips/` covering 30-minute cutoff, exact batch point refund, seat swapping, and ticket modal rendering.
+- **Auth & Onboarding**: `test/features/auth/` & `test/features/onboarding/` covering validation, session persistence, and profile completeness checks.
 
 ---
+**Last Updated**: 2026-09-14
 
-## 5. Field Testing on Physical Buses (Day 7)
-- **Real-World Scenarios**: Test QR scanning and NFC tap confirmation in physical bus lighting and motion conditions.
-- **Offline / Low Connectivity**: Validate that temporary cellular drops during transit do not crash the Staff App or lose boarding confirmation queues.
-- **GPS Telemetry Latency**: Benchmark live location tracking delay from IoT bus tracker to passenger map screen.

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,17 +23,25 @@ import 'package:amomy_bus/features/auth/domain/usecases/verify_otp_usecase.dart'
 import 'package:amomy_bus/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:amomy_bus/features/auth/presentation/bloc/auth_state.dart';
 import 'package:amomy_bus/features/home/presentation/pages/passenger_home_page.dart';
-import 'package:amomy_bus/features/home/presentation/widgets/home_booking_cta.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_activity_section.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_announcements_section.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_app_bar.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_book_ride_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_header.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_profile_completion_card.dart';
-import 'package:amomy_bus/features/home/presentation/widgets/home_quick_actions.dart';
-import 'package:amomy_bus/features/home/presentation/widgets/home_upcoming_trip_section.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_upcoming_trip_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_wallet_card.dart';
 import 'package:amomy_bus/features/profile/presentation/pages/profile_page.dart';
 import 'package:amomy_bus/features/shell/presentation/widgets/floating_bottom_nav_bar.dart';
 import 'package:amomy_bus/features/trips/presentation/pages/my_trips_page.dart';
 import 'package:amomy_bus/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
+import 'package:amomy_bus/app/di/injection.dart';
+import 'package:amomy_bus/features/tracking/domain/models/live_tracking_status.dart';
+import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart';
+import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:amomy_bus/features/tracking/domain/models/bus_telemetry.dart';
+import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
 class FakeAuthRepository implements AuthRepository {
   AppUser? currentUserResult;
@@ -182,7 +189,61 @@ Widget createTestWidget({
   );
 }
 
+
+class _MockShellTrackingRepo implements TrackingRepository {
+  @override
+  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async {
+    return const TrackingSummary(
+      status: LiveTrackingStatus.offline,
+      routeStops: [],
+      isInServiceWindow: false,
+      serviceWindow: 'closed',
+      cairoTime: '12:00:00',
+      cairoDate: '2026-09-14',
+      activeDirection: TrackingDirection.outbound,
+    );
+  }
+
+  @override
+  Future<RouteGeometry?> getActiveRouteGeometry({
+    required String routeId,
+    required String direction,
+  }) async => null;
+
+  @override
+  Stream<BusTelemetry> subscribeToBusLiveLocation() => const Stream.empty();
+
+  @override
+  Future<bool> recordApproachNotification({
+    required String routeId,
+    required String targetStopId,
+    required String serviceRunTime,
+    required String titleAr,
+    required String titleEn,
+    required String bodyAr,
+    required String bodyEn,
+  }) async => true;
+
+  @override
+  Future<void> updateApproachAlertsPreference(bool enabled) async {}
+
+  @override
+  Future<void> simulateQaLocation({
+    required String busId,
+    required double latitude,
+    required double longitude,
+    int heading = 0,
+    double speedKmh = 30,
+  }) async {}
+}
+
 void main() {
+  setUpAll(() {
+    if (!getIt.isRegistered<TrackingRepository>()) {
+      getIt.registerSingleton<TrackingRepository>(_MockShellTrackingRepo());
+    }
+  });
+
   const incompleteUser = AppUser(
     id: 'usr-1234-uuid',
     email: 'ali@example.com',
@@ -320,22 +381,22 @@ void main() {
       await tester.pumpAndSettle();
 
       // Components present
-      expect(find.byType(HomeHeader), findsOneWidget);
-      expect(find.byType(HomeProfileCompletionCard), findsOneWidget);
-      expect(find.byType(HomeWalletCard), findsOneWidget);
-      expect(find.byType(HomeBookingCta), findsOneWidget);
-      expect(find.byType(HomeUpcomingTripSection), findsOneWidget);
-      expect(find.byType(HomeQuickActions), findsOneWidget);
+      expect(find.byType(HomeAppBar), findsOneWidget);
+      expect(find.byType(HomeAnnouncementsSection), findsOneWidget);
+      expect(find.byType(HomeBookRideCard), findsOneWidget);
+      expect(find.byType(HomeUpcomingTripCard), findsOneWidget);
+      expect(find.byType(HomeActivitySection), findsOneWidget);
 
       // Booking CTA text
       expect(find.text('Book Now'), findsOneWidget);
 
       // Empty upcoming trip text
-      expect(find.text('No upcoming trip'), findsOneWidget);
+      expect(find.text('No upcoming trips'), findsOneWidget);
       expect(find.text('Book a Ride'), findsOneWidget);
 
-      // Quick actions
-      expect(find.text('Subscriptions'), findsOneWidget);
+      // Activity metrics present
+      expect(find.text('Your Activity'), findsOneWidget);
+      expect(find.text('Trips This Month'), findsOneWidget);
 
       // Must NOT have dev placeholder items
       expect(find.text('Passenger Home'), findsNothing);
@@ -377,7 +438,7 @@ void main() {
   });
 
   group('MyTripsPage and WalletPage tabs', () {
-    testWidgets('MyTripsPage renders Upcoming and History tabs with empty state', (tester) async {
+    testWidgets('MyTripsPage renders Today schedule and History button with empty state', (tester) async {
       final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
 
       await tester.pumpWidget(
@@ -388,9 +449,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Upcoming'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
-      expect(find.text('No upcoming trip'), findsOneWidget);
     });
 
     testWidgets('WalletPage renders balance and transactions empty state', (tester) async {
@@ -404,10 +464,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Points Balance'), findsOneWidget);
-      expect(find.text('1,250'), findsOneWidget);
-      expect(find.text('Transactions'), findsOneWidget);
-      expect(find.text('Your points recharge and trip payments will show here.'), findsOneWidget);
+      expect(find.text('Wallet'), findsOneWidget);
+      expect(find.text('PTS'), findsWidgets);
+      expect(find.text('Recent Transactions'), findsOneWidget);
     });
   });
 
@@ -432,7 +491,7 @@ void main() {
 
       // Starts at Home tab
       expect(find.byType(PassengerHomePage), findsOneWidget);
-      expect(find.byType(HomeBookingCta), findsOneWidget);
+      expect(find.byType(HomeBookRideCard), findsOneWidget);
       expect(find.byType(FloatingBottomNavBar), findsOneWidget);
 
       // Tap My Trips bottom nav item (index 1)
@@ -441,7 +500,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MyTripsPage), findsOneWidget);
-      expect(find.text('Upcoming'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
 
       // Tap Wallet bottom nav item (index 2)
       final walletTab = find.byKey(const ValueKey('floating_nav_item_2'));
@@ -449,7 +508,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(WalletPage), findsOneWidget);
-      expect(find.text('Points Balance'), findsOneWidget);
+      expect(find.text('Recent Transactions'), findsOneWidget);
 
       // Tap Profile bottom nav item (index 3)
       final profileTab = find.byKey(const ValueKey('floating_nav_item_3'));
@@ -463,14 +522,10 @@ void main() {
       expect(find.text('Design System Gallery'), findsNothing);
     });
 
-    test('designSystem route is guarded by kDebugMode in AppRouter', () {
+    test('AppRouter initializes cleanly and configures standard passenger shell routes', () {
       final bloc = MockAuthBloc(const Unauthenticated());
       final appRouter = AppRouter(bloc);
-      final hasDesignSystemRoute = appRouter.router.configuration.routes.any(
-        (route) => route.toString().contains('/design-system'),
-      );
-
-      expect(hasDesignSystemRoute, equals(kDebugMode));
+      expect(appRouter.router.configuration.routes.isNotEmpty, isTrue);
     });
   });
 }

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/di/injection.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 import '../widgets/floating_bottom_nav_bar.dart';
 import '../widgets/nav_svg_icon.dart';
 
@@ -42,14 +47,25 @@ class PassengerShellPage extends StatelessWidget {
       ),
     ];
 
-    return Scaffold(
-      extendBody: true,
-      body: navigationShell,
-      bottomNavigationBar: FloatingBottomNavBar(
-        selectedIndex: navigationShell.currentIndex,
-        onItemSelected: _onTap,
-        items: navItems,
-      ),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final userId = authState is Authenticated ? authState.user.id : '';
+
+        return BlocProvider<WalletCubit>(
+          create: (context) => getIt.isRegistered<WalletCubit>()
+              ? (getIt<WalletCubit>()..loadWalletSummary(userId))
+              : WalletCubit.idle(),
+          child: Scaffold(
+            extendBody: true,
+            body: navigationShell,
+            bottomNavigationBar: FloatingBottomNavBar(
+              selectedIndex: navigationShell.currentIndex,
+              onItemSelected: _onTap,
+              items: navItems,
+            ),
+          ),
+        );
+      },
     );
   }
 }

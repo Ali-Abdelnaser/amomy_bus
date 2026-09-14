@@ -61,10 +61,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: effectiveLeading,
       automaticallyImplyLeading: showBackButton && automaticallyImplyLeading,
       centerTitle: centerTitle,
-      backgroundColor: backgroundColor ?? AppColors.surface,
+      backgroundColor: Colors.transparent,
       elevation: elevation,
-
-      bottom: bottom,
+      surfaceTintColor: Colors.transparent,
     );
   }
 

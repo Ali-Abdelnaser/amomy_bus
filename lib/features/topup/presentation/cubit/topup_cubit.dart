@@ -1,58 +1,156 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import '../../../../app/di/injection.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../wallet/domain/usecases/get_wallet_summary_usecase.dart';
 import '../../domain/entities/topup_entities.dart';
 import '../../domain/usecases/create_topup_request_usecase.dart';
 import '../../domain/usecases/get_active_payment_methods_usecase.dart';
-import '../../domain/usecases/upload_topup_proof_usecase.dart';
+import '../../domain/usecases/get_payment_config_usecase.dart';
+import '../../domain/usecases/submit_topup_proof_usecase.dart';
 import 'topup_state.dart';
 
 @injectable
 class TopUpCubit extends Cubit<TopUpState> {
+  final GetPaymentConfigUseCase? _getPaymentConfigUseCase;
   final GetActivePaymentMethodsUseCase? _getActivePaymentMethodsUseCase;
   final CreateTopUpRequestUseCase? _createTopUpRequestUseCase;
-  final UploadTopUpProofUseCase? _uploadTopUpProofUseCase;
+  final SubmitTopUpProofUseCase? _submitTopUpProofUseCase;
 
   TopUpCubit(
+    GetPaymentConfigUseCase getPaymentConfigUseCase,
     GetActivePaymentMethodsUseCase getActivePaymentMethodsUseCase,
     CreateTopUpRequestUseCase createTopUpRequestUseCase,
-    UploadTopUpProofUseCase uploadTopUpProofUseCase,
-  )   : _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
+    SubmitTopUpProofUseCase submitTopUpProofUseCase,
+  )   : _getPaymentConfigUseCase = getPaymentConfigUseCase,
+        _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
         _createTopUpRequestUseCase = createTopUpRequestUseCase,
-        _uploadTopUpProofUseCase = uploadTopUpProofUseCase,
+        _submitTopUpProofUseCase = submitTopUpProofUseCase,
         super(const TopUpState());
 
   TopUpCubit.idle()
-      : _getActivePaymentMethodsUseCase = null,
+      : _getPaymentConfigUseCase = null,
+        _getActivePaymentMethodsUseCase = null,
         _createTopUpRequestUseCase = null,
-        _uploadTopUpProofUseCase = null,
+        _submitTopUpProofUseCase = null,
         super(const TopUpState());
 
-  Future<void> loadPaymentMethods() async {
-    if (_getActivePaymentMethodsUseCase == null) return;
-    emit(state.copyWith(isLoadingMethods: true, errorMessage: () => null));
+  void initWithResubmit(TopUpRequest request) {
+    emit(state.copyWith(
+      isResubmit: true,
+      currentStep: TopUpStep.details,
+      createdRequestId: () => request.id,
+      createdPublicId: () => request.publicId,
+      amount: request.requestedAmount,
+      expectedAmountEgp: request.expectedAmountEgp,
+      receivingPhone: () => request.receivingPhone,
+      senderPhone: request.senderPhone ?? '',
+      paymentReference: request.paymentReference ?? '',
+      transferredAt: () => request.transferredAt ?? DateTime.now(),
+      rejectionReason: () => request.rejectionReason,
+      isLoadingConfig: false,
+      errorMessage: () => null,
+    ));
+  }
 
-    final result = await _getActivePaymentMethodsUseCase();
-    result.fold(
-      onError: (failure) {
-        emit(state.copyWith(
-          isLoadingMethods: false,
-          errorMessage: () => failure.message,
-        ));
-      },
-      onSuccess: (methods) {
-        final initialSelected = methods.isNotEmpty ? methods.first : null;
-        emit(state.copyWith(
-          isLoadingMethods: false,
-          paymentMethods: methods,
-          selectedMethod: () => initialSelected,
-        ));
-      },
+  Future<void> init({int availableBalance = 0}) async {
+    emit(state.copyWith(
+      isLoadingConfig: true,
+      availableBalance: availableBalance,
+      errorMessage: () => null,
+      transferredAt: () => DateTime.now(),
+    ));
+
+    int balance = availableBalance;
+    if (balance <= 0 && getIt.isRegistered<GetWalletSummaryUseCase>()) {
+      try {
+        final authBloc = getIt.isRegistered<AuthBloc>() ? getIt<AuthBloc>() : null;
+        final currentUserId = authBloc?.state is Authenticated ? (authBloc!.state as Authenticated).user.id : null;
+        if (currentUserId != null && currentUserId.isNotEmpty) {
+          final summaryResult = await getIt<GetWalletSummaryUseCase>()(currentUserId);
+          summaryResult.fold(
+            onSuccess: (summary) {
+              balance = summary.totalAvailablePoints;
+            },
+            onError: (_) {},
+          );
+        }
+      } catch (_) {}
+    }
+
+    if (_getPaymentConfigUseCase == null || _getActivePaymentMethodsUseCase == null) {
+      emit(state.copyWith(isLoadingConfig: false, availableBalance: balance));
+      return;
+    }
+
+    // Parallel fetch config & methods
+    final configFuture = _getPaymentConfigUseCase();
+    final methodsFuture = _getActivePaymentMethodsUseCase();
+
+    final configResult = await configFuture;
+    final methodsResult = await methodsFuture;
+
+    var config = const PaymentConfig();
+    configResult.fold(
+      onSuccess: (c) => config = c,
+      onError: (_) {},
     );
+
+    List<PaymentMethod> methods = const [];
+    methodsResult.fold(
+      onSuccess: (m) => methods = m,
+      onError: (_) {},
+    );
+
+    if (methods.isEmpty) {
+      methods = const [
+        PaymentMethod(
+          id: 'vodafone_cash_default',
+          code: 'VODAFONE_CASH',
+          nameAr: 'فودافون كاش',
+          nameEn: 'Vodafone Cash',
+          accountIdentifier: '01000000000',
+          instructionsAr: 'قم بتحويل المبلغ المطلوب إلى رقم فودافون كاش أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
+          instructionsEn: 'Transfer the required amount to the Vodafone Cash number above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
+          iconKey: 'vodafone_cash',
+          isActive: true,
+          sortOrder: 1,
+        ),
+        PaymentMethod(
+          id: 'instapay_default',
+          code: 'INSTAPAY',
+          nameAr: 'إنستاباي',
+          nameEn: 'InstaPay',
+          accountIdentifier: '01000000000',
+          instructionsAr: 'قم بالتحويل عبر تطبيق إنستاباي إلى رقم الهاتف أو الحساب أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
+          instructionsEn: 'Transfer via the InstaPay app to the phone number or username above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
+          iconKey: 'instapay',
+          isActive: true,
+          sortOrder: 2,
+        ),
+      ];
+    }
+
+    final initialSelected = methods.isNotEmpty ? methods.first : null;
+    final defaultAmount = config.minimumTopupPoints > 0 ? config.minimumTopupPoints : 200;
+
+    emit(state.copyWith(
+      isLoadingConfig: false,
+      availableBalance: balance,
+      paymentConfig: config,
+      paymentMethods: methods,
+      selectedMethod: () => initialSelected,
+      amount: defaultAmount,
+      expectedAmountEgp: config.calculateExpectedEgp(defaultAmount).toDouble(),
+    ));
   }
 
   void setAmount(int amount) {
+    final expectedEgp = state.paymentConfig.calculateExpectedEgp(amount).toDouble();
     emit(state.copyWith(
       amount: amount,
+      expectedAmountEgp: expectedEgp,
       errorMessage: () => null,
     ));
   }
@@ -64,9 +162,80 @@ class TopUpCubit extends Cubit<TopUpState> {
     ));
   }
 
+  void proceedToInstructions() {
+    if (!state.isAmountValid) {
+      emit(state.copyWith(
+        errorMessage: () => 'Minimum top-up is ${state.paymentConfig.minimumTopupPoints} Points.',
+      ));
+      return;
+    }
+    emit(state.copyWith(
+      currentStep: TopUpStep.instructions,
+      errorMessage: () => null,
+    ));
+  }
+
+  Future<void> confirmTransferAndCreateRequest() async {
+    if (_createTopUpRequestUseCase == null) {
+      emit(state.copyWith(currentStep: TopUpStep.details));
+      return;
+    }
+
+    // If request already created for this exact amount, advance directly
+    if (state.createdRequestId != null && state.amount == state.amount) {
+      emit(state.copyWith(
+        currentStep: TopUpStep.details,
+        errorMessage: () => null,
+      ));
+      return;
+    }
+
+    emit(state.copyWith(isSubmitting: true, errorMessage: () => null));
+
+    final methodCode = state.selectedMethod?.code ?? 'VODAFONE_CASH';
+    final result = await _createTopUpRequestUseCase(
+      amount: state.amount,
+      paymentMethodCode: methodCode,
+    );
+
+    result.fold(
+      onError: (failure) {
+        emit(state.copyWith(
+          isSubmitting: false,
+          errorMessage: () => failure.message,
+        ));
+      },
+      onSuccess: (created) {
+        emit(state.copyWith(
+          isSubmitting: false,
+          createdRequestId: () => created.requestId,
+          createdPublicId: () => created.publicId,
+          expectedAmountEgp: created.expectedAmountEgp,
+          receivingPhone: () => created.receivingPhone,
+          currentStep: TopUpStep.details,
+          errorMessage: () => null,
+        ));
+      },
+    );
+  }
+
+  void setSenderPhone(String phone) {
+    emit(state.copyWith(
+      senderPhone: phone.trim(),
+      errorMessage: () => null,
+    ));
+  }
+
   void setPaymentReference(String reference) {
     emit(state.copyWith(
       paymentReference: reference.trim(),
+      errorMessage: () => null,
+    ));
+  }
+
+  void setTransferredAt(DateTime dateTime) {
+    emit(state.copyWith(
+      transferredAt: () => dateTime,
       errorMessage: () => null,
     ));
   }
@@ -94,65 +263,39 @@ class TopUpCubit extends Cubit<TopUpState> {
     ));
   }
 
-  void goToStep(TopUpStep step) {
-    emit(state.copyWith(
-      currentStep: step,
-      errorMessage: () => null,
-    ));
-  }
-
-  void nextStep() {
-    switch (state.currentStep) {
-      case TopUpStep.amount:
-        if (state.canProceedFromAmount) {
-          goToStep(TopUpStep.paymentMethod);
-        }
-        break;
-      case TopUpStep.paymentMethod:
-        if (state.canProceedFromMethod) {
-          goToStep(TopUpStep.transferDetails);
-        }
-        break;
-      case TopUpStep.transferDetails:
-        if (state.canProceedFromDetails) {
-          goToStep(TopUpStep.review);
-        }
-        break;
-      case TopUpStep.review:
-        submitTopUpRequest();
-        break;
-      case TopUpStep.pendingSuccess:
-        break;
-    }
-  }
-
   void previousStep() {
     switch (state.currentStep) {
       case TopUpStep.amount:
         break;
-      case TopUpStep.paymentMethod:
-        goToStep(TopUpStep.amount);
+      case TopUpStep.instructions:
+        emit(state.copyWith(currentStep: TopUpStep.amount, errorMessage: () => null));
         break;
-      case TopUpStep.transferDetails:
-        goToStep(TopUpStep.paymentMethod);
+      case TopUpStep.details:
+        emit(state.copyWith(currentStep: TopUpStep.instructions, errorMessage: () => null));
         break;
-      case TopUpStep.review:
-        goToStep(TopUpStep.transferDetails);
-        break;
-      case TopUpStep.pendingSuccess:
+      case TopUpStep.pendingReview:
         break;
     }
   }
 
-  Future<void> submitTopUpRequest() async {
-    if (!state.canSubmit) return;
-    if (_createTopUpRequestUseCase == null || _uploadTopUpProofUseCase == null) return;
+  Future<void> submitPaymentProof() async {
+    if (!state.canSubmitDetails) {
+      if (!state.isSenderPhoneValid) {
+        emit(state.copyWith(
+          errorMessage: () => 'Please enter a valid Egyptian mobile number (01XXXXXXXXX).',
+        ));
+        return;
+      }
+      if (!state.isProofValid) {
+        emit(state.copyWith(
+          errorMessage: () => 'Payment screenshot is required.',
+        ));
+        return;
+      }
+      return;
+    }
 
-    final amount = state.amount;
-    final method = state.selectedMethod!;
-    final ref = state.paymentReference;
-    final proofBytes = state.proofBytes!;
-    final proofExt = state.proofExtension ?? 'jpg';
+    if (_submitTopUpProofUseCase == null) return;
 
     emit(state.copyWith(
       isSubmitting: true,
@@ -160,47 +303,32 @@ class TopUpCubit extends Cubit<TopUpState> {
       errorMessage: () => null,
     ));
 
-    // Step 1: Create top-up request to get requestId
-    final createResult = await _createTopUpRequestUseCase(
-      amount: amount,
-      paymentMethodCode: method.code,
-      paymentReference: ref,
+    final result = await _submitTopUpProofUseCase(
+      requestId: state.createdRequestId!,
+      senderPhone: state.senderPhone,
+      transferReference: state.paymentReference.isNotEmpty ? state.paymentReference : null,
+      transferredAt: state.transferredAt ?? DateTime.now(),
+      fileBytes: state.proofBytes!,
+      fileExtension: state.proofExtension ?? 'jpg',
     );
 
-    await createResult.fold(
-      onError: (failure) async {
+    result.fold(
+      onError: (failure) {
         emit(state.copyWith(
           isSubmitting: false,
           proofStatus: ProofUploadStatus.failed,
           errorMessage: () => failure.message,
         ));
       },
-      onSuccess: (requestId) async {
-        // Step 2: Upload screenshot proof to private bucket and attach via hardened RPC
-        final uploadResult = await _uploadTopUpProofUseCase(
-          requestId: requestId,
-          fileBytes: proofBytes,
-          fileExtension: proofExt,
-        );
-
-        uploadResult.fold(
-          onError: (uploadFailure) {
-            emit(state.copyWith(
-              isSubmitting: false,
-              proofStatus: ProofUploadStatus.failed,
-              errorMessage: () => uploadFailure.message,
-            ));
-          },
-          onSuccess: (storedPath) {
-            emit(state.copyWith(
-              isSubmitting: false,
-              isSuccess: true,
-              proofStatus: ProofUploadStatus.uploaded,
-              currentStep: TopUpStep.pendingSuccess,
-              submittedRequestId: () => requestId,
-            ));
-          },
-        );
+      onSuccess: (path) {
+        emit(state.copyWith(
+          isSubmitting: false,
+          isSuccess: true,
+          proofStatus: ProofUploadStatus.uploaded,
+          currentStep: TopUpStep.pendingReview,
+          submittedPublicId: () => state.createdPublicId,
+          errorMessage: () => null,
+        ));
       },
     );
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "630539243829",
+    "project_id": "amomy-32fc9",
+    "storage_bucket": "amomy-32fc9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:630539243829:android:a025f7073de9a6807c7c7c",
+        "android_client_info": {
+          "package_name": "com.aliabdelnaser.amomy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoyFu3M0H0ykrKEAjqSx7qo_9W-uAz8IM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

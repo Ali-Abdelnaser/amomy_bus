@@ -133,6 +133,58 @@
   3. **Profile Completeness Guard**: If an OAuth user signs up without mandatory transport metadata (phone, gender, date of birth), route them immediately to `CompleteProfilePage` before allowing access to the main app.
   4. **Email OTP Code UX**: Utilize Supabase 6-digit email OTP codes (`type: signup`) via `AppOtpField` rather than link-only verification, complete with a 60-second resend throttling timer.
   5. **Cross-Platform Deep Linking**: Standardize deep-link scheme `com.aliabdelnaser.amomy://login-callback` for password recovery across Android Intent Filters and iOS URL Types.
-- **Consequences**: Native user experience without webview redirects, bulletproof identity linking without manual merging, zero client secrets committed, and robust session persistence.
+## ADR 017: Authoritative 28-Seat Physical Bus Layout
+- **Status**: Accepted
+- **Context**: The physical bus fleet operates on a 28-seat configuration (1 front single + 12 left + 10 right + 5 rear bench). The legacy 14-seat layout was insufficient for production capacity.
+- **Decision**: Standardize `buses.capacity = 28`, seed `bus_seats` numbers '1' through '28', and implement custom 2D cabin rendering with exact physical slot coordinates and touch boundaries.
+- **Consequences**: Accurate physical bus parity, robust seat number mapping, and high-precision visual selection.
+
+---
+
+## ADR 018: Dynamic 3-Zone Stop Pricing & Frozen Fare Snapshots
+- **Status**: Accepted
+- **Context**: Uniform fixed pricing per trip fails to accommodate short-distance vs. long-distance passengers across the 34-stop corridor.
+- **Decision**: Implement a 3-tier fare model determined strictly by the boarding stop:
+  - Zone 30 (Stops 1–5): 30 Points
+  - Zone 25 (Stops 6–17): 25 Points
+  - Zone 20 (Stops 18–34): 20 Points
+  Freeze `fare_points_snapshot` at the moment of seat hold creation in `seat_holds` and carry it into `bookings.fare_points` to protect confirmed bookings against future fare modifications.
+- **Consequences**: Fair, zone-based pricing and guaranteed financial immutability for passenger bookings.
+
+---
+
+## ADR 019: Google Maps Platform & Road-Following Google Routes Geometry
+- **Status**: Accepted
+- **Context**: Generic OSM/raster map tiles and straight-line waypoint connections exhibited visual stutter, white flashes, and unrealistic bus paths across water and fields.
+- **Decision**: Migrate entirely to official Google Maps Platform (`google_maps_flutter`), generate road-following high-precision polylines via Google Routes API Edge Function, and apply custom Silver monochrome map styling with upright circular bus markers and teardrop stop pins.
+- **Consequences**: Fluid 60fps vector map rendering, exact road alignment, zero tile pop-in, and premium brand aesthetics.
+
+---
+
+## ADR 020: Hardware-Only ETrack GPS Telemetry & Tracking Windows
+- **Status**: Accepted
+- **Context**: Mobile client GPS relies on driver/staff phones which are prone to battery drain, app backgrounding, and location spoofing.
+- **Decision**: Ingest vehicle telemetry exclusively from dedicated physical ETrack hardware IoT trackers installed on Amomy 1 and Amomy 2 via an automated Edge Function (`etrack-sync`). Limit passenger live tracking visibility to active operational windows (08:00–12:00 and 13:00–17:00).
+- **Consequences**: 100% backend-authoritative vehicle telemetry, zero battery drain on passenger/staff devices, and clear offline states outside service runs.
+
+---
+
+## ADR 021: Today-Only Booking & 30-Minute Cancellation Cutoff with Exact Batch Refund
+- **Status**: Accepted
+- **Context**: Multi-day pre-booking introduces complex scheduling volatility, while late cancellations create empty seats that cannot be resold.
+- **Decision**: Enforce today-only booking (Africa/Cairo timezone) across daily scheduled departures. Allow cancellations and seat swaps up to 30 minutes before departure. Upon cancellation, restore points to the exact originating point batches (`point_batches.remaining_amount`) using `point_transactions` audit records.
+- **Consequences**: Predictable daily seat utilization, passenger flexibility, and zero financial leakage.
+
+---
+
+## ADR 022: Elimination of Legacy 50-Point Fallbacks
+- **Status**: Accepted
+- **Context**: Early prototyping contained a hardcoded 50-point fallback in trip tables and booking procedures.
+- **Decision**: Eliminate all 50-point fallbacks in active migrations and RPCs (`get_available_trips`, `get_today_available_trips`, `create_booking_hold`), ensuring dynamic stop 1 zone fare (30 pts outbound / 20 pts return) serves as the canonical baseline.
+- **Consequences**: 100% price consistency between schedule discovery, seat selection, and wallet debiting.
+
+---
+**Last Updated**: 2026-09-14
+
 
 

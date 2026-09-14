@@ -6,6 +6,8 @@ class AppConfig {
   final String apiBaseUrl;
   final String supabaseUrl;
   final String supabaseAnonKey;
+  final String cartoBasemapKey;
+  final String stadiaMapsApiKey;
   final bool enableLogging;
 
   const AppConfig({
@@ -14,11 +16,17 @@ class AppConfig {
     required this.apiBaseUrl,
     this.supabaseUrl = '',
     this.supabaseAnonKey = '',
+    this.cartoBasemapKey = '',
+    this.stadiaMapsApiKey = '',
     this.enableLogging = true,
   });
 
   bool get hasValidSupabaseConfig =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
+  bool get hasCartoBasemapKey => cartoBasemapKey.isNotEmpty;
+
+  bool get hasStadiaMapsApiKey => stadiaMapsApiKey.isNotEmpty;
 
   static late final AppConfig instance;
 

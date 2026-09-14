@@ -191,8 +191,33 @@ System-wide append-only audit trail.
 
 ---
 
-## 4. Planned Entities for Future Phases (Phase 2 & 3)
-- **Fleet & Trips**: `buses`, `drivers`, `staff_bus_assignments`, `routes`, `stops`, `trip_templates`, `trips`.
-- **Seats & Layouts**: `seat_layouts`, `seats`, `trip_seats`, `seat_holds`.
-- **Bookings & Boarding**: `bookings`, `booking_passengers`, `boarding_events`, `nfc_cards`.
-- **Telemetry & Push**: `device_tokens`, `notifications`.
+## 4. Implemented Fleet, Route & Booking Entities
+
+### 4.1. `public.buses` & `public.bus_seats`
+- `buses`: Stores physical buses (`id`, `name`, `plate_number`, `capacity` = 28, `is_active`).
+- `bus_seats`: Authoritative 28 seat slots per bus (`id`, `bus_id`, `seat_number` '1'..'28', `is_active`).
+
+### 4.2. `public.routes`, `public.stops`, `public.fare_zones` & `public.route_stops`
+- `routes`: Transit corridors (`id`, `name_ar`, `name_en`, `direction` `'outbound'|'return'`).
+- `stops`: 34 landmark stops (`id`, `name_ar`, `name_en`, `locality_ar`, `locality_en`, `latitude`, `longitude`).
+- `fare_zones`: Dynamic pricing zones (`id`, `code` `ZONE_30|ZONE_25|ZONE_20`, `fare_points` 30, 25, 20).
+- `route_stops`: Stop order along route with linked fare zone (`id`, `route_id`, `stop_id`, `fare_zone_id`, `stop_order`).
+
+### 4.3. `public.route_geometries` & `public.route_anchor_points`
+- `route_geometries`: Stored road polyline geometry generated via Google Routes API (`id`, `route_id`, `direction`, `version`, `polyline_encoded`, `polyline_points`, `distance_meters`, `duration_seconds`).
+- `route_anchor_points`: Strategic shaping waypoints defining road trajectories.
+
+### 4.4. `public.trips`, `public.seat_holds` & `public.bookings`
+- `trips`: Daily scheduled departures (`id`, `route_id`, `bus_id`, `service_date`, `departure_at`, `status`, `fare_points`).
+- `seat_holds`: 5-minute atomic reservations (`id`, `trip_id`, `seat_id`, `user_id`, `route_stop_id`, `fare_zone_id`, `fare_points_snapshot`, `status`, `expires_at`).
+- `bookings`: Confirmed reservations (`id`, `trip_id`, `seat_id`, `user_id`, `route_stop_id`, `destination_route_stop_id`, `seat_number_snapshot`, `fare_points`, `qr_token`, `status` `'confirmed'|'cancelled'|'boarded'`).
+
+### 4.5. `public.bus_tracking_devices`, `public.bus_live_locations`, `public.bus_location_history` & `public.trip_stop_events`
+- `bus_tracking_devices`: Hardware IoT trackers mapped to buses (`bus_id`, `provider` `'etrack'`, `provider_device_id`, `provider_device_name` `'Amomy1'|'Amomy2'`).
+- `bus_live_locations`: Authoritative realtime vehicle position (`bus_id`, `latitude`, `longitude`, `speed_kmh`, `heading`, `gps_recorded_at`, `current_stop_id`, `next_stop_id`, `source` `'etrack'`, `is_valid`).
+- `bus_location_history`: Historical breadcrumb logs.
+- `trip_stop_events`: Recorded actual stop arrival events (`trip_id`, `stop_id`, `stop_order`, `arrived_at`, `recorded_at`).
+
+---
+**Last Updated**: 2026-09-14
+

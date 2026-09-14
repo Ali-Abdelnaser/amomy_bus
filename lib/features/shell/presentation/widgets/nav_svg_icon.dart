@@ -114,10 +114,26 @@ class _NavSvgPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
 
     // Road lines & location point from trip.svg
-    canvas.drawLine(const Offset(12.5, 10.5), const Offset(18.0, 10.5), strokePaint);
-    canvas.drawLine(const Offset(16.0, 18.0), const Offset(13.0, 22.0), strokePaint);
-    canvas.drawLine(const Offset(13.0, 22.0), const Offset(8.0, 22.0), strokePaint);
-    canvas.drawLine(const Offset(13.0, 22.0), const Offset(18.0, 22.0), strokePaint);
+    canvas.drawLine(
+      const Offset(12.5, 10.5),
+      const Offset(18.0, 10.5),
+      strokePaint,
+    );
+    canvas.drawLine(
+      const Offset(16.0, 18.0),
+      const Offset(13.0, 22.0),
+      strokePaint,
+    );
+    canvas.drawLine(
+      const Offset(13.0, 22.0),
+      const Offset(8.0, 22.0),
+      strokePaint,
+    );
+    canvas.drawLine(
+      const Offset(13.0, 22.0),
+      const Offset(18.0, 22.0),
+      strokePaint,
+    );
 
     final mainPath = Path();
     mainPath.moveTo(8.482, 18);
@@ -209,10 +225,12 @@ class _NavSvgPainter extends CustomPainter {
     bodyPath.close();
 
     // Center lock circle
-    bodyPath.addRRect(RRect.fromRectAndRadius(
-      const Rect.fromLTWH(10, 10, 2, 1.5),
-      const Radius.circular(0.75),
-    ));
+    bodyPath.addRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(10, 10, 2, 1.5),
+        const Radius.circular(0.75),
+      ),
+    );
 
     canvas.drawPath(path, fillPaint);
     canvas.drawPath(bodyPath, fillPaint);

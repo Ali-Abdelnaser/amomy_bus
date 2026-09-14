@@ -41,3 +41,22 @@ class AlreadyBookedFailure extends Failure {
     super.message = 'This seat is already booked.',
   });
 }
+
+class AlreadyBookedTripFailure extends Failure {
+  const AlreadyBookedTripFailure({
+    super.message = 'You already have an active booking for this trip.',
+  });
+}
+
+class CancellationClosedFailure extends Failure {
+  const CancellationClosedFailure({
+    super.message = 'Cancellation is closed within 30 minutes of departure.',
+  });
+}
+
+class ChangeSeatClosedFailure extends Failure {
+  const ChangeSeatClosedFailure({
+    super.message = 'Changing seats is closed within 30 minutes of departure.',
+  });
+}
+

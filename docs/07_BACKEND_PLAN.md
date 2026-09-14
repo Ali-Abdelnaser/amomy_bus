@@ -98,23 +98,55 @@
   6. Updates `wallets.cached_available_balance`.
   7. Appends `SUBSCRIPTION_CREATED` in `audit_logs`.
 
-### 2.8. `expire_point_batches`
-- **Purpose**: Background scheduled job to expire points past their expiration date.
-- **Security**: `SECURITY DEFINER`, restricted to `service_role` and `postgres` (run by `pg_cron` hourly).
-- **Hold-Safe Idempotency**: Inspects `point_hold_allocations` joined to active `point_holds`; only expires `GREATEST(0, remaining_amount - held_amount)` to protect points reserved for active bookings.
-- **Steps**:
-  1. Selects batches past `expires_at` with `remaining_amount > 0` (`FOR UPDATE SKIP LOCKED`).
-  2. Calculates active held points from `point_hold_allocations`.
-  3. Locks corresponding user wallet.
-  4. Creates `expire` transaction in `point_transactions` for expirable amount.
-  5. Deducts expirable amount from `wallets.cached_available_balance`.
-  6. Sets `point_batches.remaining_amount = remaining_amount - expirable_amount`.
-  7. If batch balance reaches zero, marks related `subscriptions.status = 'expired'`.
-  8. Appends summary `POINTS_EXPIRED_BATCH_JOB` in `audit_logs`.
+### 2.9. `create_booking_hold`
+- **Purpose**: Creates an atomic 5-minute hold on a physical 28-seat slot, resolves the dynamic fare based on boarding stop (30, 25, or 20 PTS), freezes `fare_points_snapshot`, and reserves wallet points via `point_holds` and `point_hold_allocations`.
+- **Security**: `SECURITY DEFINER`, authenticated users only.
+- **Enforcements**: Today-only booking guard, duplicate-trip booking prevention, full profile completeness check, row-level locks on seat and wallet (`FOR UPDATE`).
+
+### 2.10. `confirm_booking`
+- **Purpose**: Permanently debits the held points based on frozen snapshot, converts `seat_holds` to `consumed`, and creates a `bookings` record with a cryptographically secure QR token.
+
+### 2.11. `cancel_passenger_booking`
+- **Purpose**: Cancels a confirmed booking up to 30 minutes before departure and atomically refunds points to the exact originating `point_batches` recorded in `point_transactions`.
+
+### 2.12. `change_booking_seat`
+- **Purpose**: Swaps seat assignment on the same bus up to 30 minutes before departure with atomic conflict validation.
+
+### 2.13. `get_available_trips` & `get_today_available_trips`
+- **Purpose**: Retrieves active today trips with dynamic stop fare, real available seat counts, and duplicate-trip filtering.
+
+### 2.14. `get_route_stops`
+- **Purpose**: Returns the 34 ordered route stops with localized names and linked fare zones.
+
+### 2.15. `compute_bus_progression` & `record_stop_arrival_event`
+- **Purpose**: Server-side calculation of monotonic bus progress along route stops and recording actual stop arrival events in `trip_stop_events`.
 
 ---
 
-## 3. Storage Architecture: `payment-proofs`
+## 3. Implemented Supabase Edge Functions
+
+### 3.1. `etrack-sync` (Hardware IoT GPS Telemetry)
+- **Schedule / Trigger**: Automated periodic invocation.
+- **Scope**: Amomy 1 and Amomy 2 only.
+- **Security**: Authenticates with ETrack portal via secure credentials vault RPC (`get_etrack_credentials`).
+- **Functionality**:
+  1. Fetches real hardware GPS telemetry (latitude, longitude, speed, heading, battery, ignition, hardware timestamp).
+  2. Validates coordinates and timestamps.
+  3. Authoritatively upserts into `bus_live_locations` with `source = 'etrack'`.
+  4. Triggers `compute_bus_progression` and logs breadcrumbs into `bus_location_history`.
+  5. Records execution health in `sync_health_logs`.
+
+### 3.2. `google-route-generator` (Google Routes Road Geometry)
+- **Purpose**: Calls Google Routes API (`directions/v2:computeRoutes`) using ordered `route_anchor_points` to generate official road-following high-precision polylines.
+- **Functionality**:
+  1. Computes road distances and durations.
+  2. Decodes polyline coordinates.
+  3. Validates proximity of all 34 passenger landmark stops.
+  4. Stores versioned, active polyline in `route_geometries`.
+
+---
+
+## 4. Storage Architecture: `payment-proofs`
 - **Bucket Visibility**: **Private (`public = false`)**.
 - **Max File Size**: **10 MB** (10,485,760 bytes).
 - **MIME Types**: `image/jpeg`, `image/png`, `image/webp`, `image/heic`.
@@ -122,18 +154,7 @@
 - **Access Policies**:
   - `INSERT`: Allowed only if user is authenticated and path root matches `auth.uid()`.
   - `SELECT`: Allowed if path root matches `auth.uid()` OR user has `super_admin` role.
-  - `UPDATE` / `DELETE`: Disallowed from client.
 
 ---
+**Last Updated**: 2026-09-14
 
-## 4. Background Expiration Strategy (`pg_cron`)
-For automated background execution on Supabase:
-```sql
--- Recommended pg_cron schedule (e.g. every hour)
-SELECT cron.schedule(
-  'expire-subscription-points-hourly',
-  '0 * * * *',
-  'SELECT public.expire_point_batches();'
-);
-```
-No mobile client is ever required to be open for expiration to occur.

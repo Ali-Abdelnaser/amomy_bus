@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Native API Secrets (Google Maps, etc.)
+android/secrets.properties
+android/**/secrets.properties
+ios/Flutter/Secrets.xcconfig
+**/Secrets.xcconfig

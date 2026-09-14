@@ -8,6 +8,7 @@ import 'package:amomy_bus/features/booking/presentation/cubit/booking_cubit.dart
 import 'package:amomy_bus/features/booking/presentation/cubit/booking_state.dart';
 
 class FakeBookingRepository implements BookingRepository {
+  List<RouteStop> routeStops = [];
   List<TripOption> trips = [];
   List<TripSeat> seats = [];
   BookingHold? hold;
@@ -15,9 +16,18 @@ class FakeBookingRepository implements BookingRepository {
   Failure? failure;
 
   @override
+  ResultFuture<List<RouteStop>> getRouteStops({
+    required BookingDirection direction,
+  }) async {
+    if (failure != null) return Error(failure!);
+    return Success(routeStops);
+  }
+
+  @override
   ResultFuture<List<TripOption>> getAvailableTrips({
     required BookingDirection direction,
-    required DateTime date,
+    DateTime? date,
+    String? routeStopId,
   }) async {
     if (failure != null) return Error(failure!);
     return Success(trips);
@@ -33,6 +43,8 @@ class FakeBookingRepository implements BookingRepository {
   ResultFuture<BookingHold> createBookingHold({
     required String tripId,
     required String seatId,
+    String? routeStopId,
+    String? destinationRouteStopId,
   }) async {
     if (failure != null) return Error(failure!);
     return Success(hold!);
@@ -56,13 +68,60 @@ class FakeBookingRepository implements BookingRepository {
   }
 
   @override
+  ResultFuture<List<PassengerTodayTrip>> getPassengerTodayTrips({
+    String? direction,
+    String? originRouteStopId,
+  }) async {
+    return const Success([]);
+  }
+
+  @override
+  ResultFuture<PassengerTripPreference?> getMyTripPreferences() async {
+    return const Success(null);
+  }
+
+  @override
+  ResultFuture<PassengerTripPreference> setMyTripPreferences({
+    required String originStopId,
+    required String destinationStopId,
+  }) async {
+    return Success(PassengerTripPreference(
+      originStopId: originStopId,
+      destinationStopId: destinationStopId,
+      originNameAr: 'ميت العامل',
+      originNameEn: 'Mit El Amel',
+      originLocalityAr: 'ميت العامل',
+      originLocalityEn: 'Mit El Amel',
+      destinationNameAr: 'بوابة حاسبات',
+      destinationNameEn: 'Computers Gate',
+      destinationLocalityAr: 'المنصورة',
+      destinationLocalityEn: 'Mansoura',
+      updatedAt: DateTime.now(),
+    ));
+  }
+
+  @override
   Stream<void> subscribeToTripSeatUpdates(String tripId) {
     return const Stream.empty();
+  }
+
+  @override
+  ResultFuture<void> cancelBooking(String bookingId) async {
+    return const Success(null);
+  }
+
+  @override
+  ResultFuture<void> changeBookingSeat({
+    required String bookingId,
+    required String newSeatId,
+  }) async {
+    return const Success(null);
   }
 }
 
 void main() {
   late FakeBookingRepository fakeRepo;
+  late GetRouteStopsUseCase getRouteStopsUseCase;
   late GetAvailableTripsUseCase getAvailableTripsUseCase;
   late GetTripSeatMapUseCase getTripSeatMapUseCase;
   late CreateBookingHoldUseCase createBookingHoldUseCase;
@@ -70,17 +129,47 @@ void main() {
   late ConfirmBookingUseCase confirmBookingUseCase;
   late BookingCubit cubit;
 
+  const sampleStopZone30 = RouteStop(
+    routeStopId: 'rs-1',
+    stopId: 'stop-1',
+    stopOrder: 1,
+    stopNameAr: 'كوبرى عزت',
+    localityAr: 'ميت فضالة',
+    fareZoneId: 'zone-30',
+    farePoints: 30.0,
+  );
+
+  const sampleStopZone25 = RouteStop(
+    routeStopId: 'rs-6',
+    stopId: 'stop-6',
+    stopOrder: 6,
+    stopNameAr: 'القنطرة البيضة',
+    localityAr: 'ميت العامل',
+    fareZoneId: 'zone-25',
+    farePoints: 25.0,
+  );
+
+  const sampleStopZone20 = RouteStop(
+    routeStopId: 'rs-18',
+    stopId: 'stop-18',
+    stopOrder: 18,
+    stopNameAr: 'ماركت المراعي',
+    localityAr: 'برج النور الحمص',
+    fareZoneId: 'zone-20',
+    farePoints: 20.0,
+  );
+
   final sampleTrip = TripOption(
     tripId: 'trip-1',
     routeId: 'route-1',
     direction: BookingDirection.outbound,
-    originNameAr: 'محطة أكتوبر',
-    originNameEn: 'October Station',
-    destinationNameAr: 'محطة التجمع',
-    destinationNameEn: 'Tagamoa Station',
+    originNameAr: 'محطة ميت فضالة',
+    originNameEn: 'Meet Fadala',
+    destinationNameAr: 'محطة المنصورة',
+    destinationNameEn: 'Mansoura',
     departureTime: '08:00',
-    departureAt: DateTime.now().add(const Duration(days: 1, hours: 8)),
-    farePoints: 50.0,
+    departureAt: DateTime.now().add(const Duration(hours: 2)),
+    farePoints: 25.0,
     availableSeatsCount: 12,
     status: 'scheduled',
   );
@@ -100,7 +189,11 @@ void main() {
     tripId: 'trip-1',
     seatId: 'seat-1',
     seatNumber: '1A',
-    farePoints: 50.0,
+    farePoints: 25.0,
+    routeStopId: 'rs-6',
+    stopName: 'القنطرة البيضة',
+    locality: 'ميت العامل',
+    fareZoneId: 'zone-25',
     expiresAt: DateTime.now().add(const Duration(minutes: 5)),
     serverTime: DateTime.now(),
   );
@@ -109,15 +202,18 @@ void main() {
     bookingId: 'booking-1',
     tripId: 'trip-1',
     direction: BookingDirection.outbound,
-    originNameAr: 'محطة أكتوبر',
-    originNameEn: 'October Station',
-    destinationNameAr: 'محطة التجمع',
-    destinationNameEn: 'Tagamoa Station',
-    serviceDate: DateTime.now().add(const Duration(days: 1)),
+    originNameAr: 'محطة ميت فضالة',
+    originNameEn: 'Meet Fadala',
+    destinationNameAr: 'محطة المنصورة',
+    destinationNameEn: 'Mansoura',
+    serviceDate: DateTime.now(),
     departureTime: '08:00',
-    departureAt: DateTime.now().add(const Duration(days: 1, hours: 8)),
+    departureAt: DateTime.now().add(const Duration(hours: 2)),
     seatNumber: '1A',
-    farePoints: 50.0,
+    farePoints: 25.0,
+    routeStopId: 'rs-6',
+    stopName: 'القنطرة البيضة',
+    locality: 'ميت العامل',
     status: 'confirmed',
     qrToken: 'AMY_SAMPLE_QR_TOKEN_123',
     bookedAt: DateTime.now(),
@@ -125,6 +221,8 @@ void main() {
 
   setUp(() {
     fakeRepo = FakeBookingRepository();
+    fakeRepo.routeStops = [sampleStopZone30, sampleStopZone25, sampleStopZone20];
+    getRouteStopsUseCase = GetRouteStopsUseCase(fakeRepo);
     getAvailableTripsUseCase = GetAvailableTripsUseCase(fakeRepo);
     getTripSeatMapUseCase = GetTripSeatMapUseCase(fakeRepo);
     createBookingHoldUseCase = CreateBookingHoldUseCase(fakeRepo);
@@ -132,6 +230,7 @@ void main() {
     confirmBookingUseCase = ConfirmBookingUseCase(fakeRepo);
 
     cubit = BookingCubit(
+      getRouteStopsUseCase: getRouteStopsUseCase,
       getAvailableTripsUseCase: getAvailableTripsUseCase,
       getTripSeatMapUseCase: getTripSeatMapUseCase,
       createBookingHoldUseCase: createBookingHoldUseCase,
@@ -144,33 +243,40 @@ void main() {
     cubit.close();
   });
 
-  test('initial state has default step directionAndDate and outbound direction', () {
-    expect(cubit.state.currentStep, BookingStep.directionAndDate);
+  test('initial state has default step direction and outbound direction', () {
+    expect(cubit.state.currentStep, BookingStep.direction);
     expect(cubit.state.selectedDirection, BookingDirection.outbound);
     expect(cubit.state.availableTrips, isEmpty);
     expect(cubit.state.seats, isEmpty);
   });
 
-  test('setDirection updates direction and triggers loadAvailableTrips', () async {
-    fakeRepo.trips = [sampleTrip];
+  test('setDirection updates direction and reloads route stops', () async {
+    fakeRepo.routeStops = [sampleStopZone30];
 
     cubit.setDirection(BookingDirection.returnTrip);
     expect(cubit.state.selectedDirection, BookingDirection.returnTrip);
+    expect(cubit.state.currentStep, BookingStep.direction);
+
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(cubit.state.routeStops, contains(sampleStopZone30));
+  });
+
+  test('proceedToBoardingStop advances step to boardingStop', () {
+    cubit.proceedToBoardingStop();
+    expect(cubit.state.currentStep, BookingStep.boardingStop);
+  });
+
+  test('selectRouteStop sets stop and advances step to departureTime and loads trips', () async {
+    fakeRepo.trips = [sampleTrip];
+
+    cubit.selectRouteStop(sampleStopZone25);
+
+    expect(cubit.state.selectedRouteStop, sampleStopZone25);
+    expect(cubit.state.currentStep, BookingStep.departureTime);
 
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(cubit.state.availableTrips, contains(sampleTrip));
     expect(cubit.state.status, BookingStatus.tripsLoaded);
-  });
-
-  test('setDate updates selected date and reloads trips', () async {
-    fakeRepo.trips = [sampleTrip];
-    final nextDate = DateTime.now().add(const Duration(days: 2));
-
-    cubit.setDate(nextDate);
-    expect(cubit.state.selectedDate.day, nextDate.day);
-
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    expect(cubit.state.availableTrips, contains(sampleTrip));
   });
 
   test('selectTrip loads seat map and advances step to seatMap', () async {
@@ -235,7 +341,7 @@ void main() {
     expect(cubit.state.confirmedBooking, sampleBooking);
   });
 
-  test('backToTrips resets state back to directionAndDate step', () async {
+  test('backToTrips resets state back to departureTime step', () async {
     fakeRepo.seats = [sampleSeat];
     fakeRepo.hold = sampleHold;
 
@@ -245,8 +351,58 @@ void main() {
 
     cubit.backToTrips();
 
-    expect(cubit.state.currentStep, BookingStep.directionAndDate);
+    expect(cubit.state.currentStep, BookingStep.departureTime);
     expect(cubit.state.selectedTrip, isNull);
     expect(cubit.state.activeHold, isNull);
+  });
+
+  test('loadRouteStops populates stops and defaults to first stop (Zone 30: 30 pts)', () async {
+    await cubit.loadRouteStops();
+
+    expect(cubit.state.routeStops.length, 3);
+    expect(cubit.state.selectedRouteStop, sampleStopZone30);
+    expect(cubit.state.selectedRouteStop!.farePoints, 30.0);
+  });
+
+  test('selectRouteStop updates selected stop to Zone 25 (25 pts) and reloads trips', () async {
+    await cubit.loadRouteStops();
+    fakeRepo.trips = [sampleTrip];
+
+    cubit.selectRouteStop(sampleStopZone25);
+
+    expect(cubit.state.selectedRouteStop, sampleStopZone25);
+    expect(cubit.state.selectedRouteStop!.farePoints, 25.0);
+
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(cubit.state.availableTrips, contains(sampleTrip));
+  });
+
+  test('selectRouteStop updates selected stop to Zone 20 (20 pts) and reloads trips', () async {
+    await cubit.loadRouteStops();
+    fakeRepo.trips = [sampleTrip];
+
+    cubit.selectRouteStop(sampleStopZone20);
+
+    expect(cubit.state.selectedRouteStop, sampleStopZone20);
+    expect(cubit.state.selectedRouteStop!.farePoints, 20.0);
+
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(cubit.state.availableTrips, contains(sampleTrip));
+  });
+
+  test('selectSeatAndHold passes selectedRouteStop id to backend hold RPC', () async {
+    await cubit.loadRouteStops();
+    cubit.selectRouteStop(sampleStopZone25);
+
+    fakeRepo.seats = [sampleSeat];
+    fakeRepo.hold = sampleHold;
+
+    cubit.selectTrip(sampleTrip);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    await cubit.selectSeatAndHold(sampleSeat);
+
+    expect(cubit.state.activeHold?.farePoints, 25.0);
+    expect(cubit.state.activeHold?.routeStopId, 'rs-6');
   });
 }

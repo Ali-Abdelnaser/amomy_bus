@@ -5,9 +5,14 @@ import '../../domain/entities/booking_entities.dart';
 import '../models/booking_models.dart';
 
 abstract class BookingRemoteDataSource {
+  Future<List<RouteStopModel>> getRouteStops({
+    required String direction,
+  });
+
   Future<List<TripOptionModel>> getAvailableTrips({
     required String direction,
-    required String date,
+    String? date,
+    String? routeStopId,
   });
 
   Future<List<TripSeatModel>> getTripSeatMap({
@@ -17,6 +22,8 @@ abstract class BookingRemoteDataSource {
   Future<BookingHoldModel> createBookingHold({
     required String tripId,
     required String seatId,
+    String? routeStopId,
+    String? destinationRouteStopId,
   });
 
   Future<void> releaseBookingHold({
@@ -29,6 +36,25 @@ abstract class BookingRemoteDataSource {
 
   Future<List<PassengerBookingModel>> getPassengerBookings();
 
+  Future<List<PassengerTodayTripModel>> getPassengerTodayTrips({
+    String? direction,
+    String? originRouteStopId,
+  });
+
+  Future<PassengerTripPreferenceModel?> getMyTripPreferences();
+
+  Future<PassengerTripPreferenceModel> setMyTripPreferences({
+    required String originStopId,
+    required String destinationStopId,
+  });
+
+  Future<void> cancelBooking(String bookingId);
+
+  Future<void> changeBookingSeat({
+    required String bookingId,
+    required String newSeatId,
+  });
+
   Stream<void> subscribeToTripSeatUpdates(String tripId);
 }
 
@@ -39,16 +65,38 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   BookingRemoteDataSourceImpl(this._supabase);
 
   @override
-  Future<List<TripOptionModel>> getAvailableTrips({
+  Future<List<RouteStopModel>> getRouteStops({
     required String direction,
-    required String date,
   }) async {
     final response = await _supabase.rpc(
-      'get_available_trips',
+      'get_route_stops',
       params: {
         'p_direction': direction,
-        'p_date': date,
       },
+    );
+
+    final list = response as List<dynamic>;
+    return list
+        .map((e) => RouteStopModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<TripOptionModel>> getAvailableTrips({
+    required String direction,
+    String? date,
+    String? routeStopId,
+  }) async {
+    final params = <String, dynamic>{
+      'p_direction': direction,
+    };
+    if (routeStopId != null) {
+      params['p_route_stop_id'] = routeStopId;
+    }
+
+    final response = await _supabase.rpc(
+      'get_today_available_trips',
+      params: params,
     );
 
     final list = response as List<dynamic>;
@@ -78,13 +126,23 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingHoldModel> createBookingHold({
     required String tripId,
     required String seatId,
+    String? routeStopId,
+    String? destinationRouteStopId,
   }) async {
+    final params = <String, dynamic>{
+      'p_trip_id': tripId,
+      'p_seat_id': seatId,
+    };
+    if (routeStopId != null) {
+      params['p_route_stop_id'] = routeStopId;
+    }
+    if (destinationRouteStopId != null) {
+      params['p_destination_route_stop_id'] = destinationRouteStopId;
+    }
+
     final response = await _supabase.rpc(
       'create_booking_hold',
-      params: {
-        'p_trip_id': tripId,
-        'p_seat_id': seatId,
-      },
+      params: params,
     );
 
     return BookingHoldModel.fromJson(response as Map<String, dynamic>);
@@ -130,11 +188,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
         serviceDate: DateTime.now(),
         departureTime: '',
         departureAt: DateTime.now(),
-        seatNumber: bookingJson['seat_number'] as String? ?? '',
-        farePoints: (bookingJson['fare_points'] as num? ?? 50).toDouble(),
+        seatNumber: (bookingJson['seat'] ?? bookingJson['seat_number']) as String? ?? '',
+        farePoints: (bookingJson['fare_points'] as num? ?? 0).toDouble(),
         status: 'confirmed',
         qrToken: bookingJson['qr_token'] as String? ?? '',
         bookedAt: DateTime.now(),
+        routeStopId: bookingJson['route_stop_id'] as String?,
       ),
     );
   }
@@ -146,6 +205,75 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     return list
         .map((e) => PassengerBookingModel.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  @override
+  Future<List<PassengerTodayTripModel>> getPassengerTodayTrips({
+    String? direction,
+    String? originRouteStopId,
+  }) async {
+    final params = <String, dynamic>{};
+    if (direction != null) {
+      params['p_direction'] = direction;
+    }
+    if (originRouteStopId != null) {
+      params['p_origin_route_stop_id'] = originRouteStopId;
+    }
+
+    final response = await _supabase.rpc(
+      'get_passenger_today_trips',
+      params: params,
+    );
+
+    final list = response as List<dynamic>;
+    return list
+        .map((e) => PassengerTodayTripModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<PassengerTripPreferenceModel?> getMyTripPreferences() async {
+    final response = await _supabase.rpc('get_my_trip_preferences');
+    if (response == null) return null;
+    return PassengerTripPreferenceModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<PassengerTripPreferenceModel> setMyTripPreferences({
+    required String originStopId,
+    required String destinationStopId,
+  }) async {
+    final response = await _supabase.rpc(
+      'set_my_trip_preferences',
+      params: {
+        'p_origin_stop_id': originStopId,
+        'p_destination_stop_id': destinationStopId,
+      },
+    );
+
+    return PassengerTripPreferenceModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> cancelBooking(String bookingId) async {
+    await _supabase.rpc(
+      'cancel_passenger_booking',
+      params: {'p_booking_id': bookingId},
+    );
+  }
+
+  @override
+  Future<void> changeBookingSeat({
+    required String bookingId,
+    required String newSeatId,
+  }) async {
+    await _supabase.rpc(
+      'change_booking_seat',
+      params: {
+        'p_booking_id': bookingId,
+        'p_new_seat_id': newSeatId,
+      },
+    );
   }
 
   @override

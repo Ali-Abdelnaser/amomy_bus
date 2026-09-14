@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 import 'package:amomy_bus/features/booking/domain/entities/booking_entities.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/direction_selector.dart';
+import 'package:amomy_bus/features/booking/presentation/widgets/departure_time_selector.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/bus_seat_map_widget.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/booking_review_card.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/app_qr_ticket_widget.dart';
@@ -28,13 +29,13 @@ void main() {
     tripId: 'trip-1',
     routeId: 'route-1',
     direction: BookingDirection.outbound,
-    originNameAr: 'محطة أكتوبر',
-    originNameEn: 'October Station',
-    destinationNameAr: 'محطة التجمع',
-    destinationNameEn: 'Tagamoa Station',
+    originNameAr: 'كوبرى عزت',
+    originNameEn: 'Ezzat Bridge',
+    destinationNameAr: 'بوابة توشكى',
+    destinationNameEn: 'Toshka Gate',
     departureTime: '08:00',
-    departureAt: DateTime(2026, 9, 15, 8, 0),
-    farePoints: 50.0,
+    departureAt: DateTime.now().add(const Duration(hours: 2)),
+    farePoints: 25.0,
     availableSeatsCount: 10,
     status: 'scheduled',
   );
@@ -73,18 +74,18 @@ void main() {
     bookingId: 'b1',
     tripId: 'trip-1',
     direction: BookingDirection.outbound,
-    originNameAr: 'محطة أكتوبر',
-    originNameEn: 'October Station',
-    destinationNameAr: 'محطة التجمع',
-    destinationNameEn: 'Tagamoa Station',
-    serviceDate: DateTime(2026, 9, 15),
+    originNameAr: 'كوبرى عزت',
+    originNameEn: 'Ezzat Bridge',
+    destinationNameAr: 'بوابة توشكى',
+    destinationNameEn: 'Toshka Gate',
+    serviceDate: DateTime.now(),
     departureTime: '08:00',
-    departureAt: DateTime(2026, 9, 15, 8, 0),
+    departureAt: DateTime.now().add(const Duration(hours: 2)),
     seatNumber: '1A',
-    farePoints: 50.0,
+    farePoints: 25.0,
     status: 'confirmed',
     qrToken: 'AMY_TOKEN_123456789',
-    bookedAt: DateTime(2026, 9, 11, 12, 0),
+    bookedAt: DateTime.now(),
   );
 
   group('DirectionSelector Widget', () {
@@ -124,8 +125,49 @@ void main() {
     });
   });
 
+  group('DepartureTimeSelector Widget', () {
+    testWidgets('renders vertical radio rows for trips and selects on tap', (tester) async {
+      TripOption? selected;
+      await tester.pumpWidget(
+        buildTestableWidget(
+          DepartureTimeSelector(
+            trips: [sampleTrip],
+            selectedTrip: null,
+            direction: BookingDirection.outbound,
+            onTripSelected: (t) => selected = t,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('08:00'), findsOneWidget);
+      expect(find.text('Available now'), findsOneWidget);
+
+      await tester.tap(find.text('08:00'));
+      expect(selected, sampleTrip);
+    });
+
+    testWidgets('renders end-of-day empty state when trips are finished', (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          DepartureTimeSelector(
+            trips: const [],
+            selectedTrip: null,
+            direction: BookingDirection.outbound,
+            onTripSelected: (_) {},
+          ),
+          locale: const Locale('ar'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('انتهت رحلات اليوم'), findsOneWidget);
+      expect(find.text('تابع التطبيق غداً لمواعيد الرحلات الجديدة.'), findsOneWidget);
+    });
+  });
+
   group('BusSeatMapWidget', () {
-    testWidgets('renders driver indicator, seat items and legend', (tester) async {
+    testWidgets('renders seat items and responds to taps', (tester) async {
       TripSeat? tappedSeat;
       await tester.pumpWidget(
         buildTestableWidget(
@@ -136,19 +178,13 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Front / Driver'), findsOneWidget);
-      expect(find.text('Available'), findsOneWidget);
-      expect(find.text('Selected'), findsOneWidget);
-      expect(find.text('Held'), findsOneWidget);
-      expect(find.text('Booked'), findsOneWidget);
+      expect(find.bySemanticsLabel('Seat 1A'), findsOneWidget);
+      expect(find.bySemanticsLabel('Seat 1B'), findsOneWidget);
+      expect(find.bySemanticsLabel('Seat 2A'), findsOneWidget);
 
-      expect(find.text('1A'), findsOneWidget);
-      expect(find.text('1B'), findsOneWidget);
-      expect(find.text('2A'), findsOneWidget);
-
-      await tester.tap(find.text('1A'));
+      await tester.tap(find.bySemanticsLabel('Seat 1A'));
       expect(tappedSeat?.seatNumber, '1A');
     });
   });
@@ -170,13 +206,26 @@ void main() {
   });
 
   group('BookingReviewCard', () {
-    testWidgets('displays trip direction, seat, fare and available points', (tester) async {
+    testWidgets('displays boarding stop, seat, dynamic fare and available points', (tester) async {
       bool confirmed = false;
+      const sampleStop = RouteStop(
+        routeStopId: 'rs-6',
+        stopId: 'stop-6',
+        stopOrder: 6,
+        stopNameAr: 'القنطرة البيضة',
+        stopNameEn: 'El Qantara El Baida',
+        localityAr: 'ميت العامل',
+        localityEn: 'Meet El Amel',
+        fareZoneId: 'zone-25',
+        farePoints: 25.0,
+      );
+
       await tester.pumpWidget(
         buildTestableWidget(
           BookingReviewCard(
             trip: sampleTrip,
             seat: sampleSeats.first,
+            routeStop: sampleStop,
             userAvailablePoints: 200.0,
             onConfirm: () => confirmed = true,
           ),
@@ -185,8 +234,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('1A'), findsOneWidget);
-      expect(find.text('50 Points'), findsOneWidget);
+      expect(find.text('25 Points'), findsNWidgets(2)); // Trip fare and Total
       expect(find.text('200 Points'), findsOneWidget);
+      expect(find.text('175 Points'), findsOneWidget); // Balance after booking
+      expect(find.text('El Qantara El Baida'), findsOneWidget);
 
       await tester.tap(find.text('Confirm Booking'));
       expect(confirmed, isTrue);

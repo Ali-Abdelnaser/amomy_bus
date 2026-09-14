@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/amomy_bus_icon.dart';
 import '../../../../core/widgets/app_dialog.dart';
 
 class HomeQuickActions extends StatelessWidget {
@@ -25,6 +27,7 @@ class HomeQuickActions extends StatelessWidget {
     showInfoDialog(
       context: context,
       title: l10n.actionSubscriptions,
+      illustrationPath: AppAssets.busServiceIllustration,
       message: l10n.subscriptionsComingSoonDesc,
       buttonText: l10n.dismiss,
     );
@@ -56,7 +59,10 @@ class HomeQuickActions extends StatelessWidget {
             ),
             _QuickActionTile(
               label: l10n.actionMyTrips,
-              icon: AppIcons.bus,
+              iconWidget: const AmomyBusIcon(
+                size: 20,
+                color: AppColors.primaryDark,
+              ),
               color: AppColors.primaryDark,
               onTap: () => context.go('/trips'),
             ),
@@ -82,14 +88,16 @@ class HomeQuickActions extends StatelessWidget {
 
 class _QuickActionTile extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final Color color;
   final Color? iconColor;
   final VoidCallback onTap;
 
   const _QuickActionTile({
     required this.label,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.color,
     this.iconColor,
     required this.onTap,
@@ -122,10 +130,13 @@ class _QuickActionTile extends StatelessWidget {
                       color: color.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      icon,
-                      size: 20,
-                      color: iconColor ?? color,
+                    child: Center(
+                      child: iconWidget ??
+                          Icon(
+                            icon,
+                            size: 20,
+                            color: iconColor ?? color,
+                          ),
                     ),
                   ),
                   AppSpacing.gapH8,

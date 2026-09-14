@@ -75,9 +75,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Amounts
-      expect(find.text('500 EGP'), findsOneWidget);
-      expect(find.text('200 EGP'), findsOneWidget);
-      expect(find.text('100 EGP'), findsOneWidget);
+      expect(find.text('500 PTS'), findsOneWidget);
+      expect(find.text('200 PTS'), findsOneWidget);
+      expect(find.text('100 PTS'), findsOneWidget);
 
       // Status badges
       expect(find.text('Under Review'), findsOneWidget);
@@ -110,7 +110,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('قيد المراجعة'), findsOneWidget);
-      expect(find.text('فودافون كاش'), findsOneWidget);
+      expect(find.text('500 نقطة'), findsOneWidget);
     });
   });
 }

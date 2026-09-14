@@ -129,7 +129,7 @@ If credentials are not supplied, the app gracefully falls back to offline/mock m
 
 ## 6. Project Documentation Index
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+Comprehensive, reconciled documentation is available in the [`docs/`](docs/) directory:
 
 - [00 — Project Overview](docs/00_PROJECT_OVERVIEW.md)
 - [01 — System Architecture](docs/01_ARCHITECTURE.md)
@@ -149,9 +149,20 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
 ---
 
-## 7. Current Phase Status
+## 7. Current Project Status
 
-- **Phase**: **Day 2B — Authentication, Session Persistence, Auth Guards, Google Sign-In & Recovery**
-- **Status**: **COMPLETE & VERIFIED**
-- **Next Phase**: Day 3A — Wallet & Points Engine Integration (Recharge, Top-up Requests, Ledger).
+- **Status**: **PASSENGER APP IMPLEMENTATION COMPLETE & VERIFIED**
+- **Core Implemented Features**:
+  - Full Authentication & Session Lifecycle (Email/Password, Google Sign-In, 6-digit OTP, Complete Profile Guard)
+  - Passenger Home Hub with Active Trips, Announcements, and Live Mini-Map
+  - Today-Only Scheduled Booking (4 Outbound: 08:00–11:00, 4 Return: 13:00–16:00)
+  - Authoritative 28-Seat Physical Cabin Map (1 front + 12 left + 10 right + 5 rear bench) with 5-minute atomic holds
+  - Dynamic 3-Tier Stop Pricing (34 stops: Zone 30 pts, Zone 25 pts, Zone 20 pts) with frozen fare snapshots
+  - Duplicate-Trip Booking Prevention & 30-Minute Cutoff for Cancellations/Seat Swaps
+  - Live GPS Bus Tracking (Google Maps Platform, Silver AMOMY styling, ETrack hardware IoT telemetry for Amomy 1 & 2, road-following Google Routes geometry, stop arrival events & ETA engine)
+  - Points Wallet (1 EGP = 1 Point, minimum 200 PTS top-up, Vodafone Cash / InstaPay manual top-up with resubmission support, double-entry immutable ledger)
+  - My Trips Hub with QR Ticket Pass, Booking History, Seat Swaps, and Exact-Batch Refunds
+- **Next Development Phase**: Push Notifications Infrastructure (Firebase Messaging, transactional alerts, bus approach triggers).
+- **Last Updated**: 2026-09-14
+
 

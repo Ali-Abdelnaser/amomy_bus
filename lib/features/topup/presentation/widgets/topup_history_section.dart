@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -21,13 +21,13 @@ class TopUpHistorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isArabic = Localizations.localeOf(context).languageCode.startsWith('ar');
     final formatter = NumberFormat('#,###');
     final dateFormat = DateFormat.yMMMd(isArabic ? 'ar' : 'en').add_jm();
 
     if (isLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: CircularProgressIndicator(
             color: AppColors.primary,
@@ -42,8 +42,8 @@ class TopUpHistorySection extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Center(
           child: Column(
@@ -64,27 +64,32 @@ class TopUpHistorySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: requests.map((req) {
         final (statusText, statusColor, statusBg) = switch (req.status) {
+          TopUpStatus.awaitingPayment => (
+              l10n.statusAwaitingPayment,
+              const Color(0xFF475467),
+              const Color(0xFFF2F4F7),
+            ),
           TopUpStatus.pending => (
-              l10n.topUpStatusPending,
-              AppColors.warning,
-              AppColors.warningLight.withValues(alpha: 0.4),
+              l10n.statusPendingReview,
+              const Color(0xFFB54708),
+              const Color(0xFFFEF0C7),
             ),
           TopUpStatus.approved => (
-              l10n.topUpStatusApproved,
-              AppColors.success,
-              AppColors.successLight.withValues(alpha: 0.4),
+              l10n.statusApproved,
+              const Color(0xFF027A48),
+              const Color(0xFFECFDF3),
             ),
           TopUpStatus.rejected => (
-              l10n.topUpStatusRejected,
-              AppColors.error,
-              AppColors.errorLight.withValues(alpha: 0.4),
+              l10n.statusRejected,
+              const Color(0xFFB42318),
+              const Color(0xFFFEE4E2),
             ),
         };
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: AppCard(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,10 +97,12 @@ class TopUpHistorySection extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${formatter.format(req.requestedAmount)} EGP',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        fontWeight: FontWeight.bold,
+                      '${formatter.format(req.requestedAmount)} ${l10n.ptsUnit}',
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
                       ),
                     ),
                     Container(
@@ -106,9 +113,10 @@ class TopUpHistorySection extends StatelessWidget {
                       ),
                       child: Text(
                         statusText,
-                        style: AppTextStyles.labelSmall.copyWith(
+                        style: TextStyle(
+                          fontSize: 11.5,
                           color: statusColor,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -118,24 +126,26 @@ class TopUpHistorySection extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(AppIcons.wallet, size: 14, color: AppColors.textSecondary),
-                    AppSpacing.gapW4,
+                    AppSpacing.gapW6,
                     Text(
-                      req.getLocalizedMethodName(isArabic),
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      'EGP ${formatter.format(req.expectedAmountEgp.round())}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                    if (req.paymentReference != null && req.paymentReference!.isNotEmpty) ...[
+                    if (req.publicId != null && req.publicId!.isNotEmpty) ...[
                       AppSpacing.gapW8,
                       const Text('•', style: TextStyle(color: AppColors.textTertiary)),
                       AppSpacing.gapW8,
-                      Expanded(
-                        child: Text(
-                          req.paymentReference!,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        req.publicId!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                          fontFamily: 'monospace',
                         ),
                       ),
                     ],
@@ -144,7 +154,7 @@ class TopUpHistorySection extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   dateFormat.format(req.createdAt.toLocal()),
-                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textTertiary),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
                 ),
                 if (req.status == TopUpStatus.rejected &&
                     req.rejectionReason != null &&
@@ -153,19 +163,20 @@ class TopUpHistorySection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.errorLight.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(6),
+                      color: const Color(0xFFFEE4E2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(AppIcons.info, size: 14, color: AppColors.error),
+                        const Icon(AppIcons.info, size: 14, color: Color(0xFFB42318)),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             '${l10n.topUpRejectionReason}: ${req.rejectionReason}',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.error,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFB42318),
                               height: 1.3,
                             ),
                           ),

@@ -5,6 +5,7 @@ import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/amomy_bus_icon.dart';
 
 class HomeBookingCta extends StatelessWidget {
   const HomeBookingCta({super.key});
@@ -31,10 +32,9 @@ class HomeBookingCta extends StatelessWidget {
           PositionedDirectional(
             end: -15,
             bottom: -15,
-            child: Icon(
-              AppIcons.bus,
-              size: 130,
-              color: Colors.white.withValues(alpha: 0.08),
+            child: const AmomyBusIcon(
+              width: 130,
+              opacity: 0.12,
             ),
           ),
           Padding(

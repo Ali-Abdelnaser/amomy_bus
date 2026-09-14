@@ -54,6 +54,30 @@ Direct writes (`INSERT`, `UPDATE`, `DELETE`) to financial tables and top-up requ
 | | `INSERT` | **DENIED** (RPC only) | **DENIED** (RPC only) | **DENIED** (RPC only) | **DENIED** (RPC only) |
 | | `UPDATE` | **DENIED** (RPC only) | **DENIED** (RPC only) | **DENIED** (RPC only) | **DENIED** (RPC only) |
 | | `DELETE` | Denied | Denied | Denied | Denied |
+| **`public.routes`** | `SELECT` | Active routes (`is_active = true`) | All routes | All routes | All routes |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.stops`** | `SELECT` | Active stops (`is_active = true`) | All stops | All stops | All stops |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.fare_zones`** | `SELECT` | Active zones (`is_active = true`) | All zones | All zones | All zones |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.route_stops`** | `SELECT` | Active route stops | All route stops | All route stops | All route stops |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.route_geometries`** | `SELECT` | Active verified geoms | All geoms | All geoms | All geoms |
+| | `DML` | **DENIED** (Edge function / Admin) | **DENIED** | Admin only | Super Admin |
+| **`public.buses`** | `SELECT` | Active fleet (`is_active = true`) | All buses | All buses | All buses |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.bus_seats`** | `SELECT` | Active seats | All seats | All seats | All seats |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.trips`** | `SELECT` | Active scheduled/boarding trips | Assigned trips | All trips | All trips |
+| | `DML` | **DENIED** | **DENIED** | Admin only | Super Admin |
+| **`public.seat_holds`** | `SELECT` | Own holds (`auth.uid() = user_id`) | All active holds | All holds | All holds |
+| | `DML` | **DENIED** (RPC only: `create_booking_hold`) | **DENIED** | **DENIED** | **DENIED** |
+| **`public.bookings`** | `SELECT` | Own bookings (`auth.uid() = user_id`) | Manifest for assigned bus | All bookings | All bookings |
+| | `DML` | **DENIED** (RPC only: `confirm_booking`, `cancel_passenger_booking`, `change_booking_seat`) | **DENIED** | All bookings | All bookings |
+| **`public.bus_live_locations`** | `SELECT` | Public / authenticated read for tracking | Read all | Read all | Read all |
+| | `DML` | **DENIED** (Edge function only) | **DENIED** | **DENIED** | Allowed |
+| **`public.trip_stop_events`** | `SELECT` | Authenticated read | Read all | Read all | Read all |
+| | `DML` | **DENIED** (Server calculation only) | Staff record | Admin | Super Admin |
 | **`public.audit_logs`** | `SELECT` | **DENIED** | **DENIED** | **DENIED** | All audit records |
 | | `INSERT` | Internal trigger / RPC only | Internal trigger / RPC only | Internal trigger / RPC only | Internal trigger / RPC only |
 | | `UPDATE` | **DENIED** (Immutable) | **DENIED** (Immutable) | **DENIED** (Immutable) | **DENIED** (Immutable) |
@@ -69,3 +93,7 @@ Direct writes (`INSERT`, `UPDATE`, `DELETE`) to financial tables and top-up requ
 | | `SELECT` | Own folder: `{auth.uid()}/*` | Denied | Denied | All folders & receipts |
 | | `UPDATE` | Denied | Denied | Denied | Denied |
 | | `DELETE` | Denied | Denied | Denied | Allowed |
+
+---
+**Last Updated**: 2026-09-14
+

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../localization/app_locale_controller.dart';
 import 'app_colors.dart';
 import 'app_radius.dart';
 import 'app_spacing.dart';
@@ -6,10 +8,25 @@ import 'app_text_styles.dart';
 
 /// Centralized Material 3 Theme definition for Amomy Bus.
 ///
-/// Strictly preserves official primary brand color #01589F without
-/// letting ColorScheme.fromSeed overwrite it.
+/// Strictly applies:
+/// - Arabic: Tajawal (GoogleFonts.tajawal)
+/// - English: Open Sans (GoogleFonts.openSans)
+///
+/// Preserves official primary brand color #01589F and handles full bi-directional typography.
 abstract final class AppTheme {
-  static ThemeData get lightTheme {
+  /// Builds locale-aware ThemeData with Tajawal for Arabic and Open Sans for English.
+  static ThemeData getTheme([Locale? locale]) {
+    final effectiveLocale = locale ?? AppLocaleController.instance.locale;
+    final isArabic = effectiveLocale.languageCode == 'ar';
+
+    final primaryFont = isArabic
+        ? GoogleFonts.tajawal().fontFamily
+        : GoogleFonts.openSans().fontFamily;
+
+    final fallbackFont = isArabic
+        ? GoogleFonts.openSans().fontFamily!
+        : GoogleFonts.tajawal().fontFamily!;
+
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
@@ -37,40 +54,55 @@ abstract final class AppTheme {
       inversePrimary: AppColors.primaryLight,
     );
 
+    final baseTextTheme = TextTheme(
+      displayLarge: AppTextStyles.rawDisplayLarge,
+      displayMedium: AppTextStyles.rawDisplayMedium,
+      headlineLarge: AppTextStyles.rawHeadlineLarge,
+      headlineMedium: AppTextStyles.rawHeadlineMedium,
+      headlineSmall: AppTextStyles.rawHeadlineSmall,
+      titleLarge: AppTextStyles.rawTitleLarge,
+      titleMedium: AppTextStyles.rawTitleMedium,
+      titleSmall: isArabic
+          ? AppTextStyles.rawTitleSmall.copyWith(fontWeight: FontWeight.w700)
+          : AppTextStyles.rawTitleSmall,
+      bodyLarge: AppTextStyles.rawBodyLarge,
+      bodyMedium: AppTextStyles.rawBodyMedium,
+      bodySmall: AppTextStyles.rawBodySmall,
+      labelLarge: AppTextStyles.rawLabelLarge,
+      labelMedium: isArabic
+          ? AppTextStyles.rawLabelMedium.copyWith(fontWeight: FontWeight.w700)
+          : AppTextStyles.rawLabelMedium,
+      labelSmall: AppTextStyles.rawLabelSmall,
+    );
+
+    final localizedTextTheme = isArabic
+        ? GoogleFonts.tajawalTextTheme(baseTextTheme)
+        : GoogleFonts.openSansTextTheme(baseTextTheme);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
+      fontFamily: primaryFont,
+      fontFamilyFallback: [primaryFont!, fallbackFont],
 
       // Typography
-      textTheme: const TextTheme(
-        displayLarge: AppTextStyles.displayLarge,
-        displayMedium: AppTextStyles.displayMedium,
-        headlineLarge: AppTextStyles.headlineLarge,
-        headlineMedium: AppTextStyles.headlineMedium,
-        headlineSmall: AppTextStyles.headlineSmall,
-        titleLarge: AppTextStyles.titleLarge,
-        titleMedium: AppTextStyles.titleMedium,
-        titleSmall: AppTextStyles.titleSmall,
-        bodyLarge: AppTextStyles.bodyLarge,
-        bodyMedium: AppTextStyles.bodyMedium,
-        bodySmall: AppTextStyles.bodySmall,
-        labelLarge: AppTextStyles.labelLarge,
-        labelMedium: AppTextStyles.labelMedium,
-        labelSmall: AppTextStyles.labelSmall,
-      ),
+      textTheme: localizedTextTheme,
 
       // App Bar Theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.headlineSmall,
-        iconTheme: IconThemeData(color: AppColors.textPrimary, size: 24),
+        titleTextStyle: AppTextStyles.localized(
+          AppTextStyles.rawHeadlineSmall,
+          locale: effectiveLocale,
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 24),
       ),
 
       // Card Theme
@@ -91,7 +123,10 @@ abstract final class AppTheme {
           foregroundColor: AppColors.textOnPrimary,
           disabledBackgroundColor: AppColors.disabledBackground,
           disabledForegroundColor: AppColors.disabled,
-          textStyle: AppTextStyles.labelLarge,
+          textStyle: AppTextStyles.localized(
+            AppTextStyles.rawLabelLarge,
+            locale: effectiveLocale,
+          ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s20,
             vertical: AppSpacing.s12,
@@ -107,7 +142,10 @@ abstract final class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           disabledForegroundColor: AppColors.disabled,
-          textStyle: AppTextStyles.labelLarge,
+          textStyle: AppTextStyles.localized(
+            AppTextStyles.rawLabelLarge,
+            locale: effectiveLocale,
+          ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s20,
             vertical: AppSpacing.s12,
@@ -123,7 +161,10 @@ abstract final class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           disabledForegroundColor: AppColors.disabled,
-          textStyle: AppTextStyles.labelLarge,
+          textStyle: AppTextStyles.localized(
+            AppTextStyles.rawLabelLarge,
+            locale: effectiveLocale,
+          ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s12,
             vertical: AppSpacing.s8,
@@ -140,15 +181,24 @@ abstract final class AppTheme {
           horizontal: AppSpacing.s16,
           vertical: AppSpacing.s16,
         ),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(
-          color: const Color(0xFF94A3B8),
+        hintStyle: AppTextStyles.localized(
+          AppTextStyles.rawBodyMedium.copyWith(
+            color: const Color(0xFF94A3B8),
+          ),
+          locale: effectiveLocale,
         ),
-        labelStyle: AppTextStyles.labelMedium.copyWith(
-          color: AppColors.textSecondary,
+        labelStyle: AppTextStyles.localized(
+          AppTextStyles.rawLabelMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          locale: effectiveLocale,
         ),
-        errorStyle: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.error,
-          fontSize: 12,
+        errorStyle: AppTextStyles.localized(
+          AppTextStyles.rawBodySmall.copyWith(
+            color: AppColors.error,
+            fontSize: 12,
+          ),
+          locale: effectiveLocale,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -182,32 +232,41 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 16,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.topXxl),
-        showDragHandle: true,
+        showDragHandle: false,
         dragHandleColor: AppColors.disabled,
         dragHandleSize: Size(36, 4),
       ),
 
       // Dialog Theme
-      dialogTheme: const DialogThemeData(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusXxl),
-        titleTextStyle: AppTextStyles.headlineSmall,
-        contentTextStyle: AppTextStyles.bodyMedium,
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusXxl),
+        titleTextStyle: AppTextStyles.localized(
+          AppTextStyles.rawHeadlineSmall,
+          locale: effectiveLocale,
+        ),
+        contentTextStyle: AppTextStyles.localized(
+          AppTextStyles.rawBodyMedium,
+          locale: effectiveLocale,
+        ),
       ),
 
       // Chip Theme
-      chipTheme: const ChipThemeData(
+      chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceSoft,
         disabledColor: AppColors.disabledBackground,
         selectedColor: AppColors.primaryLight,
         secondarySelectedColor: AppColors.primary,
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.s8,
           vertical: AppSpacing.s4,
         ),
-        labelStyle: AppTextStyles.labelMedium,
-        shape: RoundedRectangleBorder(
+        labelStyle: AppTextStyles.localized(
+          AppTextStyles.rawLabelMedium,
+          locale: effectiveLocale,
+        ),
+        shape: const RoundedRectangleBorder(
           borderRadius: AppRadius.radiusSm,
           side: BorderSide(color: AppColors.border, width: 1),
         ),
@@ -223,8 +282,11 @@ abstract final class AppTheme {
       // SnackBar Theme
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: AppTextStyles.bodyMedium.copyWith(
-          color: Colors.white,
+        contentTextStyle: AppTextStyles.localized(
+          AppTextStyles.rawBodyMedium.copyWith(
+            color: Colors.white,
+          ),
+          locale: effectiveLocale,
         ),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
         behavior: SnackBarBehavior.floating,
@@ -239,6 +301,9 @@ abstract final class AppTheme {
       ),
     );
   }
+
+  /// Default light theme using current active locale
+  static ThemeData get lightTheme => getTheme();
 
   /// Scaffold placeholder for future Dark Theme expansion
   static ThemeData get darkTheme => lightTheme;

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../auth/domain/entities/app_user.dart';
 
@@ -35,8 +36,12 @@ class BookingProfileGuard {
 
     final result = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: false,
       isScrollControlled: true,
+      showDragHandle: false,
+      elevation: 0,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (sheetContext) => _BookingProfileGuardSheet(
         user: user,
         onNavigateToProfile: onNavigateToProfile,
@@ -60,48 +65,31 @@ class _BookingProfileGuardSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: SafeArea(
-        top: false,
+    return AmomySheetContainer(
+      hasBottomNav: true,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            AppSpacing.gapH20,
-
             // Icon Badge
             Center(
               child: Container(
-                width: 64,
-                height: 64,
+                width: 60,
+                height: 60,
                 decoration: const BoxDecoration(
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   AppIcons.user,
-                  size: 32,
+                  size: 30,
                   color: AppColors.primary,
                 ),
               ),
             ),
-            AppSpacing.gapH16,
+            AppSpacing.gapH14,
 
             // Title
             Text(
@@ -109,21 +97,23 @@ class _BookingProfileGuardSheet extends StatelessWidget {
               style: AppTextStyles.headlineSmall.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
+                fontSize: 18,
               ),
               textAlign: TextAlign.center,
             ),
-            AppSpacing.gapH8,
+            AppSpacing.gapH6,
 
             // Subtitle / Explanation
             Text(
               l10n.bookingGuardSubtitle,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
-                height: 1.4,
+                height: 1.35,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
             ),
-            AppSpacing.gapH20,
+            AppSpacing.gapH16,
 
             // Progress Indicator
             Container(
@@ -168,7 +158,7 @@ class _BookingProfileGuardSheet extends StatelessWidget {
                 ],
               ),
             ),
-            AppSpacing.gapH24,
+            AppSpacing.gapH20,
 
             // Complete Profile CTA
             AppButton(
@@ -184,7 +174,7 @@ class _BookingProfileGuardSheet extends StatelessWidget {
                 }
               },
             ),
-            AppSpacing.gapH12,
+            AppSpacing.gapH10,
 
             // Dismiss Button (Allow user to continue browsing)
             TextButton(

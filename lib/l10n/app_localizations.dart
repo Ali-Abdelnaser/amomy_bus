@@ -677,13 +677,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashPointsPrefix.
   ///
   /// In en, this message translates to:
-  /// **'Cash '**
+  /// **'Cash points'**
   String get cashPointsPrefix;
 
   /// No description provided for @subscriptionPointsPrefix.
   ///
   /// In en, this message translates to:
-  /// **'Subscription '**
+  /// **'Subscription points'**
   String get subscriptionPointsPrefix;
 
   /// No description provided for @bookRideTitle.
@@ -713,7 +713,7 @@ abstract class AppLocalizations {
   /// No description provided for @noUpcomingTrip.
   ///
   /// In en, this message translates to:
-  /// **'No upcoming trip'**
+  /// **'No upcoming trips'**
   String get noUpcomingTrip;
 
   /// No description provided for @bookTripCta.
@@ -797,7 +797,7 @@ abstract class AppLocalizations {
   /// No description provided for @noTransactionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your points recharge and trip payments will show here.'**
+  /// **'Your points activity will appear here.'**
   String get noTransactionsSubtitle;
 
   /// No description provided for @personalInfo.
@@ -1333,6 +1333,564 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back'**
   String get backAction;
+
+  /// No description provided for @announcements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get announcements;
+
+  /// No description provided for @announcementBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get announcementBadge;
+
+  /// No description provided for @offerBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer'**
+  String get offerBadge;
+
+  /// No description provided for @viewTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'View Ticket'**
+  String get viewTicket;
+
+  /// No description provided for @yourActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Activity'**
+  String get yourActivity;
+
+  /// No description provided for @tripsThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips This Month'**
+  String get tripsThisMonth;
+
+  /// No description provided for @completedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Trips'**
+  String get completedTrips;
+
+  /// No description provided for @pointsSpentThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Spent This Month'**
+  String get pointsSpentThisMonth;
+
+  /// No description provided for @missedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed Trips'**
+  String get missedTrips;
+
+  /// No description provided for @noMissedTripsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No missed trips this month.'**
+  String get noMissedTripsMessage;
+
+  /// No description provided for @allTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get allTime;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get thisMonth;
+
+  /// No description provided for @selectBoardingStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Boarding Stop'**
+  String get selectBoardingStop;
+
+  /// No description provided for @boardingStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Boarding Stop'**
+  String get boardingStop;
+
+  /// No description provided for @noStopsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No boarding stops available at this time'**
+  String get noStopsAvailable;
+
+  /// No description provided for @chooseSeatAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Seat Again'**
+  String get chooseSeatAgain;
+
+  /// No description provided for @holdExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your seat hold has expired. Please choose a seat again.'**
+  String get holdExpiredMessage;
+
+  /// No description provided for @seatHeldFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat held for {time}'**
+  String seatHeldFor(String time);
+
+  /// No description provided for @bookingSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Summary'**
+  String get bookingSummaryTitle;
+
+  /// No description provided for @totalFare.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalFare;
+
+  /// No description provided for @availableBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Available balance'**
+  String get availableBalanceLabel;
+
+  /// No description provided for @afterBookingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'After booking'**
+  String get afterBookingLabel;
+
+  /// No description provided for @notEnoughPointsDeficit.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough points. You need {deficit} more points to complete this booking.'**
+  String notEnoughPointsDeficit(int deficit);
+
+  /// No description provided for @reviewTicketNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'You can review your ticket in My Trips after booking.'**
+  String get reviewTicketNotice;
+
+  /// No description provided for @fromStop.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get fromStop;
+
+  /// No description provided for @toStop.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get toStop;
+
+  /// No description provided for @departureTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure Time'**
+  String get departureTimeTitle;
+
+  /// No description provided for @departureSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get departureSelected;
+
+  /// No description provided for @departureAvailableNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Available now'**
+  String get departureAvailableNow;
+
+  /// No description provided for @fewSeatsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Few seats left'**
+  String get fewSeatsLeft;
+
+  /// No description provided for @alreadyBookedTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an active booking for this trip.'**
+  String get alreadyBookedTrip;
+
+  /// No description provided for @seatNumberSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat {seatNumber} selected'**
+  String seatNumberSelected(String seatNumber);
+
+  /// No description provided for @noMoreAvailableTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'No more available trips for today'**
+  String get noMoreAvailableTrips;
+
+  /// No description provided for @recentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Transactions'**
+  String get recentTransactions;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
+  /// No description provided for @noTransactionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet'**
+  String get noTransactionsTitle;
+
+  /// No description provided for @cardTravelBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Your travel balance'**
+  String get cardTravelBalance;
+
+  /// No description provided for @amomyWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'AMOMY Wallet'**
+  String get amomyWallet;
+
+  /// No description provided for @txTypeTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get txTypeTrip;
+
+  /// No description provided for @txTypeTopUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Top-up'**
+  String get txTypeTopUp;
+
+  /// No description provided for @txTypeRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Refund'**
+  String get txTypeRefund;
+
+  /// No description provided for @txTypeBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get txTypeBonus;
+
+  /// No description provided for @txTypeGift.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift'**
+  String get txTypeGift;
+
+  /// No description provided for @txTypeAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance Adjustment'**
+  String get txTypeAdjustment;
+
+  /// No description provided for @ptsUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'PTS'**
+  String get ptsUnit;
+
+  /// No description provided for @howManyPointsToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'How many points would you like to add?'**
+  String get howManyPointsToAdd;
+
+  /// No description provided for @minTopupNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum top-up is 200 Points.'**
+  String get minTopupNotice;
+
+  /// No description provided for @customAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Amount'**
+  String get customAmount;
+
+  /// No description provided for @pointsEquivalentEgp.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} Points = {egp} EGP'**
+  String pointsEquivalentEgp(String points, String egp);
+
+  /// No description provided for @mobileCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Cash'**
+  String get mobileCash;
+
+  /// No description provided for @transferAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Amount'**
+  String get transferAmount;
+
+  /// No description provided for @transferTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer To'**
+  String get transferTo;
+
+  /// No description provided for @copyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyNumber;
+
+  /// No description provided for @numberCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Number copied to clipboard'**
+  String get numberCopied;
+
+  /// No description provided for @instructionStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Open your mobile wallet.'**
+  String get instructionStep1;
+
+  /// No description provided for @instructionStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Transfer the exact amount.'**
+  String get instructionStep2;
+
+  /// No description provided for @instructionStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Keep the confirmation message.'**
+  String get instructionStep3;
+
+  /// No description provided for @instructionStep4.
+  ///
+  /// In en, this message translates to:
+  /// **'4. Return here and submit the transfer details.'**
+  String get instructionStep4;
+
+  /// No description provided for @iveTransferredCta.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve Made the Transfer'**
+  String get iveTransferredCta;
+
+  /// No description provided for @senderPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender Phone Number'**
+  String get senderPhoneLabel;
+
+  /// No description provided for @senderPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'01XXXXXXXXX'**
+  String get senderPhoneHint;
+
+  /// No description provided for @senderPhoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid Egyptian mobile number (01XXXXXXXXX)'**
+  String get senderPhoneInvalid;
+
+  /// No description provided for @transferReferenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference / Transaction ID'**
+  String get transferReferenceLabel;
+
+  /// No description provided for @transferReferenceOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional if not provided by wallet'**
+  String get transferReferenceOptional;
+
+  /// No description provided for @transferDateTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Date & Time'**
+  String get transferDateTimeLabel;
+
+  /// No description provided for @paymentScreenshotLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Screenshot'**
+  String get paymentScreenshotLabel;
+
+  /// No description provided for @tapToUploadScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to upload screenshot'**
+  String get tapToUploadScreenshot;
+
+  /// No description provided for @screenshotAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt attached'**
+  String get screenshotAttached;
+
+  /// No description provided for @submitDetailsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Transfer Details'**
+  String get submitDetailsAction;
+
+  /// No description provided for @paymentSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Submitted'**
+  String get paymentSubmittedTitle;
+
+  /// No description provided for @paymentUnderReviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your transfer is under review.'**
+  String get paymentUnderReviewSubtitle;
+
+  /// No description provided for @statusPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Under Review'**
+  String get statusPendingReview;
+
+  /// No description provided for @statusAwaitingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting Payment'**
+  String get statusAwaitingPayment;
+
+  /// No description provided for @statusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get statusApproved;
+
+  /// No description provided for @statusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get statusRejected;
+
+  /// No description provided for @requestIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Request ID'**
+  String get requestIdLabel;
+
+  /// No description provided for @backToWalletCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Wallet'**
+  String get backToWalletCta;
+
+  /// No description provided for @stepPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get stepPoints;
+
+  /// No description provided for @stepPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get stepPayment;
+
+  /// No description provided for @stepConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get stepConfirm;
+
+  /// No description provided for @vodafoneCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Vodafone Cash'**
+  String get vodafoneCash;
+
+  /// No description provided for @instapay.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay'**
+  String get instapay;
+
+  /// No description provided for @choosePaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose payment method'**
+  String get choosePaymentMethod;
+
+  /// No description provided for @instapayAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay Account'**
+  String get instapayAccount;
+
+  /// No description provided for @txTypePointsAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Adjustment'**
+  String get txTypePointsAdjustment;
+
+  /// No description provided for @pendingPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Points'**
+  String get pendingPoints;
+
+  /// No description provided for @paymentCouldNotBeVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment couldn\'t be verified'**
+  String get paymentCouldNotBeVerified;
+
+  /// No description provided for @resubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit'**
+  String get resubmit;
+
+  /// No description provided for @resubmitPaymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit Payment'**
+  String get resubmitPaymentTitle;
+
+  /// No description provided for @resubmitForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit for Review'**
+  String get resubmitForReview;
+
+  /// No description provided for @paymentResubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Resubmitted'**
+  String get paymentResubmittedTitle;
+
+  /// No description provided for @submittedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get submittedOn;
+
+  /// No description provided for @viewAllPendingTopUps.
+  ///
+  /// In en, this message translates to:
+  /// **'View all pending top-ups'**
+  String get viewAllPendingTopUps;
 }
 
 class _AppLocalizationsDelegate

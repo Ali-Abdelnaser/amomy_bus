@@ -370,11 +370,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get transactions => 'سجل المعاملات';
 
   @override
-  String get noTransactions => 'لا توجد معاملات سابقة';
+  String get noTransactions => 'لا توجد معاملات بعد';
 
   @override
-  String get noTransactionsSubtitle =>
-      'عمليات شحن النقاط ودفع الرحلات ستظهر هنا.';
+  String get noTransactionsSubtitle => 'ستظهر تفاصيل ومعاملات نقاطك هنا.';
 
   @override
   String get personalInfo => 'البيانات الشخصية';
@@ -663,4 +662,297 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backAction => 'رجوع';
+
+  @override
+  String get announcements => 'الإعلانات';
+
+  @override
+  String get announcementBadge => 'تنبيه';
+
+  @override
+  String get offerBadge => 'عرض';
+
+  @override
+  String get viewTicket => 'عرض التذكرة';
+
+  @override
+  String get yourActivity => 'نشاطك';
+
+  @override
+  String get tripsThisMonth => 'رحلات هذا الشهر';
+
+  @override
+  String get completedTrips => 'رحلات مكتملة';
+
+  @override
+  String get pointsSpentThisMonth => 'نقاط مصروفة هذا الشهر';
+
+  @override
+  String get missedTrips => 'رحلات فائتة';
+
+  @override
+  String get noMissedTripsMessage => 'لا توجد رحلات فائتة هذا الشهر.';
+
+  @override
+  String get allTime => 'إجمالي';
+
+  @override
+  String get thisMonth => 'هذا الشهر';
+
+  @override
+  String get selectBoardingStop => 'اختر نقطة الركوب';
+
+  @override
+  String get boardingStop => 'نقطة الركوب';
+
+  @override
+  String get noStopsAvailable => 'لا توجد نقاط ركوب متاحة حالياً';
+
+  @override
+  String get chooseSeatAgain => 'اختيار مقعد مرة أخرى';
+
+  @override
+  String get holdExpiredMessage =>
+      'انتهت مدة حجز المقعد. يرجى اختيار المقعد مرة أخرى.';
+
+  @override
+  String seatHeldFor(String time) {
+    return 'المقعد محجوز لك لمدة $time';
+  }
+
+  @override
+  String get bookingSummaryTitle => 'ملخص الحجز';
+
+  @override
+  String get totalFare => 'الإجمالي';
+
+  @override
+  String get availableBalanceLabel => 'الرصيد المتاح';
+
+  @override
+  String get afterBookingLabel => 'بعد الحجز';
+
+  @override
+  String notEnoughPointsDeficit(int deficit) {
+    return 'رصيد النقاط غير كافٍ. تحتاج إلى $deficit نقطة إضافية لإتمام هذا الحجز.';
+  }
+
+  @override
+  String get reviewTicketNotice => 'يمكنك عرض تذكرتك لاحقًا من رحلاتي.';
+
+  @override
+  String get fromStop => 'من';
+
+  @override
+  String get toStop => 'إلى';
+
+  @override
+  String get departureTimeTitle => 'ميعاد الرحلة';
+
+  @override
+  String get departureSelected => 'تم الاختيار';
+
+  @override
+  String get departureAvailableNow => 'متاح الآن';
+
+  @override
+  String get fewSeatsLeft => 'مقاعد محدودة';
+
+  @override
+  String get alreadyBookedTrip => 'لقد قمت بحجز هذه الرحلة بالفعل.';
+
+  @override
+  String seatNumberSelected(String seatNumber) {
+    return 'تم اختيار مقعد $seatNumber';
+  }
+
+  @override
+  String get noMoreAvailableTrips => 'انتهت رحلات اليوم';
+
+  @override
+  String get recentTransactions => 'آخر المعاملات';
+
+  @override
+  String get viewAll => 'عرض الكل';
+
+  @override
+  String get noTransactionsTitle => 'لا توجد معاملات بعد';
+
+  @override
+  String get cardTravelBalance => 'رصيد رحلاتك';
+
+  @override
+  String get amomyWallet => 'محفظة عمومي';
+
+  @override
+  String get txTypeTrip => 'رحلة';
+
+  @override
+  String get txTypeTopUp => 'شحن نقاط';
+
+  @override
+  String get txTypeRefund => 'استرداد حجز';
+
+  @override
+  String get txTypeBonus => 'مكافأة';
+
+  @override
+  String get txTypeGift => 'هدية';
+
+  @override
+  String get txTypeAdjustment => 'تعديل رصيد';
+
+  @override
+  String get ptsUnit => 'نقطة';
+
+  @override
+  String get howManyPointsToAdd => 'كم عدد النقاط التي ترغب في شحنها؟';
+
+  @override
+  String get minTopupNotice => 'الحد الأدنى للشحن هو 200 نقطة.';
+
+  @override
+  String get customAmount => 'مبلغ مخصص';
+
+  @override
+  String pointsEquivalentEgp(String points, String egp) {
+    return '$points نقطة = $egp ج.م';
+  }
+
+  @override
+  String get mobileCash => 'محفظة كاش (فودافون كاش / أورنج كاش)';
+
+  @override
+  String get transferAmount => 'مبلغ التحويل';
+
+  @override
+  String get transferTo => 'تحويل إلى';
+
+  @override
+  String get copyNumber => 'نسخ';
+
+  @override
+  String get numberCopied => 'تم نسخ الرقم إلى الحافظة';
+
+  @override
+  String get instructionStep1 =>
+      '١. افتح تطبيق محفظتك الإلكترونية (أنا فودافون، أورنج كاش...).';
+
+  @override
+  String get instructionStep2 => '٢. قم بتحويل المبلغ المحدد أعلاه بدقة.';
+
+  @override
+  String get instructionStep3 =>
+      '٣. احتفظ برسالة تأكيد التحويل أو لقطة شاشة للإيصال.';
+
+  @override
+  String get instructionStep4 =>
+      '٤. عُد هنا وأرسل بيانات التحويل لتأكيد الشحن.';
+
+  @override
+  String get iveTransferredCta => 'لقد قمت بالتحويل';
+
+  @override
+  String get senderPhoneLabel => 'رقم الهاتف المُرسل منه';
+
+  @override
+  String get senderPhoneHint => '01XXXXXXXXX';
+
+  @override
+  String get senderPhoneInvalid =>
+      'يرجى إدخال رقم محمول مصري صحيح (01XXXXXXXXX)';
+
+  @override
+  String get transferReferenceLabel => 'رقم العملية أو المرجع';
+
+  @override
+  String get transferReferenceOptional => 'اختياري إذا لم يتوفر برقم الإيصال';
+
+  @override
+  String get transferDateTimeLabel => 'تاريخ ووقت التحويل';
+
+  @override
+  String get paymentScreenshotLabel => 'صورة إيصال التحويل';
+
+  @override
+  String get tapToUploadScreenshot => 'اضغط لإرفاق لقطة شاشة للإيصال';
+
+  @override
+  String get screenshotAttached => 'تم إرفاق الإيصال بنجاح';
+
+  @override
+  String get submitDetailsAction => 'إرسال بيانات التحويل';
+
+  @override
+  String get paymentSubmittedTitle => 'تم إرسال بيانات الدفع';
+
+  @override
+  String get paymentUnderReviewSubtitle =>
+      'طلب الشحن قيد المراجعة حالياً من قبل الإدارة.';
+
+  @override
+  String get statusPendingReview => 'قيد المراجعة';
+
+  @override
+  String get statusAwaitingPayment => 'بانتظار التحويل';
+
+  @override
+  String get statusApproved => 'تمت الموافقة';
+
+  @override
+  String get statusRejected => 'مرفوض';
+
+  @override
+  String get requestIdLabel => 'رقم الطلب';
+
+  @override
+  String get backToWalletCta => 'العودة للمحفظة';
+
+  @override
+  String get stepPoints => 'النقاط';
+
+  @override
+  String get stepPayment => 'طريقة الدفع';
+
+  @override
+  String get stepConfirm => 'التأكيد';
+
+  @override
+  String get vodafoneCash => 'فودافون كاش';
+
+  @override
+  String get instapay => 'إنستاباي';
+
+  @override
+  String get choosePaymentMethod => 'اختر طريقة الدفع';
+
+  @override
+  String get instapayAccount => 'حساب إنستاباي';
+
+  @override
+  String get txTypePointsAdjustment => 'تعديل نقاط';
+
+  @override
+  String get pendingPoints => 'نقاط قيد المراجعة';
+
+  @override
+  String get paymentCouldNotBeVerified => 'تعذر التحقق من الدفع';
+
+  @override
+  String get resubmit => 'إعادة التقديم';
+
+  @override
+  String get resubmitPaymentTitle => 'إعادة تقديم الدفع';
+
+  @override
+  String get resubmitForReview => 'إعادة التقديم للمراجعة';
+
+  @override
+  String get paymentResubmittedTitle => 'تمت إعادة تقديم الدفع';
+
+  @override
+  String get submittedOn => 'قُدم في';
+
+  @override
+  String get viewAllPendingTopUps => 'عرض جميع النقاط المعلقة';
 }

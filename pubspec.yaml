@@ -61,6 +61,11 @@ dependencies:
   lucide_icons_flutter: ^3.1.19
   image_picker: ^1.1.2
   qr_flutter: ^4.1.0
+  google_fonts: ^6.2.1
+  audioplayers: ^6.8.1
+  flutter_map: ^8.1.0
+  latlong2: ^0.9.1
+  google_maps_flutter: ^2.18.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -93,9 +98,19 @@ flutter:
   # Assets registration
   assets:
     - assets/
+    - assets/animations/
+    - assets/illustrations/states/
+    - assets/illustrations/booking/
+    - assets/booking/
+    - assets/illustrations/trips/
+    - assets/audio/
+    - assets/illustrations/tracking/
+    - assets/map/
     - assets/logo_transperunt.png
     - assets/logo_WhiteBg.png
     - assets/splash.png
+    - assets/vodafone_cash.webp
+    - assets/instapay.webp
 
 flutter_native_splash:
   color: "#FFFFFF"
