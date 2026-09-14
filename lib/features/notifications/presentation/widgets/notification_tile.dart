@@ -29,9 +29,14 @@ class NotificationTile extends StatelessWidget {
         return AppIcons.wallet;
       case NotificationType.busApproaching:
       case NotificationType.tripUpdate:
+      case NotificationType.tripDelayed:
+      case NotificationType.busArrivedAtBoardingStop:
+      case NotificationType.nextStopUpdate:
         return AppIcons.bus;
       case NotificationType.system:
       case NotificationType.unknown:
+      case NotificationType.generalAnnouncement:
+      case NotificationType.serviceUpdate:
         return AppIcons.notification;
     }
   }
@@ -41,16 +46,21 @@ class NotificationTile extends StatelessWidget {
       case NotificationType.bookingConfirmed:
       case NotificationType.topupApproved:
       case NotificationType.walletCredit:
+      case NotificationType.busArrivedAtBoardingStop:
         return AppColors.success;
       case NotificationType.bookingCancelled:
       case NotificationType.topupRejected:
         return AppColors.error;
       case NotificationType.busApproaching:
+      case NotificationType.tripDelayed:
         return AppColors.warning;
       case NotificationType.seatChanged:
       case NotificationType.walletRefund:
       case NotificationType.tripUpdate:
+      case NotificationType.nextStopUpdate:
       case NotificationType.system:
+      case NotificationType.generalAnnouncement:
+      case NotificationType.serviceUpdate:
       case NotificationType.unknown:
         return AppColors.primary;
     }

@@ -24,7 +24,9 @@ import '../../../tracking/presentation/widgets/home_live_tracking_card.dart';
 import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 import '../../../wallet/presentation/cubit/wallet_state.dart';
 
-class PassengerHomePage extends StatelessWidget {
+import '../../../notifications/presentation/services/notification_service.dart';
+
+class PassengerHomePage extends StatefulWidget {
   final HomeCubit? homeCubit;
   final WalletCubit? walletCubit;
   final TrackingCubit? trackingCubit;
@@ -79,19 +81,39 @@ class PassengerHomePage extends StatelessWidget {
   ];
 
   @override
+  State<PassengerHomePage> createState() => _PassengerHomePageState();
+}
+
+class _PassengerHomePageState extends State<PassengerHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNotificationPermission();
+    });
+  }
+
+  void _checkNotificationPermission() {
+    if (!mounted) return;
+    if (getIt.isRegistered<NotificationService>()) {
+      getIt<NotificationService>().promptPermissionIfNeeded(context);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<HomeCubit>(
           create: (context) =>
-              homeCubit ??
+              widget.homeCubit ??
               (getIt.isRegistered<HomeCubit>()
                   ? (getIt<HomeCubit>()..loadHomeData())
                   : HomeCubit.idle()),
         ),
         BlocProvider<TrackingCubit>(
           create: (context) =>
-              trackingCubit ??
+              widget.trackingCubit ??
               (getIt.isRegistered<TrackingCubit>()
                     ? (getIt<TrackingCubit>()..loadTrackingData())
                     : TrackingCubit(repository: getIt())
@@ -140,10 +162,10 @@ class PassengerHomePage extends StatelessWidget {
 
               // Loading / Skeleton State
               final isLoading = state.isLoading || state.isInitial;
-              final summary = state.summary ?? _skeletonSummary;
+              final summary = state.summary ?? PassengerHomePage._skeletonSummary;
               final announcements = state.isLoaded
                   ? state.announcements
-                  : _skeletonAnnouncements;
+                  : PassengerHomePage._skeletonAnnouncements;
 
               return RefreshIndicator(
                 color: AppColors.primary,
@@ -156,7 +178,7 @@ class PassengerHomePage extends StatelessWidget {
                     ),
                   ];
                   try {
-                    final cubit = walletCubit ?? context.read<WalletCubit>();
+                    final cubit = widget.walletCubit ?? context.read<WalletCubit>();
                     final authState = context.read<AuthBloc>().state;
                     final userId = authState is Authenticated
                         ? authState.user.id
@@ -200,7 +222,7 @@ class PassengerHomePage extends StatelessWidget {
                         Builder(
                           builder: (context) {
                             final parentWalletCubit =
-                                walletCubit ??
+                                widget.walletCubit ??
                                 () {
                                   try {
                                     return context.read<WalletCubit>();

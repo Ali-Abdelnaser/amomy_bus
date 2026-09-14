@@ -6,6 +6,7 @@ import '../../features/notifications/data/datasources/notification_remote_dataso
 import '../../features/notifications/data/repositories/notification_repository_impl.dart';
 import '../../features/notifications/domain/repositories/notification_repository.dart';
 import '../../features/notifications/presentation/cubit/notification_cubit.dart';
+import '../../features/notifications/presentation/services/local_notification_service.dart';
 import '../../features/notifications/presentation/services/notification_service.dart';
 import '../../features/tracking/data/datasources/tracking_remote_datasource.dart';
 import '../../features/tracking/data/repositories/tracking_repository_impl.dart';
@@ -35,16 +36,27 @@ Future<void> configureDependencies() async {
       ),
     );
   }
+  if (!getIt.isRegistered<LocalNotificationService>()) {
+    getIt.registerLazySingleton<LocalNotificationService>(
+      () => LocalNotificationService(),
+    );
+  }
   if (!getIt.isRegistered<NotificationService>()) {
     getIt.registerLazySingleton<NotificationService>(
       () => NotificationService(
         repository: getIt<NotificationRepository>(),
+        localNotifications: getIt<LocalNotificationService>(),
       ),
     );
   }
   if (!getIt.isRegistered<NotificationCubit>()) {
     getIt.registerFactory<NotificationCubit>(
-      () => NotificationCubit(repository: getIt<NotificationRepository>()),
+      () => NotificationCubit(
+        repository: getIt<NotificationRepository>(),
+        notificationService: getIt.isRegistered<NotificationService>()
+            ? getIt<NotificationService>()
+            : null,
+      ),
     );
   }
 

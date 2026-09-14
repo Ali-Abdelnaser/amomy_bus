@@ -94,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                             AuthHeaderWidget(
                               title: l10n.loginTitle,
                               subtitle: l10n.loginSubtitle,
-                              logoHeight: 230,
+                              logoHeight: 280,
                             ).appFadeIn(),
                             AppSpacing.gapH20,
 

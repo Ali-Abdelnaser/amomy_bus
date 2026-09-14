@@ -159,24 +159,25 @@ export async function getGoogleAccessToken(config: FirebaseConfig): Promise<stri
   );
 
   const encodedSignature = base64UrlEncode(new Uint8Array(signature));
-  const assertion = `${signatureInput}.${encodedSignature}`;
+  const jwtAssertion = `${signatureInput}.${encodedSignature}`;
 
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion,
+      assertion: jwtAssertion,
     }),
   });
 
-  if (!tokenResponse.ok) {
-    throw new Error("Failed to exchange OAuth2 JWT for Google access token");
+  if (!tokenResp.ok) {
+    const errText = await tokenResp.text();
+    throw new Error(`Google OAuth2 Token Exchange Failed: ${tokenResp.status} ${errText}`);
   }
 
-  const tokenData = await tokenResponse.json();
+  const tokenData = await tokenResp.json();
   cachedAccessToken = tokenData.access_token;
   tokenExpiresAt = now + (tokenData.expires_in || 3600);
 
@@ -185,60 +186,43 @@ export async function getGoogleAccessToken(config: FirebaseConfig): Promise<stri
 
 export async function sendFcmMessage(
   message: FcmMessage,
-  config?: FirebaseConfig | null,
+  config: FirebaseConfig,
 ): Promise<FcmSendResult> {
-  const activeConfig = config ?? getFirebaseConfig();
-  if (!activeConfig) {
-    return {
-      success: false,
-      error: "Firebase credentials not configured",
-    };
-  }
-
   try {
-    const accessToken = await getGoogleAccessToken(activeConfig);
-    const endpoint = `https://fcm.googleapis.com/v1/projects/${activeConfig.projectId}/messages:send`;
+    const accessToken = await getGoogleAccessToken(config);
+    const url = `https://fcm.googleapis.com/v1/projects/${config.projectId}/messages:send`;
 
-    const fcmMessageBody: Record<string, unknown> = {
-      token: message.token,
+    const fcmPayload = {
+      message: {
+        token: message.token,
+        ...(message.notification ? { notification: message.notification } : {}),
+        ...(message.data ? { data: message.data } : {}),
+        android: {
+          priority: message.android?.priority ?? "high",
+          notification: {
+            channel_id: message.android?.notification?.channelId ?? "amomy_high_importance",
+            sound: message.android?.notification?.sound ?? "default",
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: message.apns?.payload?.aps?.sound ?? "default",
+              badge: message.apns?.payload?.aps?.badge ?? 1,
+              content_available: message.apns?.payload?.aps?.contentAvailable ?? true,
+            },
+          },
+        },
+      },
     };
 
-    if (message.notification) {
-      fcmMessageBody.notification = {
-        title: message.notification.title,
-        body: message.notification.body,
-        ...(message.notification.imageUrl ? { image: message.notification.imageUrl } : {}),
-      };
-    }
-
-    if (message.data) {
-      fcmMessageBody.data = message.data;
-    }
-
-    if (message.android) {
-      fcmMessageBody.android = {
-        priority: message.android.priority || "high",
-        notification: {
-          channel_id: message.android.notification?.channelId || "amomy_bus_tracking_channel",
-          sound: message.android.notification?.sound || "default",
-          ...(message.android.notification?.clickAction
-            ? { click_action: message.android.notification.clickAction }
-            : {}),
-        },
-      };
-    }
-
-    if (message.apns) {
-      fcmMessageBody.apns = message.apns;
-    }
-
-    const response = await fetch(endpoint, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json; UTF-8",
       },
-      body: JSON.stringify({ message: fcmMessageBody }),
+      body: JSON.stringify(fcmPayload),
     });
 
     if (response.ok) {
@@ -249,67 +233,240 @@ export async function sendFcmMessage(
       };
     }
 
-    const errorJson = await response.json().catch(() => ({}));
-    const errorCode = errorJson?.error?.details?.[0]?.errorCode || errorJson?.error?.status || "UNKNOWN";
+    const errorData = await response.json().catch(() => ({}));
+    const errorCode = errorData?.error?.details?.[0]?.errorCode || errorData?.error?.status || "";
     const isUnregistered =
       errorCode === "UNREGISTERED" ||
-      errorJson?.error?.message?.includes("not registered") ||
-      response.status === 404;
+      errorCode === "NOT_FOUND" ||
+      response.status === 404 ||
+      JSON.stringify(errorData).includes("UNREGISTERED") ||
+      JSON.stringify(errorData).includes("Requested entity was not found");
 
     return {
       success: false,
-      error: `FCM error status: ${response.status}`,
+      error: errorData?.error?.message || `FCM error HTTP ${response.status}`,
       unregisteredToken: isUnregistered,
     };
-  } catch (_e) {
+  } catch (err: unknown) {
     return {
       success: false,
-      error: "Failed to dispatch FCM message",
+      error: err instanceof Error ? err.message : String(err),
     };
   }
 }
 
 // ============================================================================
-// Edge Function Request Handler
+// CENTRAL AUTHORITATIVE EVENT CATALOG (TypeScript Definition)
 // ============================================================================
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-secret",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+export interface EventCatalogItem {
+  type: string;
+  category: "service_updates" | "booking_updates" | "wallet_updates" | "trip_updates";
+  titleAr: string;
+  bodyAr: string;
+  titleEn: string;
+  bodyEn: string;
+  screen: string;
+  data: Record<string, string>;
+  isPushOptional: boolean;
+  dedupeStrategy: string;
+}
+
+export const EVENT_CATALOG: Record<string, EventCatalogItem> = {
+  system: {
+    type: "system",
+    category: "service_updates",
+    titleAr: "إشعار من عمومي",
+    bodyAr: "تحديثات وتنبيهات هامة تخص خدمة عمومي باص.",
+    titleEn: "AMOMY Notice",
+    bodyEn: "Important updates regarding AMOMY bus service.",
+    screen: "notifications",
+    data: { screen: "notifications" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  general_announcement: {
+    type: "general_announcement",
+    category: "service_updates",
+    titleAr: "إعلان عام",
+    bodyAr: "يسر عمومي إعلامكم بجداول ومواعيد التشغيل المحدثة.",
+    titleEn: "General Announcement",
+    bodyEn: "AMOMY is pleased to announce updated service schedules.",
+    screen: "home",
+    data: { screen: "home" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  service_update: {
+    type: "service_update",
+    category: "service_updates",
+    titleAr: "تحديث الخدمة",
+    bodyAr: "تم تحديث مسارات ومحطات التوقف لخدمة أفضل.",
+    titleEn: "Service Update",
+    bodyEn: "Routes and stops have been updated for better service.",
+    screen: "notifications",
+    data: { screen: "notifications" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  booking_confirmed: {
+    type: "booking_confirmed",
+    category: "booking_updates",
+    titleAr: "تم تأكيد حجزك",
+    bodyAr: "تم تأكيد رحلتك الساعة 08:00 صباحاً والمقعد رقم 7.",
+    titleEn: "Booking confirmed",
+    bodyEn: "Your 08:00 AM trip is confirmed. Seat #7.",
+    screen: "ticket",
+    data: { screen: "ticket", booking_id: "test-booking-id" },
+    isPushOptional: true,
+    dedupeStrategy: "booking_id",
+  },
+  booking_cancelled: {
+    type: "booking_cancelled",
+    category: "booking_updates",
+    titleAr: "تم إلغاء الحجز",
+    bodyAr: "تم إلغاء حجز رحلتك بنجاح واسترداد النقاط إلى محفظتك.",
+    titleEn: "Booking cancelled",
+    bodyEn: "Your trip booking has been cancelled and points returned.",
+    screen: "trips",
+    data: { screen: "trips" },
+    isPushOptional: true,
+    dedupeStrategy: "booking_id",
+  },
+  seat_changed: {
+    type: "seat_changed",
+    category: "booking_updates",
+    titleAr: "تم تغيير المقعد",
+    bodyAr: "تم تغيير مقعدك إلى رقم 14 بنجاح.",
+    titleEn: "Seat updated",
+    bodyEn: "Your seat has been changed to #14.",
+    screen: "ticket",
+    data: { screen: "ticket", booking_id: "test-booking-id" },
+    isPushOptional: true,
+    dedupeStrategy: "booking_id",
+  },
+  topup_approved: {
+    type: "topup_approved",
+    category: "wallet_updates",
+    titleAr: "تم قبول طلب الشحن",
+    bodyAr: "تم إضافة 300 نقطة إلى محفظتك بنجاح.",
+    titleEn: "Top-up approved",
+    bodyEn: "300 points were added to your wallet.",
+    screen: "wallet",
+    data: { screen: "wallet" },
+    isPushOptional: true,
+    dedupeStrategy: "request_id",
+  },
+  topup_rejected: {
+    type: "topup_rejected",
+    category: "wallet_updates",
+    titleAr: "لم يتم قبول طلب الشحن",
+    bodyAr: "راجع تفاصيل الطلب أو أعد المحاولة بإرفاق إيصال صالح.",
+    titleEn: "Top-up not approved",
+    bodyEn: "Please review your top-up request or submit a valid receipt.",
+    screen: "wallet",
+    data: { screen: "wallet" },
+    isPushOptional: true,
+    dedupeStrategy: "request_id",
+  },
+  wallet_credit: {
+    type: "wallet_credit",
+    category: "wallet_updates",
+    titleAr: "إضافة نقاط",
+    bodyAr: "تم إضافة 50 نقطة مكافأة إلى رصيدك.",
+    titleEn: "Points credited",
+    bodyEn: "50 reward points were added to your balance.",
+    screen: "wallet",
+    data: { screen: "wallet" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  wallet_refund: {
+    type: "wallet_refund",
+    category: "wallet_updates",
+    titleAr: "تم استرداد النقاط",
+    bodyAr: "تمت إعادة 100 نقطة إلى محفظتك.",
+    titleEn: "Points refunded",
+    bodyEn: "100 points were returned to your wallet.",
+    screen: "wallet",
+    data: { screen: "wallet" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  bus_approaching: {
+    type: "bus_approaching",
+    category: "trip_updates",
+    titleAr: "الأتوبيس يقترب من محطتك",
+    bodyAr: "عمومي باص يقترب من محطة أحمد ماهر. استعد للركوب.",
+    titleEn: "Your bus is approaching",
+    bodyEn: "Your bus is approaching Ahmed Maher stop. Please get ready.",
+    screen: "live_map",
+    data: { screen: "live_map", stop_name: "Ahmed Maher" },
+    isPushOptional: true,
+    dedupeStrategy: "booking_run_approaching",
+  },
+  bus_arrived_at_boarding_stop: {
+    type: "bus_arrived_at_boarding_stop",
+    category: "trip_updates",
+    titleAr: "الأتوبيس وصل محطتك",
+    bodyAr: "الأتوبيس وصل الآن إلى محطة أحمد ماهر.",
+    titleEn: "Your bus has arrived",
+    bodyEn: "The bus has arrived at Ahmed Maher stop.",
+    screen: "live_map",
+    data: { screen: "live_map", stop_name: "Ahmed Maher" },
+    isPushOptional: true,
+    dedupeStrategy: "booking_run_arrival",
+  },
+  trip_update: {
+    type: "trip_update",
+    category: "trip_updates",
+    titleAr: "تحديث على الرحلة",
+    bodyAr: "الأوتوبيس يسير بانتظام في مسار الرحلة الحالي.",
+    titleEn: "Trip update",
+    bodyEn: "The bus is proceeding normally on its current route.",
+    screen: "live_map",
+    data: { screen: "live_map" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  trip_delayed: {
+    type: "trip_delayed",
+    category: "trip_updates",
+    titleAr: "تحديث على الرحلة",
+    bodyAr: "يوجد تأخير بسيط بسبب حركة المرور على مسار الرحلة.",
+    titleEn: "Trip update",
+    bodyEn: "Your current trip is slightly delayed due to traffic.",
+    screen: "live_map",
+    data: { screen: "live_map" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
+  next_stop_update: {
+    type: "next_stop_update",
+    category: "trip_updates",
+    titleAr: "المحطة القادمة",
+    bodyAr: "المحطة القادمة هي جيهان.",
+    titleEn: "Next stop",
+    bodyEn: "The next stop is Jihan.",
+    screen: "live_map",
+    data: { screen: "live_map", next_stop: "Jihan" },
+    isPushOptional: true,
+    dedupeStrategy: "none",
+  },
 };
 
+// ============================================================================
+// HTTP Server / Edge Handler
+// ============================================================================
+
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-secret",
+  };
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
-  }
-
-  const url = new URL(req.url);
-
-  // Health / Config Validation Route (Safe: never exposes secrets or tokens)
-  if (req.method === "GET" || url.pathname.endsWith("/health")) {
-    const configured = isFirebaseConfigured();
-    return new Response(
-      JSON.stringify({
-        status: "ok",
-        configured,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
   }
 
   try {
@@ -318,7 +475,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Firebase service credentials are not configured on the server.",
+          error: "Firebase service account credentials are not configured on Supabase.",
         }),
         {
           status: 503,
@@ -327,16 +484,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const payload = await req.json().catch(() => null);
-    if (!payload) {
+    if (req.method === "GET") {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid JSON body" }),
+        JSON.stringify({
+          status: "ok",
+          configured: true,
+          projectId: config.projectId,
+          clientEmail: config.clientEmail,
+        }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
+
+    const payload = await req.json().catch(() => ({}));
 
     // Health action via POST
     if (payload.action === "health" || payload.action === "check_config") {
@@ -360,9 +523,9 @@ Deno.serve(async (req: Request) => {
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // =========================================================================
-    // 1. SAFE DEVELOPER SELF-TEST PUSH PATH
+    // 1. NOTIFICATION TEST LAB (Tester Account Functional Simulator)
     // =========================================================================
-    if (payload.action === "self_test") {
+    if (payload.action === "test_event" || payload.action === "self_test") {
       if (!token) {
         return new Response(
           JSON.stringify({ success: false, error: "Unauthorized: Missing authentication token" }),
@@ -385,44 +548,159 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Fetch active device tokens for THIS authenticated user only
-      const { data: deviceTokens, error: tokensError } = await adminClient
-        .from("user_device_tokens")
-        .select("token, platform")
+      // Check tester authorization
+      const { data: testerData } = await adminClient
+        .from("app_testers")
+        .select("notification_lab_enabled")
         .eq("user_id", user.id)
-        .eq("is_active", true);
+        .maybeSingle();
 
-      if (tokensError || !deviceTokens || deviceTokens.length === 0) {
+      const { data: roleData } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const { data: qaOverrideData } = await adminClient
+        .from("qa_booking_time_overrides")
+        .select("enabled")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isTester =
+        Boolean(testerData?.notification_lab_enabled) ||
+        roleData?.role === "admin" ||
+        roleData?.role === "super_admin" ||
+        Boolean(qaOverrideData?.enabled);
+
+      if (!isTester && payload.action === "test_event") {
         return new Response(
-          JSON.stringify({
-            success: false,
-            error: "No active device tokens found for your account. Please enable notifications in the app first.",
-          }),
+          JSON.stringify({ success: false, error: "Notification Test Lab access denied." }),
           {
-            status: 404,
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           },
         );
       }
 
-      const titleAr = "اختبار إشعارات عمومي";
-      const bodyAr = "الإشعارات تعمل بنجاح.";
-      const titleEn = "AMOMY Notification Test";
-      const bodyEn = "Push notifications are working successfully.";
+      // Resolve and validate event catalog entry
+      const eventKey = String(payload.event_type || payload.type || (payload.action === "self_test" ? "system" : ""));
+      if (payload.action === "test_event" && (!eventKey || !EVENT_CATALOG[eventKey])) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Invalid or unsupported event_type: ${eventKey}` }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
 
-      // Insert matching in-app notification record
-      await adminClient.from("notifications").insert({
-        user_id: user.id,
-        type: "system",
-        title_ar: titleAr,
-        body_ar: bodyAr,
-        title_en: titleEn,
-        body_en: bodyEn,
-        data: { screen: "notifications" },
-      });
+      const catalogItem = EVENT_CATALOG[eventKey] || EVENT_CATALOG.system;
 
-      // Send push to active device tokens
+      const titleAr = payload.title_ar || catalogItem.titleAr;
+      const bodyAr = payload.body_ar || catalogItem.bodyAr;
+      const titleEn = payload.title_en || catalogItem.titleEn;
+      const bodyEn = payload.body_en || catalogItem.bodyEn;
+      const eventCategory = catalogItem.category;
+
+      // 1. Always record in-app notification inbox row for the user
+      let inboxInserted = false;
+      try {
+        const insertRes = await adminClient.from("notifications").insert({
+          user_id: user.id,
+          type: catalogItem.type,
+          title_ar: titleAr,
+          body_ar: bodyAr,
+          title_en: titleEn,
+          body_en: bodyEn,
+          data: { ...catalogItem.data, ...(payload.data || {}) },
+          created_at: new Date().toISOString(),
+        });
+        inboxInserted = !insertRes.error;
+      } catch (_) {
+        inboxInserted = false;
+      }
+
+      // 2. Evaluate recipient notification preferences
+      const { data: prefs } = await adminClient
+        .from("notification_preferences")
+        .select("all_enabled, service_updates, booking_updates, wallet_updates, trip_updates")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const forceDelivery = Boolean(payload.force_delivery) && isTester;
+      let isPushAllowed = true;
+
+      if (!forceDelivery) {
+        if (prefs) {
+          if (!prefs.all_enabled) {
+            isPushAllowed = false;
+          } else {
+            const categoryAllowed = prefs[eventCategory];
+            if (categoryAllowed === false) {
+              isPushAllowed = false;
+            }
+          }
+        }
+      }
+
+      // 3. If push is suppressed by user preference
+      if (!isPushAllowed) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            event_type: catalogItem.type,
+            category: eventCategory,
+            preference_suppressed: true,
+            forced: false,
+            notification_inbox_inserted: inboxInserted,
+            delivered: 0,
+            message: "In-app notification saved. Push delivery suppressed by your Notification Settings preference.",
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // 4. Push allowed: Fetch active device tokens for the caller
+      const { data: deviceTokens } = await adminClient
+        .from("user_device_tokens")
+        .select("token, platform")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      if (!deviceTokens || deviceTokens.length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            event_type: catalogItem.type,
+            category: eventCategory,
+            preference_suppressed: false,
+            forced: forceDelivery,
+            notification_inbox_inserted: inboxInserted,
+            total_devices: 0,
+            delivered: 0,
+            message: "In-app notification saved. No registered active device tokens found for push.",
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // Optional delay
+      if (typeof payload.delay_seconds === "number" && payload.delay_seconds > 0) {
+        const safeDelay = Math.min(payload.delay_seconds, 30);
+        await new Promise((resolve) => setTimeout(resolve, safeDelay * 1000));
+      }
+
+      // 5. Send FCM push to device tokens
       let deliveredCount = 0;
+      let lastFcmError: string | undefined;
+
       for (const dt of deviceTokens) {
         const message: FcmMessage = {
           token: dt.token,
@@ -431,13 +709,20 @@ Deno.serve(async (req: Request) => {
             body: bodyEn,
           },
           data: {
-            screen: "notifications",
-            type: "system",
+            type: catalogItem.type,
+            category: eventCategory,
+            screen: catalogItem.screen,
+            title_ar: titleAr,
+            body_ar: bodyAr,
+            title_en: titleEn,
+            body_en: bodyEn,
+            ...catalogItem.data,
+            ...(payload.data || {}),
           },
           android: {
             priority: "high",
             notification: {
-              channelId: "amomy_bus_tracking_channel",
+              channelId: "amomy_high_importance",
               sound: "default",
             },
           },
@@ -446,6 +731,7 @@ Deno.serve(async (req: Request) => {
               aps: {
                 sound: "default",
                 badge: 1,
+                contentAvailable: true,
               },
             },
           },
@@ -454,24 +740,35 @@ Deno.serve(async (req: Request) => {
         const res = await sendFcmMessage(message, config);
         if (res.success) {
           deliveredCount++;
-        } else if (res.unregisteredToken) {
-          // Deactivate permanently invalid token
-          await adminClient
-            .from("user_device_tokens")
-            .update({ is_active: false, updated_at: new Date().toISOString() })
-            .eq("token", dt.token);
+        } else {
+          lastFcmError = res.error || "FCM dispatch error";
+          if (res.unregisteredToken) {
+            // Deactivate dead token
+            await adminClient
+              .from("user_device_tokens")
+              .update({ is_active: false, updated_at: new Date().toISOString() })
+              .eq("token", dt.token);
+          }
         }
       }
 
+      const allSuccess = deliveredCount > 0;
       return new Response(
         JSON.stringify({
-          success: deliveredCount > 0,
+          success: allSuccess,
+          event_type: catalogItem.type,
+          category: eventCategory,
+          preference_suppressed: false,
+          forced: forceDelivery,
           total_devices: deviceTokens.length,
           delivered: deliveredCount,
-          message: deliveredCount > 0 ? "Test notification delivered" : "Failed to deliver to device tokens",
+          fcm_failures: deviceTokens.length - deliveredCount,
+          notification_inbox_inserted: inboxInserted,
+          message: allSuccess ? "Test notification delivered successfully" : "Failed to deliver to device tokens",
+          error: allSuccess ? undefined : lastFcmError,
         }),
         {
-          status: deliveredCount > 0 ? 200 : 502,
+          status: allSuccess ? 200 : 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
@@ -480,7 +777,6 @@ Deno.serve(async (req: Request) => {
     // =========================================================================
     // 2. GENERIC BACKEND AUTHORIZED SEND
     // =========================================================================
-    // Verify caller is service_role or internal admin secret
     const isServiceRole = token && (token === supabaseServiceKey || token.includes("service_role"));
     const internalSecret = req.headers.get("x-internal-secret");
     const validInternalSecret = Deno.env.get("INTERNAL_FCM_SECRET");
@@ -501,8 +797,51 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // If dispatching by recipient_user_id
+    const recipientUserId = payload.recipient_user_id || payload.user_id;
     const tokens: string[] = [];
-    if (typeof payload.token === "string" && payload.token.trim()) {
+
+    if (recipientUserId) {
+      // 1. Check recipient preferences before push
+      const eventType = payload.event_type || payload.type || "system";
+      const catalogItem = EVENT_CATALOG[eventType] || EVENT_CATALOG.system;
+      const category = catalogItem.category;
+
+      const { data: recipientPrefs } = await adminClient
+        .from("notification_preferences")
+        .select("all_enabled, service_updates, booking_updates, wallet_updates, trip_updates")
+        .eq("user_id", recipientUserId)
+        .maybeSingle();
+
+      if (recipientPrefs) {
+        if (!recipientPrefs.all_enabled || recipientPrefs[category] === false) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              preference_suppressed: true,
+              message: "Push suppressed by recipient preferences",
+            }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+          );
+        }
+      }
+
+      // 2. Fetch active tokens
+      const { data: userTokens } = await adminClient
+        .from("user_device_tokens")
+        .select("token")
+        .eq("user_id", recipientUserId)
+        .eq("is_active", true);
+
+      if (userTokens) {
+        for (const ut of userTokens) {
+          if (ut.token) tokens.push(ut.token);
+        }
+      }
+    } else if (typeof payload.token === "string" && payload.token.trim()) {
       tokens.push(payload.token.trim());
     } else if (Array.isArray(payload.tokens)) {
       for (const t of payload.tokens) {
@@ -514,7 +853,7 @@ Deno.serve(async (req: Request) => {
 
     if (tokens.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing required 'token' or 'tokens' field" }),
+        JSON.stringify({ success: false, error: "Missing active device tokens for recipient" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -536,7 +875,7 @@ Deno.serve(async (req: Request) => {
         android: {
           priority: "high",
           notification: {
-            channelId: channelId || "amomy_bus_tracking_channel",
+            channelId: channelId || "amomy_high_importance",
             sound: "default",
           },
         },

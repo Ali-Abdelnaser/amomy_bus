@@ -80,7 +80,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           AuthHeaderWidget(
                             title: l10n.forgotPasswordTitle,
                             subtitle: l10n.forgotPasswordSubtitle,
-                            logoHeight: 220,
+                            logoHeight: 280,
                           ).appFadeIn(),
                           AppSpacing.gapH20,
 

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -10,6 +9,7 @@ import '../../domain/entities/app_notification.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../cubit/notification_cubit.dart';
 import '../cubit/notification_state.dart';
+import '../services/notification_service.dart';
 import '../widgets/notification_tile.dart';
 
 class NotificationsPage extends StatelessWidget {
@@ -20,6 +20,9 @@ class NotificationsPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => NotificationCubit(
         repository: getIt<NotificationRepository>(),
+        notificationService: getIt.isRegistered<NotificationService>()
+            ? getIt<NotificationService>()
+            : null,
       )..loadNotifications(),
       child: const _NotificationsView(),
     );
@@ -28,6 +31,11 @@ class NotificationsPage extends StatelessWidget {
 
 class _NotificationsView extends StatelessWidget {
   const _NotificationsView();
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +49,8 @@ class _NotificationsView extends StatelessWidget {
         ? 'ستظهر هنا تحديثات رحلاتك وحجوزاتك واقتراب الأتوبيس'
         : 'Updates on your trips, bookings, and bus arrivals will appear here';
     final retryText = isAr ? 'إعادة المحاولة' : 'Retry';
+    final todayText = isAr ? 'اليوم' : 'TODAY';
+    final earlierText = isAr ? 'السابق' : 'EARLIER';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -77,25 +87,6 @@ class _NotificationsView extends StatelessWidget {
               );
             },
           ),
-          if (kDebugMode)
-            IconButton(
-              icon: const Icon(AppIcons.refresh, size: 20, color: AppColors.primary),
-              tooltip: 'Send Test Push',
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final success = await context.read<NotificationCubit>().sendSelfTestPush();
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? (isAr ? 'تم إرسال إشعار التجربة بنجاح' : 'Test push dispatched')
-                          : (isAr ? 'فشل إرسال إشعار التجربة' : 'Failed to send test push'),
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
         ],
       ),
       body: BlocBuilder<NotificationCubit, NotificationState>(
@@ -181,27 +172,65 @@ class _NotificationsView extends StatelessWidget {
               );
             }
 
+            final todayList = state.notifications.where((n) => _isToday(n.createdAt)).toList();
+            final earlierList = state.notifications.where((n) => !_isToday(n.createdAt)).toList();
+
             return RefreshIndicator(
               onRefresh: () => context.read<NotificationCubit>().loadNotifications(isRefresh: true),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.notifications.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final notification = state.notifications[index];
-                  return NotificationTile(
-                    notification: notification,
-                    onMarkRead: () {
-                      context.read<NotificationCubit>().markAsRead(notification.id);
-                    },
-                  );
-                },
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                children: [
+                  // 1. TODAY Section
+                  if (todayList.isNotEmpty) ...[
+                    _buildSectionHeader(todayText),
+                    const SizedBox(height: 8),
+                    ...todayList.map((notification) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: NotificationTile(
+                            notification: notification,
+                            onMarkRead: () {
+                              context.read<NotificationCubit>().markAsRead(notification.id);
+                            },
+                          ),
+                        )),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // 2. EARLIER Section
+                  if (earlierList.isNotEmpty) ...[
+                    _buildSectionHeader(earlierText),
+                    const SizedBox(height: 8),
+                    ...earlierList.map((notification) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: NotificationTile(
+                            notification: notification,
+                            onMarkRead: () {
+                              context.read<NotificationCubit>().markAsRead(notification.id);
+                            },
+                          ),
+                        )),
+                  ],
+                ],
               ),
             );
           }
 
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        title,
+        style: AppTextStyles.labelSmall.copyWith(
+          fontWeight: FontWeight.w700,
+          color: AppColors.textTertiary,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }

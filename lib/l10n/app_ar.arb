@@ -340,5 +340,21 @@
   "resubmitForReview": "إعادة التقديم للمراجعة",
   "paymentResubmittedTitle": "تمت إعادة تقديم الدفع",
   "submittedOn": "قُدم في",
-  "viewAllPendingTopUps": "عرض جميع النقاط المعلقة"
+  "viewAllPendingTopUps": "عرض جميع النقاط المعلقة",
+  "notificationSettings": "إعدادات الإشعارات",
+  "allNotifications": "كل الإشعارات",
+  "serviceUpdatesTitle": "تحديثات الخدمة والإشعارات العامة",
+  "serviceUpdatesDesc": "إعلانات وتحديثات مهمة تخص خدمة عمومي.",
+  "bookingUpdatesTitle": "تحديثات الحجز",
+  "bookingUpdatesDesc": "تأكيد الحجز والإلغاء وتغيير المقعد.",
+  "walletUpdatesTitle": "المحفظة والشحن",
+  "walletUpdatesDesc": "حالة طلبات الشحن وحركات النقاط.",
+  "tripUpdatesTitle": "الرحلات وتتبع الأتوبيس",
+  "tripUpdatesDesc": "تحديثات الرحلة وتنبيه اقتراب الأتوبيس من محطتك.",
+  "notificationsDisabledOs": "الإشعارات متوقفة من إعدادات الجهاز.",
+  "openDeviceSettings": "فتح إعدادات الجهاز",
+  "todayHeader": "اليوم",
+  "earlierHeader": "السابق",
+  "markAllAsRead": "تحديد الكل كمقروء",
+  "noNotifications": "لا توجد إشعارات حالياً"
 }

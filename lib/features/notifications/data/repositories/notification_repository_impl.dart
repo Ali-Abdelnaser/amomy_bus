@@ -1,4 +1,8 @@
+import 'package:amomy_bus/features/notifications/domain/entities/notification_test_event_result.dart';
+
 import '../../domain/entities/app_notification.dart';
+import '../../domain/entities/notification_preferences.dart';
+import '../../domain/entities/self_test_result.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../datasources/notification_remote_datasource.dart';
 
@@ -53,7 +57,38 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
-  Future<bool> sendSelfTestNotification() {
-    return remoteDataSource.sendSelfTestNotification();
+  Future<SelfTestResult> sendSelfTestNotification({int? delaySeconds}) {
+    return remoteDataSource.sendSelfTestNotification(delaySeconds: delaySeconds);
+  }
+
+  @override
+  Future<bool> isNotificationTester() {
+    return remoteDataSource.isNotificationTester();
+  }
+
+  @override
+  Future<NotificationTestEventResult> sendTestEvent({
+    required String eventType,
+    bool forceDelivery = false,
+    Map<String, dynamic>? customData,
+    int? delaySeconds,
+  }) {
+    return remoteDataSource.sendTestEvent(
+      eventType: eventType,
+      forceDelivery: forceDelivery,
+      customData: customData,
+      delaySeconds: delaySeconds,
+    );
+  }
+
+  @override
+  Future<NotificationPreferences> getPreferences() {
+    return remoteDataSource.getPreferences();
+  }
+
+  @override
+  Future<NotificationPreferences> updatePreferences(
+      NotificationPreferences preferences) {
+    return remoteDataSource.updatePreferences(preferences);
   }
 }

@@ -28,7 +28,7 @@ class AuthHeaderWidget extends StatelessWidget {
           child: Hero(
             tag: 'app_logo',
             child: Image.asset(
-              AppAssets.logoTransparent,
+              AppAssets.logo,
               height: logoHeight,
               fit: BoxFit.cover,
             ),

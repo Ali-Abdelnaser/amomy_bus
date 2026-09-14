@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
@@ -243,6 +244,12 @@ class ProfilePage extends StatelessWidget {
                           icon: AppIcons.user,
                           title: l10n.personalInfo,
                           onTap: () => context.push('/complete-profile'),
+                        ),
+                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
+                        _ProfileMenuItem(
+                          icon: AppIcons.notification,
+                          title: l10n.notificationSettings,
+                          onTap: () => context.push(RoutePaths.notificationSettings),
                         ),
                         const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
                         _ProfileMenuItem(

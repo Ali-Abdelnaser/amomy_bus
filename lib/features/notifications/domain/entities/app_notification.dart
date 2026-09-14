@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 
 enum NotificationType {
   system,
+  generalAnnouncement,
+  serviceUpdate,
   bookingConfirmed,
   bookingCancelled,
   seatChanged,
@@ -11,13 +13,20 @@ enum NotificationType {
   walletCredit,
   walletRefund,
   tripUpdate,
+  tripDelayed,
   busApproaching,
+  busArrivedAtBoardingStop,
+  nextStopUpdate,
   unknown;
 
   static NotificationType fromString(String? value) {
     switch (value) {
       case 'system':
         return NotificationType.system;
+      case 'general_announcement':
+        return NotificationType.generalAnnouncement;
+      case 'service_update':
+        return NotificationType.serviceUpdate;
       case 'booking_confirmed':
         return NotificationType.bookingConfirmed;
       case 'booking_cancelled':
@@ -34,9 +43,17 @@ enum NotificationType {
         return NotificationType.walletRefund;
       case 'trip_update':
         return NotificationType.tripUpdate;
+      case 'trip_delayed':
+        return NotificationType.tripDelayed;
       case 'bus_approaching':
       case 'approaching':
         return NotificationType.busApproaching;
+      case 'bus_arrived_at_boarding_stop':
+      case 'bus_arrived':
+        return NotificationType.busArrivedAtBoardingStop;
+      case 'next_stop_update':
+      case 'next_stop':
+        return NotificationType.nextStopUpdate;
       default:
         return NotificationType.unknown;
     }
@@ -46,6 +63,10 @@ enum NotificationType {
     switch (this) {
       case NotificationType.system:
         return 'system';
+      case NotificationType.generalAnnouncement:
+        return 'general_announcement';
+      case NotificationType.serviceUpdate:
+        return 'service_update';
       case NotificationType.bookingConfirmed:
         return 'booking_confirmed';
       case NotificationType.bookingCancelled:
@@ -62,8 +83,14 @@ enum NotificationType {
         return 'wallet_refund';
       case NotificationType.tripUpdate:
         return 'trip_update';
+      case NotificationType.tripDelayed:
+        return 'trip_delayed';
       case NotificationType.busApproaching:
         return 'bus_approaching';
+      case NotificationType.busArrivedAtBoardingStop:
+        return 'bus_arrived_at_boarding_stop';
+      case NotificationType.nextStopUpdate:
+        return 'next_stop_update';
       case NotificationType.unknown:
         return 'system';
     }

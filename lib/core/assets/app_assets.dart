@@ -4,6 +4,7 @@ abstract final class AppAssets {
 
   /// App Logo with transparent background (1254x1254 PNG)
   static const String logoTransparent = 'assets/logo_transperunt.png';
+  static const String logo = 'assets/logo2.png';
 
   /// Main splash brand composition image (3840x3840 PNG)
   static const String splash = 'assets/splash.png';

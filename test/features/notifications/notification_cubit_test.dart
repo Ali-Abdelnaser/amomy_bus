@@ -1,4 +1,7 @@
 import 'package:amomy_bus/features/notifications/domain/entities/app_notification.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/notification_preferences.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/notification_test_event_result.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/self_test_result.dart';
 import 'package:amomy_bus/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:amomy_bus/features/notifications/presentation/cubit/notification_cubit.dart';
 import 'package:amomy_bus/features/notifications/presentation/cubit/notification_state.dart';
@@ -60,7 +63,7 @@ class _FakeNotificationRepository implements NotificationRepository {
   }
 
   @override
-  Future<bool> sendSelfTestNotification() async {
+  Future<SelfTestResult> sendSelfTestNotification({int? delaySeconds}) async {
     if (selfTestSuccess) {
       final newNotif = AppNotification(
         id: 'test-1',
@@ -74,9 +77,42 @@ class _FakeNotificationRepository implements NotificationRepository {
       );
       notifications = [newNotif, ...notifications];
       unreadCount++;
-      return true;
+      return const SelfTestResult(
+        success: true,
+        requestAccepted: true,
+        totalDevices: 1,
+        delivered: 1,
+        message: 'Delivered',
+      );
     }
-    return false;
+    return SelfTestResult.failure('Failed');
+  }
+
+  @override
+  Future<bool> isNotificationTester() async => false;
+
+  @override
+  Future<NotificationTestEventResult> sendTestEvent({
+    required String eventType,
+    bool forceDelivery = false,
+    Map<String, dynamic>? customData,
+    int? delaySeconds,
+  }) async {
+    return const NotificationTestEventResult(
+      success: true,
+      eventType: 'test',
+      category: 'service_updates',
+    );
+  }
+
+  @override
+  Future<NotificationPreferences> getPreferences() async {
+    return const NotificationPreferences();
+  }
+
+  @override
+  Future<NotificationPreferences> updatePreferences(NotificationPreferences preferences) async {
+    return preferences;
   }
 }
 
@@ -184,8 +220,8 @@ void main() {
   });
 
   test('sendSelfTestPush reloads notifications on success', () async {
-    final success = await cubit.sendSelfTestPush();
-    expect(success, isTrue);
+    final res = await cubit.sendSelfTestPush();
+    expect(res.success, isTrue);
 
     final state = cubit.state as NotificationLoaded;
     expect(state.notifications, isNotEmpty);

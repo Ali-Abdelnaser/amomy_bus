@@ -1,11 +1,25 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/self_test_result.dart';
 import '../../domain/repositories/notification_repository.dart';
+import '../services/notification_service.dart';
 import 'notification_state.dart';
 
 class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepository repository;
+  final NotificationService? notificationService;
+  StreamSubscription? _foregroundSub;
 
-  NotificationCubit({required this.repository}) : super(const NotificationInitial());
+  NotificationCubit({
+    required this.repository,
+    this.notificationService,
+  }) : super(const NotificationInitial()) {
+    if (notificationService != null) {
+      _foregroundSub = notificationService!.onForegroundNotification.listen((_) {
+        loadNotifications(isRefresh: true);
+      });
+    }
+  }
 
   Future<void> loadNotifications({bool isRefresh = false}) async {
     final currentState = state;
@@ -18,6 +32,11 @@ class NotificationCubit extends Cubit<NotificationState> {
     try {
       final notifications = await repository.getNotifications();
       final unreadCount = await repository.getUnreadCount();
+
+      notificationService?.recordInboxRefresh(
+        count: notifications.length,
+        unreadCount: unreadCount,
+      );
 
       emit(NotificationLoaded(
         notifications: notifications,
@@ -74,15 +93,21 @@ class NotificationCubit extends Cubit<NotificationState> {
     } catch (_) {}
   }
 
-  Future<bool> sendSelfTestPush() async {
+  Future<SelfTestResult> sendSelfTestPush({int? delaySeconds}) async {
     try {
-      final success = await repository.sendSelfTestNotification();
-      if (success) {
+      final result = await repository.sendSelfTestNotification(delaySeconds: delaySeconds);
+      if (result.success) {
         await loadNotifications(isRefresh: true);
       }
-      return success;
-    } catch (_) {
-      return false;
+      return result;
+    } catch (e) {
+      return SelfTestResult.failure(e.toString());
     }
+  }
+
+  @override
+  Future<void> close() {
+    _foregroundSub?.cancel();
+    return super.close();
   }
 }

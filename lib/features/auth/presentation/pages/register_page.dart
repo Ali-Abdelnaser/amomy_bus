@@ -97,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             AuthHeaderWidget(
                               title: l10n.registerTitle,
                               subtitle: l10n.registerSubtitle,
-                              logoHeight: 200,
+                              logoHeight: 280,
                             ).appFadeIn(),
                             AppSpacing.gapH20,
 

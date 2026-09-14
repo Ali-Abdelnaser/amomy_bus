@@ -955,4 +955,53 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get viewAllPendingTopUps => 'عرض جميع النقاط المعلقة';
+
+  @override
+  String get notificationSettings => 'إعدادات الإشعارات';
+
+  @override
+  String get allNotifications => 'كل الإشعارات';
+
+  @override
+  String get serviceUpdatesTitle => 'تحديثات الخدمة والإشعارات العامة';
+
+  @override
+  String get serviceUpdatesDesc => 'إعلانات وتحديثات مهمة تخص خدمة عمومي.';
+
+  @override
+  String get bookingUpdatesTitle => 'تحديثات الحجز';
+
+  @override
+  String get bookingUpdatesDesc => 'تأكيد الحجز والإلغاء وتغيير المقعد.';
+
+  @override
+  String get walletUpdatesTitle => 'المحفظة والشحن';
+
+  @override
+  String get walletUpdatesDesc => 'حالة طلبات الشحن وحركات النقاط.';
+
+  @override
+  String get tripUpdatesTitle => 'الرحلات وتتبع الأتوبيس';
+
+  @override
+  String get tripUpdatesDesc =>
+      'تحديثات الرحلة وتنبيه اقتراب الأتوبيس من محطتك.';
+
+  @override
+  String get notificationsDisabledOs => 'الإشعارات متوقفة من إعدادات الجهاز.';
+
+  @override
+  String get openDeviceSettings => 'فتح إعدادات الجهاز';
+
+  @override
+  String get todayHeader => 'اليوم';
+
+  @override
+  String get earlierHeader => 'السابق';
+
+  @override
+  String get markAllAsRead => 'تحديد الكل كمقروء';
+
+  @override
+  String get noNotifications => 'لا توجد إشعارات حالياً';
 }

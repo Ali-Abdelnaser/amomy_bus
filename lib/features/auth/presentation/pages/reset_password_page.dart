@@ -38,10 +38,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   void _onUpdatePressed() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            UpdatePasswordRequested(
-              newPassword: _newPasswordController.text,
-            ),
-          );
+        UpdatePasswordRequested(newPassword: _newPasswordController.text),
+      );
     }
   }
 
@@ -82,7 +80,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           AuthHeaderWidget(
                             title: l10n.resetPasswordTitle,
                             subtitle: l10n.resetPasswordSubtitle,
-                            logoHeight: 220,
+                            logoHeight: 280,
                           ).appFadeIn(),
                           AppSpacing.gapH20,
 
@@ -96,9 +94,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               val,
                               requiredMessage: l10n.validationRequired,
                               minLengthMessage: l10n.validationPasswordLength,
-                              complexityMessage: l10n.validationPasswordComplexity,
+                              complexityMessage:
+                                  l10n.validationPasswordComplexity,
                             ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 200)),
+                          ).appSlideUp(
+                            delay: const Duration(milliseconds: 200),
+                          ),
                           AppSpacing.gapH16,
 
                           // Confirm Password
@@ -107,13 +108,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             label: l10n.confirmPassword,
                             hint: l10n.confirmPasswordHint,
                             autofillHints: const [AutofillHints.newPassword],
-                            validator: (val) => AppValidators.validateConfirmPassword(
-                              val,
-                              _newPasswordController.text,
-                              requiredMessage: l10n.validationRequired,
-                              mismatchMessage: l10n.validationPasswordMismatch,
-                            ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 250)),
+                            validator: (val) =>
+                                AppValidators.validateConfirmPassword(
+                                  val,
+                                  _newPasswordController.text,
+                                  requiredMessage: l10n.validationRequired,
+                                  mismatchMessage:
+                                      l10n.validationPasswordMismatch,
+                                ),
+                          ).appSlideUp(
+                            delay: const Duration(milliseconds: 250),
+                          ),
                           AppSpacing.gapH24,
 
                           // Update Button
@@ -123,7 +128,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             isFullWidth: true,
                             isLoading: isLoading,
                             onPressed: _onUpdatePressed,
-                          ).appSlideUp(delay: const Duration(milliseconds: 300)),
+                          ).appSlideUp(
+                            delay: const Duration(milliseconds: 300),
+                          ),
                         ],
                       ),
                     ),

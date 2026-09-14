@@ -49,3 +49,10 @@ android/secrets.properties
 android/**/secrets.properties
 ios/Flutter/Secrets.xcconfig
 **/Secrets.xcconfig
+
+# Android Signing Secrets & Keystores
+android/key.properties
+**/key.properties
+*.jks
+*.keystore
+

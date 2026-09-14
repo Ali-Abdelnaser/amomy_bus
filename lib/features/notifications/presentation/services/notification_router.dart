@@ -25,10 +25,13 @@ class NotificationRouter {
       // Explicit route matching
       switch (screen) {
         case 'home':
+        case 'general_announcement':
           return RoutePaths.home;
 
         case 'notifications':
         case 'inbox':
+        case 'system':
+        case 'service_update':
           return RoutePaths.notifications;
 
         case 'ticket':
@@ -62,6 +65,12 @@ class NotificationRouter {
         case 'live_tracking':
         case 'bus_approaching':
         case 'approaching':
+        case 'bus_arrived_at_boarding_stop':
+        case 'bus_arrived':
+        case 'trip_update':
+        case 'trip_delayed':
+        case 'next_stop_update':
+        case 'next_stop':
           if (tripId != null && tripId.isNotEmpty) {
             return '/trips/$tripId/tracking';
           }

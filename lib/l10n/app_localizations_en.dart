@@ -960,4 +960,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewAllPendingTopUps => 'View all pending top-ups';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get allNotifications => 'All Notifications';
+
+  @override
+  String get serviceUpdatesTitle => 'Service & General Updates';
+
+  @override
+  String get serviceUpdatesDesc => 'Important AMOMY service announcements.';
+
+  @override
+  String get bookingUpdatesTitle => 'Booking Updates';
+
+  @override
+  String get bookingUpdatesDesc =>
+      'Confirmation, cancellation and seat changes.';
+
+  @override
+  String get walletUpdatesTitle => 'Wallet & Top-up';
+
+  @override
+  String get walletUpdatesDesc =>
+      'Top-up approvals, rejections and point transactions.';
+
+  @override
+  String get tripUpdatesTitle => 'Trip & Bus Tracking';
+
+  @override
+  String get tripUpdatesDesc =>
+      'Trip updates and alerts when your bus is approaching.';
+
+  @override
+  String get notificationsDisabledOs =>
+      'Notifications are disabled in device settings.';
+
+  @override
+  String get openDeviceSettings => 'Open Device Settings';
+
+  @override
+  String get todayHeader => 'TODAY';
+
+  @override
+  String get earlierHeader => 'EARLIER';
+
+  @override
+  String get markAllAsRead => 'Mark all as read';
+
+  @override
+  String get noNotifications => 'No notifications';
 }

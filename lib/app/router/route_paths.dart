@@ -26,6 +26,7 @@ class RoutePaths {
   static const String subscriptions = '/subscriptions';
   static const String profile = '/profile';
   static const String notifications = '/notifications';
+  static const String notificationSettings = '/notification-settings';
   static const String liveTracking = '/trips/:tripId/tracking';
   static const String liveBusMap = '/live-map';
 

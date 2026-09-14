@@ -1891,6 +1891,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View all pending top-ups'**
   String get viewAllPendingTopUps;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @allNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'All Notifications'**
+  String get allNotifications;
+
+  /// No description provided for @serviceUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Service & General Updates'**
+  String get serviceUpdatesTitle;
+
+  /// No description provided for @serviceUpdatesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Important AMOMY service announcements.'**
+  String get serviceUpdatesDesc;
+
+  /// No description provided for @bookingUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Updates'**
+  String get bookingUpdatesTitle;
+
+  /// No description provided for @bookingUpdatesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation, cancellation and seat changes.'**
+  String get bookingUpdatesDesc;
+
+  /// No description provided for @walletUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet & Top-up'**
+  String get walletUpdatesTitle;
+
+  /// No description provided for @walletUpdatesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-up approvals, rejections and point transactions.'**
+  String get walletUpdatesDesc;
+
+  /// No description provided for @tripUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip & Bus Tracking'**
+  String get tripUpdatesTitle;
+
+  /// No description provided for @tripUpdatesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip updates and alerts when your bus is approaching.'**
+  String get tripUpdatesDesc;
+
+  /// No description provided for @notificationsDisabledOs.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are disabled in device settings.'**
+  String get notificationsDisabledOs;
+
+  /// No description provided for @openDeviceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Device Settings'**
+  String get openDeviceSettings;
+
+  /// No description provided for @todayHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get todayHeader;
+
+  /// No description provided for @earlierHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'EARLIER'**
+  String get earlierHeader;
+
+  /// No description provided for @markAllAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get markAllAsRead;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
 }
 
 class _AppLocalizationsDelegate

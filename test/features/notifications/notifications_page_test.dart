@@ -1,5 +1,8 @@
 import 'package:amomy_bus/app/di/injection.dart';
 import 'package:amomy_bus/features/notifications/domain/entities/app_notification.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/notification_preferences.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/notification_test_event_result.dart';
+import 'package:amomy_bus/features/notifications/domain/entities/self_test_result.dart';
 import 'package:amomy_bus/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:amomy_bus/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:amomy_bus/features/notifications/presentation/widgets/notification_tile.dart';
@@ -46,7 +49,36 @@ class _MockNotificationRepo implements NotificationRepository {
   Future<bool> deactivateDeviceToken(String token) async => true;
 
   @override
-  Future<bool> sendSelfTestNotification() async => true;
+  Future<SelfTestResult> sendSelfTestNotification({int? delaySeconds}) async =>
+      const SelfTestResult(
+        success: true,
+        requestAccepted: true,
+        totalDevices: 1,
+        delivered: 1,
+        message: 'Dispatched',
+      );
+
+  @override
+  Future<bool> isNotificationTester() async => false;
+
+  @override
+  Future<NotificationTestEventResult> sendTestEvent({
+    required String eventType,
+    bool forceDelivery = false,
+    Map<String, dynamic>? customData,
+    int? delaySeconds,
+  }) async =>
+      const NotificationTestEventResult(
+        success: true,
+        eventType: 'test',
+        category: 'service_updates',
+      );
+
+  @override
+  Future<NotificationPreferences> getPreferences() async => const NotificationPreferences();
+
+  @override
+  Future<NotificationPreferences> updatePreferences(NotificationPreferences preferences) async => preferences;
 }
 
 void main() {
@@ -83,7 +115,10 @@ void main() {
     expect(find.text('No notifications'), findsOneWidget);
   });
 
-  testWidgets('renders notification items and unread count', (tester) async {
+  testWidgets('renders notification items with TODAY grouping', (tester) async {
+    final now = DateTime.now();
+    final earlier = now.subtract(const Duration(days: 2));
+
     mockRepo.notifications = [
       AppNotification(
         id: 'n1',
@@ -93,7 +128,17 @@ void main() {
         bodyAr: 'تم حجز المقعد بنجاح.',
         titleEn: 'Booking Confirmed',
         bodyEn: 'Seat confirmed successfully.',
-        createdAt: DateTime.now(),
+        createdAt: now,
+      ),
+      AppNotification(
+        id: 'n2',
+        userId: 'u1',
+        type: NotificationType.topupApproved,
+        titleAr: 'تم الشحن',
+        bodyAr: 'تم إضافة الرصيد.',
+        titleEn: 'Top-up Approved',
+        bodyEn: 'Points added.',
+        createdAt: earlier,
       ),
     ];
     mockRepo.unread = 1;
@@ -101,9 +146,36 @@ void main() {
     await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NotificationTile), findsOneWidget);
+    expect(find.byType(NotificationTile), findsNWidgets(2));
+    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('EARLIER'), findsOneWidget);
     expect(find.text('Booking Confirmed'), findsOneWidget);
-    expect(find.text('Seat confirmed successfully.'), findsOneWidget);
+    expect(find.text('Top-up Approved'), findsOneWidget);
     expect(find.text('Mark all as read'), findsOneWidget);
+
+    // Verify Debug action is NOT present on production NotificationsPage
+    expect(find.text('Debug'), findsNothing);
+  });
+
+  testWidgets('does not show Mark all as read when unread count is zero', (tester) async {
+    mockRepo.notifications = [
+      AppNotification(
+        id: 'n1',
+        userId: 'u1',
+        type: NotificationType.bookingConfirmed,
+        titleAr: 'تأكيد الحجز',
+        bodyAr: 'تم حجز المقعد بنجاح.',
+        titleEn: 'Booking Confirmed',
+        bodyEn: 'Seat confirmed successfully.',
+        readAt: DateTime.now(),
+        createdAt: DateTime.now(),
+      ),
+    ];
+    mockRepo.unread = 0;
+
+    await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mark all as read'), findsNothing);
   });
 }

@@ -14,6 +14,7 @@ import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/booking/domain/entities/booking_entities.dart';
 import '../../features/booking/presentation/pages/book_trip_page.dart';
 import '../../features/home/presentation/pages/passenger_home_page.dart';
+import '../../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
@@ -306,6 +307,17 @@ class AppRouter {
           key: state.pageKey,
           name: state.name,
           child: const NotificationsPage(),
+        ),
+      ),
+
+      // Notification Settings
+      GoRoute(
+        path: RoutePaths.notificationSettings,
+        name: RouteNames.notificationSettings,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const NotificationSettingsPage(),
         ),
       ),
 

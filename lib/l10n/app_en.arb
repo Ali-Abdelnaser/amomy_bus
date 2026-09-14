@@ -353,5 +353,21 @@
   "resubmitForReview": "Resubmit for Review",
   "paymentResubmittedTitle": "Payment Resubmitted",
   "submittedOn": "Submitted",
-  "viewAllPendingTopUps": "View all pending top-ups"
+  "viewAllPendingTopUps": "View all pending top-ups",
+  "notificationSettings": "Notification Settings",
+  "allNotifications": "All Notifications",
+  "serviceUpdatesTitle": "Service & General Updates",
+  "serviceUpdatesDesc": "Important AMOMY service announcements.",
+  "bookingUpdatesTitle": "Booking Updates",
+  "bookingUpdatesDesc": "Confirmation, cancellation and seat changes.",
+  "walletUpdatesTitle": "Wallet & Top-up",
+  "walletUpdatesDesc": "Top-up approvals, rejections and point transactions.",
+  "tripUpdatesTitle": "Trip & Bus Tracking",
+  "tripUpdatesDesc": "Trip updates and alerts when your bus is approaching.",
+  "notificationsDisabledOs": "Notifications are disabled in device settings.",
+  "openDeviceSettings": "Open Device Settings",
+  "todayHeader": "TODAY",
+  "earlierHeader": "EARLIER",
+  "markAllAsRead": "Mark all as read",
+  "noNotifications": "No notifications"
 }
