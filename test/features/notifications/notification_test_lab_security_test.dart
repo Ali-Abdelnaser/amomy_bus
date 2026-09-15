@@ -282,5 +282,25 @@ void main() {
 
       expect(find.textContaining('No active notification device found'), findsOneWidget);
     });
+
+    testWidgets('9. APNs credential error is mapped to safe user message in UI', (tester) async {
+      mockRepo.isTester = true;
+      mockRepo.mockTestResult = const NotificationTestEventResult(
+        success: false,
+        eventType: 'service_update',
+        category: 'service_updates',
+        error: 'Invalid APNs credential.',
+      );
+
+      await tester.pumpWidget(buildTestSheet());
+      await tester.pumpAndSettle();
+
+      final sendButtons = find.text('Send Test');
+      await tester.tap(sendButtons.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Apple push credentials are not configured correctly.'), findsOneWidget);
+    });
   });
 }
+

@@ -66,6 +66,26 @@ final class Authenticated extends AuthState {
   List<Object?> get props => [user, wallet];
 }
 
+final class ProfileSaving extends Authenticated {
+  const ProfileSaving({
+    required super.user,
+    super.wallet,
+  });
+}
+
+final class ProfileSaveFailure extends Authenticated {
+  final Failure failure;
+
+  const ProfileSaveFailure({
+    required super.user,
+    required this.failure,
+    super.wallet,
+  });
+
+  @override
+  List<Object?> get props => [user, wallet, failure];
+}
+
 final class AuthFailureState extends AuthState {
   final Failure failure;
 

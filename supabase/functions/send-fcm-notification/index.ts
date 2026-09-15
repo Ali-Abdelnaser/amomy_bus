@@ -235,6 +235,7 @@ export async function sendFcmMessage(
 
     const errorData = await response.json().catch(() => ({}));
     const errorCode = errorData?.error?.details?.[0]?.errorCode || errorData?.error?.status || "";
+    const rawErrorMessage = errorData?.error?.message || `FCM error HTTP ${response.status}`;
     const isUnregistered =
       errorCode === "UNREGISTERED" ||
       errorCode === "NOT_FOUND" ||
@@ -242,9 +243,20 @@ export async function sendFcmMessage(
       JSON.stringify(errorData).includes("UNREGISTERED") ||
       JSON.stringify(errorData).includes("Requested entity was not found");
 
+    const isApnsCredentialError =
+      rawErrorMessage.toLowerCase().includes("apns") ||
+      errorCode === "THIRD_PARTY_AUTH_ERROR" ||
+      JSON.stringify(errorData).toLowerCase().includes("invalid apns credential");
+
+    const safeErrorMessage = isApnsCredentialError
+      ? "Apple push credentials are not configured correctly."
+      : rawErrorMessage;
+
+    console.error(`[FCM_SEND_ERROR] status=${response.status}, code=${errorCode}, raw=${rawErrorMessage}`);
+
     return {
       success: false,
-      error: errorData?.error?.message || `FCM error HTTP ${response.status}`,
+      error: safeErrorMessage,
       unregisteredToken: isUnregistered,
     };
   } catch (err: unknown) {

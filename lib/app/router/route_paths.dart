@@ -25,8 +25,13 @@ class RoutePaths {
   static const String changeSeat = '/change-seat';
   static const String subscriptions = '/subscriptions';
   static const String profile = '/profile';
+  static const String personalInformation = '/personal-information';
   static const String notifications = '/notifications';
   static const String notificationSettings = '/notification-settings';
+  static const String support = '/support';
+  static const String aboutApp = '/about-app';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String termsAndConditions = '/terms-and-conditions';
   static const String liveTracking = '/trips/:tripId/tracking';
   static const String liveBusMap = '/live-map';
 

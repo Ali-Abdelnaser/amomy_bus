@@ -137,7 +137,7 @@ class RouteStopModel extends RouteStop {
 }
 
 class BookingHoldModel extends BookingHold {
-  const BookingHoldModel({
+  BookingHoldModel({
     required super.holdId,
     required super.tripId,
     required super.seatId,
@@ -145,6 +145,8 @@ class BookingHoldModel extends BookingHold {
     required super.farePoints,
     required super.expiresAt,
     required super.serverTime,
+    super.initialRemainingSeconds,
+    super.clientReceivedAt,
     super.routeStopId,
     super.destinationRouteStopId,
     super.stopName,
@@ -154,16 +156,25 @@ class BookingHoldModel extends BookingHold {
   });
 
   factory BookingHoldModel.fromJson(Map<String, dynamic> json) {
+    final expiresAt = DateTime.parse(json['expires_at'] as String);
+    final serverTime = json['server_time'] != null
+        ? DateTime.parse(json['server_time'] as String)
+        : (json['server_now'] != null
+            ? DateTime.parse(json['server_now'] as String)
+            : DateTime.now());
+    final remainingSecs = json['remaining_seconds'] != null
+        ? (json['remaining_seconds'] as num).toInt()
+        : null;
+
     return BookingHoldModel(
       holdId: (json['hold_id'] ?? '') as String,
       tripId: (json['trip_id'] ?? '') as String,
       seatId: (json['seat_id'] ?? '') as String,
       seatNumber: (json['seat_number'] ?? '') as String,
       farePoints: ((json['fare_points'] ?? 0) as num).toDouble(),
-      expiresAt: DateTime.parse(json['expires_at'] as String),
-      serverTime: json['server_time'] != null
-          ? DateTime.parse(json['server_time'] as String)
-          : DateTime.now(),
+      expiresAt: expiresAt,
+      serverTime: serverTime,
+      initialRemainingSeconds: remainingSecs,
       routeStopId: json['route_stop_id'] as String?,
       destinationRouteStopId: json['destination_route_stop_id'] as String?,
       stopName: (json['stop_name'] ?? json['stop_name_ar']) as String?,

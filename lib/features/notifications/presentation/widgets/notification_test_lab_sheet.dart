@@ -620,6 +620,13 @@ class _ResultFeedbackBanner extends StatelessWidget {
         statusText = isAr ? 'فشل الإرسال: غير مصرح للحساب بالوصول لمختبر الإشعارات' : 'Failed to send test: Tester authorization failed.';
       } else if (rawError.contains('No active device') || rawError.contains('No registered active device')) {
         statusText = isAr ? 'فشل الإرسال: لا توجد أجهزة نشطة مسجلة للإشعارات' : 'Failed to send test: No active notification device found.';
+      } else if (rawError.toLowerCase().contains('apns') ||
+          rawError.toLowerCase().contains('invalid apns') ||
+          rawError.toLowerCase().contains('third_party_auth_error') ||
+          rawError.contains('Apple push credentials')) {
+        statusText = isAr
+            ? 'بيانات اعتماد دفع Apple (APNs) غير مهيأة بشكل صحيح.'
+            : 'Apple push credentials are not configured correctly.';
       } else if (rawError.contains('suppressed')) {
         statusText = isAr ? 'تم حجب الإشعار بناءً على إعدادات التفضيلات' : 'Test suppressed by notification preferences.';
       } else if (rawError.isNotEmpty) {

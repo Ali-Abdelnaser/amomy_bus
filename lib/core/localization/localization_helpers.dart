@@ -1,18 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../l10n/app_localizations.dart';
-
-extension LocalizationExtension on BuildContext {
-  AppLocalizations get l10n {
-    final localizations = AppLocalizations.of(this);
-    if (localizations == null) {
-      throw StateError('AppLocalizations not found in current context');
-    }
-    return localizations;
-  }
-
-  bool get isArabic => Localizations.localeOf(this).languageCode == 'ar';
-  bool get isRtl => Directionality.of(this) == TextDirection.rtl;
-}
+export '../extensions/context_extensions.dart';
 
 class LocalizationHelper {
   const LocalizationHelper._();

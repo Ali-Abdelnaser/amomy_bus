@@ -210,6 +210,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ProfileCompletionRequired(:final user) => user,
       _ => null,
     };
+    final currentWallet = switch (state) {
+      Authenticated(:final wallet) => wallet,
+      _ => null,
+    };
 
     if (currentUser == null) {
       developer.log(
@@ -220,7 +224,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    emit(const AuthLoading());
+    emit(ProfileSaving(user: currentUser, wallet: currentWallet));
     final result = await _completeProfileUseCase(
       userId: currentUser.id,
       fullName: event.fullName,
@@ -228,10 +232,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       gender: event.gender,
       dateOfBirth: event.dateOfBirth,
     );
-    await result.fold(
-      onError: (failure) async => emit(AuthFailureState(failure)),
-      onSuccess: (user) async => _routeUser(user, emit),
-    );
+    if (result.isError) {
+      final failure = result.failureOrNull!;
+      developer.log(
+        'AuthBloc: CompleteProfileRequested failed for user ${currentUser.id}: ${failure.message}',
+        name: 'AUTH',
+      );
+      emit(ProfileSaveFailure(
+        user: currentUser,
+        failure: failure,
+        wallet: currentWallet,
+      ));
+    } else {
+      await _routeUser(result.dataOrNull!, emit);
+    }
   }
 
   Future<void> _onSendPasswordResetRequested(
@@ -278,10 +292,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final user = event.user;
     if (user == null) {
-      // If a login/auth operation is actively loading, do NOT cancel it with Unauthenticated
-      if (state is AuthLoading) {
+      // If a login/auth operation or profile saving is actively loading, do NOT cancel it with Unauthenticated
+      if (state is AuthLoading || state is ProfileSaving) {
         developer.log(
-          'AuthBloc: Received null auth stream event while in AuthLoading - preserving active auth flow',
+          'AuthBloc: Received null auth stream event while in AuthLoading/ProfileSaving - preserving active auth flow',
           name: 'AUTH',
         );
         return;

@@ -1,32 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/di/injection.dart';
 import '../../../../app/router/route_paths.dart';
-import '../../../../core/assets/app_assets.dart';
-import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_locale_controller.dart';
+import '../../../../core/localization/localization_helpers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../home/presentation/widgets/home_profile_completion_card.dart';
+import '../../data/repositories/profile_repository_impl.dart';
+import '../../domain/repositories/profile_repository.dart';
+import '../bloc/profile_bloc.dart';
+import '../bloc/profile_state.dart';
+import '../widgets/profile_identity_header.dart';
+import '../widgets/profile_section.dart';
+import '../widgets/profile_setting_tile.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+/// Redesigned Passenger Profile Page.
+///
+/// Features:
+/// - Clean, calm, modern visual hierarchy without heavy container cards
+/// - Centered identity header directly on surface with interactive camera badge
+/// - Real avatar capture, gallery selection, and removal with Supabase Storage
+/// - Dedicated navigation to Personal Information, Notifications, Support, About, Privacy, and Terms
+/// - Instant in-app language switching via modal bottom sheet
+/// - Elegant non-destructive AMOMY Blue sign-out action with confirmation
+class ProfilePage extends StatefulWidget {
+  final ProfileBloc? profileBloc;
+
+  const ProfilePage({super.key, this.profileBloc});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  late final ProfileBloc _profileBloc;
+  bool _createdBloc = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.profileBloc != null) {
+      _profileBloc = widget.profileBloc!;
+    } else if (getIt.isRegistered<ProfileBloc>()) {
+      _profileBloc = getIt<ProfileBloc>();
+    } else {
+      _profileBloc = ProfileBloc(
+        repository: getIt.isRegistered<ProfileRepository>()
+            ? getIt<ProfileRepository>()
+            : ProfileRepositoryImpl(),
+      );
+      _createdBloc = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_createdBloc) {
+      _profileBloc.close();
+    }
+    super.dispose();
+  }
 
   void _showLanguageSelector(BuildContext context) {
     final controller = AppLocaleController.instance;
+    final l10n = context.l10n;
+
     showModalBottomSheet<void>(
       context: context,
-      useRootNavigator: false,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       showDragHandle: false,
@@ -40,42 +90,72 @@ class ProfilePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              context.l10n.language,
+              l10n.language,
               style: AppTextStyles.titleMedium.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
             AppSpacing.gapH12,
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              leading: const Icon(AppIcons.globe, color: AppColors.primary),
-              title: const Text('العربية'),
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(AppIcons.languages, size: 18, color: AppColors.primary),
+              ),
+              title: Text(
+                'العربية',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: controller.isArabic ? FontWeight.w700 : FontWeight.w500,
+                  color: controller.isArabic ? AppColors.primary : AppColors.textPrimary,
+                ),
+              ),
               trailing: controller.isArabic
-                  ? const Icon(AppIcons.check, color: AppColors.primary)
+                  ? const Icon(AppIcons.check, color: AppColors.primary, size: 20)
                   : null,
               onTap: () {
                 if (!controller.isArabic) {
-                  controller.toggleLocale();
+                  controller.setLocale(LocalizationHelper.arabicLocale);
                 }
                 Navigator.of(ctx).pop();
               },
             ),
+            const Divider(height: 1, indent: 60, color: AppColors.borderSubtle),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              leading: const Icon(AppIcons.globe, color: AppColors.primary),
-              title: const Text('English'),
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(AppIcons.languages, size: 18, color: AppColors.primary),
+              ),
+              title: Text(
+                'English',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: !controller.isArabic ? FontWeight.w700 : FontWeight.w500,
+                  color: !controller.isArabic ? AppColors.primary : AppColors.textPrimary,
+                ),
+              ),
               trailing: !controller.isArabic
-                  ? const Icon(AppIcons.check, color: AppColors.primary)
+                  ? const Icon(AppIcons.check, color: AppColors.primary, size: 20)
                   : null,
               onTap: () {
                 if (controller.isArabic) {
-                  controller.toggleLocale();
+                  controller.setLocale(LocalizationHelper.englishLocale);
                 }
                 Navigator.of(ctx).pop();
               },
@@ -83,75 +163,97 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    final l10n = context.l10n;
-    showInfoDialog(
-      context: context,
-      title: l10n.aboutAmomy,
-      illustrationPath: AppAssets.busServiceIllustration,
-      message: 'AMOMY Bus v1.0.0\nSmart, reliable bus transportation in Egypt.\n\n© 2026 AMOMY. All rights reserved.',
-      buttonText: l10n.dismiss,
-    );
-  }
-
-  void _showPrivacyPolicy(BuildContext context) {
-    final l10n = context.l10n;
-    showInfoDialog(
-      context: context,
-      title: l10n.privacyPolicy,
-      message: 'AMOMY respects your privacy. We securely collect only the necessary information to verify your account, ensure passenger safety, and process bookings smoothly.',
-      buttonText: l10n.dismiss,
-    );
-  }
-
-  void _showTerms(BuildContext context) {
-    final l10n = context.l10n;
-    showInfoDialog(
-      context: context,
-      title: l10n.termsAndConditions,
-      message: 'By using AMOMY, you agree to comply with passenger safety guidelines, accurate seat booking policies, and punctuality standards.',
-      buttonText: l10n.dismiss,
-    );
-  }
-
-  void _showSupportDialog(BuildContext context) {
-    final l10n = context.l10n;
-    showInfoDialog(
-      context: context,
-      title: l10n.supportDialogTitle,
-      message: l10n.supportDialogDesc,
-      buttonText: l10n.dismiss,
     );
   }
 
   void _confirmSignOut(BuildContext context) {
     final l10n = context.l10n;
-    showDialog<void>(
+
+    showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(l10n.signOutConfirmTitle),
-        content: Text(l10n.signOutConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => AmomySheetContainer(
+        hasBottomNav: true,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(AppIcons.logOut, color: AppColors.primary, size: 24),
+                ),
+              ),
+              AppSpacing.gapH16,
+              Text(
+                l10n.signOutConfirmTitle,
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.gapH8,
+              Text(
+                l10n.signOutConfirmMessage,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              AppSpacing.gapH24,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(sheetCtx).pop(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(
+                        l10n.cancel,
+                        style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                  AppSpacing.gapW12,
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(sheetCtx).pop();
+                        context.read<AuthBloc>().add(const SignOutRequested());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(
+                        l10n.signOut,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.read<AuthBloc>().add(const SignOutRequested());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(l10n.signOut),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -159,207 +261,173 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        if (state is! Authenticated) {
-          return const AppScaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    return BlocProvider<ProfileBloc>.value(
+      value: _profileBloc,
+      child: BlocConsumer<ProfileBloc, ProfileState>(
+        listener: (context, profileState) {
+          if (profileState is ProfileAvatarSuccess) {
+            final authBloc = context.read<AuthBloc>();
+            final authState = authBloc.state;
+            if (authState is Authenticated) {
+              final updatedUser = authState.user.copyWith(
+                avatarUrl: profileState.avatarUrl,
+              );
+              authBloc.add(AuthUserChangedInternal(updatedUser));
+            }
+            AppSnackBar.showSuccess(
+              context,
+              profileState.isRemoved
+                  ? l10n.avatarRemovedSuccess
+                  : l10n.avatarUpdatedSuccess,
+            );
+          } else if (profileState is ProfileAvatarFailure) {
+            AppSnackBar.showError(context, profileState.message);
+          }
+        },
+        builder: (context, profileState) {
+          return BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, authState) {
+              if (authState is! Authenticated) {
+                return const AppScaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-        final user = state.user;
-        final hasAvatar = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
+              final user = authState.user;
 
-        return AppScaffold(
-          appBar: AppAppBar(
-            title: l10n.navProfile,
-            showBackButton: false,
-          ),
-          body: SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // User Header Card
-                  AppCard(
-                    padding: AppSpacing.edgeInsetsA20,
-                    child: Row(
+              return AppScaffold(
+                appBar: AppAppBar(
+                  title: l10n.navProfile,
+                  showBackButton: false,
+                ),
+                body: SafeArea(
+                  bottom: false,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppColors.primaryLight,
-                          backgroundImage: hasAvatar ? NetworkImage(user.avatarUrl!) : null,
-                          child: !hasAvatar
-                              ? Text(
-                                  user.initials,
-                                  style: AppTextStyles.headlineMedium.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
+                        // Centered Identity Header directly on surface (no heavy card)
+                        ProfileIdentityHeader(user: user),
+                        AppSpacing.gapH24,
+
+                        // SECTION 1: ACCOUNT
+                        ProfileSection(
+                          title: isAr ? 'الحساب' : 'ACCOUNT',
+                          children: [
+                            ProfileSettingTile(
+                              icon: AppIcons.userRound,
+                              title: l10n.personalInfo,
+                              onTap: () => context.push(RoutePaths.personalInformation),
+                            ),
+                          ],
                         ),
-                        AppSpacing.gapW16,
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.fullName.isNotEmpty ? user.fullName : 'Commuter',
-                                style: AppTextStyles.titleMedium.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                        AppSpacing.gapH16,
+
+                        // SECTION 2: PREFERENCES
+                        ProfileSection(
+                          title: isAr ? 'التفضيلات' : 'PREFERENCES',
+                          children: [
+                            ProfileSettingTile(
+                              icon: AppIcons.notification,
+                              title: l10n.notificationSettings,
+                              onTap: () => context.push(RoutePaths.notificationSettings),
+                            ),
+                            ProfileSettingTile(
+                              icon: AppIcons.languages,
+                              title: l10n.language,
+                              trailingText: isAr ? 'العربية' : 'English',
+                              onTap: () => _showLanguageSelector(context),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.gapH16,
+
+                        // SECTION 3: HELP & SUPPORT
+                        ProfileSection(
+                          title: isAr ? 'المساعدة والدعم' : 'HELP & SUPPORT',
+                          children: [
+                            ProfileSettingTile(
+                              icon: AppIcons.headphones,
+                              title: l10n.supportCenter,
+                              onTap: () => context.push(RoutePaths.support),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.gapH16,
+
+                        // SECTION 4: ABOUT & LEGAL
+                        ProfileSection(
+                          title: isAr ? 'حول التطبيق والقانونية' : 'ABOUT & LEGAL',
+                          children: [
+                            ProfileSettingTile(
+                              icon: AppIcons.info,
+                              title: l10n.aboutAmomyApp,
+                              onTap: () => context.push(RoutePaths.aboutApp),
+                            ),
+                            ProfileSettingTile(
+                              icon: AppIcons.shield,
+                              title: l10n.privacyPolicy,
+                              onTap: () => context.push(RoutePaths.privacyPolicy),
+                            ),
+                            ProfileSettingTile(
+                              icon: AppIcons.fileText,
+                              title: l10n.termsAndConditions,
+                              onTap: () => context.push(RoutePaths.termsAndConditions),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.gapH24,
+
+                        // ELEGANT AMOMY BLUE SIGN OUT ACTION (Non-destructive design)
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _confirmSignOut(context),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.18),
+                                  width: 1,
                                 ),
                               ),
-                              AppSpacing.gapH4,
-                              Text(
-                                user.email,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    AppIcons.logOut,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  AppSpacing.gapW8,
+                                  Text(
+                                    l10n.signOut,
+                                    style: AppTextStyles.labelLarge.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
+                        AppSpacing.gapBottomNav,
                       ],
                     ),
                   ),
-                  AppSpacing.gapH16,
-
-                  // Profile Completion Section (if incomplete)
-                  if (!user.isProfileComplete) ...[
-                    HomeProfileCompletionCard(user: user),
-                    AppSpacing.gapH16,
-                  ],
-
-                  // Menu Items Card
-                  AppCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        _ProfileMenuItem(
-                          icon: AppIcons.user,
-                          title: l10n.personalInfo,
-                          onTap: () => context.push('/complete-profile'),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.notification,
-                          title: l10n.notificationSettings,
-                          onTap: () => context.push(RoutePaths.notificationSettings),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.globe,
-                          title: l10n.language,
-                          trailingText: AppLocaleController.instance.isArabic ? 'العربية' : 'English',
-                          onTap: () => _showLanguageSelector(context),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.headphones,
-                          title: l10n.support,
-                          onTap: () => _showSupportDialog(context),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.info,
-                          title: l10n.aboutAmomy,
-                          onTap: () => _showAboutDialog(context),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.shield,
-                          title: l10n.privacyPolicy,
-                          onTap: () => _showPrivacyPolicy(context),
-                        ),
-                        const Divider(height: 1, indent: 56, color: AppColors.borderSubtle),
-                        _ProfileMenuItem(
-                          icon: AppIcons.fileText,
-                          title: l10n.termsAndConditions,
-                          onTap: () => _showTerms(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AppSpacing.gapH24,
-
-                  // Destructive Sign Out Button
-                  AppButton(
-                    label: l10n.signOut,
-                    variant: AppButtonVariant.danger,
-                    icon: AppIcons.logOut,
-                    isFullWidth: true,
-                    onPressed: () => _confirmSignOut(context),
-                  ),
-                  AppSpacing.gapBottomNav,
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ProfileMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? trailingText;
-  final VoidCallback onTap;
-
-  const _ProfileMenuItem({
-    required this.icon,
-    required this.title,
-    this.trailingText,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        leading: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 18, color: AppColors.primary),
-        ),
-        title: Text(
-          title,
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (trailingText != null) ...[
-              Text(
-                trailingText!,
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.textSecondary,
                 ),
-              ),
-              AppSpacing.gapW8,
-            ],
-            const Icon(
-              AppIcons.arrowForward,
-              size: 16,
-              color: AppColors.textTertiary,
-            ),
-          ],
-        ),
-        onTap: onTap,
+              );
+            },
+          );
+        },
       ),
     );
   }

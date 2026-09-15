@@ -108,18 +108,18 @@ class _BookingReviewCardState extends State<BookingReviewCard>
   }
 
   void _initHoldTimer() {
-    final expiry = widget.seat.heldExpiresAt;
-    if (expiry != null) {
-      final diff = expiry.difference(DateTime.now()).inSeconds;
-      _secondsRemaining = diff > 0 ? diff : 0;
-    } else if (widget.initialHoldSecondsRemaining != null) {
+    // Prefer authoritative countdown seconds passed from BookingCubit
+    if (widget.initialHoldSecondsRemaining != null) {
       _secondsRemaining = widget.initialHoldSecondsRemaining!;
+    } else if (widget.seat.heldExpiresAt != null) {
+      final diff = widget.seat.heldExpiresAt!.toUtc().difference(DateTime.now().toUtc()).inSeconds;
+      _secondsRemaining = diff > 0 ? diff : 0;
     } else {
       _secondsRemaining = 0;
     }
 
     if (_secondsRemaining <= 0 &&
-        (expiry != null || widget.initialHoldSecondsRemaining != null)) {
+        (widget.initialHoldSecondsRemaining != null || widget.seat.heldExpiresAt != null)) {
       _isExpired = true;
     } else if (_secondsRemaining > 0) {
       _isExpired = false;

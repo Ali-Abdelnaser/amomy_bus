@@ -124,8 +124,32 @@ class BookTripPage extends StatelessWidget {
   }
 }
 
-class _BookTripContent extends StatelessWidget {
+class _BookTripContent extends StatefulWidget {
   const _BookTripContent();
+
+  @override
+  State<_BookTripContent> createState() => _BookTripContentState();
+}
+
+class _BookTripContentState extends State<_BookTripContent> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<BookingCubit>().resyncHoldOnResume();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

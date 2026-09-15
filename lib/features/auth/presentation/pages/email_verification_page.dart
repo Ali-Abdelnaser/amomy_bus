@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/animations/app_animations.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
@@ -34,11 +35,24 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   String _otpCode = '';
   int _countdownSeconds = 60;
   Timer? _countdownTimer;
+  late String _cachedEmail;
 
   @override
   void initState() {
     super.initState();
+    _cachedEmail = widget.email ?? '';
     _startCountdown();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_cachedEmail.isEmpty) {
+      final state = context.read<AuthBloc>().state;
+      if (state is EmailVerificationRequired && state.email.isNotEmpty) {
+        _cachedEmail = state.email;
+      }
+    }
   }
 
   @override
@@ -52,7 +66,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdownSeconds > 0) {
-        setState(() => _countdownSeconds--);
+        if (mounted) {
+          setState(() => _countdownSeconds--);
+        }
       } else {
         timer.cancel();
       }
@@ -63,8 +79,12 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     if (widget.email != null && widget.email!.isNotEmpty) {
       return widget.email!;
     }
+    if (_cachedEmail.isNotEmpty) {
+      return _cachedEmail;
+    }
     final state = context.read<AuthBloc>().state;
-    if (state is EmailVerificationRequired) {
+    if (state is EmailVerificationRequired && state.email.isNotEmpty) {
+      _cachedEmail = state.email;
       return state.email;
     }
     return '';
@@ -87,21 +107,31 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   void _onResendPressed() {
     if (_countdownSeconds > 0) return;
 
+    final targetEmail = _effectiveEmail;
+    if (targetEmail.isEmpty) {
+      AppSnackBar.showError(context, context.l10n.validationEmailInvalid);
+      return;
+    }
+
     context.read<AuthBloc>().add(
-          ResendOtpRequested(email: _effectiveEmail),
+          ResendOtpRequested(email: targetEmail),
         );
     _startCountdown();
   }
 
-  String _maskEmail(String email) {
-    final parts = email.split('@');
-    if (parts.length != 2) return email;
-    final name = parts[0];
-    final domain = parts[1];
-    if (name.length <= 3) {
-      return '$name***@$domain';
+  void _navigateBackToLogin(BuildContext context) {
+    context.read<AuthBloc>().add(const SignOutRequested());
+    try {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(RoutePaths.login);
+      }
+    } catch (_) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     }
-    return '${name.substring(0, 2)}***${name.substring(name.length - 1)}@$domain';
   }
 
   @override
@@ -115,9 +145,9 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         } else if (state is EmailVerificationRequired && state.infoMessage != null) {
           AppSnackBar.showSuccess(context, state.infoMessage!);
         } else if (state is ProfileCompletionRequired) {
-          context.go('/complete-profile');
+          context.go(RoutePaths.completeProfile);
         } else if (state is Authenticated) {
-          context.go('/home');
+          context.go(RoutePaths.home);
         }
       },
       builder: (context, state) {
@@ -126,6 +156,10 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         return AppLoadingOverlay(
           isLoading: isLoading,
           child: AppScaffold(
+            appBar: AppAppBar(
+              showBackButton: true,
+              onBackPressed: () => _navigateBackToLogin(context),
+            ),
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -138,7 +172,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                         // Standardized Brand Header
                         AuthHeaderWidget(
                           title: l10n.verifyEmailTitle,
-                          logoHeight: 200,
+                          logoHeight: 180,
                         ).appFadeIn(),
                         AppSpacing.gapH8,
 
@@ -151,16 +185,17 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                           textAlign: TextAlign.center,
                         ).appFadeIn(delay: const Duration(milliseconds: 150)),
                         AppSpacing.gapH4,
-                        Text(
-                          _maskEmail(_effectiveEmail),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                          textDirection: TextDirection.ltr,
-                        ).appFadeIn(delay: const Duration(milliseconds: 200)),
-                        AppSpacing.gapH20,
+                        if (_effectiveEmail.isNotEmpty)
+                          Text(
+                            _effectiveEmail,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.ltr,
+                          ).appFadeIn(delay: const Duration(milliseconds: 200)),
+                        AppSpacing.gapH24,
 
                         // 6-digit OTP Field
                         AppOtpField(
@@ -186,14 +221,34 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                         // Resend Code with Countdown
                         Center(
                           child: _countdownSeconds > 0
-                              ? Text(
-                                  l10n.resendIn(_countdownSeconds),
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.textSecondary,
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceSoft,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        AppIcons.clock,
+                                        size: 16,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      AppSpacing.gapW8,
+                                      Text(
+                                        l10n.resendIn(_countdownSeconds),
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 )
                               : TextButton(
-                                  onPressed: _onResendPressed,
+                                  onPressed: isLoading ? null : _onResendPressed,
                                   style: TextButton.styleFrom(
                                     foregroundColor: AppColors.primary,
                                   ),
@@ -213,16 +268,26 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                                   ),
                                 ),
                         ),
-                        AppSpacing.gapH16,
+                        AppSpacing.gapH20,
 
-                        // Change Email / Back
+                        // Explicit Return to Login Button
                         Center(
-                          child: TextButton(
-                            onPressed: () => context.go('/login'),
-                            child: Text(
-                              l10n.changeEmail,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _navigateBackToLogin(context),
+                            icon: const Icon(AppIcons.arrowBack, size: 18),
+                            label: Text(
+                              l10n.backToLogin,
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textPrimary,
+                              side: const BorderSide(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
@@ -239,3 +304,4 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     );
   }
 }
+

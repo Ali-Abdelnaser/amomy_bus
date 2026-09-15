@@ -25,8 +25,13 @@ class RouteNames {
   static const String changeSeat = 'changeSeat';
   static const String subscriptions = 'subscriptions';
   static const String profile = 'profile';
+  static const String personalInformation = 'personalInformation';
   static const String notifications = 'notifications';
   static const String notificationSettings = 'notificationSettings';
+  static const String support = 'support';
+  static const String aboutApp = 'aboutApp';
+  static const String privacyPolicy = 'privacyPolicy';
+  static const String termsAndConditions = 'termsAndConditions';
   static const String liveTracking = 'liveTracking';
   static const String liveBusMap = 'liveBusMap';
 

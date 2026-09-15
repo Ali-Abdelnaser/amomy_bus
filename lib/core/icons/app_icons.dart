@@ -59,13 +59,19 @@ abstract final class AppIcons {
   static const IconData receipt = LucideIcons.receipt;
 
   // Profile, Support & Settings
+  static const IconData userRound = LucideIcons.userRound;
   static const IconData chevronRight = LucideIcons.chevronRight;
   static const IconData chevronLeft = LucideIcons.chevronLeft;
   static const IconData chevronDown = LucideIcons.chevronDown;
   static const IconData headphones = LucideIcons.headphones;
   static const IconData globe = LucideIcons.globe;
+  static const IconData languages = LucideIcons.languages;
   static const IconData shield = LucideIcons.shieldCheck;
   static const IconData fileText = LucideIcons.fileText;
   static const IconData logOut = LucideIcons.logOut;
   static const IconData repeat = LucideIcons.repeat;
+  static const IconData trash = LucideIcons.trash;
+  static const IconData copy = LucideIcons.copy;
+  static const IconData messageCircle = LucideIcons.messageCircle;
+  static const IconData externalLink = LucideIcons.externalLink;
 }

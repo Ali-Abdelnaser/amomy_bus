@@ -29,6 +29,15 @@ class ErrorHandler {
     }
 
     if (error is PostgrestException) {
+      if (error.code == '23505') {
+        final message = AppLocaleController.instance.isArabic
+            ? 'البيانات المدخلة (رقم الهاتف أو البريد) مسجلة مسبقاً لحساب آخر.'
+            : 'The entered details (phone or email) are already in use by another account.';
+        return ValidationFailure(
+          message: message,
+          statusCode: 409,
+        );
+      }
       return ServerFailure(
         message: error.message,
         statusCode: int.tryParse(error.code ?? ''),

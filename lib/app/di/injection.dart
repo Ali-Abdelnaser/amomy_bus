@@ -8,6 +8,10 @@ import '../../features/notifications/domain/repositories/notification_repository
 import '../../features/notifications/presentation/cubit/notification_cubit.dart';
 import '../../features/notifications/presentation/services/local_notification_service.dart';
 import '../../features/notifications/presentation/services/notification_service.dart';
+import '../../features/profile/data/datasources/profile_remote_datasource.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/repositories/profile_repository.dart';
+import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/tracking/data/datasources/tracking_remote_datasource.dart';
 import '../../features/tracking/data/repositories/tracking_repository_impl.dart';
 import '../../features/tracking/domain/repositories/tracking_repository.dart';
@@ -76,6 +80,25 @@ Future<void> configureDependencies() async {
   if (!getIt.isRegistered<TrackingCubit>()) {
     getIt.registerFactory<TrackingCubit>(
       () => TrackingCubit(repository: getIt<TrackingRepository>()),
+    );
+  }
+
+  // Register profile dependencies
+  if (!getIt.isRegistered<ProfileRemoteDataSource>()) {
+    getIt.registerLazySingleton<ProfileRemoteDataSource>(
+      () => ProfileRemoteDataSourceImpl(),
+    );
+  }
+  if (!getIt.isRegistered<ProfileRepository>()) {
+    getIt.registerLazySingleton<ProfileRepository>(
+      () => ProfileRepositoryImpl(
+        remoteDataSource: getIt<ProfileRemoteDataSource>(),
+      ),
+    );
+  }
+  if (!getIt.isRegistered<ProfileBloc>()) {
+    getIt.registerFactory<ProfileBloc>(
+      () => ProfileBloc(repository: getIt<ProfileRepository>()),
     );
   }
 }

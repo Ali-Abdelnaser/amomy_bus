@@ -241,15 +241,24 @@ class BookingRepositoryImpl implements BookingRepository {
       return const ChangeSeatClosedFailure();
     }
     if (message.contains('insufficient_points') ||
-        message.contains('insufficient_unexpired_points')) {
+        message.contains('insufficient_unexpired_points') ||
+        message.contains('insufficient_balance') ||
+        message.contains('insufficient_usable_batch_balance')) {
       return const InsufficientPointsFailure();
     }
     if (message.contains('seat_unavailable') ||
         message.contains('seat_already_booked') ||
-        message.contains('seat_held_by_another_user')) {
+        message.contains('seat_held_by_another_user') ||
+        message.contains('seat_held') ||
+        message.contains('seat_invalid')) {
       return const SeatUnavailableFailure();
     }
-    if (message.contains('hold_expired')) {
+    if (message.contains('hold_expired') ||
+        message.contains('hold_not_found') ||
+        message.contains('hold_invalid') ||
+        message.contains('point_hold_invalid') ||
+        message.contains('hold is not active') ||
+        message.contains('hold has expired')) {
       return const HoldExpiredFailure();
     }
     if (message.contains('profile_incomplete')) {
@@ -259,12 +268,15 @@ class BookingRepositoryImpl implements BookingRepository {
       return const BookingClosedFailure();
     }
     if (message.contains('already_booked_trip') ||
-        message.contains('uq_passenger_active_trip_booking')) {
+        message.contains('uq_passenger_active_trip_booking') ||
+        message.contains('already_booked')) {
       return const AlreadyBookedTripFailure();
     }
-    if (message.contains('trip_unavailable') || message.contains('trip_not_found')) {
+    if (message.contains('trip_unavailable') ||
+        message.contains('trip_not_found') ||
+        message.contains('trip_cancelled')) {
       return const TripUnavailableFailure();
     }
-    return ServerFailure(message: error.toString());
+    return const ServerFailure(message: 'Something went wrong. Please try again.');
   }
 }

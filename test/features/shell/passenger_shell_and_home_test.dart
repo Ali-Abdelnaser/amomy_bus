@@ -28,7 +28,6 @@ import 'package:amomy_bus/features/home/presentation/widgets/home_announcements_
 import 'package:amomy_bus/features/home/presentation/widgets/home_app_bar.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_book_ride_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_header.dart';
-import 'package:amomy_bus/features/home/presentation/widgets/home_profile_completion_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_upcoming_trip_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_wallet_card.dart';
 import 'package:amomy_bus/features/profile/presentation/pages/profile_page.dart';
@@ -304,38 +303,7 @@ void main() {
     });
   });
 
-  group('HomeProfileCompletionCard widget', () {
-    testWidgets('shows when profile is incomplete with percentage', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
 
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const Scaffold(body: HomeProfileCompletionCard(user: incompleteUser)),
-          authBloc: bloc,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Complete your profile'), findsOneWidget);
-      expect(find.text('40%'), findsOneWidget);
-    });
-
-    testWidgets('is completely hidden when profile is complete', (tester) async {
-      final bloc = MockAuthBloc(Authenticated(user: completeUser, wallet: testWallet));
-
-      await tester.pumpWidget(
-        createTestWidget(
-          child: Scaffold(body: HomeProfileCompletionCard(user: completeUser)),
-          authBloc: bloc,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Complete your profile'), findsNothing);
-      expect(find.byType(HomeProfileCompletionCard), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsNothing);
-    });
-  });
 
   group('HomeWalletCard widget', () {
     testWidgets('displays points balance and breakdown without money symbols', (tester) async {
@@ -423,8 +391,8 @@ void main() {
       expect(find.text('ali@example.com'), findsOneWidget);
       expect(find.text('Personal Information'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
-      expect(find.text('Support'), findsOneWidget);
-      expect(find.text('About AMOMY'), findsOneWidget);
+      expect(find.text('Support Center'), findsOneWidget);
+      expect(find.text('About AMOMY App'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Terms & Conditions'), findsOneWidget);
 

@@ -181,6 +181,8 @@ class BookingHold extends Equatable {
   final double farePoints;
   final DateTime expiresAt;
   final DateTime serverTime;
+  final int initialRemainingSeconds;
+  final DateTime clientReceivedAt;
   final String? routeStopId;
   final String? destinationRouteStopId;
   final String? stopName;
@@ -188,7 +190,7 @@ class BookingHold extends Equatable {
   final String? locality;
   final String? fareZoneId;
 
-  const BookingHold({
+  BookingHold({
     required this.holdId,
     required this.tripId,
     required this.seatId,
@@ -196,19 +198,29 @@ class BookingHold extends Equatable {
     required this.farePoints,
     required this.expiresAt,
     required this.serverTime,
+    int? initialRemainingSeconds,
+    DateTime? clientReceivedAt,
     this.routeStopId,
     this.destinationRouteStopId,
     this.stopName,
     this.destinationStopName,
     this.locality,
     this.fareZoneId,
-  });
+  })  : clientReceivedAt = clientReceivedAt ?? DateTime.now(),
+        initialRemainingSeconds = initialRemainingSeconds ??
+            _calculateInitialRemaining(expiresAt, serverTime);
 
-  /// Seconds remaining calculated relative to server time anchor
+  static int _calculateInitialRemaining(DateTime expiresAt, DateTime serverTime) {
+    final diff = expiresAt.toUtc().difference(serverTime.toUtc()).inSeconds;
+    if (diff <= 0) return 0;
+    return diff > 300 ? 300 : diff;
+  }
+
+  /// Server-authoritative remaining seconds decremented locally via client elapsed time
   int get remainingSeconds {
-    final now = DateTime.now();
-    final difference = expiresAt.difference(now).inSeconds;
-    return difference > 0 ? difference : 0;
+    final elapsed = DateTime.now().difference(clientReceivedAt).inSeconds;
+    final remaining = initialRemainingSeconds - elapsed;
+    return remaining > 0 ? remaining : 0;
   }
 
   bool get isExpired => remainingSeconds <= 0;
@@ -222,6 +234,8 @@ class BookingHold extends Equatable {
         farePoints,
         expiresAt,
         serverTime,
+        initialRemainingSeconds,
+        clientReceivedAt,
         routeStopId,
         destinationRouteStopId,
         stopName,

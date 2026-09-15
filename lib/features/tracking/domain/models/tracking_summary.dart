@@ -248,4 +248,17 @@ class TrackingSummary extends Equatable {
         approachAlertsEnabled,
         isQaPreviewActive,
       ];
+
+  @override
+  String toString() {
+    return 'TrackingSummary('
+        'status: ${status.name}, '
+        'serviceState: $serviceState, '
+        'progressState: $progressState, '
+        'direction: ${activeDirection.name}, '
+        'runTime: ${activeRunTime ?? 'none'}, '
+        'currentStop: ${currentStop?.stopOrder ?? 'none'}, '
+        'nextStop: ${nextStop?.stopOrder ?? 'none'}, '
+        'stopsCount: $stopsCount)';
+  }
 }

@@ -41,70 +41,80 @@ class AppDatePickerField extends StatelessWidget {
         ? DateFormat.yMMMd().format(selectedDate!)
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (label != null) ...[
-          Text(
-            label!,
-            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
-          ),
-          AppSpacing.gapH8,
-        ],
-        InkWell(
-          onTap: enabled
-              ? () async {
-                  final initial = selectedDate ??
-                      DateTime(
-                        DateTime.now().year - 20,
-                        DateTime.now().month,
-                        DateTime.now().day,
+    return FormField<DateTime>(
+      initialValue: selectedDate,
+      validator: validator,
+      builder: (formFieldState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (label != null) ...[
+              Text(
+                label!,
+                style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
+              ),
+              AppSpacing.gapH8,
+            ],
+            InkWell(
+              onTap: enabled
+                  ? () async {
+                      final initial = selectedDate ??
+                          DateTime(
+                            DateTime.now().year - 20,
+                            DateTime.now().month,
+                            DateTime.now().day,
+                          );
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initial.isBefore(effectiveFirstDate)
+                            ? effectiveFirstDate
+                            : (initial.isAfter(effectiveLastDate)
+                                ? effectiveLastDate
+                                : initial),
+                        firstDate: effectiveFirstDate,
+                        lastDate: effectiveLastDate,
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: AppColors.primary,
+                                onPrimary: Colors.white,
+                                onSurface: AppColors.textPrimary,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: initial.isBefore(effectiveFirstDate)
-                        ? effectiveFirstDate
-                        : (initial.isAfter(effectiveLastDate)
-                            ? effectiveLastDate
-                            : initial),
-                    firstDate: effectiveFirstDate,
-                    lastDate: effectiveLastDate,
-                    builder: (context, child) {
-                      return Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.light(
-                            primary: AppColors.primary,
-                            onPrimary: Colors.white,
-                            onSurface: AppColors.textPrimary,
-                          ),
-                        ),
-                        child: child!,
-                      );
-                    },
-                  );
 
-                  if (picked != null) {
-                    onDateSelected(picked);
-                  }
-                }
-              : null,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              hintText: hint ?? 'Select date',
-              prefixIcon: prefixIcon ?? const Icon(AppIcons.birthday, color: AppColors.textSecondary, size: 20),
-              suffixIcon: const Icon(AppIcons.calendar, color: AppColors.textSecondary, size: 20),
-              enabled: enabled,
+                      if (picked != null) {
+                        formFieldState.didChange(picked);
+                        onDateSelected(picked);
+                      }
+                    }
+                  : null,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  hintText: hint ?? 'Select date',
+                  prefixIcon: prefixIcon ??
+                      const Icon(AppIcons.birthday, color: AppColors.textSecondary, size: 20),
+                  suffixIcon:
+                      const Icon(AppIcons.calendar, color: AppColors.textSecondary, size: 20),
+                  enabled: enabled,
+                  errorText: formFieldState.errorText,
+                ),
+                child: Text(
+                  formattedText ?? (hint ?? 'Select date'),
+                  style: formattedText != null
+                      ? AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)
+                      : AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+                ),
+              ),
             ),
-            child: Text(
-              formattedText ?? (hint ?? 'Select date'),
-              style: formattedText != null
-                  ? AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)
-                  : AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

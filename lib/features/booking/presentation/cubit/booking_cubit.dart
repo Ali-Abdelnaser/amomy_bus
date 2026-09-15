@@ -580,6 +580,31 @@ class BookingCubit extends Cubit<BookingState> {
     }
   }
 
+  /// Resyncs countdown and hold validity when app resumes from background
+  void resyncHoldOnResume() {
+    final hold = state.activeHold;
+    if (hold == null) return;
+    final remaining = hold.remainingSeconds;
+    if (remaining <= 0) {
+      _cancelHoldTimer();
+      emit(state.copyWith(
+        status: BookingStatus.error,
+        holdSecondsRemaining: 0,
+        currentStep: BookingStep.seatMap,
+        clearActiveHold: true,
+        clearSelectedSeat: true,
+        errorMessage: 'HOLD_EXPIRED',
+      ));
+      if (state.selectedTrip != null) {
+        loadSeatMap(state.selectedTrip!.tripId);
+      }
+    } else {
+      emit(state.copyWith(
+        holdSecondsRemaining: remaining,
+      ));
+    }
+  }
+
   void _startHoldTimer(BookingHold hold) {
     _cancelHoldTimer();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {

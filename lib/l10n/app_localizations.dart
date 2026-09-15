@@ -362,6 +362,12 @@ abstract class AppLocalizations {
   /// **'Save & Continue'**
   String get saveAndContinue;
 
+  /// No description provided for @profileUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your changes. Please try again.'**
+  String get profileUpdateFailed;
+
   /// No description provided for @forgotPasswordTitle.
   ///
   /// In en, this message translates to:
@@ -833,13 +839,13 @@ abstract class AppLocalizations {
   /// No description provided for @signOutConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Sign Out'**
+  /// **'Sign out?'**
   String get signOutConfirmTitle;
 
   /// No description provided for @signOutConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to sign out from AMOMY?'**
+  /// **'Are you sure you want to sign out of your account?'**
   String get signOutConfirmMessage;
 
   /// No description provided for @cancel.
@@ -1987,6 +1993,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notifications'**
   String get noNotifications;
+
+  /// No description provided for @profileAccountSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get profileAccountSection;
+
+  /// No description provided for @profilePreferencesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get profilePreferencesSection;
+
+  /// No description provided for @profileHelpSupportSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get profileHelpSupportSection;
+
+  /// No description provided for @profileAboutLegalSection.
+  ///
+  /// In en, this message translates to:
+  /// **'About & Legal'**
+  String get profileAboutLegalSection;
+
+  /// No description provided for @supportCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Center'**
+  String get supportCenter;
+
+  /// No description provided for @aboutAmomyApp.
+  ///
+  /// In en, this message translates to:
+  /// **'About AMOMY App'**
+  String get aboutAmomyApp;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
+  /// No description provided for @chooseFromPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Photos'**
+  String get chooseFromPhotos;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Photo'**
+  String get removePhoto;
+
+  /// No description provided for @avatarUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo updated successfully'**
+  String get avatarUpdatedSuccess;
+
+  /// No description provided for @avatarRemovedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo removed successfully'**
+  String get avatarRemovedSuccess;
+
+  /// No description provided for @avatarUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile photo'**
+  String get avatarUpdateFailed;
+
+  /// No description provided for @avatarRemoveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove profile photo'**
+  String get avatarRemoveFailed;
+
+  /// No description provided for @supportHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we help?'**
+  String get supportHeroTitle;
+
+  /// No description provided for @supportHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We are here to assist you with your trips, bookings, and account.'**
+  String get supportHeroSubtitle;
+
+  /// No description provided for @emailSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Support'**
+  String get emailSupport;
+
+  /// No description provided for @callUs.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Us'**
+  String get callUs;
+
+  /// No description provided for @whatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsApp;
+
+  /// No description provided for @workingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Working Hours'**
+  String get workingHours;
+
+  /// No description provided for @frequentlyAskedQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently Asked Questions'**
+  String get frequentlyAskedQuestions;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @faqQuestion1.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I book a seat on a bus?'**
+  String get faqQuestion1;
+
+  /// No description provided for @faqAnswer1.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your departure and destination stops, select your trip time, and pick an available seat directly on the bus map.'**
+  String get faqAnswer1;
+
+  /// No description provided for @faqQuestion2.
+  ///
+  /// In en, this message translates to:
+  /// **'How does the Points wallet work?'**
+  String get faqQuestion2;
+
+  /// No description provided for @faqAnswer2.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallet uses points where 1 Point = 1 EGP. You can top up your balance via Vodafone Cash or InstaPay.'**
+  String get faqAnswer2;
+
+  /// No description provided for @faqQuestion3.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I board the bus?'**
+  String get faqQuestion3;
+
+  /// No description provided for @faqAnswer3.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your digital QR ticket from the app to the driver or staff member when boarding.'**
+  String get faqAnswer3;
+
+  /// No description provided for @aboutAppDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'AMOMY Bus is a modern passenger transportation app designed for reliable daily commuting in Egypt.'**
+  String get aboutAppDescription;
+
+  /// No description provided for @aboutFeature1.
+  ///
+  /// In en, this message translates to:
+  /// **'View scheduled trips and routes'**
+  String get aboutFeature1;
+
+  /// No description provided for @aboutFeature2.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserve available seats in real time'**
+  String get aboutFeature2;
+
+  /// No description provided for @aboutFeature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your bookings and trip history'**
+  String get aboutFeature3;
+
+  /// No description provided for @aboutFeature4.
+  ///
+  /// In en, this message translates to:
+  /// **'Top up and pay with Points wallet'**
+  String get aboutFeature4;
+
+  /// No description provided for @aboutFeature5.
+  ///
+  /// In en, this message translates to:
+  /// **'Access digital QR tickets for quick boarding'**
+  String get aboutFeature5;
+
+  /// No description provided for @aboutFeature6.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive real-time trip and service notifications'**
+  String get aboutFeature6;
+
+  /// No description provided for @aboutFeature7.
+  ///
+  /// In en, this message translates to:
+  /// **'Track supported buses during operating hours'**
+  String get aboutFeature7;
+
+  /// No description provided for @developerSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get developerSection;
+
+  /// No description provided for @developerNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get developerNameLabel;
+
+  /// No description provided for @developerEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Email'**
+  String get developerEmailLabel;
+
+  /// No description provided for @developerWebsiteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get developerWebsiteLabel;
+
+  /// No description provided for @developerLinkedInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'LinkedIn'**
+  String get developerLinkedInLabel;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersion(String version);
+
+  /// No description provided for @allRightsReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'All rights reserved.'**
+  String get allRightsReserved;
 }
 
 class _AppLocalizationsDelegate

@@ -369,4 +369,149 @@ void main() {
     expectLater(authBloc.stream, emitsInOrder(expected));
     authBloc.add(const SignOutRequested());
   });
+
+  test('emits [AuthLoading, EmailVerificationRequired] on SignUpWithEmailRequested when user is unverified', () async {
+    fakeRepo.currentUserResult = tUnverifiedUser;
+    fakeRepo.failure = null;
+    final expected = [
+      const AuthLoading(),
+      EmailVerificationRequired(
+        email: 'unverified@amomy.com',
+        infoMessage: 'Verification code sent to your email.',
+      ),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const SignUpWithEmailRequested(
+      email: 'unverified@amomy.com',
+      password: 'ValidPassword123',
+      fullName: 'New Passenger',
+    ));
+  });
+
+  test('emits [EmailVerificationRequired] with success message on successful ResendOtpRequested', () async {
+    fakeRepo.failure = null;
+    final expected = [
+      const EmailVerificationRequired(
+        email: 'test@example.com',
+        infoMessage: 'Verification code resent successfully.',
+      ),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const ResendOtpRequested(email: 'test@example.com'));
+  });
+
+  test('emits [AuthFailureState] on failed ResendOtpRequested', () async {
+    const rateLimitFailure = ServerFailure(message: 'For security purposes, you can only request this once every 60 seconds');
+    fakeRepo.failure = rateLimitFailure;
+    final expected = [
+      const AuthFailureState(rateLimitFailure),
+    ];
+    expectLater(authBloc.stream, emitsInOrder(expected));
+    authBloc.add(const ResendOtpRequested(email: 'test@example.com'));
+  });
+
+  group('CompleteProfileRequested', () {
+    test('emits [ProfileSaving, ProfileSaveFailure] on profile save failure and preserves authenticated identity', () async {
+      fakeRepo.currentUserResult = tUser;
+      fakeRepo.failure = null;
+      authBloc.emit(Authenticated(
+        user: tUser,
+        wallet: const WalletPreview(
+          id: 'w-1',
+          userId: 'u-1',
+          cashPoints: 100,
+          subscriptionPoints: 50,
+        ),
+      ));
+
+      const serverFailure = ServerFailure(message: 'infinite recursion detected in policy for relation "profiles"');
+      fakeRepo.failure = serverFailure;
+
+      final expected = [
+        ProfileSaving(
+          user: tUser,
+          wallet: const WalletPreview(
+            id: 'w-1',
+            userId: 'u-1',
+            cashPoints: 100,
+            subscriptionPoints: 50,
+          ),
+        ),
+        ProfileSaveFailure(
+          user: tUser,
+          failure: serverFailure,
+          wallet: const WalletPreview(
+            id: 'w-1',
+            userId: 'u-1',
+            cashPoints: 100,
+            subscriptionPoints: 50,
+          ),
+        ),
+      ];
+
+      expectLater(authBloc.stream, emitsInOrder(expected));
+
+      authBloc.add(CompleteProfileRequested(
+        fullName: 'New Name',
+        phone: '01012345678',
+        gender: 'male',
+        dateOfBirth: DateTime(1995, 1, 1),
+      ));
+    });
+
+    test('failure preserves authenticated identity and allows subsequent retry to succeed', () async {
+      fakeRepo.currentUserResult = tUser;
+      const initialWallet = WalletPreview(
+        id: 'w-1',
+        userId: 'u-1',
+        cashPoints: 100,
+        subscriptionPoints: 50,
+      );
+      authBloc.emit(Authenticated(user: tUser, wallet: initialWallet));
+
+      // 1. First attempt fails
+      const serverFailure = ServerFailure(message: 'Network issue');
+      fakeRepo.failure = serverFailure;
+
+      authBloc.add(CompleteProfileRequested(
+        fullName: 'New Name',
+        phone: '01012345678',
+        gender: 'male',
+        dateOfBirth: DateTime(1995, 1, 1),
+      ));
+
+      await expectLater(
+        authBloc.stream,
+        emitsThrough(isA<ProfileSaveFailure>()),
+      );
+
+      // Verify that state remains an Authenticated subclass
+      expect(authBloc.state, isA<Authenticated>());
+      expect(authBloc.state is Unauthenticated, isFalse);
+      final failureState = authBloc.state as ProfileSaveFailure;
+      expect(failureState.user.id, equals(tUser.id));
+      expect(failureState.wallet, equals(initialWallet));
+
+      // 2. Retry succeeds
+      final updatedUser = tUser.copyWith(fullName: 'New Name');
+      fakeRepo.failure = null;
+      fakeRepo.currentUserResult = updatedUser;
+
+      authBloc.add(CompleteProfileRequested(
+        fullName: 'New Name',
+        phone: '01012345678',
+        gender: 'male',
+        dateOfBirth: DateTime(1995, 1, 1),
+      ));
+
+      await expectLater(
+        authBloc.stream,
+        emitsInOrder([
+          isA<ProfileSaving>(),
+          isA<Authenticated>().having((s) => s.user.fullName, 'fullName', 'New Name'),
+        ]),
+      );
+    });
+  });
 }
+

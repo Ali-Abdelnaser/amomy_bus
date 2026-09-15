@@ -145,6 +145,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveAndContinue => 'Save & Continue';
 
   @override
+  String get profileUpdateFailed =>
+      'Couldn\'t save your changes. Please try again.';
+
+  @override
   String get forgotPasswordTitle => 'Reset Password';
 
   @override
@@ -394,11 +398,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termsAndConditions => 'Terms & Conditions';
 
   @override
-  String get signOutConfirmTitle => 'Sign Out';
+  String get signOutConfirmTitle => 'Sign out?';
 
   @override
   String get signOutConfirmMessage =>
-      'Are you sure you want to sign out from AMOMY?';
+      'Are you sure you want to sign out of your account?';
 
   @override
   String get cancel => 'Cancel';
@@ -1012,4 +1016,138 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotifications => 'No notifications';
+
+  @override
+  String get profileAccountSection => 'Account';
+
+  @override
+  String get profilePreferencesSection => 'Preferences';
+
+  @override
+  String get profileHelpSupportSection => 'Help & Support';
+
+  @override
+  String get profileAboutLegalSection => 'About & Legal';
+
+  @override
+  String get supportCenter => 'Support Center';
+
+  @override
+  String get aboutAmomyApp => 'About AMOMY App';
+
+  @override
+  String get takePhoto => 'Take Photo';
+
+  @override
+  String get chooseFromPhotos => 'Choose from Photos';
+
+  @override
+  String get removePhoto => 'Remove Photo';
+
+  @override
+  String get avatarUpdatedSuccess => 'Profile photo updated successfully';
+
+  @override
+  String get avatarRemovedSuccess => 'Profile photo removed successfully';
+
+  @override
+  String get avatarUpdateFailed => 'Failed to update profile photo';
+
+  @override
+  String get avatarRemoveFailed => 'Failed to remove profile photo';
+
+  @override
+  String get supportHeroTitle => 'How can we help?';
+
+  @override
+  String get supportHeroSubtitle =>
+      'We are here to assist you with your trips, bookings, and account.';
+
+  @override
+  String get emailSupport => 'Email Support';
+
+  @override
+  String get callUs => 'Call Us';
+
+  @override
+  String get whatsApp => 'WhatsApp';
+
+  @override
+  String get workingHours => 'Working Hours';
+
+  @override
+  String get frequentlyAskedQuestions => 'Frequently Asked Questions';
+
+  @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get faqQuestion1 => 'How do I book a seat on a bus?';
+
+  @override
+  String get faqAnswer1 =>
+      'Choose your departure and destination stops, select your trip time, and pick an available seat directly on the bus map.';
+
+  @override
+  String get faqQuestion2 => 'How does the Points wallet work?';
+
+  @override
+  String get faqAnswer2 =>
+      'Your wallet uses points where 1 Point = 1 EGP. You can top up your balance via Vodafone Cash or InstaPay.';
+
+  @override
+  String get faqQuestion3 => 'How do I board the bus?';
+
+  @override
+  String get faqAnswer3 =>
+      'Show your digital QR ticket from the app to the driver or staff member when boarding.';
+
+  @override
+  String get aboutAppDescription =>
+      'AMOMY Bus is a modern passenger transportation app designed for reliable daily commuting in Egypt.';
+
+  @override
+  String get aboutFeature1 => 'View scheduled trips and routes';
+
+  @override
+  String get aboutFeature2 => 'Reserve available seats in real time';
+
+  @override
+  String get aboutFeature3 => 'Manage your bookings and trip history';
+
+  @override
+  String get aboutFeature4 => 'Top up and pay with Points wallet';
+
+  @override
+  String get aboutFeature5 => 'Access digital QR tickets for quick boarding';
+
+  @override
+  String get aboutFeature6 =>
+      'Receive real-time trip and service notifications';
+
+  @override
+  String get aboutFeature7 => 'Track supported buses during operating hours';
+
+  @override
+  String get developerSection => 'Developer';
+
+  @override
+  String get developerNameLabel => 'Developer';
+
+  @override
+  String get developerEmailLabel => 'Contact Email';
+
+  @override
+  String get developerWebsiteLabel => 'Website';
+
+  @override
+  String get developerLinkedInLabel => 'LinkedIn';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get allRightsReserved => 'All rights reserved.';
 }

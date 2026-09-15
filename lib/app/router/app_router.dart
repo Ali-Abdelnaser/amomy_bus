@@ -17,7 +17,11 @@ import '../../features/home/presentation/pages/passenger_home_page.dart';
 import '../../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/profile/presentation/pages/about_app_page.dart';
+import '../../features/profile/presentation/pages/privacy_policy_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/profile/presentation/pages/support_center_page.dart';
+import '../../features/profile/presentation/pages/terms_and_conditions_page.dart';
 import '../../features/shell/presentation/pages/passenger_shell_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/topup/domain/entities/topup_entities.dart';
@@ -321,6 +325,61 @@ class AppRouter {
         ),
       ),
 
+      // Profile: Personal Information (Edit Mode)
+      GoRoute(
+        path: RoutePaths.personalInformation,
+        name: RouteNames.personalInformation,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const CompleteProfilePage(),
+        ),
+      ),
+
+      // Profile: Support Center
+      GoRoute(
+        path: RoutePaths.support,
+        name: RouteNames.support,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const SupportCenterPage(),
+        ),
+      ),
+
+      // Profile: About AMOMY App
+      GoRoute(
+        path: RoutePaths.aboutApp,
+        name: RouteNames.aboutApp,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const AboutAppPage(),
+        ),
+      ),
+
+      // Profile: Privacy Policy
+      GoRoute(
+        path: RoutePaths.privacyPolicy,
+        name: RouteNames.privacyPolicy,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const PrivacyPolicyPage(),
+        ),
+      ),
+
+      // Profile: Terms & Conditions
+      GoRoute(
+        path: RoutePaths.termsAndConditions,
+        name: RouteNames.termsAndConditions,
+        pageBuilder: (context, state) => AppPageTransitions.standardPage(
+          key: state.pageKey,
+          name: state.name,
+          child: const TermsAndConditionsPage(),
+        ),
+      ),
+
       // Legacy/deep-link trip-linked live tracking path
       GoRoute(
         path: RoutePaths.liveTracking,
@@ -334,49 +393,69 @@ class AppRouter {
 
       // Debug: Design System Gallery (ONLY in debug mode)
     ],
-    redirect: (context, state) {
-      final authState = _authBloc.state;
-      final location = state.matchedLocation;
-
-      final isSplash = location == RoutePaths.splash;
-      final isOnboarding = location == RoutePaths.onboarding;
-      final isDesignSystem = location == RoutePaths.designSystemPreview;
-      final isAuthRoute = location == RoutePaths.login ||
-          location == RoutePaths.register ||
-          location == RoutePaths.forgotPassword ||
-          location == RoutePaths.resetPassword;
-      final isVerifyEmail = location == RoutePaths.emailVerification;
-
-      // Always permit design system preview in debug
-      if (isDesignSystem) return null;
-
-      // Allow onboarding and splash on initial launch / unauthenticated
-      if (authState is AuthInitial) {
-        return null;
-      }
-
-      // If user is unauthenticated or has auth failure
-      if (authState is Unauthenticated || authState is AuthFailureState) {
-        if (isOnboarding || isAuthRoute) return null;
-        return RoutePaths.login;
-      }
-
-      // If email verification is pending
-      if (authState is EmailVerificationRequired) {
-        if (isVerifyEmail) return null;
-        return RoutePaths.emailVerification;
-      }
-
-      // If user is authenticated (incomplete profile does NOT block Home)
-      if (authState is Authenticated) {
-        if (isSplash || isAuthRoute || isVerifyEmail) {
-          return RoutePaths.home;
-        }
-        // Permitted routes: /home, /complete-profile, etc.
-        return null;
-      }
-
-      return null;
-    },
+    redirect: (context, state) =>
+        redirectLogic(_authBloc.state, state.matchedLocation),
   );
+
+  static String? redirectLogic(AuthState authState, String location) {
+    final isSplash = location == RoutePaths.splash;
+    final isOnboarding = location == RoutePaths.onboarding;
+    final isDesignSystem = location == RoutePaths.designSystemPreview;
+    final isAuthRoute = location == RoutePaths.login ||
+        location == RoutePaths.register ||
+        location == RoutePaths.forgotPassword ||
+        location == RoutePaths.resetPassword ||
+        location == RoutePaths.emailVerification;
+
+    // Always permit design system preview in debug
+    if (isDesignSystem) return null;
+
+    // Allow onboarding and splash on initial launch / unauthenticated
+    if (authState is AuthInitial) {
+      return null;
+    }
+
+    // If user is explicitly unauthenticated
+    if (authState is Unauthenticated) {
+      if (isOnboarding || isAuthRoute) return null;
+      return RoutePaths.login;
+    }
+
+    // If an auth operation failed: never redirect to login from completeProfile
+    if (authState is AuthFailureState) {
+      if (isOnboarding || isAuthRoute || location == RoutePaths.completeProfile) {
+        return null;
+      }
+      return RoutePaths.login;
+    }
+
+    // If email verification is pending
+    if (authState is EmailVerificationRequired) {
+      if (isAuthRoute) return null;
+      return RoutePaths.emailVerification;
+    }
+
+    // If profile completion is explicitly pending
+    if (authState is ProfileCompletionRequired) {
+      if (location == RoutePaths.completeProfile) return null;
+      return RoutePaths.completeProfile;
+    }
+
+    // If user is authenticated: enforce strict profile completion guard
+    if (authState is Authenticated) {
+      final isComplete = authState.user.isProfileComplete;
+      if (!isComplete) {
+        if (location == RoutePaths.completeProfile) return null;
+        return RoutePaths.completeProfile;
+      }
+
+      if (isSplash || isAuthRoute) {
+        return RoutePaths.home;
+      }
+      // Permitted routes when complete: /home, /complete-profile (edit mode), etc.
+      return null;
+    }
+
+    return null;
+  }
 }

@@ -144,6 +144,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get saveAndContinue => 'حفظ ومتابعة';
 
   @override
+  String get profileUpdateFailed => 'تعذر حفظ التعديلات. حاول مرة أخرى.';
+
+  @override
   String get forgotPasswordTitle => 'استعادة كلمة المرور';
 
   @override
@@ -391,11 +394,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get termsAndConditions => 'الشروط والأحكام';
 
   @override
-  String get signOutConfirmTitle => 'تسجيل الخروج';
+  String get signOutConfirmTitle => 'تسجيل الخروج؟';
 
   @override
   String get signOutConfirmMessage =>
-      'هل أنت متأكد من رغبتك في تسجيل الخروج من AMOMY؟';
+      'هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟';
 
   @override
   String get cancel => 'إلغاء';
@@ -1004,4 +1007,137 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noNotifications => 'لا توجد إشعارات حالياً';
+
+  @override
+  String get profileAccountSection => 'الحساب';
+
+  @override
+  String get profilePreferencesSection => 'التفضيلات';
+
+  @override
+  String get profileHelpSupportSection => 'المساعدة والدعم';
+
+  @override
+  String get profileAboutLegalSection => 'حول التطبيق والقانونية';
+
+  @override
+  String get supportCenter => 'مركز الدعم';
+
+  @override
+  String get aboutAmomyApp => 'عن تطبيق عمومي';
+
+  @override
+  String get takePhoto => 'التقاط صورة';
+
+  @override
+  String get chooseFromPhotos => 'اختيار من الصور';
+
+  @override
+  String get removePhoto => 'إزالة الصورة';
+
+  @override
+  String get avatarUpdatedSuccess => 'تم تحديث الصورة الشخصية بنجاح';
+
+  @override
+  String get avatarRemovedSuccess => 'تم إزالة الصورة الشخصية بنجاح';
+
+  @override
+  String get avatarUpdateFailed => 'فشل تحديث الصورة الشخصية';
+
+  @override
+  String get avatarRemoveFailed => 'فشل إزالة الصورة الشخصية';
+
+  @override
+  String get supportHeroTitle => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get supportHeroSubtitle =>
+      'فريقنا متواجد لمساعدتك في كل ما يخص رحلاتك وحسابك.';
+
+  @override
+  String get emailSupport => 'البريد الإلكتروني للدعم';
+
+  @override
+  String get callUs => 'اتصل بنا';
+
+  @override
+  String get whatsApp => 'واتساب';
+
+  @override
+  String get workingHours => 'ساعات العمل';
+
+  @override
+  String get frequentlyAskedQuestions => 'الأسئلة الشائعة';
+
+  @override
+  String get copiedToClipboard => 'تم النسخ إلى الحافظة';
+
+  @override
+  String get faqQuestion1 => 'كيف يمكنني حجز مقعد في الأتوبيس؟';
+
+  @override
+  String get faqAnswer1 =>
+      'اختر محطة الركوب ومحطة النزول، ثم حدد موعد الرحلة واختر مقعدك المفضل مباشرة من خريطة الأتوبيس.';
+
+  @override
+  String get faqQuestion2 => 'كيف يعمل رصيد النقاط في المحفظة؟';
+
+  @override
+  String get faqAnswer2 =>
+      'تعتمد المحفظة على النقاط بحيث ١ نقطة = ١ جنيه مصري. يمكنك شحن رصيدك بسهولة عبر فودافون كاش أو إنستاباي.';
+
+  @override
+  String get faqQuestion3 => 'كيف أصعد إلى الأتوبيس؟';
+
+  @override
+  String get faqAnswer3 =>
+      'أظهر تذكرة QR الرقمية الخاصة بك من التطبيق للمشرف أو السائق عند الصعود.';
+
+  @override
+  String get aboutAppDescription =>
+      'تطبيق عمومي باص هو منصة نقل ذكية تتيح للركاب تجربة تنقل يومية مريحة وموثوقة في مصر.';
+
+  @override
+  String get aboutFeature1 => 'استعراض الرحلات والمواعيد المجدولة';
+
+  @override
+  String get aboutFeature2 => 'حجز المقاعد المتاحة في الوقت الفعلي';
+
+  @override
+  String get aboutFeature3 => 'إدارة الحجوزات وسجل الرحلات';
+
+  @override
+  String get aboutFeature4 => 'الدفع السهل عبر محفظة النقاط';
+
+  @override
+  String get aboutFeature5 => 'تذاكر رقمية برمز QR لركوب أسرع';
+
+  @override
+  String get aboutFeature6 => 'استلام إشعارات بالرحلات والخدمات أولاً بأول';
+
+  @override
+  String get aboutFeature7 => 'تتبع الأتوبيسات المدعومة أثناء الخدمة';
+
+  @override
+  String get developerSection => 'المطور';
+
+  @override
+  String get developerNameLabel => 'المطور';
+
+  @override
+  String get developerEmailLabel => 'البريد الإلكتروني';
+
+  @override
+  String get developerWebsiteLabel => 'الموقع الإلكتروني';
+
+  @override
+  String get developerLinkedInLabel => 'لينكد إن';
+
+  @override
+  String appVersion(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get allRightsReserved => 'جميع الحقوق محفوظة.';
 }
