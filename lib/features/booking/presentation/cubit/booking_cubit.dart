@@ -1,9 +1,12 @@
 // ignore_for_file: prefer_initializing_formals
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../domain/entities/booking_entities.dart';
+import '../../domain/failures/booking_failures.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../domain/usecases/booking_usecases.dart';
 import 'booking_state.dart';
@@ -21,6 +24,14 @@ class BookingCubit extends Cubit<BookingState> {
   final BookingRepository? _bookingRepository;
 
   Timer? _countdownTimer;
+  Stopwatch? _holdStopwatch;
+  int _initialHoldSecondsRemaining = 0;
+  Stopwatch Function() _stopwatchFactory = Stopwatch.new;
+
+  @visibleForTesting
+  set stopwatchFactory(Stopwatch Function() factory) =>
+      _stopwatchFactory = factory;
+
   StreamSubscription? _seatSubscription;
   bool _seatMapRefreshInFlight = false;
   bool _seatMapRefreshQueued = false;
@@ -155,10 +166,8 @@ class BookingCubit extends Cubit<BookingState> {
     }
 
     if (resolvedTrip == null) {
-      // Pick next available bookable trip for today
-      final bookableTrips = availableTrips
-          .where((t) => t.availableSeatsCount > 0)
-          .toList();
+      // Pick the first server-bookable trip for today.
+      final bookableTrips = availableTrips.where((t) => t.canBook).toList();
       if (bookableTrips.isNotEmpty) {
         resolvedTrip = bookableTrips.first;
       } else if (availableTrips.isNotEmpty) {
@@ -359,15 +368,21 @@ class BookingCubit extends Cubit<BookingState> {
         String? alert;
         if (current != null && !state.isTripLocked) {
           final stillValid = trips.any(
-            (t) => t.tripId == current!.tripId && t.availableSeatsCount > 0,
+            (t) => t.tripId == current!.tripId && t.canBook,
           );
           if (!stillValid) {
-            final next = trips
-                .where((t) => t.availableSeatsCount > 0)
-                .firstOrNull;
+            final next = trips.where((t) => t.canBook).firstOrNull;
             if (next != null) {
+              final currentFormatted = AppTimeFormatter.formatTripOption(
+                current,
+                isArabic: true,
+              );
+              final nextFormatted = AppTimeFormatter.formatTripOption(
+                next,
+                isArabic: true,
+              );
               alert =
-                  'رحلة ${current.departureTime} غير متاحة، تم اختيار رحلة ${next.departureTime}';
+                  'رحلة $currentFormatted غير متاحة، تم اختيار رحلة $nextFormatted';
               current = next;
             } else if (trips.isNotEmpty) {
               current = trips.first;
@@ -376,12 +391,10 @@ class BookingCubit extends Cubit<BookingState> {
             }
           }
         } else if (current == null && trips.isNotEmpty) {
-          current =
-              trips.where((t) => t.availableSeatsCount > 0).firstOrNull ??
-              trips.first;
+          current = trips.where((t) => t.canBook).firstOrNull ?? trips.first;
         } else if (current != null && bookedTripIds.contains(current.tripId)) {
           current =
-              trips.where((t) => t.availableSeatsCount > 0).firstOrNull ??
+              trips.where((t) => t.canBook).firstOrNull ??
               (trips.isNotEmpty ? trips.first : null);
         }
         emit(
@@ -571,6 +584,7 @@ class BookingCubit extends Cubit<BookingState> {
         currentStep: BookingStep.setup,
         clearSelectedSeat: true,
         clearActiveHold: true,
+        holdSecondsRemaining: 0,
         clearError: true,
       ),
     );
@@ -615,6 +629,7 @@ class BookingCubit extends Cubit<BookingState> {
         clearSelectedTrip: true,
         clearSelectedSeat: true,
         clearActiveHold: true,
+        holdSecondsRemaining: 0,
         clearError: true,
       ),
     );
@@ -643,6 +658,7 @@ class BookingCubit extends Cubit<BookingState> {
         currentStep: BookingStep.setup,
         clearSelectedSeat: true,
         clearActiveHold: true,
+        holdSecondsRemaining: 0,
         clearError: true,
       ),
     );
@@ -676,6 +692,24 @@ class BookingCubit extends Cubit<BookingState> {
         );
       },
       onError: (failure) {
+        if (failure is HoldExpiredFailure) {
+          _cancelHoldTimer();
+          emit(
+            state.copyWith(
+              status: BookingStatus.error,
+              currentStep: BookingStep.seatMap,
+              clearActiveHold: true,
+              clearSelectedSeat: true,
+              holdSecondsRemaining: 0,
+              errorMessage: failure.message,
+            ),
+          );
+          if (state.selectedTrip != null) {
+            _refreshSeatMapSilently(state.selectedTrip!.tripId);
+          }
+          return;
+        }
+
         emit(
           state.copyWith(
             status: BookingStatus.error,
@@ -704,7 +738,16 @@ class BookingCubit extends Cubit<BookingState> {
   void resyncHoldOnResume() {
     final hold = state.activeHold;
     if (hold == null) return;
-    final remaining = hold.remainingSeconds;
+
+    final int remaining;
+    if (_holdStopwatch != null) {
+      final elapsedSeconds = _holdStopwatch!.elapsed.inSeconds;
+      final calculated = _initialHoldSecondsRemaining - elapsedSeconds;
+      remaining = calculated > 0 ? calculated : 0;
+    } else {
+      remaining = hold.remainingSeconds;
+    }
+
     if (remaining <= 0) {
       _cancelHoldTimer();
       emit(
@@ -718,7 +761,7 @@ class BookingCubit extends Cubit<BookingState> {
         ),
       );
       if (state.selectedTrip != null) {
-        loadSeatMap(state.selectedTrip!.tripId);
+        _refreshSeatMapSilently(state.selectedTrip!.tripId);
       }
     } else {
       emit(state.copyWith(holdSecondsRemaining: remaining));
@@ -727,8 +770,21 @@ class BookingCubit extends Cubit<BookingState> {
 
   void _startHoldTimer(BookingHold hold) {
     _cancelHoldTimer();
+    // Authoritative initial value from backend: hold.remainingSeconds
+    _initialHoldSecondsRemaining = hold.remainingSeconds;
+    _holdStopwatch = _stopwatchFactory()..start();
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final remaining = hold.remainingSeconds;
+      // If the active hold was cleared, cancelled, or replaced, stop ticking immediately
+      if (state.activeHold == null || state.activeHold?.holdId != hold.holdId) {
+        _cancelHoldTimer();
+        return;
+      }
+
+      final elapsedSeconds = _holdStopwatch?.elapsed.inSeconds ?? 0;
+      final calculated = _initialHoldSecondsRemaining - elapsedSeconds;
+      final remaining = calculated > 0 ? calculated : 0;
+
       if (remaining <= 0) {
         _cancelHoldTimer();
         emit(
@@ -742,19 +798,10 @@ class BookingCubit extends Cubit<BookingState> {
           ),
         );
         if (state.selectedTrip != null) {
-          loadSeatMap(state.selectedTrip!.tripId);
+          _refreshSeatMapSilently(state.selectedTrip!.tripId);
         }
       } else {
-        // Countdown ticks must NEVER re-emit or retain error status / messages
-        final hasError =
-            state.errorMessage != null || state.status == BookingStatus.error;
-        emit(
-          state.copyWith(
-            holdSecondsRemaining: remaining,
-            status: hasError ? BookingStatus.seatHeld : state.status,
-            clearError: hasError,
-          ),
-        );
+        emit(state.copyWith(holdSecondsRemaining: remaining));
       }
     });
   }
@@ -762,6 +809,9 @@ class BookingCubit extends Cubit<BookingState> {
   void _cancelHoldTimer() {
     _countdownTimer?.cancel();
     _countdownTimer = null;
+    _holdStopwatch?.stop();
+    _holdStopwatch = null;
+    _initialHoldSecondsRemaining = 0;
   }
 
   @override

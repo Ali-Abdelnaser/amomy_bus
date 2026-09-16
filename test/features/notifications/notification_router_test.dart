@@ -329,9 +329,8 @@ void main() {
         routes: [
           StatefulShellRoute.indexedStack(
             parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state, navigationShell) => Scaffold(
-              body: navigationShell,
-            ),
+            builder: (context, state, navigationShell) =>
+                Scaffold(body: navigationShell),
             branches: [
               StatefulShellBranch(
                 navigatorKey: shellHomeNavigatorKey,
@@ -481,31 +480,30 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Test E: Different notification later -> navigation succeeds',
-      (tester) async {
-        final router = buildTestRouter();
-        await tester.pumpWidget(createTestApp(router: router));
-        await tester.pumpAndSettle();
+    testWidgets('Test E: Different notification later -> navigation succeeds', (
+      tester,
+    ) async {
+      final router = buildTestRouter();
+      await tester.pumpWidget(createTestApp(router: router));
+      await tester.pumpAndSettle();
 
-        // First notification -> /trips
-        NotificationRouter.navigateToDestination({
-          'notification_id': 'first-notif',
-          'type': 'booking_confirmed',
-        });
-        await tester.pumpAndSettle();
-        expect(find.text('Trips Screen'), findsOneWidget);
+      // First notification -> /trips
+      NotificationRouter.navigateToDestination({
+        'notification_id': 'first-notif',
+        'type': 'booking_confirmed',
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Trips Screen'), findsOneWidget);
 
-        // Second different notification later -> /wallet
-        NotificationRouter.navigateToDestination({
-          'notification_id': 'second-notif',
-          'type': 'wallet_credit',
-        });
-        await tester.pumpAndSettle();
-        expect(find.text('Wallet Screen'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
-    );
+      // Second different notification later -> /wallet
+      NotificationRouter.navigateToDestination({
+        'notification_id': 'second-notif',
+        'type': 'wallet_credit',
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Wallet Screen'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets(
       'Test F: Cold-start / background notification routing contract intact',
@@ -569,9 +567,7 @@ void main() {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [Locale('en'), Locale('ar')],
-            home: Scaffold(
-              body: BookingSuccessView(booking: sampleBooking),
-            ),
+            home: Scaffold(body: BookingSuccessView(booking: sampleBooking)),
           ),
         );
         await tester.pumpAndSettle();

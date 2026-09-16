@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_dialog.dart';
@@ -75,7 +76,6 @@ class TodayTripCard extends StatelessWidget {
       displayOrigin = trip.originName(locale);
       displayDest = trip.destinationName(locale);
     }
-
 
     // Bulletproof non-empty fallback
     if (displayOrigin.trim().isEmpty) {
@@ -201,7 +201,10 @@ class TodayTripCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  trip.departureTime,
+                                  AppTimeFormatter.formatPassengerTodayTrip(
+                                    trip,
+                                    locale: locale,
+                                  ),
                                   style: AppTextStyles.titleSmall.copyWith(
                                     fontWeight: FontWeight.w900,
                                     fontSize: 15,
@@ -234,7 +237,9 @@ class TodayTripCard extends StatelessWidget {
                                   showDialog(
                                     context: context,
                                     builder: (ctx) => AppDialog(
-                                      title: isAr ? 'المقاعد المحجوزة' : 'Booked Seats',
+                                      title: isAr
+                                          ? 'المقاعد المحجوزة'
+                                          : 'Booked Seats',
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -242,9 +247,11 @@ class TodayTripCard extends StatelessWidget {
                                             isAr
                                                 ? 'تم حجز ${seatsList.length} مقاعد لهذه الرحلة'
                                                 : '${seatsList.length} seats booked for this trip',
-                                            style: AppTextStyles.bodyMedium.copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
+                                            style: AppTextStyles.bodyMedium
+                                                .copyWith(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
                                             textAlign: TextAlign.center,
                                           ),
                                           const SizedBox(height: 16),
@@ -254,19 +261,25 @@ class TodayTripCard extends StatelessWidget {
                                             alignment: WrapAlignment.center,
                                             children: seatsList.map((seat) {
                                               return Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 14,
-                                                  vertical: 8,
-                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 8,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFEFF6FC),
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  color: const Color(
+                                                    0xFFEFF6FC,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                   border: Border.all(
-                                                    color: AppColors.primary.withValues(alpha: 0.3),
+                                                    color: AppColors.primary
+                                                        .withValues(alpha: 0.3),
                                                   ),
                                                 ),
                                                 child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
                                                     const NavSvgIcon(
                                                       type: NavSvgType.trip,
@@ -275,11 +288,15 @@ class TodayTripCard extends StatelessWidget {
                                                     ),
                                                     const SizedBox(width: 6),
                                                     Text(
-                                                      isAr ? 'مقعد $seat' : 'Seat $seat',
+                                                      isAr
+                                                          ? 'مقعد $seat'
+                                                          : 'Seat $seat',
                                                       style: const TextStyle(
-                                                        fontWeight: FontWeight.w800,
+                                                        fontWeight:
+                                                            FontWeight.w800,
                                                         fontSize: 13,
-                                                        color: AppColors.primaryDarker,
+                                                        color: AppColors
+                                                            .primaryDarker,
                                                       ),
                                                     ),
                                                   ],
@@ -291,7 +308,8 @@ class TodayTripCard extends StatelessWidget {
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(),
                                           child: Text(
                                             isAr ? 'إغلاق' : 'Close',
                                             style: const TextStyle(
@@ -310,9 +328,13 @@ class TodayTripCard extends StatelessWidget {
                                     onTap: showSeatsDialog,
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                        vertical: 1,
+                                      ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const NavSvgIcon(
@@ -326,11 +348,14 @@ class TodayTripCard extends StatelessWidget {
                                               isAr
                                                   ? '${seatsList.length} مقاعد'
                                                   : '${seatsList.length} Seats',
-                                              style: AppTextStyles.titleSmall.copyWith(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w900,
-                                                color: const Color(0xFF101828),
-                                              ),
+                                              style: AppTextStyles.titleSmall
+                                                  .copyWith(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: const Color(
+                                                      0xFF101828,
+                                                    ),
+                                                  ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -360,27 +385,38 @@ class TodayTripCard extends StatelessWidget {
                                     Flexible(
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             isAr
-                                                ? (isMulti ? 'المقاعد' : 'المقعد')
+                                                ? (isMulti
+                                                      ? 'المقاعد'
+                                                      : 'المقعد')
                                                 : (isMulti ? 'Seats' : 'Seat'),
-                                            style: AppTextStyles.labelSmall.copyWith(
-                                              fontSize: 9.0,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF475467),
-                                              height: 1.0,
-                                            ),
+                                            style: AppTextStyles.labelSmall
+                                                .copyWith(
+                                                  fontSize: 9.0,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: const Color(
+                                                    0xFF475467,
+                                                  ),
+                                                  height: 1.0,
+                                                ),
                                           ),
                                           Text(
                                             seatStr,
-                                            style: AppTextStyles.titleSmall.copyWith(
-                                              fontSize: isMulti ? 11.0 : 13.0,
-                                              fontWeight: FontWeight.w900,
-                                              color: const Color(0xFF101828),
-                                              height: 1.1,
-                                            ),
+                                            style: AppTextStyles.titleSmall
+                                                .copyWith(
+                                                  fontSize: isMulti
+                                                      ? 11.0
+                                                      : 13.0,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: const Color(
+                                                    0xFF101828,
+                                                  ),
+                                                  height: 1.1,
+                                                ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -703,11 +739,13 @@ class TodayTripCard extends StatelessWidget {
                                         AddExtraSeatModal.show(
                                           context,
                                           trip: trip,
-                                          tripsCubit: context.read<PassengerTripsCubit>(),
+                                          tripsCubit: context
+                                              .read<PassengerTripsCubit>(),
                                         );
                                       },
                                       icon: const Icon(
-                                        Icons.airline_seat_recline_extra_rounded,
+                                        Icons
+                                            .airline_seat_recline_extra_rounded,
                                         size: 15,
                                       ),
                                       label: Text(
@@ -745,7 +783,6 @@ class TodayTripCard extends StatelessWidget {
                                 BookedTripOverflowMenu(trip: trip),
                               ],
                             )
-
                           else if (isAvailable)
                             _BookNowButton(
                               isAr: isAr,
@@ -938,7 +975,10 @@ class TodayTripCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     QrTicketModal.show(
       context,
-      departureTime: trip.departureTime,
+      departureTime: AppTimeFormatter.formatPassengerTodayTrip(
+        trip,
+        locale: locale,
+      ),
       originName: trip.originName(locale),
       destinationName: trip.destinationName(locale),
       seatNumber: trip.seatNumber ?? '—',

@@ -37,7 +37,7 @@ void main() {
     destinationNameAr: 'بوابة توشكى',
     destinationNameEn: 'Toshka Gate',
     departureTime: '08:00',
-    departureAt: DateTime.now().add(const Duration(hours: 2)),
+    departureAt: DateTime(2026, 9, 16, 8, 0),
     farePoints: 25.0,
     availableSeatsCount: 10,
     status: 'scheduled',
@@ -147,11 +147,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('08:00'), findsOneWidget);
+      expect(find.text('8:00 AM'), findsOneWidget);
       expect(find.text('Bus at Mit Fadala'), findsOneWidget);
       expect(find.text('First stop · Available'), findsOneWidget);
 
-      await tester.tap(find.text('08:00'));
+      await tester.tap(find.text('8:00 AM'));
       expect(selected, sampleTrip);
     });
 
@@ -171,7 +171,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('انتهت رحلات اليوم'), findsOneWidget);
+      expect(find.text('لا توجد رحلات متاحة اليوم'), findsOneWidget);
       expect(
         find.text('تابع التطبيق غداً لمواعيد الرحلات الجديدة.'),
         findsOneWidget,

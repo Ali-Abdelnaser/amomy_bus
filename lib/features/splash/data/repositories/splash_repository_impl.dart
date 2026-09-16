@@ -1,5 +1,4 @@
 import 'package:injectable/injectable.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/typedefs/typedefs.dart';
 import '../../domain/entities/app_init_status.dart';
@@ -15,8 +14,8 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   ResultFuture<AppInitStatus> checkAppStatus() async {
     try {
-      // Minimum duration for splash visual branding
-      await Future.delayed(AppConstants.splashDuration);
+      // Native launch screen already provides branding time.
+      // No artificial delay — proceed as soon as status is known.
 
       final isAuth = await _localDataSource.isAuthenticated();
       final isOnboarding = await _localDataSource.isOnboardingCompleted();

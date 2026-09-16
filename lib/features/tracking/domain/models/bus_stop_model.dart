@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'live_tracking_status.dart';
 
 /// Clean model representing an authoritative physical route stop from backend.
 class BusStopModel extends Equatable {
@@ -18,6 +19,7 @@ class BusStopModel extends Equatable {
   final int farePoints;
   final DateTime? actualArrivalTime;
   final DateTime? estimatedArrivalTime;
+  final TrackingStopSemanticState semanticState;
 
   const BusStopModel({
     required this.id,
@@ -36,6 +38,7 @@ class BusStopModel extends Equatable {
     this.farePoints = 20,
     this.actualArrivalTime,
     this.estimatedArrivalTime,
+    this.semanticState = TrackingStopSemanticState.unknown,
   });
 
   bool get hasCoordinates =>
@@ -49,6 +52,13 @@ class BusStopModel extends Equatable {
       latitude! <= 90.0 &&
       longitude! >= -180.0 &&
       longitude! <= 180.0;
+
+  bool get hasCanonicalCoordinates {
+    final source = coordinateSource?.toLowerCase().trim();
+    final isQaSource =
+        source == 'temporary_qa' || source == 'qa_stop_coordinates';
+    return hasCoordinates && !isTemporaryQa && !isQaSource;
+  }
 
   BusStopModel copyWith({
     String? id,
@@ -67,6 +77,7 @@ class BusStopModel extends Equatable {
     int? farePoints,
     DateTime? actualArrivalTime,
     DateTime? estimatedArrivalTime,
+    TrackingStopSemanticState? semanticState,
   }) {
     return BusStopModel(
       id: id ?? this.id,
@@ -85,6 +96,7 @@ class BusStopModel extends Equatable {
       farePoints: farePoints ?? this.farePoints,
       actualArrivalTime: actualArrivalTime ?? this.actualArrivalTime,
       estimatedArrivalTime: estimatedArrivalTime ?? this.estimatedArrivalTime,
+      semanticState: semanticState ?? this.semanticState,
     );
   }
 
@@ -110,6 +122,11 @@ class BusStopModel extends Equatable {
 
     final actualRaw = json['actual_arrival_time'] ?? json['arrived_at'];
     final estRaw = json['estimated_arrival_time'] ?? json['eta'];
+    final stateRaw =
+        json['semantic_state'] ??
+        json['stop_state'] ??
+        json['state'] ??
+        json['progress_state'];
 
     return BusStopModel(
       id: (json['stop_id'] ?? json['id'] ?? '') as String,
@@ -136,6 +153,7 @@ class BusStopModel extends Equatable {
       estimatedArrivalTime: estRaw != null
           ? DateTime.tryParse(estRaw.toString())
           : null,
+      semanticState: TrackingStopSemanticState.fromString(stateRaw?.toString()),
     );
   }
 
@@ -156,6 +174,7 @@ class BusStopModel extends Equatable {
     'fare_points': farePoints,
     'actual_arrival_time': actualArrivalTime?.toIso8601String(),
     'estimated_arrival_time': estimatedArrivalTime?.toIso8601String(),
+    'semantic_state': semanticState.name,
   };
 
   @override
@@ -176,5 +195,6 @@ class BusStopModel extends Equatable {
     farePoints,
     actualArrivalTime,
     estimatedArrivalTime,
+    semanticState,
   ];
 }

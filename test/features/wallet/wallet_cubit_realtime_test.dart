@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:amomy_bus/core/typedefs/typedefs.dart';
 import 'package:amomy_bus/features/wallet/domain/entities/point_transaction.dart';
+import 'package:amomy_bus/features/wallet/domain/entities/wallet_history_event.dart';
 import 'package:amomy_bus/features/wallet/domain/entities/wallet_summary.dart';
 import 'package:amomy_bus/features/wallet/domain/repositories/wallet_repository.dart';
+import 'package:amomy_bus/features/wallet/domain/usecases/get_wallet_history_usecase.dart';
 import 'package:amomy_bus/features/wallet/domain/usecases/get_wallet_summary_usecase.dart';
 import 'package:amomy_bus/features/wallet/domain/usecases/get_wallet_transactions_usecase.dart';
 import 'package:amomy_bus/features/topup/domain/entities/topup_entities.dart';
@@ -27,12 +29,24 @@ class MockWalletRepository implements WalletRepository {
     );
   }
 
+  List<PointTransaction> mockTransactions = const [];
+  WalletHistoryPage mockHistoryPage = const WalletHistoryPage.empty();
+
   @override
   ResultFuture<List<PointTransaction>> getTransactions(
     String userId, {
     int limit = 20,
   }) async {
-    return const Success([]);
+    return Success(mockTransactions);
+  }
+
+  @override
+  ResultFuture<WalletHistoryPage> getWalletHistory({
+    int limit = 20,
+    String? beforeCreatedAt,
+    String? beforeEventId,
+  }) async {
+    return Success(mockHistoryPage);
   }
 
   @override
@@ -108,12 +122,14 @@ void main() {
     getWalletSummaryUseCase = GetWalletSummaryUseCase(walletRepo);
     getWalletTransactionsUseCase = GetWalletTransactionsUseCase(walletRepo);
     getMyTopUpRequestsUseCase = GetMyTopUpRequestsUseCase(topUpRepo);
+    final getWalletHistoryUseCase = GetWalletHistoryUseCase(walletRepo);
 
     cubit = WalletCubit(
       getWalletSummaryUseCase,
       getWalletTransactionsUseCase,
       walletRepo,
       getMyTopUpRequestsUseCase,
+      getWalletHistoryUseCase,
     );
   });
 
@@ -234,11 +250,8 @@ void main() {
   );
 
   test(
-    'WalletCubit merges point transaction realtime inserts once by id',
+    'WalletCubit treats point_transactions realtime event as invalidation and refreshes history',
     () async {
-      await cubit.loadWalletSummary('user-123');
-      expect(cubit.state.transactions, isEmpty);
-
       final transaction = PointTransaction(
         id: 'tx-1',
         userId: 'user-123',
@@ -249,13 +262,32 @@ void main() {
         createdAt: DateTime(2026, 9, 15, 12),
       );
 
+      final event = WalletHistoryEvent(
+        eventId: 'evt-1',
+        semanticType: WalletSemanticType.pointsTopup,
+        signedAmount: 50,
+        createdAt: DateTime(2026, 9, 15, 12),
+      );
+
+      walletRepo.mockTransactions = [transaction];
+      walletRepo.mockHistoryPage = WalletHistoryPage(
+        events: [event],
+        hasMore: false,
+      );
+
+      await cubit.loadWalletSummary('user-123');
+      expect(cubit.state.historyEvents.length, 1);
+      expect(cubit.state.historyEvents.first.eventId, 'evt-1');
+
+      // Trigger realtime invalidation twice
       walletRepo.transactionController?.add(transaction);
-      await pumpEventQueue();
       walletRepo.transactionController?.add(transaction);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
       await pumpEventQueue();
 
-      expect(cubit.state.transactions.length, 1);
-      expect(cubit.state.transactions.first.id, 'tx-1');
+      // De-duplicated and stable by eventId
+      expect(cubit.state.historyEvents.length, 1);
+      expect(cubit.state.historyEvents.first.eventId, 'evt-1');
     },
   );
 }

@@ -26,13 +26,6 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class NotificationService with WidgetsBindingObserver {
-  /// TEMPORARY DIAGNOSTIC SWITCH FOR IOS CRASH INVESTIGATION
-  /// Set to true to isolate iOS push startup completely (skips permission prompt, APNs check, getToken, backend sync).
-  /// If Home stays alive with this true, push startup area is definitively confirmed.
-  /// Set to false to run normal startup with focused [IOS_PUSH_DIAG] logging.
-  static const bool debugDisableIosPushStartup =
-      false; // Set to false for normal startup
-
   final NotificationRepository repository;
   final FirebaseMessaging _messaging;
   final LocalNotificationService _localNotifications;
@@ -124,8 +117,6 @@ class NotificationService with WidgetsBindingObserver {
         badge: true,
         sound: false,
       );
-      await _logIosLocalNotificationSettings();
-
       // 4. Check for initial cold-start notification tap
       final initialMessage = await _messaging.getInitialMessage();
       if (initialMessage != null) {
@@ -313,55 +304,15 @@ class NotificationService with WidgetsBindingObserver {
       _currentLifecycleState == AppLifecycleState.resumed ||
       _currentLifecycleState == AppLifecycleState.inactive;
 
-  Future<void> _logIosLocalNotificationSettings() async {
-    if (!kDebugMode || defaultTargetPlatform != TargetPlatform.iOS) return;
-
-    try {
-      final settings = await _messaging.getNotificationSettings();
-      debugPrint(
-        '[IOS_LOCAL_NOTIF_DIAG] authorization=${settings.authorizationStatus.name}',
-      );
-      debugPrint('[IOS_LOCAL_NOTIF_DIAG] alert_setting=${settings.alert.name}');
-      debugPrint('[IOS_LOCAL_NOTIF_DIAG] sound_setting=${settings.sound.name}');
-      debugPrint('[IOS_LOCAL_NOTIF_DIAG] badge_setting=${settings.badge.name}');
-      debugPrint(
-        '[IOS_LOCAL_NOTIF_DIAG] notification_center_setting=${settings.notificationCenter.name}',
-      );
-      debugPrint(
-        '[IOS_LOCAL_NOTIF_DIAG] lock_screen_setting=${settings.lockScreen.name}',
-      );
-      debugPrint(
-        '[IOS_LOCAL_NOTIF_DIAG] plugin_initialized=${_localNotifications.isInitialized}',
-      );
-    } catch (e) {
-      debugPrint(
-        '[IOS_LOCAL_NOTIF_DIAG] notification_settings_error=${e.runtimeType}',
-      );
-    }
-  }
-
   Future<bool> presentForegroundNotificationRow(
     AppNotification notification,
   ) async {
-    if (kDebugMode) {
-      debugPrint('[NOTIF_PRESENT_DIAG] realtime_insert_received');
-      debugPrint(
-        '[NOTIF_PRESENT_DIAG] lifecycle=${_currentLifecycleState.name}',
-      );
-    }
-
     if (!_isForeground) return false;
     if (notification.isRead) return false;
 
     final dedupeKey = _extractNotificationDedupeKey(notification);
     final dedupeHit = _hasPresented(dedupeKey);
-    if (kDebugMode) {
-      debugPrint('[NOTIF_PRESENT_DIAG] dedupe_hit=$dedupeHit');
-    }
     if (dedupeHit) {
-      if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Skipping duplicate realtime notification');
-      }
       return false;
     }
 
@@ -371,8 +322,6 @@ class NotificationService with WidgetsBindingObserver {
     final body = notification.bodyEn.isNotEmpty
         ? notification.bodyEn
         : notification.bodyAr;
-
-    await _logIosLocalNotificationSettings();
 
     final payload = <String, dynamic>{
       ...notification.data,
@@ -398,32 +347,12 @@ class NotificationService with WidgetsBindingObserver {
   /// 1. The sheet has not yet been shown/dismissed (per SharedPreferences).
   /// 2. The OS permission is not yet authorized.
   Future<bool> shouldShowPermissionPrompt() async {
-    if (kDebugMode) {
-      debugPrint('[IOS_PUSH_DIAG] 03 notification permission check start');
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.iOS &&
-        debugDisableIosPushStartup) {
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping permission prompt',
-        );
-      }
-      return false;
-    }
-
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final hasSeen = prefs.getBool(promptShownKey) ?? false;
       if (hasSeen) return false;
 
       final settings = await _messaging.getNotificationSettings();
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] 04 current permission = ${settings.authorizationStatus.name}',
-        );
-      }
-
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
         // Already authorized on device, sync token safely and mark as shown
@@ -441,12 +370,7 @@ class NotificationService with WidgetsBindingObserver {
 
       // On Android / notDetermined: Has not seen prompt yet -> show pre-permission sheet
       return true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] 03 notification permission check error: ${e.runtimeType}',
-        );
-      }
+    } catch (_) {
       return false;
     }
   }
@@ -483,21 +407,7 @@ class NotificationService with WidgetsBindingObserver {
   Future<NotificationSettings?> requestPermission({
     bool isManual = false,
   }) async {
-    if (defaultTargetPlatform == TargetPlatform.iOS &&
-        debugDisableIosPushStartup) {
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping requestPermission',
-        );
-      }
-      return null;
-    }
-
     try {
-      if (kDebugMode) {
-        debugPrint('[IOS_PUSH_DIAG] 05 permission request start');
-      }
-
       final settings = await _messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -508,24 +418,13 @@ class NotificationService with WidgetsBindingObserver {
         sound: true,
       );
 
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] 06 permission request returned = ${settings.authorizationStatus.name}',
-        );
-      }
-
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
         await syncDeviceToken();
       }
 
       return settings;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] 05 permission request error: ${e.runtimeType}',
-        );
-      }
+    } catch (_) {
       return null;
     }
   }
@@ -533,24 +432,12 @@ class NotificationService with WidgetsBindingObserver {
   /// Helper to verify APNs token readiness on iOS before attempting getToken.
   /// Bounded retry: attempts up to 3 times with 500ms intervals, then stops quietly.
   Future<bool> _isApnsReadyOnIos() async {
-    if (kDebugMode) {
-      debugPrint('[IOS_PUSH_DIAG] 07 getAPNSToken start');
-    }
-
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
         final apnsToken = await _messaging.getAPNSToken();
         final hasApns = apnsToken != null && apnsToken.trim().isNotEmpty;
-        if (kDebugMode) {
-          debugPrint(
-            '[IOS_PUSH_DIAG] 08 APNs token available = $hasApns (attempt $attempt/3)',
-          );
-        }
         if (hasApns) return true;
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[IOS_PUSH_DIAG] 07 getAPNSToken error: ${e.runtimeType}');
-        }
+      } catch (_) {
         return false;
       }
 
@@ -559,26 +446,11 @@ class NotificationService with WidgetsBindingObserver {
       }
     }
 
-    if (kDebugMode) {
-      debugPrint(
-        '[IOS_PUSH_DIAG] APNs token not ready; stopping quietly without calling getToken',
-      );
-    }
     return false;
   }
 
   /// Syncs / upserts the current FCM device token into public.user_device_tokens.
   Future<bool> syncDeviceToken({String? forcedToken}) async {
-    if (defaultTargetPlatform == TargetPlatform.iOS &&
-        debugDisableIosPushStartup) {
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping syncDeviceToken',
-        );
-      }
-      return false;
-    }
-
     try {
       // On iOS: verify APNs readiness first to prevent unready getToken crashes
       if (defaultTargetPlatform == TargetPlatform.iOS && forcedToken == null) {
@@ -589,27 +461,14 @@ class NotificationService with WidgetsBindingObserver {
         }
       }
 
-      if (kDebugMode) {
-        debugPrint('[IOS_PUSH_DIAG] 09 getToken start');
-      }
-
       final token = forcedToken ?? await _messaging.getToken();
       final hasToken = token != null && token.trim().isNotEmpty;
-
-      if (kDebugMode) {
-        final statusDesc = hasToken ? 'success' : 'null';
-        debugPrint('[IOS_PUSH_DIAG] 10 getToken $statusDesc');
-      }
 
       if (!hasToken) {
         _lastRegistrationStatus = 'missing_token';
         return false;
       }
       _lastKnownToken = token;
-
-      if (kDebugMode) {
-        debugPrint('[IOS_PUSH_DIAG] 11 backend token sync start');
-      }
 
       final platformStr = defaultTargetPlatform == TargetPlatform.iOS
           ? 'ios'
@@ -620,19 +479,10 @@ class NotificationService with WidgetsBindingObserver {
         platform: platformStr,
       );
 
-      if (kDebugMode) {
-        debugPrint(
-          '[IOS_PUSH_DIAG] 12 backend token sync ${success ? "success" : "error"}',
-        );
-      }
-
       _lastRegistrationStatus = success ? 'success' : 'failure';
       return success;
-    } catch (e) {
-      _lastRegistrationStatus = 'error: $e';
-      if (kDebugMode) {
-        debugPrint('[IOS_PUSH_DIAG] syncDeviceToken error: ${e.runtimeType}');
-      }
+    } catch (_) {
+      _lastRegistrationStatus = 'error';
       return false;
     }
   }
@@ -757,10 +607,8 @@ class NotificationService with WidgetsBindingObserver {
       foregroundListenerAttached: _foregroundMessageSub != null,
       backgroundHandlerRegistered: true,
       lastForegroundFcmMessage: fmtTime(_lastForegroundFcmTime),
-      lastLocalNotificationShowAttempt: fmtTime(
-        _localNotifications.lastShowAttempt,
-      ),
-      lastLocalNotificationResult: _localNotifications.lastShowResult ?? 'none',
+      lastLocalNotificationShowAttempt: 'none',
+      lastLocalNotificationResult: 'none',
       lastSelfTestRequest: fmtTime(_lastSelfTestTime),
       lastSelfTestBackendResult: _lastSelfTestBackendResult ?? 'none',
       lastFcmProviderResult: _lastFcmProviderResult ?? 'unknown',

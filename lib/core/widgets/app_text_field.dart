@@ -26,6 +26,7 @@ class AppTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
   final FocusNode? focusNode;
+  final TextDirection? textDirection;
 
   const AppTextField({
     super.key,
@@ -48,6 +49,7 @@ class AppTextField extends StatelessWidget {
     this.inputFormatters,
     this.maxLines = 1,
     this.focusNode,
+    this.textDirection,
   });
 
   Widget? _buildIcon(dynamic icon) {
@@ -61,6 +63,15 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveTextDirection =
+        textDirection ??
+        ((keyboardType == TextInputType.phone ||
+                keyboardType == TextInputType.emailAddress ||
+                keyboardType == TextInputType.visiblePassword ||
+                keyboardType == TextInputType.number)
+            ? TextDirection.ltr
+            : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -91,6 +102,7 @@ class AppTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           maxLines: maxLines,
           focusNode: focusNode,
+          textDirection: effectiveTextDirection,
           style: AppTextStyles.bodyMedium.copyWith(
             color: enabled ? AppColors.textPrimary : AppColors.disabled,
             fontWeight: FontWeight.w500,

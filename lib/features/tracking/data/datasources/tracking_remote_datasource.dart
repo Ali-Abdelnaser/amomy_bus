@@ -1,17 +1,15 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../domain/models/bus_telemetry.dart';
 import '../../domain/models/route_geometry.dart';
 import '../../domain/models/tracking_summary.dart';
 
 abstract class TrackingRemoteDataSource {
-  Future<TrackingSummary> getLiveTrackingSummary({bool includeQa = false});
+  Future<TrackingSummary> getTripTracking({required String tripId});
   Future<RouteGeometry?> getActiveRouteGeometry({
     required String routeId,
     required String direction,
   });
-  Stream<BusTelemetry> subscribeToBusLiveLocation();
+  Stream<void> subscribeToTripTrackingState({required String tripId});
   Future<bool> recordApproachNotification({
     required String routeId,
     required String targetStopId,
@@ -38,25 +36,20 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
     : _client = client ?? Supabase.instance.client;
 
   @override
-  Future<TrackingSummary> getLiveTrackingSummary({
-    bool includeQa = false,
-  }) async {
+  Future<TrackingSummary> getTripTracking({required String tripId}) async {
     try {
       final response = await _client.rpc(
-        'get_live_bus_tracking_summary',
-        params: includeQa ? {'p_include_qa': true} : {},
+        'get_my_trip_tracking',
+        params: {'p_trip_id': tripId},
       );
       if (response == null) {
-        throw Exception('Tracking summary returned null');
+        throw Exception('Trip tracking returned null');
       }
       final data = response is Map<String, dynamic>
           ? response
           : Map<String, dynamic>.from(response as Map);
       return TrackingSummary.fromJson(data);
-    } catch (e, stack) {
-      debugPrint(
-        '[TrackingRemoteDataSource] getLiveTrackingSummary error: $e\n$stack',
-      );
+    } catch (_) {
       rethrow;
     }
   }
@@ -78,39 +71,20 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
 
       if (data == null) return null;
       return RouteGeometry.fromJson(Map<String, dynamic>.from(data));
-    } catch (e) {
-      debugPrint('[TrackingRemoteDataSource] getActiveRouteGeometry error: $e');
+    } catch (_) {
       return null;
     }
   }
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() {
-    debugPrint('[REALTIME_DIAG] bus_live_locations subscribe start');
+  Stream<void> subscribeToTripTrackingState({required String tripId}) {
     return _client
-        .from('bus_live_locations')
-        .stream(primaryKey: ['bus_id'])
+        .from('trip_tracking_state')
+        .stream(primaryKey: ['trip_id'])
+        .eq('trip_id', tripId)
         .where((rows) => rows.isNotEmpty)
-        .map((rows) {
-          debugPrint('[REALTIME_DIAG] bus_live_locations event');
-          // Sort by gps_recorded_at descending to get latest
-          final sorted = List<Map<String, dynamic>>.from(rows)
-            ..sort((a, b) {
-              final aTime =
-                  DateTime.tryParse(a['gps_recorded_at']?.toString() ?? '') ??
-                  DateTime(1970);
-              final bTime =
-                  DateTime.tryParse(b['gps_recorded_at']?.toString() ?? '') ??
-                  DateTime(1970);
-              return bTime.compareTo(aTime);
-            });
-          return BusTelemetry.fromJson(sorted.first);
-        })
-        .handleError((error, stackTrace) {
-          debugPrint(
-            '[REALTIME_DIAG] bus_live_locations error: ${error.runtimeType}',
-          );
-        });
+        .map((_) {})
+        .handleError((_) {});
   }
 
   @override
@@ -141,10 +115,7 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
         return (response['dispatched'] as bool?) ?? false;
       }
       return false;
-    } catch (e) {
-      debugPrint(
-        '[TrackingRemoteDataSource] recordApproachNotification error: $e',
-      );
+    } catch (_) {
       return false;
     }
   }

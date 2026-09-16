@@ -70,6 +70,8 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>UIUserInterfaceStyle</key>
+		<string>Light</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>

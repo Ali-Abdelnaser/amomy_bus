@@ -186,7 +186,7 @@ class AppRouter {
               GoRoute(
                 path: RoutePaths.home,
                 name: RouteNames.home,
-                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                pageBuilder: (context, state) => AppPageTransitions.shellPage(
                   key: state.pageKey,
                   name: state.name,
                   child: const PassengerHomePage(),
@@ -202,7 +202,7 @@ class AppRouter {
               GoRoute(
                 path: RoutePaths.trips,
                 name: RouteNames.trips,
-                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                pageBuilder: (context, state) => AppPageTransitions.shellPage(
                   key: state.pageKey,
                   name: state.name,
                   child: const MyTripsPage(),
@@ -218,7 +218,7 @@ class AppRouter {
               GoRoute(
                 path: RoutePaths.wallet,
                 name: RouteNames.wallet,
-                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                pageBuilder: (context, state) => AppPageTransitions.shellPage(
                   key: state.pageKey,
                   name: state.name,
                   child: const WalletPage(),
@@ -234,7 +234,7 @@ class AppRouter {
               GoRoute(
                 path: RoutePaths.profile,
                 name: RouteNames.profile,
-                pageBuilder: (context, state) => AppPageTransitions.fadePage(
+                pageBuilder: (context, state) => AppPageTransitions.shellPage(
                   key: state.pageKey,
                   name: state.name,
                   child: const ProfilePage(),
@@ -422,7 +422,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
           key: state.pageKey,
           name: state.name,
-          child: const LiveMapScreen(),
+          child: LiveMapScreen(tripId: state.pathParameters['tripId']),
         ),
       ),
 

@@ -12,14 +12,13 @@ import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_state.da
 // Fake repository with controllable telemetry stream
 // ---------------------------------------------------------------------------
 class FakeResilienceTrackingRepository implements TrackingRepository {
-  final TrackingSummary summary;
-  StreamController<BusTelemetry> _controller =
-      StreamController<BusTelemetry>.broadcast();
+  TrackingSummary summary;
+  StreamController<void> _controller = StreamController<void>.broadcast();
 
   FakeResilienceTrackingRepository({required this.summary});
 
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async =>
+  Future<TrackingSummary> getTripTracking({required String tripId}) async =>
       summary;
 
   @override
@@ -29,14 +28,22 @@ class FakeResilienceTrackingRepository implements TrackingRepository {
   }) async => null;
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() => _controller.stream;
+  Stream<void> subscribeToTripTrackingState({required String tripId}) =>
+      _controller.stream;
 
-  void emitTelemetry(BusTelemetry t) => _controller.add(t);
+  void emitTelemetry(BusTelemetry t) {
+    summary = summary.copyWith(
+      status: LiveTrackingStatus.online,
+      busLocation: t,
+    );
+    _controller.add(null);
+  }
+
   void emitError(Object error) => _controller.addError(error);
 
   // Replaces the underlying controller so we can simulate new subscriptions
   void replaceController() {
-    _controller = StreamController<BusTelemetry>.broadcast();
+    _controller = StreamController<void>.broadcast();
   }
 
   @override
@@ -105,12 +112,12 @@ void main() {
     test(
       'bus_live_locations telemetry event updates TrackingCubit state',
       () async {
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
         expect(cubit.state.uiStatus, TrackingUiStatus.loaded);
 
         final telemetry = _sampleTelemetry();
         repo.emitTelemetry(telemetry);
-        await pumpEventQueue();
+        await Future<void>.delayed(const Duration(milliseconds: 400));
 
         expect(cubit.state.latestTelemetry?.latitude, telemetry.latitude);
       },
@@ -119,7 +126,7 @@ void main() {
     test(
       'bus_live_locations channelError does NOT escape to global zone',
       () async {
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
 
         Object? uncaughtError;
         await runZonedGuarded(
@@ -144,7 +151,7 @@ void main() {
     test(
       'TrackingCubit stays loaded after bus_live_locations stream error',
       () async {
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
         expect(cubit.state.uiStatus, TrackingUiStatus.loaded);
 
         // Emit error
@@ -159,7 +166,7 @@ void main() {
     test(
       'TrackingCubit continues receiving events after stream error (cancelOnError: false)',
       () async {
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
 
         // First — fire an error
         repo.emitError(Exception('channelError'));
@@ -168,7 +175,7 @@ void main() {
         // Then — fire a real telemetry event
         final telemetry = _sampleTelemetry();
         repo.emitTelemetry(telemetry);
-        await pumpEventQueue();
+        await Future<void>.delayed(const Duration(milliseconds: 400));
 
         // Cubit processed the telemetry after the error
         expect(cubit.state.latestTelemetry?.latitude, telemetry.latitude);
@@ -178,7 +185,7 @@ void main() {
     test(
       'Subscriptions cancelled on cubit close — late telemetry not processed',
       () async {
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
         expect(cubit.state.uiStatus, TrackingUiStatus.loaded);
         final initialTelemetry = cubit.state.latestTelemetry;
 
@@ -200,7 +207,7 @@ void main() {
         // The datasource uses .where((rows) => rows.isNotEmpty) so empty rows
         // never reach the cubit. This test verifies the cubit stays loaded
         // even when no telemetry arrives (offline scenario).
-        await cubit.loadTrackingData();
+        await cubit.loadTrackingData(tripId: 'trip-test');
         expect(cubit.state.uiStatus, TrackingUiStatus.loaded);
         expect(cubit.state.latestTelemetry, isNull); // no telemetry emitted
       },

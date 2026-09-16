@@ -194,18 +194,11 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
       return const Stream.empty();
     }
 
-    debugPrint('[REALTIME_DIAG] topup_requests subscribe start');
     return _supabase
         .from('topup_requests')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
-        .map((_) {
-          debugPrint('[REALTIME_DIAG] topup_requests event');
-        })
-        .handleError((error, stackTrace) {
-          debugPrint(
-            '[REALTIME_DIAG] topup_requests error: ${error.runtimeType}',
-          );
-        });
+        .map((_) {})
+        .handleError((_) {});
   }
 }

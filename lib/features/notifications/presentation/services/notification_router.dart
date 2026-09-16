@@ -37,7 +37,8 @@ class NotificationRouter {
 
   static String? _extractNotificationId(Map<String, dynamic>? data) {
     if (data == null) return null;
-    final id = data['notification_id'] ??
+    final id =
+        data['notification_id'] ??
         data['id'] ??
         data['event_id'] ??
         data['message_id'] ??
@@ -201,7 +202,8 @@ class NotificationRouter {
     // 2. Tap throttling (debounce rapid repeated taps for the same route within 800ms)
     if (_lastNavigatedTime != null &&
         _lastNavigatedRoute == route &&
-        now.difference(_lastNavigatedTime!) < const Duration(milliseconds: 800)) {
+        now.difference(_lastNavigatedTime!) <
+            const Duration(milliseconds: 800)) {
       debugPrint(
         '[NotificationRouter] Debouncing rapid notification tap for route: $route',
       );
@@ -251,7 +253,9 @@ class NotificationRouter {
       _lastNavigatedTime = now;
       _lastNavigatedRoute = route;
     } catch (e, st) {
-      debugPrint('[NotificationRouter] Navigation error for route $route: $e\n$st');
+      debugPrint(
+        '[NotificationRouter] Navigation error for route $route: $e\n$st',
+      );
     }
   }
 }

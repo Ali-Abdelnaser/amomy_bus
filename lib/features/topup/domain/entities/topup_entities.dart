@@ -52,11 +52,11 @@ class PaymentConfig extends Equatable {
 
   @override
   List<Object?> get props => [
-        mobileCashEnabled,
-        mobileCashReceiverNumber,
-        egpPerPoint,
-        minimumTopupPoints,
-      ];
+    mobileCashEnabled,
+    mobileCashReceiverNumber,
+    egpPerPoint,
+    minimumTopupPoints,
+  ];
 }
 
 class PaymentMethod extends Equatable {
@@ -84,22 +84,26 @@ class PaymentMethod extends Equatable {
     required this.sortOrder,
   });
 
-  String localizedName(bool isArabic) => isArabic ? nameAr : nameEn;
-  String localizedInstructions(bool isArabic) => isArabic ? instructionsAr : instructionsEn;
+  String localizedName(bool isArabic) => isArabic
+      ? (nameAr.trim().isNotEmpty ? nameAr : nameEn)
+      : (nameEn.trim().isNotEmpty ? nameEn : nameAr);
+  String localizedInstructions(bool isArabic) => isArabic
+      ? (instructionsAr.trim().isNotEmpty ? instructionsAr : instructionsEn)
+      : (instructionsEn.trim().isNotEmpty ? instructionsEn : instructionsAr);
 
   @override
   List<Object?> get props => [
-        id,
-        code,
-        nameAr,
-        nameEn,
-        accountIdentifier,
-        instructionsAr,
-        instructionsEn,
-        iconKey,
-        isActive,
-        sortOrder,
-      ];
+    id,
+    code,
+    nameAr,
+    nameEn,
+    accountIdentifier,
+    instructionsAr,
+    instructionsEn,
+    iconKey,
+    isActive,
+    sortOrder,
+  ];
 }
 
 class TopUpCreatedResponse extends Equatable {
@@ -123,14 +127,14 @@ class TopUpCreatedResponse extends Equatable {
 
   @override
   List<Object?> get props => [
-        requestId,
-        publicId,
-        requestedPoints,
-        expectedAmountEgp,
-        receivingPhone,
-        conversionRate,
-        status,
-      ];
+    requestId,
+    publicId,
+    requestedPoints,
+    expectedAmountEgp,
+    receivingPhone,
+    conversionRate,
+    status,
+  ];
 }
 
 class TopUpRequest extends Equatable {
@@ -180,13 +184,18 @@ class TopUpRequest extends Equatable {
     this.paymentMethodIconKey,
   });
 
-  String get displayReference => publicId != null && publicId!.isNotEmpty ? publicId! : id.substring(0, 8);
+  String get displayReference =>
+      publicId != null && publicId!.isNotEmpty ? publicId! : id.substring(0, 8);
 
   String getLocalizedMethodName(bool isArabic) {
-    if (isArabic && paymentMethodNameAr != null && paymentMethodNameAr!.isNotEmpty) {
+    if (isArabic &&
+        paymentMethodNameAr != null &&
+        paymentMethodNameAr!.isNotEmpty) {
       return paymentMethodNameAr!;
     }
-    if (!isArabic && paymentMethodNameEn != null && paymentMethodNameEn!.isNotEmpty) {
+    if (!isArabic &&
+        paymentMethodNameEn != null &&
+        paymentMethodNameEn!.isNotEmpty) {
       return paymentMethodNameEn!;
     }
     return paymentMethodCode;
@@ -194,26 +203,26 @@ class TopUpRequest extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        publicId,
-        userId,
-        requestedAmount,
-        expectedAmountEgp,
-        conversionRate,
-        receivingPhone,
-        paymentMethodCode,
-        paymentReference,
-        senderPhone,
-        transferredAt,
-        submittedAt,
-        screenshotPath,
-        status,
-        rejectionReason,
-        resubmissionCount,
-        createdAt,
-        updatedAt,
-        paymentMethodNameAr,
-        paymentMethodNameEn,
-        paymentMethodIconKey,
-      ];
+    id,
+    publicId,
+    userId,
+    requestedAmount,
+    expectedAmountEgp,
+    conversionRate,
+    receivingPhone,
+    paymentMethodCode,
+    paymentReference,
+    senderPhone,
+    transferredAt,
+    submittedAt,
+    screenshotPath,
+    status,
+    rejectionReason,
+    resubmissionCount,
+    createdAt,
+    updatedAt,
+    paymentMethodNameAr,
+    paymentMethodNameEn,
+    paymentMethodIconKey,
+  ];
 }

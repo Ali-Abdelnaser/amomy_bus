@@ -1,132 +1,132 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'app_animation_durations.dart';
+import 'package:flutter/material.dart';
 
-/// Centralized animation extensions and presets using flutter_animate.
-///
-/// Designed to be subtle, professional, and accessible.
+/// Central animation tokens for route transitions and screen entrances.
+abstract final class AppAnimations {
+  static const Duration routeTransitionDuration = Duration(milliseconds: 240);
+  static const Duration routeReverseTransitionDuration = Duration(
+    milliseconds: 180,
+  );
+  static const Duration reducedMotionRouteDuration = Duration(milliseconds: 80);
+
+  static const Duration screenEntryDuration = Duration(milliseconds: 340);
+  static const Duration reducedMotionScreenEntryDuration = Duration(
+    milliseconds: 80,
+  );
+
+  static const Curve routeCurve = Curves.easeOutCubic;
+  static const Curve screenEntryCurve = Curves.easeOutCubic;
+
+  static const Offset screenEntryOffset = Offset(0, 32);
+
+  static bool reduceMotion(BuildContext context) =>
+      MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+}
+
 extension AppAnimationExtensions on Widget {
-  /// Subtle fade-in animation
-  Widget animateFadeIn({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-  }) {
-    return animate(delay: delay).fadeIn(
-      duration: duration,
-      curve: AppAnimationDurations.decelerate,
+  Widget appFadeIn({Duration delay = Duration.zero}) {
+    return _AppEntranceEffect(delay: delay, offset: Offset.zero, child: this);
+  }
+
+  Widget appSlideUp({Duration delay = Duration.zero}) {
+    return _AppEntranceEffect(
+      delay: delay,
+      offset: AppAnimations.screenEntryOffset,
+      child: this,
     );
   }
 
-  /// Subtle slide-up + fade-in animation
-  Widget animateSlideUp({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginY = 0.15,
-  }) {
-    return animate(delay: delay)
-        .fadeIn(duration: duration, curve: AppAnimationDurations.decelerate)
-        .slideY(
-          begin: beginY,
-          end: 0,
-          duration: duration,
-          curve: AppAnimationDurations.decelerate,
-        );
+  Widget appScaleIn({Duration delay = Duration.zero}) {
+    return _AppEntranceEffect(
+      delay: delay,
+      offset: Offset.zero,
+      beginScale: 0.96,
+      child: this,
+    );
+  }
+}
+
+class _AppEntranceEffect extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  final Offset offset;
+  final double beginScale;
+
+  const _AppEntranceEffect({
+    required this.child,
+    required this.delay,
+    required this.offset,
+    this.beginScale = 1,
+  });
+
+  @override
+  State<_AppEntranceEffect> createState() => _AppEntranceEffectState();
+}
+
+class _AppEntranceEffectState extends State<_AppEntranceEffect>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<double> _opacity;
+  late Animation<Offset> _offset;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppAnimations.screenEntryDuration,
+    );
   }
 
-  /// Subtle slide-down animation
-  Widget animateSlideDown({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginY = -0.15,
-  }) {
-    return animate(delay: delay)
-        .fadeIn(duration: duration, curve: AppAnimationDurations.decelerate)
-        .slideY(
-          begin: beginY,
-          end: 0,
-          duration: duration,
-          curve: AppAnimationDurations.decelerate,
-        );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = AppAnimations.reduceMotion(context);
+    _controller.duration = reduceMotion
+        ? AppAnimations.reducedMotionScreenEntryDuration
+        : AppAnimations.screenEntryDuration;
+
+    final curve = CurvedAnimation(
+      parent: _controller,
+      curve: AppAnimations.screenEntryCurve,
+    );
+    _opacity = Tween<double>(begin: 0, end: 1).animate(curve);
+    _offset = Tween<Offset>(
+      begin: reduceMotion ? Offset.zero : widget.offset,
+      end: Offset.zero,
+    ).animate(curve);
+    _scale = Tween<double>(
+      begin: reduceMotion ? 1 : widget.beginScale,
+      end: 1,
+    ).animate(curve);
+
+    if (_controller.status == AnimationStatus.dismissed) {
+      final delay = reduceMotion ? Duration.zero : widget.delay;
+      if (delay == Duration.zero) {
+        _controller.forward();
+      } else {
+        Future<void>.delayed(delay, () {
+          if (mounted) _controller.forward();
+        });
+      }
+    }
   }
 
-  /// Horizontal slide from right (e.g. for step navigation or card entrance)
-  Widget animateSlideFromRight({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginX = 0.2,
-  }) {
-    return animate(delay: delay)
-        .fadeIn(duration: duration, curve: AppAnimationDurations.decelerate)
-        .slideX(
-          begin: beginX,
-          end: 0,
-          duration: duration,
-          curve: AppAnimationDurations.decelerate,
-        );
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  /// Scale-in animation with slight spring
-  Widget animateScaleIn({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginScale = 0.85,
-  }) {
-    return animate(delay: delay)
-        .fadeIn(duration: duration)
-        .scale(
-          begin: Offset(beginScale, beginScale),
-          end: const Offset(1, 1),
-          duration: duration,
-          curve: AppAnimationDurations.decelerate,
-        );
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(
+        position: _offset,
+        transformHitTests: false,
+        child: ScaleTransition(scale: _scale, child: widget.child),
+      ),
+    );
   }
-
-  /// Staggered list item entrance animation
-  Widget animateListItem(int index) {
-    return animate(delay: Duration(milliseconds: 30 * index))
-        .fadeIn(duration: AppAnimationDurations.normal)
-        .slideY(
-          begin: 0.1,
-          end: 0,
-          duration: AppAnimationDurations.normal,
-          curve: AppAnimationDurations.decelerate,
-        );
-  }
-
-  // Shorthand aliases matching AMOMY design system specifications
-  Widget appFadeIn({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-  }) =>
-      animateFadeIn(duration: duration, delay: delay);
-
-  Widget appSlideUp({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginY = 0.15,
-  }) =>
-      animateSlideUp(duration: duration, delay: delay, beginY: beginY);
-
-  Widget appSlideDown({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginY = -0.15,
-  }) =>
-      animateSlideDown(duration: duration, delay: delay, beginY: beginY);
-
-  Widget appSlideFromRight({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginX = 0.2,
-  }) =>
-      animateSlideFromRight(duration: duration, delay: delay, beginX: beginX);
-
-  Widget appScaleIn({
-    Duration duration = AppAnimationDurations.normal,
-    Duration delay = Duration.zero,
-    double beginScale = 0.85,
-  }) =>
-      animateScaleIn(duration: duration, delay: delay, beginScale: beginScale);
-
-  Widget appListItemEntrance(int index) => animateListItem(index);
 }

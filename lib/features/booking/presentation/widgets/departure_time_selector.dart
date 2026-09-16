@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/booking_entities.dart';
@@ -156,7 +157,7 @@ class DepartureTimeSelector extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isAr ? 'انتهت رحلات اليوم' : "Today's trips have ended.",
+                  context.l10n.noTripsAvailableToday,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -185,7 +186,6 @@ class DepartureTimeSelector extends StatelessWidget {
           Column(
             children: trips.map((trip) {
               final isSelected = selectedTrip?.tripId == trip.tripId;
-              final isFull = trip.availableSeatsCount <= 0;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -194,7 +194,7 @@ class DepartureTimeSelector extends StatelessWidget {
                   isSelected: isSelected,
                   isLocked: false,
                   isAr: isAr,
-                  onTap: isFull ? null : () => onTripSelected(trip),
+                  onTap: trip.canBook ? () => onTripSelected(trip) : null,
                 ),
               );
             }).toList(),
@@ -221,14 +221,18 @@ class _DepartureTimeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isFull = trip.availableSeatsCount <= 0;
-    final isFewSeats = !isFull && trip.availableSeatsCount <= 5;
+    final isClosed = trip.isClosed || !trip.isBookable;
+    final isFull = !isClosed && trip.isFull;
+    final isNotBookable = !trip.canBook;
+    final isFewSeats = !isNotBookable && trip.availableSeatsCount <= 5;
 
     final l10n = context.l10n;
 
     // Status text determination
     String statusText;
-    if (isFull) {
+    if (isClosed) {
+      statusText = isAr ? 'الرحلة مغلقة' : 'Trip closed';
+    } else if (isFull) {
       statusText = l10n.departureFullyBooked;
     } else if (isSelected) {
       statusText = isLocked
@@ -251,12 +255,12 @@ class _DepartureTimeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFFF0F9FF)
-                : (isFull ? const Color(0xFFF8FAFC) : Colors.white),
+                : (isNotBookable ? const Color(0xFFF8FAFC) : Colors.white),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
-                  : (isFull
+                  : (isNotBookable
                         ? const Color(0xFFE2E8F0)
                         : const Color(0xFFCBD5E1)),
               width: isSelected ? 1.6 : 1.0,
@@ -285,7 +289,7 @@ class _DepartureTimeCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      trip.departureTime,
+                      AppTimeFormatter.formatTripOption(trip, isArabic: isAr),
                       style: TextStyle(
                         fontSize: 17.5,
                         fontWeight: isSelected

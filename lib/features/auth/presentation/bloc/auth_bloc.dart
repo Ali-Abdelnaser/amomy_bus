@@ -330,11 +330,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     emit(Authenticated(user: user, wallet: wallet));
 
-    // [IOS_PUSH_DIAG] 01 authenticated
-    if (kDebugMode) {
-      debugPrint('[IOS_PUSH_DIAG] 01 authenticated');
-    }
-
     // Push registration is a non-critical side effect.
     // On iOS, token sync MUST NOT be initiated immediately after authentication
     // before notification authorization and APNs readiness have occurred.

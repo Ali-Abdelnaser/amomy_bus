@@ -133,6 +133,10 @@ class _MyTripsView extends StatelessWidget {
                             _HeaderBookButton(
                               isAr: isAr,
                               disableAnimations: disableAnimations,
+                              isEnabled: !state.shouldDisableBookingEntry,
+                              disabledMessage: isAr
+                                  ? 'لا توجد رحلات متاحة للحجز اليوم'
+                                  : 'No trips available today',
                               onTap: () => context.push(RoutePaths.bookTrip),
                             ),
                           ],
@@ -435,11 +439,15 @@ class _HeaderSettingsButtonState extends State<_HeaderSettingsButton> {
 class _HeaderBookButton extends StatefulWidget {
   final bool isAr;
   final bool disableAnimations;
+  final bool isEnabled;
+  final String disabledMessage;
   final VoidCallback onTap;
 
   const _HeaderBookButton({
     required this.isAr,
     required this.disableAnimations,
+    this.isEnabled = true,
+    required this.disabledMessage,
     required this.onTap,
   });
 
@@ -452,32 +460,45 @@ class _HeaderBookButtonState extends State<_HeaderBookButton> {
 
   @override
   Widget build(BuildContext context) {
+    final foreground = widget.isEnabled
+        ? Colors.white
+        : const Color(0xFFF1F5F9);
+    final background = widget.isEnabled
+        ? AppColors.primary
+        : const Color(0xFF94A3B8);
+
     Widget button = Tooltip(
-      message: widget.isAr ? 'حجز رحلة جديدة' : 'Book a New Trip',
+      message: widget.isEnabled
+          ? (widget.isAr ? 'حجز رحلة جديدة' : 'Book a New Trip')
+          : widget.disabledMessage,
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _isDown = true),
+        onTapDown: widget.isEnabled
+            ? (_) => setState(() => _isDown = true)
+            : null,
         onTapUp: (_) {
           setState(() => _isDown = false);
-          widget.onTap();
+          if (widget.isEnabled) {
+            widget.onTap();
+          }
         },
         onTapCancel: () => setState(() => _isDown = false),
         child: AnimatedScale(
-          scale: _isDown ? 0.94 : 1.0,
+          scale: widget.isEnabled && _isDown ? 0.94 : 1.0,
           duration: const Duration(milliseconds: 110),
           curve: Curves.easeOutCubic,
           child: Container(
             height: 42,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: background,
               borderRadius: BorderRadius.circular(21),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.35),
+                color: background.withValues(alpha: 0.35),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.08),
+                  color: background.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -486,12 +507,12 @@ class _HeaderBookButtonState extends State<_HeaderBookButton> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                Icon(Icons.add_rounded, size: 18, color: foreground),
                 const SizedBox(width: 5),
                 Text(
                   widget.isAr ? 'حجز' : 'Book',
                   style: AppTextStyles.labelMedium.copyWith(
-                    color: Colors.white,
+                    color: foreground,
                     fontWeight: FontWeight.w800,
                     fontSize: 13.5,
                   ),

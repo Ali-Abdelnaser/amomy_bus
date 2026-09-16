@@ -39,7 +39,6 @@ import 'package:amomy_bus/app/di/injection.dart';
 import 'package:amomy_bus/features/tracking/domain/models/live_tracking_status.dart';
 import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
-import 'package:amomy_bus/features/tracking/domain/models/bus_telemetry.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
 class FakeAuthRepository implements AuthRepository {
@@ -87,17 +86,13 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  ResultFuture<void> resendVerificationOtp({
-    required String email,
-  }) async {
+  ResultFuture<void> resendVerificationOtp({required String email}) async {
     if (failure != null) return Error(failure!);
     return const Success(null);
   }
 
   @override
-  ResultFuture<AppUser> signInWithGoogle({
-    String? webClientId,
-  }) async {
+  ResultFuture<AppUser> signInWithGoogle({String? webClientId}) async {
     if (failure != null) return Error(failure!);
     return Success(currentUserResult!);
   }
@@ -115,17 +110,13 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  ResultFuture<void> sendPasswordResetEmail({
-    required String email,
-  }) async {
+  ResultFuture<void> sendPasswordResetEmail({required String email}) async {
     if (failure != null) return Error(failure!);
     return const Success(null);
   }
 
   @override
-  ResultFuture<void> updatePassword({
-    required String newPassword,
-  }) async {
+  ResultFuture<void> updatePassword({required String newPassword}) async {
     if (failure != null) return Error(failure!);
     return const Success(null);
   }
@@ -154,19 +145,19 @@ final _dummyRepo = FakeAuthRepository();
 
 class MockAuthBloc extends AuthBloc {
   MockAuthBloc(AuthState initialState)
-      : super(
-          getCurrentUserUseCase: GetCurrentUserUseCase(_dummyRepo),
-          signInWithEmailUseCase: SignInWithEmailUseCase(_dummyRepo),
-          signUpWithEmailUseCase: SignUpWithEmailUseCase(_dummyRepo),
-          signInWithGoogleUseCase: SignInWithGoogleUseCase(_dummyRepo),
-          signOutUseCase: SignOutUseCase(_dummyRepo),
-          sendPasswordResetUseCase: SendPasswordResetUseCase(_dummyRepo),
-          updatePasswordUseCase: UpdatePasswordUseCase(_dummyRepo),
-          completeProfileUseCase: CompleteProfileUseCase(_dummyRepo),
-          verifyOtpUseCase: VerifyOtpUseCase(_dummyRepo),
-          resendOtpUseCase: ResendOtpUseCase(_dummyRepo),
-          getWalletPreviewUseCase: GetWalletPreviewUseCase(_dummyRepo),
-        ) {
+    : super(
+        getCurrentUserUseCase: GetCurrentUserUseCase(_dummyRepo),
+        signInWithEmailUseCase: SignInWithEmailUseCase(_dummyRepo),
+        signUpWithEmailUseCase: SignUpWithEmailUseCase(_dummyRepo),
+        signInWithGoogleUseCase: SignInWithGoogleUseCase(_dummyRepo),
+        signOutUseCase: SignOutUseCase(_dummyRepo),
+        sendPasswordResetUseCase: SendPasswordResetUseCase(_dummyRepo),
+        updatePasswordUseCase: UpdatePasswordUseCase(_dummyRepo),
+        completeProfileUseCase: CompleteProfileUseCase(_dummyRepo),
+        verifyOtpUseCase: VerifyOtpUseCase(_dummyRepo),
+        resendOtpUseCase: ResendOtpUseCase(_dummyRepo),
+        getWalletPreviewUseCase: GetWalletPreviewUseCase(_dummyRepo),
+      ) {
     emit(initialState);
   }
 }
@@ -188,10 +179,9 @@ Widget createTestWidget({
   );
 }
 
-
 class _MockShellTrackingRepo implements TrackingRepository {
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async {
+  Future<TrackingSummary> getTripTracking({required String tripId}) async {
     return const TrackingSummary(
       status: LiveTrackingStatus.offline,
       routeStops: [],
@@ -210,7 +200,8 @@ class _MockShellTrackingRepo implements TrackingRepository {
   }) async => null;
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() => const Stream.empty();
+  Stream<void> subscribeToTripTrackingState({required String tripId}) =>
+      const Stream.empty();
 
   @override
   Future<bool> recordApproachNotification({
@@ -268,46 +259,62 @@ void main() {
   group('AppUser name parsing and helpers', () {
     test('firstName extracts first word cleanly', () {
       expect(incompleteUser.firstName, 'Ali');
-      expect(const AppUser(id: '1', email: '', fullName: 'John Doe').firstName, 'John');
-      expect(const AppUser(id: '1', email: '', fullName: '').firstName, 'Commuter');
+      expect(
+        const AppUser(id: '1', email: '', fullName: 'John Doe').firstName,
+        'John',
+      );
+      expect(
+        const AppUser(id: '1', email: '', fullName: '').firstName,
+        'Commuter',
+      );
     });
 
     test('initials extracts 2 initials or defaults', () {
       expect(incompleteUser.initials, 'AA');
-      expect(const AppUser(id: '1', email: '', fullName: 'Mohamed').initials, 'M');
+      expect(
+        const AppUser(id: '1', email: '', fullName: 'Mohamed').initials,
+        'M',
+      );
       expect(const AppUser(id: '1', email: '', fullName: '').initials, 'A');
     });
   });
 
   group('HomeHeader widget', () {
-    testWidgets('displays user first name and initials fallback without debug info', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
+    testWidgets(
+      'displays user first name and initials fallback without debug info',
+      (tester) async {
+        final bloc = MockAuthBloc(
+          const Authenticated(user: incompleteUser, wallet: testWallet),
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const Scaffold(body: HomeHeader(user: incompleteUser)),
-          authBloc: bloc,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(
+            child: const Scaffold(body: HomeHeader(user: incompleteUser)),
+            authBloc: bloc,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // First name with wave
-      expect(find.textContaining('Ali 👋'), findsOneWidget);
-      // Avatar initials
-      expect(find.text('AA'), findsOneWidget);
+        // First name with wave
+        expect(find.textContaining('Ali 👋'), findsOneWidget);
+        // Avatar initials
+        expect(find.text('AA'), findsOneWidget);
 
-      // Must NOT display sensitive or debug information
-      expect(find.text('ali@example.com'), findsNothing);
-      expect(find.text('usr-1234-uuid'), findsNothing);
-      expect(find.text('passenger'), findsNothing);
-    });
+        // Must NOT display sensitive or debug information
+        expect(find.text('ali@example.com'), findsNothing);
+        expect(find.text('usr-1234-uuid'), findsNothing);
+        expect(find.text('passenger'), findsNothing);
+      },
+    );
   });
 
-
-
   group('HomeWalletCard widget', () {
-    testWidgets('displays points balance and breakdown without money symbols', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
+    testWidgets('displays points balance and breakdown without money symbols', (
+      tester,
+    ) async {
+      final bloc = MockAuthBloc(
+        const Authenticated(user: incompleteUser, wallet: testWallet),
+      );
 
       await tester.pumpWidget(
         createTestWidget(
@@ -337,14 +344,15 @@ void main() {
   });
 
   group('PassengerHomePage production components & clean UI', () {
-    testWidgets('renders all production sections and NO dev/debug elements', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
+    testWidgets('renders all production sections and NO dev/debug elements', (
+      tester,
+    ) async {
+      final bloc = MockAuthBloc(
+        const Authenticated(user: incompleteUser, wallet: testWallet),
+      );
 
       await tester.pumpWidget(
-        createTestWidget(
-          child: const PassengerHomePage(),
-          authBloc: bloc,
-        ),
+        createTestWidget(child: const PassengerHomePage(), authBloc: bloc),
       );
       await tester.pumpAndSettle();
 
@@ -370,20 +378,24 @@ void main() {
       expect(find.text('Passenger Home'), findsNothing);
       expect(find.text('Active Role'), findsNothing);
       expect(find.text('Design System Gallery'), findsNothing);
-      expect(find.text('Sign Out'), findsNothing); // Sign Out is strictly in Profile
+      expect(
+        find.text('Sign Out'),
+        findsNothing,
+      ); // Sign Out is strictly in Profile
       expect(find.text('Reset'), findsNothing);
     });
   });
 
   group('ProfilePage', () {
-    testWidgets('contains user info, menu items and Sign Out button', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
+    testWidgets('contains user info, menu items and Sign Out button', (
+      tester,
+    ) async {
+      final bloc = MockAuthBloc(
+        const Authenticated(user: incompleteUser, wallet: testWallet),
+      );
 
       await tester.pumpWidget(
-        createTestWidget(
-          child: const ProfilePage(),
-          authBloc: bloc,
-        ),
+        createTestWidget(child: const ProfilePage(), authBloc: bloc),
       );
       await tester.pumpAndSettle();
 
@@ -406,29 +418,32 @@ void main() {
   });
 
   group('MyTripsPage and WalletPage tabs', () {
-    testWidgets('MyTripsPage renders Today schedule and History button with empty state', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
+    testWidgets(
+      'MyTripsPage renders Today schedule and History button with empty state',
+      (tester) async {
+        final bloc = MockAuthBloc(
+          const Authenticated(user: incompleteUser, wallet: testWallet),
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const MyTripsPage(),
-          authBloc: bloc,
-        ),
+        await tester.pumpWidget(
+          createTestWidget(child: const MyTripsPage(), authBloc: bloc),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Today'), findsOneWidget);
+        expect(find.text('History'), findsOneWidget);
+      },
+    );
+
+    testWidgets('WalletPage renders balance and transactions empty state', (
+      tester,
+    ) async {
+      final bloc = MockAuthBloc(
+        const Authenticated(user: incompleteUser, wallet: testWallet),
       );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Today'), findsOneWidget);
-      expect(find.text('History'), findsOneWidget);
-    });
-
-    testWidgets('WalletPage renders balance and transactions empty state', (tester) async {
-      final bloc = MockAuthBloc(const Authenticated(user: incompleteUser, wallet: testWallet));
 
       await tester.pumpWidget(
-        createTestWidget(
-          child: const WalletPage(),
-          authBloc: bloc,
-        ),
+        createTestWidget(child: const WalletPage(), authBloc: bloc),
       );
       await tester.pumpAndSettle();
 
@@ -439,61 +454,69 @@ void main() {
   });
 
   group('Passenger Shell Integration and Router Navigation', () {
-    testWidgets('Authenticated user enters PassengerShell and switches tabs via bottom nav', (tester) async {
-      final bloc = MockAuthBloc(Authenticated(user: completeUser, wallet: testWallet));
-      final appRouter = AppRouter(bloc);
+    testWidgets(
+      'Authenticated user enters PassengerShell and switches tabs via bottom nav',
+      (tester) async {
+        final bloc = MockAuthBloc(
+          Authenticated(user: completeUser, wallet: testWallet),
+        );
+        final appRouter = AppRouter(bloc);
 
-      await tester.pumpWidget(
-        BlocProvider<AuthBloc>.value(
-          value: bloc,
-          child: MaterialApp.router(
-            theme: AppTheme.lightTheme,
-            locale: const Locale('en'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: appRouter.router,
+        await tester.pumpWidget(
+          BlocProvider<AuthBloc>.value(
+            value: bloc,
+            child: MaterialApp.router(
+              theme: AppTheme.lightTheme,
+              locale: const Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: appRouter.router,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Starts at Home tab
-      expect(find.byType(PassengerHomePage), findsOneWidget);
-      expect(find.byType(HomeBookRideCard), findsOneWidget);
-      expect(find.byType(FloatingBottomNavBar), findsOneWidget);
+        // Starts at Home tab
+        expect(find.byType(PassengerHomePage), findsOneWidget);
+        expect(find.byType(HomeBookRideCard), findsOneWidget);
+        expect(find.byType(FloatingBottomNavBar), findsOneWidget);
 
-      // Tap My Trips bottom nav item (index 1)
-      final myTripsTab = find.byKey(const ValueKey('floating_nav_item_1'));
-      await tester.tap(myTripsTab);
-      await tester.pumpAndSettle();
+        // Tap My Trips bottom nav item (index 1)
+        final myTripsTab = find.byKey(const ValueKey('floating_nav_item_1'));
+        await tester.tap(myTripsTab);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MyTripsPage), findsOneWidget);
-      expect(find.text('Today'), findsOneWidget);
+        expect(find.byType(MyTripsPage), findsOneWidget);
+        expect(find.text('Today'), findsOneWidget);
 
-      // Tap Wallet bottom nav item (index 2)
-      final walletTab = find.byKey(const ValueKey('floating_nav_item_2'));
-      await tester.tap(walletTab);
-      await tester.pumpAndSettle();
+        // Tap Wallet bottom nav item (index 2)
+        final walletTab = find.byKey(const ValueKey('floating_nav_item_2'));
+        await tester.tap(walletTab);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(WalletPage), findsOneWidget);
-      expect(find.text('Recent Transactions'), findsOneWidget);
+        expect(find.byType(WalletPage), findsOneWidget);
+        expect(find.text('Recent Transactions'), findsOneWidget);
 
-      // Tap Profile bottom nav item (index 3)
-      final profileTab = find.byKey(const ValueKey('floating_nav_item_3'));
-      await tester.tap(profileTab);
-      await tester.pumpAndSettle();
+        // Tap Profile bottom nav item (index 3)
+        final profileTab = find.byKey(const ValueKey('floating_nav_item_3'));
+        await tester.tap(profileTab);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(ProfilePage), findsOneWidget);
-      expect(find.text('Sign Out'), findsOneWidget);
+        expect(find.byType(ProfilePage), findsOneWidget);
+        expect(find.text('Sign Out'), findsOneWidget);
 
-      // Design System Gallery must NOT appear anywhere in the shell
-      expect(find.text('Design System Gallery'), findsNothing);
-    });
+        // Design System Gallery must NOT appear anywhere in the shell
+        expect(find.text('Design System Gallery'), findsNothing);
+      },
+    );
 
-    test('AppRouter initializes cleanly and configures standard passenger shell routes', () {
-      final bloc = MockAuthBloc(const Unauthenticated());
-      final appRouter = AppRouter(bloc);
-      expect(appRouter.router.configuration.routes.isNotEmpty, isTrue);
-    });
+    test(
+      'AppRouter initializes cleanly and configures standard passenger shell routes',
+      () {
+        final bloc = MockAuthBloc(const Unauthenticated());
+        final appRouter = AppRouter(bloc);
+        expect(appRouter.router.configuration.routes.isNotEmpty, isTrue);
+      },
+    );
   });
 }

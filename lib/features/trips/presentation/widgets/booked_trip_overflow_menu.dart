@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
+import '../../../../core/localization/app_time_formatter.dart';
+import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -90,8 +92,8 @@ class BookedTripOverflowMenu extends StatelessWidget {
                           children: [
                             Text(
                               isAr
-                                  ? 'رحلة ${trip.departureTime} — مقعد (${trip.seatNumber ?? "—"})'
-                                  : '${trip.departureTime} Trip — Seat (${trip.seatNumber ?? "—"})',
+                                  ? 'رحلة ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: true)} — مقعد (${trip.seatNumber ?? "—"})'
+                                  : '${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: false)} Trip — Seat (${trip.seatNumber ?? "—"})',
                               style: AppTextStyles.titleMedium.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: const Color(0xFF101828),
@@ -219,8 +221,8 @@ class BookedTripOverflowMenu extends StatelessWidget {
       context: context,
       title: isAr ? 'تأكيد إلغاء الحجز' : 'Confirm Cancellation',
       message: isAr
-          ? 'هل أنت متأكد من رغبتك في إلغاء حجز المقعد (${trip.seatNumber ?? "—"}) لرحلة الساعة ${trip.departureTime}؟\n\nسيتم استرداد ${trip.farePoints.toInt()} نقطة بالكامل إلى محفظتك.'
-          : 'Are you sure you want to cancel Seat (${trip.seatNumber ?? "—"}) for the ${trip.departureTime} trip?\n\n${trip.farePoints.toInt()} points will be fully refunded to your wallet.',
+          ? 'هل أنت متأكد من رغبتك في إلغاء حجز المقعد (${trip.seatNumber ?? "—"}) لرحلة الساعة ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: true)}؟\n\nسيتم استرداد ${trip.farePoints.toInt()} نقطة بالكامل إلى محفظتك.'
+          : 'Are you sure you want to cancel Seat (${trip.seatNumber ?? "—"}) for the ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: false)} trip?\n\n${trip.farePoints.toInt()} points will be fully refunded to your wallet.',
       cancelText: isAr ? 'الاحتفاظ بالحجز' : 'Keep Booking',
       confirmText: isAr ? 'إلغاء الحجز' : 'Cancel Booking',
       isDestructive: true,
@@ -242,9 +244,10 @@ class BookedTripOverflowMenu extends StatelessWidget {
         } else {
           AmomyFloatingAlert.show(
             context,
-            title:
-                cubit.state.errorMessage ??
-                (isAr ? 'فشل إلغاء الحجز' : 'Failed to cancel booking'),
+            title: StatusLocalizer.localizeError(
+              context,
+              cubit.state.errorMessage,
+            ),
             variant: AmomyAlertVariant.error,
           );
         }

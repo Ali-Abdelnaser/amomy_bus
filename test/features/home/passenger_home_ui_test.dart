@@ -22,12 +22,11 @@ import 'package:amomy_bus/app/di/injection.dart';
 import 'package:amomy_bus/features/tracking/domain/models/live_tracking_status.dart';
 import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
-import 'package:amomy_bus/features/tracking/domain/models/bus_telemetry.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
 class _MockTrackingRepo implements TrackingRepository {
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async {
+  Future<TrackingSummary> getTripTracking({required String tripId}) async {
     return const TrackingSummary(
       status: LiveTrackingStatus.offline,
       routeStops: [],
@@ -46,7 +45,8 @@ class _MockTrackingRepo implements TrackingRepository {
   }) async => null;
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() => const Stream.empty();
+  Stream<void> subscribeToTripTrackingState({required String tripId}) =>
+      const Stream.empty();
 
   @override
   Future<bool> recordApproachNotification({
@@ -244,7 +244,7 @@ void main() {
       expect(find.byType(HomeUpcomingTripCard), findsOneWidget);
       expect(find.text('Mit Fadala'), findsOneWidget);
       expect(find.text('Mansoura'), findsOneWidget);
-      expect(find.text('08:30'), findsOneWidget);
+      expect(find.text('8:30 AM'), findsOneWidget);
       expect(find.textContaining('A1'), findsOneWidget);
       expect(find.text('View Ticket'), findsOneWidget);
 
@@ -383,4 +383,7 @@ class FakeWalletCubit extends Cubit<WalletState> implements WalletCubit {
 
   @override
   Future<void> loadWalletSummary(String userId) async {}
+
+  @override
+  Future<void> loadMoreHistory() async {}
 }

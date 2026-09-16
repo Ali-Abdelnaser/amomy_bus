@@ -7,10 +7,7 @@ import '../../domain/entities/point_transaction.dart';
 class WalletTransactionTile extends StatelessWidget {
   final PointTransaction transaction;
 
-  const WalletTransactionTile({
-    super.key,
-    required this.transaction,
-  });
+  const WalletTransactionTile({super.key, required this.transaction});
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +24,17 @@ class WalletTransactionTile extends StatelessWidget {
       transaction,
       l10n,
       formattedDate,
+      isArabic,
     );
 
     final isCredit = transaction.isCredit;
     final sign = isCredit ? '+' : '-';
-    final pointsStr = '$sign${formatter.format(transaction.amount)} ${l10n.ptsUnit}';
+    final pointsStr =
+        '$sign${formatter.format(transaction.amount)} ${l10n.ptsUnit}';
 
-    final amountColor = isCredit ? const Color(0xFF027A48) : AppColors.textPrimary;
+    final amountColor = isCredit
+        ? const Color(0xFF027A48)
+        : AppColors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -44,10 +45,7 @@ class WalletTransactionTile extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
             child: Icon(icon, size: 20, color: iconColor),
           ),
           const SizedBox(width: 14),
@@ -107,6 +105,7 @@ class WalletTransactionTile extends StatelessWidget {
     PointTransaction tx,
     dynamic l10n,
     String formattedDate,
+    bool isArabic,
   ) {
     final ref = (tx.referenceType ?? '').trim().toLowerCase();
 
@@ -116,10 +115,13 @@ class WalletTransactionTile extends StatelessWidget {
     final metaDropoff = tx.metadata['dropoff_stop'] as String?;
 
     // 1. Trip (reference_type = booking, trip, trip_booking, or debit with empty ref)
-    if (ref == 'booking' || ref == 'trip' || ref == 'trip_booking' || (tx.isDebit && ref.isEmpty)) {
+    if (ref == 'booking' ||
+        ref == 'trip' ||
+        ref == 'trip_booking' ||
+        (tx.isDebit && ref.isEmpty)) {
       String title = l10n.txTypeTrip;
       if (metaBoarding != null && metaDropoff != null) {
-        title = '$metaBoarding → $metaDropoff';
+        title = '$metaBoarding ${isArabic ? '←' : '→'} $metaDropoff';
       } else if (metaRoute != null && metaRoute.isNotEmpty) {
         title = metaRoute;
       }
@@ -133,7 +135,10 @@ class WalletTransactionTile extends StatelessWidget {
     }
 
     // 2. Points Top-up (reference_type = topup, top_up, recharge)
-    if (ref == 'topup' || ref == 'top_up' || ref.contains('topup') || ref == 'recharge') {
+    if (ref == 'topup' ||
+        ref == 'top_up' ||
+        ref.contains('topup') ||
+        ref == 'recharge') {
       return (
         l10n.txTypeTopUp,
         formattedDate,
@@ -144,7 +149,9 @@ class WalletTransactionTile extends StatelessWidget {
     }
 
     // 3. Booking Refund (reference_type = booking_cancellation, refund, cancellation)
-    if (ref == 'booking_cancellation' || ref == 'refund' || ref == 'cancellation') {
+    if (ref == 'booking_cancellation' ||
+        ref == 'refund' ||
+        ref == 'cancellation') {
       return (
         l10n.txTypeRefund,
         formattedDate,
@@ -177,7 +184,9 @@ class WalletTransactionTile extends StatelessWidget {
     }
 
     // 6. Balance Adjustment (reference_type = admin_adjustment, manual_adjustment, adjustment)
-    if (ref == 'admin_adjustment' || ref == 'manual_adjustment' || ref == 'adjustment') {
+    if (ref == 'admin_adjustment' ||
+        ref == 'manual_adjustment' ||
+        ref == 'adjustment') {
       return (
         l10n.txTypeAdjustment,
         formattedDate,

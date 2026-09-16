@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../app/router/route_paths.dart';
+import '../../../../core/extensions/context_extensions.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/live_tracking_status.dart';
-import '../../domain/services/stop_eta_engine.dart';
 import '../cubit/tracking_cubit.dart';
 import '../cubit/tracking_state.dart';
 import 'live_bus_map_widget.dart';
@@ -34,137 +33,91 @@ class HomeLiveTrackingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
+    final l10n = context.l10n;
 
     return BlocBuilder<TrackingCubit, TrackingState>(
       builder: (context, state) {
         final summary = state.summary;
         final trackingStatus = state.trackingStatus;
         final telemetry = state.latestTelemetry;
-        final isOffline = state.isOffline;
-        final isQaPreview = state.isQaPreview;
+        final isLiveMapAvailable =
+            (state.isLive || state.isProgressionUnavailable) &&
+            telemetry?.hasValidCoordinates == true;
+        final isActionDisabled = !state.isLive;
 
         final directionLabel =
             summary?.activeDirection == TrackingDirection.returnDirection
             ? (locale == 'ar' ? 'رحلة العودة' : 'Return Trip')
             : (locale == 'ar' ? 'رحلة الذهاب' : 'Outbound Trip');
 
-        // Current / Last Stop Information
-        final currentStop = state.currentStop;
-        final currentTiming = state.currentStopTiming;
-
-        final String currentStopLabel;
-        final String currentStopName;
-        final String currentStopTimingText;
-
-        if (isOffline) {
-          currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName =
-              currentStop?.localizedName(locale) ??
-              (locale == 'ar' ? 'نهاية الخط' : 'Route Terminal');
-          currentStopTimingText = '';
-        } else if (state.isAtStop) {
-          currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName =
-              currentStop?.localizedName(locale) ??
-              (locale == 'ar' ? 'بالمحطة' : 'At Stop');
-          if (currentTiming?.actualArrivalTime != null) {
-            final clockStr = StopEtaEngine.formatClockTime(
-              currentTiming!.actualArrivalTime!,
-              locale,
-            );
-            currentStopTimingText = locale == 'ar'
-                ? 'وصل الساعة $clockStr'
-                : 'Arrived at $clockStr';
-          } else {
-            currentStopTimingText = locale == 'ar' ? 'صعود الركاب' : 'Boarding';
-          }
-        } else {
-          currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName =
-              currentStop?.localizedName(locale) ??
-              (locale == 'ar' ? 'جاري التحديد...' : 'Locating...');
-          if (currentTiming?.actualArrivalTime != null) {
-            final clockStr = StopEtaEngine.formatClockTime(
-              currentTiming!.actualArrivalTime!,
-              locale,
-            );
-            currentStopTimingText = locale == 'ar'
-                ? 'وصل الساعة $clockStr'
-                : 'Arrived at $clockStr';
-          } else {
-            currentStopTimingText = locale == 'ar'
-                ? 'وقت الوصول غير متاح'
-                : 'Arrival time unavailable';
-          }
-        }
-
-        // Next Stop Information
+        final lastStop = summary?.lastPassedStop;
         final nextStop = state.nextStop;
-        final nextTiming = state.nextStopTiming;
-
-        final String nextStopLabel;
-        final String nextStopName;
-        final String nextStopTimingText;
-
-        if (isOffline) {
-          nextStopLabel = locale == 'ar' ? 'المحطة التالية' : 'Next';
-          nextStopName = summary?.nextWindowStartTime != null
-              ? (locale == 'ar'
-                    ? 'الساعة ${summary!.nextWindowStartTime}'
-                    : summary!.nextWindowStartTime!)
-              : (locale == 'ar' ? '08:00 صباحاً' : '08:00 AM');
-          nextStopTimingText = '';
-        } else {
-          nextStopLabel = locale == 'ar' ? 'المحطة التالية' : 'Next';
-          nextStopName =
-              nextStop?.localizedName(locale) ??
-              (locale == 'ar' ? 'جاري التحديد...' : 'Locating...');
-          if (nextTiming?.estimatedArrivalTime != null &&
-              (!nextStop!.isTemporaryQa || isQaPreview)) {
-            final remainingStr = StopEtaEngine.formatRemainingMinutes(
-              nextTiming!.estimatedArrivalTime!,
-              locale,
-            );
-            nextStopTimingText = remainingStr;
-          } else if (nextStop?.isTemporaryQa == true && !isQaPreview) {
-            nextStopTimingText = locale == 'ar'
-                ? 'قيد التدقيق'
-                : 'Pending verification';
-          } else {
-            nextStopTimingText = locale == 'ar' ? 'قيد الحساب' : 'Estimating';
-          }
-        }
+        final isLastStopVerified = lastStop?.hasCanonicalCoordinates ?? false;
+        final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
+        final currentStopLabel = l10n.trackingLastStop;
+        final currentStopName =
+            lastStop?.localizedName(locale) ?? l10n.trackingUnavailable;
+        final actualArrival = lastStop?.actualArrivalTime;
+        final currentStopTimingText = actualArrival == null
+            ? ''
+            : l10n.trackingReached(
+                AppTimeFormatter.formatDepartureTime(
+                  departureAt: actualArrival,
+                  locale: locale,
+                ),
+              );
+        final nextStopLabel = l10n.trackingNextStop;
+        final nextStopName =
+            nextStop?.localizedName(locale) ?? l10n.trackingUnavailable;
+        final nextStopTimingText = l10n.trackingEtaUnavailable;
 
         // Last updated subtitle
-        final String lastUpdatedText;
-        if (isQaPreview) {
-          lastUpdatedText = locale == 'ar'
-              ? 'معاينة تجريبية مباشرة لمسار الحافلة'
-              : 'Live QA route simulation preview';
-        } else if (isOffline) {
-          lastUpdatedText = locale == 'ar'
-              ? 'الخدمة متوقفة حالياً'
-              : 'Service currently inactive';
-        } else if (telemetry != null) {
-          final age = telemetry.ageSeconds;
-          if (age < 30) {
-            lastUpdatedText = locale == 'ar'
-                ? 'تم التحديث الآن'
-                : 'Updated just now';
-          } else if (age < 120) {
-            lastUpdatedText = locale == 'ar'
-                ? 'آخر تحديث منذ $age ثانية'
-                : 'Updated $age seconds ago';
-          } else {
-            final mins = (age / 60).floor();
-            lastUpdatedText = locale == 'ar'
-                ? 'آخر تحديث منذ $mins دقيقة'
-                : 'Last updated $mins min ago';
-          }
+        final String lastUpdatedText = switch (trackingStatus) {
+          LiveTrackingStatus.live || LiveTrackingStatus.online =>
+            telemetry != null
+                ? (() {
+                    final age = telemetry.ageSeconds;
+                    if (age < 30) {
+                      return locale == 'ar'
+                          ? 'تم التحديث الآن'
+                          : 'Updated just now';
+                    }
+                    if (age < 120) {
+                      return locale == 'ar'
+                          ? 'آخر تحديث منذ $age ثانية'
+                          : 'Updated $age seconds ago';
+                    }
+                    final mins = (age / 60).floor();
+                    return locale == 'ar'
+                        ? 'آخر تحديث منذ $mins دقيقة'
+                        : 'Last updated $mins min ago';
+                  })()
+                : l10n.trackingUnavailable,
+          LiveTrackingStatus.assignmentPending =>
+            l10n.trackingAssignmentPending,
+          LiveTrackingStatus.stale => l10n.trackingLocationUnavailable,
+          LiveTrackingStatus.progressionUnavailable =>
+            l10n.trackingProgressUnavailable,
+          LiveTrackingStatus.tripNotActive => l10n.trackingTripNotActive,
+          LiveTrackingStatus.outsideTrackingWindow ||
+          LiveTrackingStatus.offline => l10n.trackingOffline,
+          LiveTrackingStatus.betweenRuns => l10n.trackingUnavailable,
+          LiveTrackingStatus.qaPreview => l10n.trackingUnavailable,
+        };
+
+        final String offlineResumeText;
+        if (summary?.nextWindowIsTomorrow == true) {
+          offlineResumeText = l10n.trackingResumesTomorrow;
+        } else if (summary?.nextWindowStartTime == '13:00' ||
+            summary?.serviceWindow == 'afternoon') {
+          offlineResumeText = l10n.trackingResumesMidday;
+        } else if (summary?.localizedNextWindowMessage(locale) != null &&
+            summary!.localizedNextWindowMessage(locale).isNotEmpty) {
+          offlineResumeText = summary.localizedNextWindowMessage(locale);
         } else {
-          lastUpdatedText = locale == 'ar'
-              ? 'في انتظار الإشارة'
-              : 'Waiting for signal';
+          offlineResumeText = locale == 'ar'
+              ? 'يستأنف التتبع الساعة 8:00 ص'
+              : 'Tracking resumes at 8:00 AM';
         }
 
         return LayoutBuilder(
@@ -246,6 +199,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
                             trackingStatus,
                             locale,
                             isAtStop: state.isAtStop,
+                            offlineLabel: l10n.trackingOffline,
                           ),
                         ],
                       ),
@@ -264,7 +218,62 @@ class HomeLiveTrackingCard extends StatelessWidget {
                           borderRadius: AppRadius.radiusLg,
                           child: Stack(
                             children: [
-                              if (kDebugMode &&
+                              if (!isLiveMapAvailable) ...[
+                                Container(
+                                  color: const Color(0xFFF1F5F9),
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFE2E8F0),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.location_off_rounded,
+                                          size: 22,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        lastUpdatedText,
+                                        style: AppTextStyles.titleMedium
+                                            .copyWith(
+                                              color: const Color(0xFF334155),
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 1.0,
+                                              fontSize: 14,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        trackingStatus ==
+                                                    LiveTrackingStatus
+                                                        .outsideTrackingWindow ||
+                                                trackingStatus ==
+                                                    LiveTrackingStatus.offline
+                                            ? offlineResumeText
+                                            : l10n.trackingUnavailable,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.labelSmall
+                                            .copyWith(
+                                              color: const Color(0xFF64748B),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else if (kDebugMode &&
                                   defaultTargetPlatform == TargetPlatform.iOS &&
                                   debugDisableHomeMap) ...[
                                 Container(
@@ -301,56 +310,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                   routeGeometry: state.routeGeometry,
                                 ),
                               ],
-
-                              // Offline subtle frosted bottom bar
-                              if (isOffline)
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.access_time_rounded,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            summary?.localizedNextWindowMessage(
-                                                  locale,
-                                                ) ??
-                                                (locale == 'ar'
-                                                    ? 'يستأنف التتبع الساعة 08:00 صباحاً'
-                                                    : 'Tracking resumes at 08:00 AM'),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              height: 1.3,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
@@ -387,9 +346,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                         width: 7,
                                         height: 7,
                                         decoration: BoxDecoration(
-                                          color: isQaPreview
-                                              ? const Color(0xFF818CF8)
-                                              : AppColors.accentYellow,
+                                          color: isLastStopVerified
+                                              ? AppColors.accentYellow
+                                              : const Color(0xFFCBD5E1),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -398,7 +357,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                         currentStopLabel,
                                         style: AppTextStyles.caption.copyWith(
                                           fontSize: 11,
-                                          color: AppColors.textSecondary,
+                                          color: isLastStopVerified
+                                              ? AppColors.textSecondary
+                                              : const Color(0xFF64748B),
                                           fontWeight: FontWeight.w600,
                                           height: 1.3,
                                         ),
@@ -458,8 +419,10 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       Container(
                                         width: 7,
                                         height: 7,
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.primary,
+                                        decoration: BoxDecoration(
+                                          color: isNextStopVerified
+                                              ? AppColors.primary
+                                              : const Color(0xFFCBD5E1),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -468,7 +431,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                         nextStopLabel,
                                         style: AppTextStyles.caption.copyWith(
                                           fontSize: 11,
-                                          color: AppColors.primaryDark,
+                                          color: isNextStopVerified
+                                              ? AppColors.primaryDark
+                                              : const Color(0xFF64748B),
                                           fontWeight: FontWeight.w700,
                                           height: 1.3,
                                         ),
@@ -494,7 +459,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppTextStyles.labelSmall.copyWith(
-                                        color: AppColors.primary,
+                                        color: isNextStopVerified
+                                            ? AppColors.primary
+                                            : const Color(0xFF64748B),
                                         fontWeight: FontWeight.w700,
                                         height: 1.3,
                                       ),
@@ -516,9 +483,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(
-                            isQaPreview
-                                ? Icons.auto_awesome_rounded
-                                : Icons.sync_rounded,
+                            Icons.sync_rounded,
                             size: 13,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -545,18 +510,11 @@ class HomeLiveTrackingCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                       child: InkWell(
-                        onTap: () {
-                          if (onViewMapTap != null) {
-                            onViewMapTap!();
-                          } else {
-                            context.push(
-                              RoutePaths.liveTracking.replaceFirst(
-                                ':tripId',
-                                'active',
-                              ),
-                            );
-                          }
-                        },
+                        onTap: isActionDisabled || onViewMapTap == null
+                            ? null
+                            : () {
+                                onViewMapTap!();
+                              },
                         borderRadius: AppRadius.radiusMd,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -564,42 +522,52 @@ class HomeLiveTrackingCard extends StatelessWidget {
                             horizontal: 16,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: isActionDisabled
+                                ? const Color(0xFFE2E8F0)
+                                : AppColors.primary,
                             borderRadius: AppRadius.radiusMd,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.25,
-                                ),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
+                            boxShadow: isActionDisabled
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.map_rounded,
-                                color: Colors.white,
+                                color: isActionDisabled
+                                    ? const Color(0xFF94A3B8)
+                                    : Colors.white,
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                locale == 'ar'
-                                    ? 'عرض الخريطة الحية'
-                                    : 'View Live Map',
+                                l10n.viewLiveMap,
                                 style: AppTextStyles.buttonMedium.copyWith(
-                                  color: Colors.white,
+                                  color: isActionDisabled
+                                      ? const Color(0xFF94A3B8)
+                                      : Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   height: 1.3,
                                 ),
                               ),
                               const Spacer(),
-                              const Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                color: Colors.white,
+                              Icon(
+                                locale == 'ar'
+                                    ? Icons.arrow_back_ios_rounded
+                                    : Icons.arrow_forward_ios_rounded,
+                                color: isActionDisabled
+                                    ? const Color(0xFF94A3B8)
+                                    : Colors.white,
                                 size: 13,
                               ),
                             ],
@@ -621,6 +589,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
     LiveTrackingStatus status,
     String locale, {
     bool isAtStop = false,
+    required String offlineLabel,
   }) {
     final Color bg;
     final Color dotColor;
@@ -632,6 +601,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
       label = locale == 'ar' ? 'بالمحطة' : 'AT STOP';
     } else {
       switch (status) {
+        case LiveTrackingStatus.live:
         case LiveTrackingStatus.online:
           bg = const Color(0xFFE8F5E9);
           dotColor = const Color(0xFF16A34A);
@@ -640,7 +610,27 @@ class HomeLiveTrackingCard extends StatelessWidget {
         case LiveTrackingStatus.stale:
           bg = const Color(0xFFFEF3C7);
           dotColor = const Color(0xFFD97706);
-          label = locale == 'ar' ? 'إشارة ضعيفة' : 'RECONNECTING';
+          label = locale == 'ar' ? 'مؤقتاً' : 'STALE';
+          break;
+        case LiveTrackingStatus.assignmentPending:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = locale == 'ar' ? 'قيد التعيين' : 'PENDING';
+          break;
+        case LiveTrackingStatus.tripNotActive:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = locale == 'ar' ? 'غير نشط' : 'INACTIVE';
+          break;
+        case LiveTrackingStatus.outsideTrackingWindow:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = offlineLabel;
+          break;
+        case LiveTrackingStatus.progressionUnavailable:
+          bg = const Color(0xFFFEF3C7);
+          dotColor = const Color(0xFFD97706);
+          label = locale == 'ar' ? 'المحطات غير متاحة' : 'NO STOPS';
           break;
         case LiveTrackingStatus.betweenRuns:
           bg = const Color(0xFFEEF2FF);
@@ -655,7 +645,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
         case LiveTrackingStatus.offline:
           bg = const Color(0xFFF1F5F9);
           dotColor = const Color(0xFF64748B);
-          label = locale == 'ar' ? 'غير متصل' : 'OFFLINE';
+          label = offlineLabel;
           break;
       }
     }

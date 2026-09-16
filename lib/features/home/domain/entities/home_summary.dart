@@ -5,10 +5,7 @@ class PassengerProfileSummary extends Equatable {
   final String fullName;
   final String? avatarUrl;
 
-  const PassengerProfileSummary({
-    required this.fullName,
-    this.avatarUrl,
-  });
+  const PassengerProfileSummary({required this.fullName, this.avatarUrl});
 
   String get initials {
     if (fullName.trim().isEmpty) return 'P';
@@ -69,15 +66,23 @@ class PassengerUpcomingTrip extends Equatable {
     this.localityAr,
   });
 
-  String originName(String locale) =>
-      locale == 'ar' ? originNameAr : originNameEn;
+  String originName(String locale) => locale.startsWith('ar')
+      ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
+      : (originNameEn.trim().isNotEmpty ? originNameEn : originNameAr);
 
-  String destinationName(String locale) =>
-      locale == 'ar' ? destinationNameAr : destinationNameEn;
+  String destinationName(String locale) => locale.startsWith('ar')
+      ? (destinationNameAr.trim().isNotEmpty
+            ? destinationNameAr
+            : destinationNameEn)
+      : (destinationNameEn.trim().isNotEmpty
+            ? destinationNameEn
+            : destinationNameAr);
 
   String? get boardingStopDisplayName {
     if (stopNameAr == null || stopNameAr!.isEmpty) return null;
-    if (localityAr != null && localityAr!.isNotEmpty && localityAr != stopNameAr) {
+    if (localityAr != null &&
+        localityAr!.isNotEmpty &&
+        localityAr != stopNameAr) {
       return '$stopNameAr — $localityAr';
     }
     return stopNameAr;
@@ -85,24 +90,24 @@ class PassengerUpcomingTrip extends Equatable {
 
   @override
   List<Object?> get props => [
-        bookingId,
-        tripId,
-        direction,
-        originNameAr,
-        originNameEn,
-        destinationNameAr,
-        destinationNameEn,
-        serviceDate,
-        departureAt,
-        departureTime,
-        seatNumber,
-        farePoints,
-        bookingStatus,
-        qrToken,
-        routeStopId,
-        stopNameAr,
-        localityAr,
-      ];
+    bookingId,
+    tripId,
+    direction,
+    originNameAr,
+    originNameEn,
+    destinationNameAr,
+    destinationNameEn,
+    serviceDate,
+    departureAt,
+    departureTime,
+    seatNumber,
+    farePoints,
+    bookingStatus,
+    qrToken,
+    routeStopId,
+    stopNameAr,
+    localityAr,
+  ];
 }
 
 /// Passenger activity analytics metrics for the Home screen.
@@ -121,11 +126,11 @@ class PassengerActivityMetrics extends Equatable {
 
   @override
   List<Object?> get props => [
-        tripsThisMonth,
-        completedTrips,
-        pointsSpentThisMonth,
-        missedTrips,
-      ];
+    tripsThisMonth,
+    completedTrips,
+    pointsSpentThisMonth,
+    missedTrips,
+  ];
 }
 
 /// Aggregated passenger home summary returned by `get_passenger_home_summary`.
@@ -143,10 +148,5 @@ class HomeSummary extends Equatable {
   });
 
   @override
-  List<Object?> get props => [
-        profile,
-        availablePoints,
-        upcomingTrip,
-        activity,
-      ];
+  List<Object?> get props => [profile, availablePoints, upcomingTrip, activity];
 }

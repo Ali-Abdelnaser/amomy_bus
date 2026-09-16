@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -40,46 +41,48 @@ class TripHistoryCard extends StatelessWidget {
       shadowColor,
     ) = switch (booking.status.toLowerCase()) {
       'completed' => (
-          isAr ? 'مكتملة' : 'Completed',
-          AppColors.success,
-          AppColors.successLight,
-          AppColors.success.withValues(alpha: 0.25),
-          const Color(0xFFF4FDF7),
-          AppColors.success.withValues(alpha: 0.35),
-          AppColors.success.withValues(alpha: 0.07),
-        ),
+        isAr ? 'مكتملة' : 'Completed',
+        AppColors.success,
+        AppColors.successLight,
+        AppColors.success.withValues(alpha: 0.25),
+        const Color(0xFFF4FDF7),
+        AppColors.success.withValues(alpha: 0.35),
+        AppColors.success.withValues(alpha: 0.07),
+      ),
       'cancelled' => (
-          isAr ? 'ملغاة' : 'Cancelled',
-          AppColors.error,
-          AppColors.errorLight,
-          AppColors.error.withValues(alpha: 0.25),
-          const Color(0xFFFFF7F7),
-          AppColors.error.withValues(alpha: 0.35),
-          AppColors.error.withValues(alpha: 0.06),
-        ),
+        isAr ? 'ملغاة' : 'Cancelled',
+        AppColors.error,
+        AppColors.errorLight,
+        AppColors.error.withValues(alpha: 0.25),
+        const Color(0xFFFFF7F7),
+        AppColors.error.withValues(alpha: 0.35),
+        AppColors.error.withValues(alpha: 0.06),
+      ),
       'no_show' => (
-          isAr ? 'لم يحضر' : 'No-show',
-          const Color(0xFFD97706),
-          const Color(0xFFFEF3C7),
-          const Color(0xFFF59E0B).withValues(alpha: 0.30),
-          const Color(0xFFFFFBEB),
-          const Color(0xFFF59E0B).withValues(alpha: 0.35),
-          const Color(0xFFF59E0B).withValues(alpha: 0.06),
-        ),
+        isAr ? 'لم يحضر' : 'No-show',
+        const Color(0xFFD97706),
+        const Color(0xFFFEF3C7),
+        const Color(0xFFF59E0B).withValues(alpha: 0.30),
+        const Color(0xFFFFFBEB),
+        const Color(0xFFF59E0B).withValues(alpha: 0.35),
+        const Color(0xFFF59E0B).withValues(alpha: 0.06),
+      ),
       _ => (
-          isAr ? 'منتهية' : 'Finished',
-          const Color(0xFF64748B),
-          const Color(0xFFF1F5F9),
-          const Color(0xFFCBD5E1),
-          const Color(0xFFF8FAFC),
-          const Color(0xFFCBD5E1),
-          Colors.black.withValues(alpha: 0.03),
-        ),
+        isAr ? 'منتهية' : 'Finished',
+        const Color(0xFF64748B),
+        const Color(0xFFF1F5F9),
+        const Color(0xFFCBD5E1),
+        const Color(0xFFF8FAFC),
+        const Color(0xFFCBD5E1),
+        Colors.black.withValues(alpha: 0.03),
+      ),
     };
 
     // Formatted date string (e.g., "12 September 2026" / "12 سبتمبر 2026")
-    final formattedDate =
-        DateFormat('d MMMM yyyy', isAr ? 'ar' : 'en').format(booking.serviceDate);
+    final formattedDate = DateFormat(
+      'd MMMM yyyy',
+      isAr ? 'ar' : 'en',
+    ).format(booking.serviceDate);
 
     // Stop names
     final displayOrigin = booking.originName(locale);
@@ -172,7 +175,10 @@ class TripHistoryCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  booking.departureTime,
+                                  AppTimeFormatter.formatPassengerBooking(
+                                    booking,
+                                    isArabic: isAr,
+                                  ),
                                   style: AppTextStyles.titleSmall.copyWith(
                                     fontWeight: FontWeight.w900,
                                     fontSize: 15,
@@ -357,12 +363,14 @@ class TripHistoryCard extends StatelessWidget {
                                       width: 24,
                                       height: 24,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFD49B00)
-                                            .withValues(alpha: 0.12),
+                                        color: const Color(
+                                          0xFFD49B00,
+                                        ).withValues(alpha: 0.12),
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: const Color(0xFFD49B00)
-                                              .withValues(alpha: 0.25),
+                                          color: const Color(
+                                            0xFFD49B00,
+                                          ).withValues(alpha: 0.25),
                                           width: 1.0,
                                         ),
                                       ),
@@ -478,10 +486,7 @@ class _HistoryVerticalConnector extends StatelessWidget {
   final double height;
   final Color color;
 
-  const _HistoryVerticalConnector({
-    required this.height,
-    required this.color,
-  });
+  const _HistoryVerticalConnector({required this.height, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -490,9 +495,7 @@ class _HistoryVerticalConnector extends StatelessWidget {
       height: height,
       child: CustomPaint(
         size: Size(2, height),
-        painter: _HistoryDashedPainter(
-          color: color.withValues(alpha: 0.55),
-        ),
+        painter: _HistoryDashedPainter(color: color.withValues(alpha: 0.55)),
       ),
     );
   }

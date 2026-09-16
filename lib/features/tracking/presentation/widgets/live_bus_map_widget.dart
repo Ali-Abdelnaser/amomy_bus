@@ -44,6 +44,19 @@ class LiveBusMapWidget extends StatefulWidget {
     this.routeGeometry,
   });
 
+  @visibleForTesting
+  static bool shouldRenderStopMarker(BusStopModel stop) =>
+      stop.hasCanonicalCoordinates;
+
+  @visibleForTesting
+  static List<BusStopModel> markerEligibleStops(
+    List<BusStopModel> stops, {
+    required bool isCompactPreview,
+  }) {
+    final eligible = stops.where(shouldRenderStopMarker);
+    return isCompactPreview ? eligible.take(4).toList() : eligible.toList();
+  }
+
   @override
   State<LiveBusMapWidget> createState() => _LiveBusMapWidgetState();
 }
@@ -98,12 +111,18 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       _lastTelemetryRecordedAt = t.gpsRecordedAt;
     }
 
+    final firstCanonicalStop = widget.routeStops
+        .cast<BusStopModel?>()
+        .firstWhere(
+          (s) => s != null && LiveBusMapWidget.shouldRenderStopMarker(s),
+          orElse: () => null,
+        );
     final initialCenter =
         _displayedPosition ??
-        (widget.routeStops.isNotEmpty && widget.routeStops.first.hasCoordinates
+        (firstCanonicalStop != null
             ? LatLng(
-                widget.routeStops.first.latitude!,
-                widget.routeStops.first.longitude!,
+                firstCanonicalStop.latitude!,
+                firstCanonicalStop.longitude!,
               )
             : _defaultCenter);
 
@@ -162,12 +181,18 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
   }
 
   BusMarkerVisualState _resolveBusVisualState() {
+    if (widget.status == LiveTrackingStatus.progressionUnavailable) {
+      return BusMarkerVisualState.reconnecting;
+    }
     final isQa =
         widget.status == LiveTrackingStatus.qaPreview ||
         widget.telemetry?.source == 'qa';
     if (isQa) return BusMarkerVisualState.qa;
 
-    if (widget.status == LiveTrackingStatus.offline) {
+    if (widget.status == LiveTrackingStatus.offline ||
+        widget.status == LiveTrackingStatus.assignmentPending ||
+        widget.status == LiveTrackingStatus.tripNotActive ||
+        widget.status == LiveTrackingStatus.outsideTrackingWindow) {
       return BusMarkerVisualState.offline;
     }
 
@@ -195,42 +220,17 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       return;
     }
 
-    final isQaPreview =
-        widget.status == LiveTrackingStatus.qaPreview ||
-        widget.telemetry?.source == 'qa';
-    final currentStopOrder =
-        widget.telemetry?.currentStopOrder ??
-        widget.routeStops
-            .cast<BusStopModel?>()
-            .firstWhere(
-              (s) => s?.id == widget.telemetry?.currentStopId,
-              orElse: () => null,
-            )
-            ?.stopOrder;
-
-    final displayStops = widget.isCompactPreview
-        ? widget.routeStops
-              .where(
-                (s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview),
-              )
-              .take(4)
-              .toList()
-        : widget.routeStops
-              .where(
-                (s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview),
-              )
-              .toList();
+    final displayStops = LiveBusMapWidget.markerEligibleStops(
+      widget.routeStops,
+      isCompactPreview: widget.isCompactPreview,
+    );
 
     final Set<Marker> newStopMarkers = {};
     for (final stop in displayStops) {
-      final isCurrent = widget.telemetry?.currentStopId == stop.id;
-      final isNext = widget.telemetry?.nextStopId == stop.id;
+      final isCurrent = stop.semanticState == TrackingStopSemanticState.active;
+      final isNext = stop.semanticState == TrackingStopSemanticState.next;
       final isSelected = widget.selectedStop?.id == stop.id;
-      final isPassed =
-          currentStopOrder != null &&
-          stop.stopOrder < currentStopOrder &&
-          !isCurrent &&
-          !isNext;
+      final isPassed = stop.semanticState == TrackingStopSemanticState.passed;
 
       BitmapDescriptor icon = _pinNormalIcon!;
       Offset anchor = AmomyMapIcons.normalPinAnchor;
@@ -288,11 +288,19 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     if (_busMarkerIcon == null) {
       _resolveIcons();
     }
-    final busCoord =
-        pos ??
-        (widget.telemetry != null
-            ? LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude)
-            : null);
+    final canShowVehicle =
+        widget.status == LiveTrackingStatus.live ||
+        widget.status == LiveTrackingStatus.online ||
+        widget.status == LiveTrackingStatus.progressionUnavailable;
+    final busCoord = canShowVehicle
+        ? pos ??
+              (widget.telemetry != null
+                  ? LatLng(
+                      widget.telemetry!.latitude,
+                      widget.telemetry!.longitude,
+                    )
+                  : null)
+        : null;
     if (busCoord != null && _busMarkerIcon != null) {
       _busMarker = Marker(
         markerId: const MarkerId('active_bus'),
@@ -314,19 +322,6 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
   }
 
   void _rebuildPolylines() {
-    final isQaPreview =
-        widget.status == LiveTrackingStatus.qaPreview ||
-        widget.telemetry?.source == 'qa';
-    final currentStopOrder =
-        widget.telemetry?.currentStopOrder ??
-        widget.routeStops
-            .cast<BusStopModel?>()
-            .firstWhere(
-              (s) => s?.id == widget.telemetry?.currentStopId,
-              orElse: () => null,
-            )
-            ?.stopOrder;
-
     final busCoord =
         _displayedPosition ??
         (widget.telemetry != null
@@ -346,7 +341,9 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       // Authoritative road-following geometry from Google Routes
       final polyPoints = geom.points;
 
-      if (busCoord != null) {
+      if (busCoord != null &&
+          (widget.status == LiveTrackingStatus.live ||
+              widget.status == LiveTrackingStatus.online)) {
         final split = RouteGeometryEngine.splitPolylineByBus(
           polyline: polyPoints,
           busLocation: busCoord,
@@ -389,7 +386,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
           if (nextStopId != null) {
             BusStopModel? nextStop;
             for (final s in widget.routeStops) {
-              if (s.id == nextStopId && s.hasCoordinates) {
+              if (s.id == nextStopId &&
+                  LiveBusMapWidget.shouldRenderStopMarker(s)) {
                 nextStop = s;
                 break;
               }
@@ -521,21 +519,17 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         );
       }
     } else {
-      // Fallback: If no road geometry yet (e.g. QA temp stops preview)
+      // Fallback only uses verified canonical stop coordinates.
       final eligibleStops = widget.routeStops
-          .where((s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview))
+          .where(LiveBusMapWidget.shouldRenderStopMarker)
           .toList();
 
       if (eligibleStops.length >= 2) {
-        int splitIdx = -1;
-        if (currentStopOrder != null) {
-          for (int i = 0; i < eligibleStops.length; i++) {
-            if (eligibleStops[i].stopOrder >= currentStopOrder) {
-              splitIdx = i;
-              break;
-            }
-          }
-        }
+        final splitIdx = eligibleStops.indexWhere(
+          (s) =>
+              s.semanticState == TrackingStopSemanticState.active ||
+              s.semanticState == TrackingStopSemanticState.next,
+        );
 
         if (splitIdx > 0) {
           final passedPoints = eligibleStops
@@ -759,7 +753,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         _isMapReady &&
         widget.routeStops.isNotEmpty) {
       final stopsWithCoords = widget.routeStops
-          .where((s) => s.hasCoordinates)
+          .where(LiveBusMapWidget.shouldRenderStopMarker)
           .toList();
       if (stopsWithCoords.length > 5) {
         _initialCameraFitted = true;
@@ -857,7 +851,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
                     if (widget.routeStops.isNotEmpty &&
                         !widget.isCompactPreview) {
                       final stopsWithCoords = widget.routeStops
-                          .where((s) => s.hasCoordinates)
+                          .where(LiveBusMapWidget.shouldRenderStopMarker)
                           .toList();
                       if (stopsWithCoords.length > 5) {
                         _fitCameraToStops(stopsWithCoords);

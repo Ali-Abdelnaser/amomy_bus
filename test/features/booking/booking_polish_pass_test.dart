@@ -122,7 +122,7 @@ void main() {
     destinationNameAr: 'بوابة توشكى',
     destinationNameEn: 'Toshka Gate',
     departureTime: '08:00',
-    departureAt: DateTime.now().add(const Duration(hours: 1)),
+    departureAt: DateTime(2026, 1, 1, 8, 0),
     farePoints: 25.0,
     availableSeatsCount: 15,
     status: 'scheduled',
@@ -137,7 +137,7 @@ void main() {
     destinationNameAr: 'بوابة توشكى',
     destinationNameEn: 'Toshka Gate',
     departureTime: '09:00',
-    departureAt: DateTime.now().add(const Duration(hours: 2)),
+    departureAt: DateTime(2026, 1, 1, 9, 0),
     farePoints: 25.0,
     availableSeatsCount: 4, // few seats left
     status: 'scheduled',
@@ -152,7 +152,7 @@ void main() {
     destinationNameAr: 'كوبرى عزت',
     destinationNameEn: 'Ezzat Bridge',
     departureTime: '14:00',
-    departureAt: DateTime.now().add(const Duration(hours: 5)),
+    departureAt: DateTime.now().add(const Duration(hours: 6)),
     farePoints: 25.0,
     availableSeatsCount: 20,
     status: 'scheduled',
@@ -195,8 +195,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final firstFinder = find.text('08:00');
-      final secondFinder = find.text('09:00');
+      final firstFinder = find.textContaining('8:00');
+      final secondFinder = find.textContaining('9:00');
 
       expect(firstFinder, findsOneWidget);
       expect(secondFinder, findsOneWidget);
@@ -229,14 +229,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap 08:00
-      await tester.tap(find.text('08:00'));
+      // Tap 8:00 AM
+      await tester.tap(find.textContaining('8:00'));
       await tester.pumpAndSettle();
       expect(selected?.tripId, 'trip-0800');
       expect(find.text('First stop · Selected'), findsOneWidget);
 
-      // Tap 09:00
-      await tester.tap(find.text('09:00'));
+      // Tap 9:00 AM
+      await tester.tap(find.textContaining('9:00'));
       await tester.pumpAndSettle();
       expect(selected?.tripId, 'trip-0900');
       // Only ONE item displays Selected
@@ -392,7 +392,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('08:00'), findsOneWidget);
+        expect(find.textContaining('8:00'), findsOneWidget);
         expect(find.text('First stop · Selected Trip'), findsOneWidget);
       },
     );
@@ -414,7 +414,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('انتهت رحلات اليوم'), findsOneWidget);
+      expect(find.text('لا توجد رحلات متاحة اليوم'), findsOneWidget);
       expect(
         find.text('تابع التطبيق غداً لمواعيد الرحلات الجديدة.'),
         findsOneWidget,

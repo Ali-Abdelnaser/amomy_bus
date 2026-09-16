@@ -21,10 +21,7 @@ void main() {
       supportedLocales: const [Locale('en'), Locale('ar')],
       home: Scaffold(
         body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: child,
-          ),
+          child: Padding(padding: const EdgeInsets.all(16.0), child: child),
         ),
       ),
     );
@@ -39,7 +36,7 @@ void main() {
     destinationNameAr: 'بوابة توشكى',
     destinationNameEn: 'Toshka Gate',
     departureTime: '08:00',
-    departureAt: DateTime.now().add(const Duration(hours: 2)),
+    departureAt: DateTime(2026, 9, 16, 8, 0),
     farePoints: 30.0,
     availableSeatsCount: 10,
     status: 'scheduled',
@@ -80,7 +77,9 @@ void main() {
   );
 
   group('BookingReviewCard Widget Tests', () {
-    testWidgets('renders trip direction, departure time, stops, and seat', (tester) async {
+    testWidgets('renders trip direction, departure time, stops, and seat', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           BookingReviewCard(
@@ -97,7 +96,7 @@ void main() {
 
       // Trip Direction and Time
       expect(find.text('Outbound'), findsOneWidget);
-      expect(find.text('08:00'), findsOneWidget);
+      expect(find.text('8:00 AM'), findsOneWidget);
 
       // Stops and Localities
       expect(find.text('Ezzat Bridge'), findsOneWidget);
@@ -123,7 +122,9 @@ void main() {
       expect(find.text('Confirm Booking'), findsOneWidget);
     });
 
-    testWidgets('renders Return direction styling in Arabic RTL', (tester) async {
+    testWidgets('renders Return direction styling in Arabic RTL', (
+      tester,
+    ) async {
       final returnTrip = TripOption(
         tripId: 'trip-2',
         routeId: 'route-1',
@@ -133,7 +134,7 @@ void main() {
         destinationNameAr: 'كوبرى عزت',
         destinationNameEn: 'Ezzat Bridge',
         departureTime: '16:30',
-        departureAt: DateTime.now().add(const Duration(hours: 6)),
+        departureAt: DateTime(2026, 9, 16, 16, 30),
         farePoints: 30.0,
         availableSeatsCount: 15,
         status: 'scheduled',
@@ -155,7 +156,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('عودة'), findsOneWidget);
-      expect(find.text('16:30'), findsOneWidget);
+      expect(find.text('4:30 م'), findsOneWidget);
       expect(find.text('بوابة توشكى'), findsOneWidget);
       expect(find.text('كوبرى عزت'), findsOneWidget);
       expect(find.text('تأكيد الحجز'), findsOneWidget);
@@ -163,7 +164,9 @@ void main() {
     });
 
     testWidgets('renders active hold countdown', (tester) async {
-      final futureExpiry = DateTime.now().add(const Duration(minutes: 4, seconds: 32));
+      final futureExpiry = DateTime.now().add(
+        const Duration(minutes: 4, seconds: 32),
+      );
       final seatWithExpiry = TripSeat(
         seatId: 'seat-7',
         seatNumber: '7',
@@ -190,75 +193,88 @@ void main() {
       expect(find.textContaining('Seat held for'), findsOneWidget);
     });
 
-    testWidgets('expired hold disables Confirm button and shows choose seat again', (tester) async {
-      bool chooseSeatAgainCalled = false;
-      final pastExpiry = DateTime.now().subtract(const Duration(seconds: 10));
-      final expiredSeat = TripSeat(
-        seatId: 'seat-7',
-        seatNumber: '7',
-        rowIndex: 3,
-        columnIndex: 1,
-        seatType: 'standard',
-        status: SeatAvailabilityStatus.held,
-        isMine: true,
-        heldExpiresAt: pastExpiry,
-      );
+    testWidgets(
+      'expired hold disables Confirm button and shows choose seat again',
+      (tester) async {
+        bool chooseSeatAgainCalled = false;
+        final pastExpiry = DateTime.now().subtract(const Duration(seconds: 10));
+        final expiredSeat = TripSeat(
+          seatId: 'seat-7',
+          seatNumber: '7',
+          rowIndex: 3,
+          columnIndex: 1,
+          seatType: 'standard',
+          status: SeatAvailabilityStatus.held,
+          isMine: true,
+          heldExpiresAt: pastExpiry,
+        );
 
-      await tester.pumpWidget(
-        buildTestableWidget(
-          BookingReviewCard(
-            trip: sampleTrip,
-            seat: expiredSeat,
-            userAvailablePoints: 100.0,
-            onConfirm: () {},
-            onChooseSeatAgain: () => chooseSeatAgainCalled = true,
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingReviewCard(
+              trip: sampleTrip,
+              seat: expiredSeat,
+              userAvailablePoints: 100.0,
+              onConfirm: () {},
+              onChooseSeatAgain: () => chooseSeatAgainCalled = true,
+            ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      expect(
-        find.text('Your seat hold has expired. Please choose a seat again.'),
-        findsOneWidget,
-      );
-      expect(find.text('Choose Seat Again'), findsOneWidget);
+        expect(
+          find.text('Your seat hold has expired. Please choose a seat again.'),
+          findsOneWidget,
+        );
+        expect(find.text('Choose Seat Again'), findsOneWidget);
 
-      await tester.tap(find.text('Choose Seat Again'));
-      expect(chooseSeatAgainCalled, isTrue);
+        await tester.tap(find.text('Choose Seat Again'));
+        expect(chooseSeatAgainCalled, isTrue);
 
-      // Confirm button should be disabled
-      final confirmFinder = find.widgetWithText(ElevatedButton, 'Confirm Booking');
-      if (confirmFinder.evaluate().isNotEmpty) {
-        final btn = tester.widget<ElevatedButton>(confirmFinder);
-        expect(btn.onPressed, isNull);
-      }
-    });
+        // Confirm button should be disabled
+        final confirmFinder = find.widgetWithText(
+          ElevatedButton,
+          'Confirm Booking',
+        );
+        if (confirmFinder.evaluate().isNotEmpty) {
+          final btn = tester.widget<ElevatedButton>(confirmFinder);
+          expect(btn.onPressed, isNull);
+        }
+      },
+    );
 
-    testWidgets('insufficient points disables Confirm button and shows deficit warning', (tester) async {
-      bool confirmCalled = false;
-      await tester.pumpWidget(
-        buildTestableWidget(
-          BookingReviewCard(
-            trip: sampleTrip,
-            seat: sampleSeat,
-            userAvailablePoints: 10.0, // Needs 30, deficit is 20
-            onConfirm: () => confirmCalled = true,
+    testWidgets(
+      'insufficient points disables Confirm button and shows deficit warning',
+      (tester) async {
+        bool confirmCalled = false;
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingReviewCard(
+              trip: sampleTrip,
+              seat: sampleSeat,
+              userAvailablePoints: 10.0, // Needs 30, deficit is 20
+              onConfirm: () => confirmCalled = true,
+            ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      expect(
-        find.text('Not enough points. You need 20 more points to complete this booking.'),
-        findsOneWidget,
-      );
+        expect(
+          find.text(
+            'Not enough points. You need 20 more points to complete this booking.',
+          ),
+          findsOneWidget,
+        );
 
-      // Try tapping Confirm Booking (disabled when insufficient points)
-      await tester.tap(find.text('Confirm Booking'), warnIfMissed: false);
-      expect(confirmCalled, isFalse);
-    });
+        // Try tapping Confirm Booking (disabled when insufficient points)
+        await tester.tap(find.text('Confirm Booking'), warnIfMissed: false);
+        expect(confirmCalled, isFalse);
+      },
+    );
 
-    testWidgets('loading state displays indicator and disables button', (tester) async {
+    testWidgets('loading state displays indicator and disables button', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           BookingReviewCard(
@@ -273,6 +289,107 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets(
+      'A. Server returns remaining_seconds = 231 -> UI starts at 3:51',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingReviewCard(
+              trip: sampleTrip,
+              seat: sampleSeat,
+              userAvailablePoints: 100.0,
+              initialHoldSecondsRemaining: 231,
+              onConfirm: () {},
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Seat held for 3:51'), findsOneWidget);
+      },
+    );
+
+    testWidgets('F. Rebuild/re-enter Review -> no reset to 5:00', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          BookingReviewCard(
+            trip: sampleTrip,
+            seat: sampleSeat,
+            userAvailablePoints: 100.0,
+            initialHoldSecondsRemaining: 180,
+            onConfirm: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Seat held for 3:00'), findsOneWidget);
+      expect(find.text('Seat held for 5:00'), findsNothing);
+
+      // Rebuild with next Cubit second (179)
+      await tester.pumpWidget(
+        buildTestableWidget(
+          BookingReviewCard(
+            trip: sampleTrip,
+            seat: sampleSeat,
+            userAvailablePoints: 100.0,
+            initialHoldSecondsRemaining: 179,
+            onConfirm: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Seat held for 2:59'), findsOneWidget);
+      expect(find.text('Seat held for 5:00'), findsNothing);
+    });
+
+    testWidgets('Confirm button: remaining > 0 + valid hold -> enabled', (
+      tester,
+    ) async {
+      bool confirmTapped = false;
+      await tester.pumpWidget(
+        buildTestableWidget(
+          BookingReviewCard(
+            trip: sampleTrip,
+            seat: sampleSeat,
+            userAvailablePoints: 100.0,
+            initialHoldSecondsRemaining: 150,
+            onConfirm: () => confirmTapped = true,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Confirm Booking'));
+      expect(confirmTapped, isTrue);
+    });
+
+    testWidgets('Confirm button: remaining = 0 / hold expired -> disabled', (
+      tester,
+    ) async {
+      bool confirmTapped = false;
+      await tester.pumpWidget(
+        buildTestableWidget(
+          BookingReviewCard(
+            trip: sampleTrip,
+            seat: sampleSeat,
+            userAvailablePoints: 100.0,
+            initialHoldSecondsRemaining: 0,
+            onConfirm: () => confirmTapped = true,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Confirm Booking'), warnIfMissed: false);
+      expect(confirmTapped, isFalse);
+      expect(
+        find.text('Your seat hold has expired. Please choose a seat again.'),
+        findsOneWidget,
+      );
     });
   });
 }

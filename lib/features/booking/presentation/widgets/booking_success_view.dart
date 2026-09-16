@@ -1,30 +1,63 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../tracking/presentation/cubit/tracking_cubit.dart';
 import '../../../trips/presentation/widgets/qr_ticket_modal.dart';
 import '../../domain/entities/booking_entities.dart';
 import 'app_qr_ticket_widget.dart';
 
-/// Clean digital boarding pass shown after a successful booking confirmation.
+/// Clean modern digital boarding pass shown after booking confirmation.
+///
+/// Phase 10 Redesign:
+/// 1. Success header (clean badge + concise localized confirmation)
+/// 2. Trip summary card (direction, date, Cairo 12-hr time, route, seat, fare)
+/// 3. QR boarding card (compact scannable QR, "Scan to Board", helper text)
+/// 4. NFC helper (secondary card explaining physical NFC card tap, no tokens/hashes)
+/// 5. Bottom actions (My Trips, Home, and conditional Live Map when state/route permits)
 class BookingSuccessView extends StatelessWidget {
   final PassengerBooking booking;
+  final bool? enableLiveMap;
 
-  const BookingSuccessView({super.key, required this.booking});
+  const BookingSuccessView({
+    super.key,
+    required this.booking,
+    this.enableLiveMap,
+  });
+
+  bool _canShowLiveMap(BuildContext context) {
+    if (enableLiveMap != null) return enableLiveMap!;
+    if (booking.tripId.isEmpty) return false;
+    try {
+      final cubit = context.read<TrackingCubit?>();
+      if (cubit != null) {
+        final state = cubit.state;
+        final isTrackedTrip =
+            state.summary?.activeTripId == booking.tripId ||
+            state.trackedTripId == booking.tripId;
+        return isTrackedTrip && (state.isLive || state.isOnline);
+      }
+    } catch (_) {}
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final canShowLiveMap = _canShowLiveMap(context);
 
     return SafeArea(
       top: false,
@@ -43,8 +76,14 @@ class BookingSuccessView extends StatelessWidget {
             _TripSummaryCard(booking: booking, isAr: isAr),
             AppSpacing.gapH16,
             _QrBoardingCard(booking: booking, isAr: isAr),
+            AppSpacing.gapH12,
+            _NfcHelperCard(isAr: isAr),
             AppSpacing.gapH20,
-            _SuccessActions(isAr: isAr),
+            _SuccessActions(
+              booking: booking,
+              isAr: isAr,
+              canShowLiveMap: canShowLiveMap,
+            ),
           ],
         ),
       ),
@@ -69,7 +108,7 @@ class _ConfirmationHeader extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
           ),
-          child: const Icon(AppIcons.check, color: AppColors.success, size: 30),
+          child: const Icon(AppIcons.check, color: AppColors.success, size: 28),
         ),
         AppSpacing.gapH12,
         Text(
@@ -151,7 +190,10 @@ class _TripSummaryCard extends StatelessWidget {
                   borderRadius: AppRadius.radiusSm,
                 ),
                 child: Text(
-                  booking.departureTime,
+                  AppTimeFormatter.formatPassengerBooking(
+                    booking,
+                    isArabic: isAr,
+                  ),
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w800,
@@ -324,7 +366,7 @@ class _DetailsGrid extends StatelessWidget {
       _DetailItemData(
         icon: AppIcons.calendar,
         label: isAr ? 'التاريخ' : 'Date',
-        value: _formatDate(booking.serviceDate),
+        value: _formatDate(booking.serviceDate, isAr),
       ),
       _DetailItemData(
         icon: AppIcons.seat,
@@ -359,7 +401,7 @@ class _DetailsGrid extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, bool isAr) {
     const enMonths = [
       'Jan',
       'Feb',
@@ -374,7 +416,25 @@ class _DetailsGrid extends StatelessWidget {
       'Nov',
       'Dec',
     ];
-    return '${date.day} ${enMonths[(date.month - 1).clamp(0, 11)]}';
+    const arMonths = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    final mIdx = (date.month - 1).clamp(0, 11);
+    if (isAr) {
+      return '${date.day} ${arMonths[mIdx]}';
+    }
+    return '${date.day} ${enMonths[mIdx]}';
   }
 }
 
@@ -469,7 +529,7 @@ class _QrBoardingCard extends StatelessWidget {
               AppSpacing.gapW8,
               Expanded(
                 child: Text(
-                  isAr ? 'امسح للصعود' : 'Scan to board',
+                  isAr ? 'امسح للصعود' : 'Scan to Board',
                   style: AppTextStyles.titleLarge.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w800,
@@ -481,13 +541,16 @@ class _QrBoardingCard extends StatelessWidget {
           AppSpacing.gapH14,
           LayoutBuilder(
             builder: (context, constraints) {
-              final qrSize = constraints.maxWidth.clamp(132.0, 172.0);
+              final qrSize = constraints.maxWidth.clamp(132.0, 168.0);
               return InkWell(
                 borderRadius: AppRadius.radiusLg,
                 onTap: () {
                   QrTicketModal.show(
                     context,
-                    departureTime: booking.departureTime,
+                    departureTime: AppTimeFormatter.formatPassengerBooking(
+                      booking,
+                      isArabic: isAr,
+                    ),
                     originName: origin,
                     destinationName: destination,
                     seatNumber: booking.seatNumber,
@@ -519,8 +582,8 @@ class _QrBoardingCard extends StatelessWidget {
           AppSpacing.gapH6,
           Text(
             isAr
-                ? 'استخدم بطاقة NFC أو رمز QR عند الصعود.'
-                : 'Use your NFC card or this QR code when boarding.',
+                ? 'أظهر رمز QR لجهاز القراءة عند الصعود إلى الحافلة.'
+                : 'Present this QR code to the scanner upon boarding.',
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
@@ -533,34 +596,132 @@ class _QrBoardingCard extends StatelessWidget {
   }
 }
 
-class _SuccessActions extends StatelessWidget {
+class _NfcHelperCard extends StatelessWidget {
   final bool isAr;
 
-  const _SuccessActions({required this.isAr});
+  const _NfcHelperCard({required this.isAr});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: AppRadius.radiusMd,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: AppRadius.radiusSm,
+            ),
+            child: const Icon(
+              Icons.contactless_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          AppSpacing.gapW12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isAr ? 'بطاقة عمومي الذكية (NFC)' : 'AMOMY Smart Card (NFC)',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                AppSpacing.gapH2,
+                Text(
+                  isAr
+                      ? 'يمكنك أيضاً تمرير بطاقتك الذكية على قارئ الحافلة للصعود مباشرة دون الحاجة لفتح التطبيق.'
+                      : 'You can also tap your physical AMOMY card at the reader to board instantly.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuccessActions extends StatelessWidget {
+  final PassengerBooking booking;
+  final bool isAr;
+  final bool canShowLiveMap;
+
+  const _SuccessActions({
+    required this.booking,
+    required this.isAr,
+    required this.canShowLiveMap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: AppButton(
-            label: context.l10n.viewMyTrips,
-            icon: const Icon(AppIcons.bus, size: 18, color: Colors.white),
-            height: 48,
-            isFullWidth: true,
-            onPressed: () => context.go('/trips'),
+        if (canShowLiveMap) ...[
+          ElevatedButton.icon(
+            onPressed: () {
+              context.push(
+                RoutePaths.liveTracking.replaceFirst(':tripId', booking.tripId),
+              );
+            },
+            icon: const Icon(AppIcons.map, size: 18, color: Colors.white),
+            label: Text(
+              isAr ? 'عرض الخريطة الحية' : 'View Live Map',
+              style: AppTextStyles.labelLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
+            ),
           ),
-        ),
-        AppSpacing.gapW12,
-        Expanded(
-          child: AppButton(
-            label: isAr ? 'العودة للرئيسية' : 'Back to Home',
-            icon: const Icon(AppIcons.home, size: 18),
-            variant: ButtonVariant.outline,
-            height: 48,
-            isFullWidth: true,
-            onPressed: () => context.go('/home'),
-          ),
+          AppSpacing.gapH10,
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: context.l10n.viewMyTrips,
+                icon: const Icon(AppIcons.bus, size: 18, color: Colors.white),
+                height: 48,
+                isFullWidth: true,
+                onPressed: () => context.go('/trips'),
+              ),
+            ),
+            AppSpacing.gapW10,
+            Expanded(
+              child: AppButton(
+                label: isAr ? 'العودة للرئيسية' : 'Back to Home',
+                icon: const Icon(AppIcons.home, size: 18),
+                variant: ButtonVariant.outline,
+                height: 48,
+                isFullWidth: true,
+                onPressed: () => context.go('/home'),
+              ),
+            ),
+          ],
         ),
       ],
     );

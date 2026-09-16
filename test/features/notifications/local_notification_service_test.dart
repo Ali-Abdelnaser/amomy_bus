@@ -409,21 +409,6 @@ void main() {
     );
 
     test(
-      'showTestLocalNotification uses safe direct local test content',
-      () async {
-        await localService.showTestLocalNotification();
-
-        expect(fakePlugin.showCallCount, 1);
-        expect(fakePlugin.lastShownId, 999001);
-        expect(fakePlugin.lastShownTitle, 'AMOMY Bus');
-        expect(
-          fakePlugin.lastShownBody,
-          'Local notification presentation test',
-        );
-      },
-    );
-
-    test(
       'showForegroundNotification lazily initializes plugin before show',
       () async {
         expect(localService.isInitialized, isFalse);
@@ -458,7 +443,6 @@ void main() {
 
         expect(shown, isFalse);
         expect(throwingPlugin.showCallCount, 1);
-        expect(throwingService.lastShowResult, startsWith('error:'));
       },
     );
 
@@ -512,7 +496,7 @@ void main() {
       expect(fakeMessaging.alertOption, isFalse);
       expect(fakeMessaging.badgeOption, isTrue);
       expect(fakeMessaging.soundOption, isFalse);
-      expect(fakeMessaging.notificationSettingsCallCount, greaterThan(0));
+      expect(fakeMessaging.notificationSettingsCallCount, isZero);
     });
 
     test(
@@ -634,7 +618,7 @@ void main() {
           notification,
         );
         expect(localService.isInitialized, isTrue);
-        expect(fakeMessaging.notificationSettingsCallCount, greaterThan(0));
+        expect(fakeMessaging.notificationSettingsCallCount, isZero);
         expect(fakePlugin.showCallCount, 1);
 
         const message = RemoteMessage(

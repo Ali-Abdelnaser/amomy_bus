@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/app_time_formatter.dart';
+import '../../../../core/localization/status_localizer.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -180,14 +183,12 @@ class _ChangeSeatModalState extends State<ChangeSeatModal> {
         variant: AmomyAlertVariant.success,
       );
     } else {
-      final isAr = Localizations.localeOf(
-        context,
-      ).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
-        title:
-            widget.tripsCubit.state.errorMessage ??
-            (isAr ? 'فشل تغيير المقعد' : 'Failed to change seat'),
+        title: StatusLocalizer.localizeError(
+          context,
+          widget.tripsCubit.state.errorMessage,
+        ),
         variant: AmomyAlertVariant.error,
       );
     }
@@ -195,7 +196,8 @@ class _ChangeSeatModalState extends State<ChangeSeatModal> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final isAr = context.isArabic;
+    final l10n = context.l10n;
     final currentSeatNumber = widget.trip.seatNumber ?? '—';
 
     // Find other available seats
@@ -247,8 +249,8 @@ class _ChangeSeatModalState extends State<ChangeSeatModal> {
                         AppSpacing.gapH2,
                         Text(
                           isAr
-                              ? 'رحلة ${widget.trip.departureTime} — مقعدك الحالي: $currentSeatNumber'
-                              : '${widget.trip.departureTime} Trip — Current seat: $currentSeatNumber',
+                              ? 'رحلة ${AppTimeFormatter.formatPassengerTodayTrip(widget.trip, isArabic: true)} — مقعدك الحالي: $currentSeatNumber'
+                              : '${AppTimeFormatter.formatPassengerTodayTrip(widget.trip, isArabic: false)} Trip — Current seat: $currentSeatNumber',
                           style: AppTextStyles.labelMedium.copyWith(
                             color: const Color(0xFF667085),
                             fontWeight: FontWeight.w600,
@@ -467,23 +469,23 @@ class _ChangeSeatModalState extends State<ChangeSeatModal> {
                           children: [
                             _LegendItem(
                               color: AppColors.success,
-                              label: isAr ? 'مقعدك الحالي' : 'Current Seat',
+                              label: l10n.seatStatusCurrent,
                             ),
                             const SizedBox(width: 16),
                             _LegendItem(
                               color: AppColors.primary,
-                              label: isAr ? 'مختار' : 'Selected',
+                              label: l10n.seatStatusSelected,
                             ),
                             const SizedBox(width: 16),
-                            const _LegendItem(
+                            _LegendItem(
                               color: Color(0xFFE2E8F0),
                               labelBorder: Color(0xFF94A3B8),
-                              label: 'متاح',
+                              label: l10n.seatStatusAvailable,
                             ),
                             const SizedBox(width: 16),
-                            const _LegendItem(
+                            _LegendItem(
                               color: Color(0xFF334155),
-                              label: 'محجوز',
+                              label: l10n.seatStatusBooked,
                             ),
                           ],
                         ),

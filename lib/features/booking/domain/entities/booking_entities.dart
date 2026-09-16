@@ -21,11 +21,7 @@ enum BookingDirection {
   }
 }
 
-enum SeatAvailabilityStatus {
-  available,
-  held,
-  booked,
-}
+enum SeatAvailabilityStatus { available, held, booked }
 
 class TripOption extends Equatable {
   final String tripId;
@@ -40,6 +36,7 @@ class TripOption extends Equatable {
   final double farePoints;
   final int availableSeatsCount;
   final String status;
+  final bool isBookable;
 
   const TripOption({
     required this.tripId,
@@ -54,26 +51,41 @@ class TripOption extends Equatable {
     required this.farePoints,
     required this.availableSeatsCount,
     required this.status,
+    this.isBookable = true,
   });
 
-  String originName(String locale) => locale.startsWith('ar') ? originNameAr : originNameEn;
-  String destinationName(String locale) => locale.startsWith('ar') ? destinationNameAr : destinationNameEn;
+  bool get isClosed =>
+      status == 'closed' || status == 'departed' || status == 'cancelled';
+  bool get isFull => availableSeatsCount <= 0;
+  bool get canBook => isBookable && !isClosed && !isFull;
+
+  String originName(String locale) => locale.startsWith('ar')
+      ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
+      : (originNameEn.trim().isNotEmpty ? originNameEn : originNameAr);
+  String destinationName(String locale) => locale.startsWith('ar')
+      ? (destinationNameAr.trim().isNotEmpty
+            ? destinationNameAr
+            : destinationNameEn)
+      : (destinationNameEn.trim().isNotEmpty
+            ? destinationNameEn
+            : destinationNameAr);
 
   @override
   List<Object?> get props => [
-        tripId,
-        routeId,
-        direction,
-        originNameAr,
-        originNameEn,
-        destinationNameAr,
-        destinationNameEn,
-        departureTime,
-        departureAt,
-        farePoints,
-        availableSeatsCount,
-        status,
-      ];
+    tripId,
+    routeId,
+    direction,
+    originNameAr,
+    originNameEn,
+    destinationNameAr,
+    destinationNameEn,
+    departureTime,
+    departureAt,
+    farePoints,
+    availableSeatsCount,
+    status,
+    isBookable,
+  ];
 }
 
 class TripSeat extends Equatable {
@@ -105,16 +117,16 @@ class TripSeat extends Equatable {
 
   @override
   List<Object?> get props => [
-        seatId,
-        seatNumber,
-        rowIndex,
-        columnIndex,
-        seatType,
-        status,
-        isMine,
-        passengerGender,
-        heldExpiresAt,
-      ];
+    seatId,
+    seatNumber,
+    rowIndex,
+    columnIndex,
+    seatType,
+    status,
+    isMine,
+    passengerGender,
+    heldExpiresAt,
+  ];
 }
 
 class RouteStop extends Equatable {
@@ -142,13 +154,13 @@ class RouteStop extends Equatable {
 
   String stopName(String locale) =>
       (locale.startsWith('ar') || stopNameEn == null || stopNameEn!.isEmpty)
-          ? stopNameAr
-          : stopNameEn!;
+      ? stopNameAr
+      : stopNameEn!;
 
   String locality(String locale) =>
       (locale.startsWith('ar') || localityEn == null || localityEn!.isEmpty)
-          ? localityAr
-          : localityEn!;
+      ? localityAr
+      : localityEn!;
 
   String displayName(String locale) {
     final name = stopName(locale);
@@ -161,16 +173,16 @@ class RouteStop extends Equatable {
 
   @override
   List<Object?> get props => [
-        routeStopId,
-        stopId,
-        stopOrder,
-        stopNameAr,
-        stopNameEn,
-        localityAr,
-        localityEn,
-        fareZoneId,
-        farePoints,
-      ];
+    routeStopId,
+    stopId,
+    stopOrder,
+    stopNameAr,
+    stopNameEn,
+    localityAr,
+    localityEn,
+    fareZoneId,
+    farePoints,
+  ];
 }
 
 class BookingHold extends Equatable {
@@ -206,11 +218,15 @@ class BookingHold extends Equatable {
     this.destinationStopName,
     this.locality,
     this.fareZoneId,
-  })  : clientReceivedAt = clientReceivedAt ?? DateTime.now(),
-        initialRemainingSeconds = initialRemainingSeconds ??
-            _calculateInitialRemaining(expiresAt, serverTime);
+  }) : clientReceivedAt = clientReceivedAt ?? DateTime.now(),
+       initialRemainingSeconds =
+           initialRemainingSeconds ??
+           _calculateInitialRemaining(expiresAt, serverTime);
 
-  static int _calculateInitialRemaining(DateTime expiresAt, DateTime serverTime) {
+  static int _calculateInitialRemaining(
+    DateTime expiresAt,
+    DateTime serverTime,
+  ) {
     final diff = expiresAt.toUtc().difference(serverTime.toUtc()).inSeconds;
     if (diff <= 0) return 0;
     return diff > 300 ? 300 : diff;
@@ -219,6 +235,7 @@ class BookingHold extends Equatable {
   /// Server-authoritative remaining seconds decremented locally via client elapsed time
   int get remainingSeconds {
     final elapsed = DateTime.now().difference(clientReceivedAt).inSeconds;
+    if (elapsed < 0) return initialRemainingSeconds;
     final remaining = initialRemainingSeconds - elapsed;
     return remaining > 0 ? remaining : 0;
   }
@@ -227,22 +244,22 @@ class BookingHold extends Equatable {
 
   @override
   List<Object?> get props => [
-        holdId,
-        tripId,
-        seatId,
-        seatNumber,
-        farePoints,
-        expiresAt,
-        serverTime,
-        initialRemainingSeconds,
-        clientReceivedAt,
-        routeStopId,
-        destinationRouteStopId,
-        stopName,
-        destinationStopName,
-        locality,
-        fareZoneId,
-      ];
+    holdId,
+    tripId,
+    seatId,
+    seatNumber,
+    farePoints,
+    expiresAt,
+    serverTime,
+    initialRemainingSeconds,
+    clientReceivedAt,
+    routeStopId,
+    destinationRouteStopId,
+    stopName,
+    destinationStopName,
+    locality,
+    fareZoneId,
+  ];
 }
 
 class PassengerBooking extends Equatable {
@@ -289,30 +306,38 @@ class PassengerBooking extends Equatable {
   bool get isUpcoming =>
       status == 'confirmed' && departureAt.isAfter(DateTime.now());
 
-  String originName(String locale) => locale.startsWith('ar') ? originNameAr : originNameEn;
-  String destinationName(String locale) => locale.startsWith('ar') ? destinationNameAr : destinationNameEn;
+  String originName(String locale) => locale.startsWith('ar')
+      ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
+      : (originNameEn.trim().isNotEmpty ? originNameEn : originNameAr);
+  String destinationName(String locale) => locale.startsWith('ar')
+      ? (destinationNameAr.trim().isNotEmpty
+            ? destinationNameAr
+            : destinationNameEn)
+      : (destinationNameEn.trim().isNotEmpty
+            ? destinationNameEn
+            : destinationNameAr);
 
   @override
   List<Object?> get props => [
-        bookingId,
-        tripId,
-        direction,
-        originNameAr,
-        originNameEn,
-        destinationNameAr,
-        destinationNameEn,
-        serviceDate,
-        departureTime,
-        departureAt,
-        seatNumber,
-        farePoints,
-        status,
-        qrToken,
-        bookedAt,
-        routeStopId,
-        stopName,
-        locality,
-      ];
+    bookingId,
+    tripId,
+    direction,
+    originNameAr,
+    originNameEn,
+    destinationNameAr,
+    destinationNameEn,
+    serviceDate,
+    departureTime,
+    departureAt,
+    seatNumber,
+    farePoints,
+    status,
+    qrToken,
+    bookedAt,
+    routeStopId,
+    stopName,
+    locality,
+  ];
 }
 
 enum TodayTripAvailabilityStatus {
@@ -400,37 +425,41 @@ class PassengerTodayTrip extends Equatable {
 
   String destinationName(String locale) {
     if (locale.startsWith('ar')) {
-      return destinationNameAr.trim().isNotEmpty ? destinationNameAr : destinationNameEn;
+      return destinationNameAr.trim().isNotEmpty
+          ? destinationNameAr
+          : destinationNameEn;
     }
-    return destinationNameEn.trim().isNotEmpty ? destinationNameEn : destinationNameAr;
+    return destinationNameEn.trim().isNotEmpty
+        ? destinationNameEn
+        : destinationNameAr;
   }
 
   bool get isUrgentSeats => availableSeats > 0 && availableSeats <= 3;
 
   @override
   List<Object?> get props => [
-        tripId,
-        routeId,
-        direction,
-        serviceDate,
-        originNameAr,
-        originNameEn,
-        destinationNameAr,
-        destinationNameEn,
-        departureTime,
-        departureAt,
-        bookingCloseAt,
-        farePoints,
-        totalSeats,
-        availableSeats,
-        status,
-        alreadyBooked,
-        bookingId,
-        seatNumber,
-        qrToken,
-        availabilityStatus,
-        isBookable,
-      ];
+    tripId,
+    routeId,
+    direction,
+    serviceDate,
+    originNameAr,
+    originNameEn,
+    destinationNameAr,
+    destinationNameEn,
+    departureTime,
+    departureAt,
+    bookingCloseAt,
+    farePoints,
+    totalSeats,
+    availableSeats,
+    status,
+    alreadyBooked,
+    bookingId,
+    seatNumber,
+    qrToken,
+    availabilityStatus,
+    isBookable,
+  ];
 }
 
 class PassengerTripPreference extends Equatable {
@@ -473,26 +502,29 @@ class PassengerTripPreference extends Equatable {
 
   String destinationName(String locale) {
     if (locale.startsWith('ar')) {
-      return destinationNameAr.trim().isNotEmpty ? destinationNameAr : destinationNameEn;
+      return destinationNameAr.trim().isNotEmpty
+          ? destinationNameAr
+          : destinationNameEn;
     }
-    return destinationNameEn.trim().isNotEmpty ? destinationNameEn : destinationNameAr;
+    return destinationNameEn.trim().isNotEmpty
+        ? destinationNameEn
+        : destinationNameAr;
   }
 
   @override
   List<Object?> get props => [
-        originStopId,
-        destinationStopId,
-        originRouteStopId,
-        destinationRouteStopId,
-        originNameAr,
-        originNameEn,
-        originLocalityAr,
-        originLocalityEn,
-        destinationNameAr,
-        destinationNameEn,
-        destinationLocalityAr,
-        destinationLocalityEn,
-        updatedAt,
-      ];
+    originStopId,
+    destinationStopId,
+    originRouteStopId,
+    destinationRouteStopId,
+    originNameAr,
+    originNameEn,
+    originLocalityAr,
+    originLocalityEn,
+    destinationNameAr,
+    destinationNameEn,
+    destinationLocalityAr,
+    destinationLocalityEn,
+    updatedAt,
+  ];
 }
-

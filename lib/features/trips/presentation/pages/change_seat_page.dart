@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/status_localizer.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -163,14 +165,12 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
         variant: AmomyAlertVariant.success,
       );
     } else {
-      final isAr = Localizations.localeOf(
-        context,
-      ).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
-        title:
-            widget.tripsCubit.state.errorMessage ??
-            (isAr ? 'فشل تغيير المقعد' : 'Failed to change seat'),
+        title: StatusLocalizer.localizeError(
+          context,
+          widget.tripsCubit.state.errorMessage,
+        ),
         variant: AmomyAlertVariant.error,
       );
     }
@@ -178,7 +178,8 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final isAr = context.isArabic;
+    final l10n = context.l10n;
     final currentSeatNumber = widget.trip.seatNumber ?? '—';
 
     // Find other available seats excluding the passenger's current seat
@@ -211,13 +212,15 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => Navigator.of(context).maybePop(),
-                child: const SizedBox(
+                child: SizedBox(
                   width: 38,
                   height: 38,
                   child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 16,
-                    color: Color(0xFF1E293B),
+                    isAr
+                        ? Icons.arrow_forward_rounded
+                        : Icons.arrow_back_rounded,
+                    size: 18,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ),
@@ -457,24 +460,24 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                           children: [
                             _LegendItem(
                               color: AppColors.success,
-                              label: isAr ? 'مقعدك الحالي' : 'Current Seat',
+                              label: l10n.seatStatusCurrent,
                             ),
                             _LegendItem(
                               color: AppColors.primary,
-                              label: isAr ? 'مختار' : 'Selected',
+                              label: l10n.seatStatusSelected,
                             ),
-                            const _LegendItem(
+                            _LegendItem(
                               color: Color(0xFFE2E8F0),
                               labelBorder: Color(0xFF94A3B8),
-                              label: 'متاح',
+                              label: l10n.seatStatusAvailable,
                             ),
                             _LegendItem(
                               color: const Color(0xFF0F172A),
-                              label: isAr ? 'محجوز (رجال)' : 'Booked (M)',
+                              label: l10n.seatStatusBookedMale,
                             ),
                             _LegendItem(
                               color: const Color(0xFFE11D48),
-                              label: isAr ? 'محجوز (نساء)' : 'Booked (F)',
+                              label: l10n.seatStatusBookedFemale,
                             ),
                           ],
                         ),
@@ -489,9 +492,7 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                             if (seat.seatNumber == currentSeatNumber) {
                               AmomyFloatingAlert.show(
                                 context,
-                                title: isAr
-                                    ? 'هذا هو مقعدك الحالي المحجوز'
-                                    : 'This is your current booked seat',
+                                title: l10n.seatStatusCurrent,
                                 variant: AmomyAlertVariant.info,
                               );
                               return;

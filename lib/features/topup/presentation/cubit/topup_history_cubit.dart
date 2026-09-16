@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../domain/entities/topup_entities.dart';
@@ -72,13 +71,10 @@ class TopUpHistoryCubit extends Cubit<TopUpHistoryState> {
       (_) {
         loadRequests();
       },
-      onError: (error, stackTrace) {
+      onError: (_) {
         // Realtime subscription failures (e.g. RealtimeSubscribeException / channelError)
         // must not escape to the global bootstrap zone.
         // TopUpHistoryCubit remains usable; last loaded list is preserved.
-        debugPrint(
-          '[REALTIME_DIAG] topup_requests (history) error: ${error.runtimeType}',
-        );
       },
       cancelOnError: false,
     );

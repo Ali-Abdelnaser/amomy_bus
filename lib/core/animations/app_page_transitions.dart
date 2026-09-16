@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'app_animation_durations.dart';
+import 'animated_screen_entry.dart';
+import 'app_animations.dart';
 
-/// Centralized GoRouter CustomTransitionPage builders for natural iOS and Android transitions.
+/// Centralized GoRouter page builders for app-level motion.
 abstract final class AppPageTransitions {
-  /// Standard platform-adaptive page transition
+  static Widget _entryChild(Widget child, {bool screenEntry = true}) {
+    return screenEntry ? AnimatedScreenEntry(child: child) : child;
+  }
+
+  /// Normal pushed page transition: subtle fade plus content entrance.
   static CustomTransitionPage<T> standardPage<T>({
     required Widget child,
     required LocalKey key,
     String? name,
+    bool screenEntry = true,
   }) {
     return CustomTransitionPage<T>(
       key: key,
       name: name,
-      child: child,
-      transitionDuration: AppAnimationDurations.normal,
-      reverseTransitionDuration: AppAnimationDurations.fast,
+      child: _entryChild(child, screenEntry: screenEntry),
+      transitionDuration: AppAnimations.routeTransitionDuration,
+      reverseTransitionDuration: AppAnimations.routeReverseTransitionDuration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: AppAnimationDurations.decelerate,
-            ),
+        final reduceMotion = AppAnimations.reduceMotion(context);
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: reduceMotion ? Curves.linear : AppAnimations.routeCurve,
           ),
           child: child,
         );
@@ -33,27 +35,43 @@ abstract final class AppPageTransitions {
     );
   }
 
-  /// Fade page transition (ideal for splash -> auth / bottom nav tab switches)
+  /// Fade page transition without screen-entry by default.
   static CustomTransitionPage<T> fadePage<T>({
     required Widget child,
     required LocalKey key,
     String? name,
+    bool screenEntry = false,
   }) {
     return CustomTransitionPage<T>(
       key: key,
       name: name,
-      child: child,
-      transitionDuration: AppAnimationDurations.normal,
-      reverseTransitionDuration: AppAnimationDurations.fast,
+      child: _entryChild(child, screenEntry: screenEntry),
+      transitionDuration: AppAnimations.routeTransitionDuration,
+      reverseTransitionDuration: AppAnimations.routeReverseTransitionDuration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
           opacity: CurvedAnimation(
             parent: animation,
-            curve: AppAnimationDurations.decelerate,
+            curve: AppAnimations.reduceMotion(context)
+                ? Curves.linear
+                : AppAnimations.routeCurve,
           ),
           child: child,
         );
       },
+    );
+  }
+
+  /// Shell tab roots keep branch switching immediate while entering once.
+  static Page<T> shellPage<T>({
+    required Widget child,
+    required LocalKey key,
+    String? name,
+  }) {
+    return NoTransitionPage<T>(
+      key: key,
+      name: name,
+      child: AnimatedScreenEntry(child: child),
     );
   }
 
@@ -67,19 +85,17 @@ abstract final class AppPageTransitions {
       key: key,
       name: name,
       child: child,
-      transitionDuration: AppAnimationDurations.medium,
-      reverseTransitionDuration: AppAnimationDurations.fast,
+      transitionDuration: AppAnimations.screenEntryDuration,
+      reverseTransitionDuration: AppAnimations.routeReverseTransitionDuration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: AppAnimationDurations.decelerate,
-            ),
-          ),
+          position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+              .animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: AppAnimations.routeCurve,
+                ),
+              ),
           child: child,
         );
       },

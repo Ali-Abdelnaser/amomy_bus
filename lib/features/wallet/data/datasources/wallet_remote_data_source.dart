@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:amomy_bus/features/wallet/data/models/point_transaction_model.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/wallet_history_event_model.dart';
 import '../models/wallet_summary_model.dart';
 
 abstract class WalletRemoteDataSource {
@@ -9,6 +9,11 @@ abstract class WalletRemoteDataSource {
   Future<List<PointTransactionModel>> getTransactions(
     String userId, {
     int limit = 20,
+  });
+  Future<WalletHistoryPageModel> getWalletHistory({
+    int limit = 20,
+    String? beforeCreatedAt,
+    String? beforeEventId,
   });
   Stream<int> subscribeToWalletBalance(String userId);
   Stream<PointTransactionModel> subscribeToPointTransactions(String userId);
@@ -76,27 +81,51 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   }
 
   @override
+  Future<WalletHistoryPageModel> getWalletHistory({
+    int limit = 20,
+    String? beforeCreatedAt,
+    String? beforeEventId,
+  }) async {
+    final params = <String, dynamic>{'p_limit': limit};
+    if (beforeCreatedAt != null) {
+      params['p_before_created_at'] = beforeCreatedAt;
+    }
+    if (beforeEventId != null) {
+      params['p_before_event_id'] = beforeEventId;
+    }
+
+    final response = await _supabase.rpc(
+      'get_my_wallet_history',
+      params: params,
+    );
+
+    if (response is Map) {
+      return WalletHistoryPageModel.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+    }
+
+    return const WalletHistoryPageModel(events: [], hasMore: false);
+  }
+
+  @override
   Stream<int> subscribeToWalletBalance(String userId) {
     if (userId.isEmpty) {
       return const Stream.empty();
     }
 
-    debugPrint('[REALTIME_DIAG] wallets subscribe start');
     return _supabase
         .from('wallets')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
         .map((rows) {
-          debugPrint('[REALTIME_DIAG] wallets event');
           if (rows.isEmpty) return 0;
           final raw = rows.first['cached_available_balance'];
           if (raw is num) return raw.toInt();
           if (raw is String) return (double.tryParse(raw) ?? 0).toInt();
           return 0;
         })
-        .handleError((error, stackTrace) {
-          debugPrint('[REALTIME_DIAG] wallets error: ${error.runtimeType}');
-        });
+        .handleError((_) {});
   }
 
   @override
@@ -105,7 +134,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       return const Stream.empty();
     }
 
-    debugPrint('[REALTIME_DIAG] point_transactions subscribe start');
     return _supabase
         .from('point_transactions')
         .stream(primaryKey: ['id'])
@@ -116,10 +144,6 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
               rows.map((row) => PointTransactionModel.fromJson(row)).toList(),
         )
         .expand((rows) => rows)
-        .handleError((error, stackTrace) {
-          debugPrint(
-            '[REALTIME_DIAG] point_transactions error: ${error.runtimeType}',
-          );
-        });
+        .handleError((_) {});
   }
 }

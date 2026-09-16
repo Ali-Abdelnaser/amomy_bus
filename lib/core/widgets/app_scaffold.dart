@@ -36,11 +36,8 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     Widget? effectiveLeading = leading;
     if (effectiveLeading == null && showBackButton && onBackPressed != null) {
       effectiveLeading = IconButton(
-        icon: const Icon(
-          Icons.arrow_back_ios_new,
-          size: 20,
-          color: AppColors.textPrimary,
-        ),
+        icon: const BackButtonIcon(),
+        color: AppColors.textPrimary,
         onPressed: onBackPressed,
       );
     }

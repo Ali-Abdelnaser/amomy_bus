@@ -26,7 +26,7 @@ class MockTrackingRepository implements TrackingRepository {
   MockTrackingRepository({required this.summary});
 
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async {
+  Future<TrackingSummary> getTripTracking({required String tripId}) async {
     return summary;
   }
 
@@ -37,7 +37,7 @@ class MockTrackingRepository implements TrackingRepository {
   }) async => null;
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() =>
+  Stream<void> subscribeToTripTrackingState({required String tripId}) =>
       _telemetryController.stream;
 
   void emitTelemetry(BusTelemetry tel) => _telemetryController.add(tel);
@@ -72,7 +72,10 @@ class MockTrackingRepository implements TrackingRepository {
   }
 }
 
-Widget createTestApp({required Widget child, Locale locale = const Locale('en')}) {
+Widget createTestApp({
+  required Widget child,
+  Locale locale = const Locale('en'),
+}) {
   return MaterialApp(
     locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -165,15 +168,23 @@ void main() {
   );
 
   group('AMOMY Production Map Phase Tests', () {
-    test('1. Production map config uses Stadia Maps Alidade Smooth with API key', () {
-      final config = MapTileConfig.productionStadia('my_secure_api_key');
-      expect(config.tileUrl, contains('tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=my_secure_api_key'));
-      expect(config.attribution, contains('Stadia Maps'));
-      expect(config.attribution, contains('OpenMapTiles'));
-      expect(config.attribution, contains('OpenStreetMap contributors'));
-      expect(config.retinaMode, isTrue);
-      expect(config.isAvailable, isTrue);
-    });
+    test(
+      '1. Production map config uses Stadia Maps Alidade Smooth with API key',
+      () {
+        final config = MapTileConfig.productionStadia('my_secure_api_key');
+        expect(
+          config.tileUrl,
+          contains(
+            'tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=my_secure_api_key',
+          ),
+        );
+        expect(config.attribution, contains('Stadia Maps'));
+        expect(config.attribution, contains('OpenMapTiles'));
+        expect(config.attribution, contains('OpenStreetMap contributors'));
+        expect(config.retinaMode, isTrue);
+        expect(config.isAvailable, isTrue);
+      },
+    );
 
     test('2. Debug fallback may use OSM Standard when key is omitted', () {
       final config = MapTileConfig.resolveActiveConfig(
@@ -195,29 +206,31 @@ void main() {
       expect(releaseConfig.tileUrl.contains('openstreetmap.org'), isFalse);
     });
 
-    testWidgets('4. SVG bus marker is completely removed from tracking and circular icon rendered', (tester) async {
+    testWidgets(
+      '4. SVG bus marker is completely removed from tracking and circular icon rendered',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestApp(
+            child: const AmomyBusMarker(
+              heading: 120,
+              isMoving: true,
+              isAtStop: false,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Bus icon is Directions Bus Rounded Material Icon
+        expect(find.byIcon(Icons.directions_bus_rounded), findsOneWidget);
+      },
+    );
+
+    testWidgets('5. Bus marker does not rotate (stays upright north-up)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestApp(
-          child: const AmomyBusMarker(
-            heading: 120,
-            isMoving: true,
-            isAtStop: false,
-          ),
-        ),
-      );
-      await tester.pump();
-
-      // Bus icon is Directions Bus Rounded Material Icon
-      expect(find.byIcon(Icons.directions_bus_rounded), findsOneWidget);
-    });
-
-    testWidgets('5. Bus marker does not rotate (stays upright north-up)', (tester) async {
-      await tester.pumpWidget(
-        createTestApp(
-          child: const AmomyBusMarker(
-            heading: 270,
-            isMoving: true,
-          ),
+          child: const AmomyBusMarker(heading: 270, isMoving: true),
         ),
       );
       await tester.pump();
@@ -235,7 +248,9 @@ void main() {
       }
     });
 
-    testWidgets('6. Stop visual states correct (no permanent stop numbers)', (tester) async {
+    testWidgets('6. Stop visual states correct (no permanent stop numbers)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestApp(
           child: LiveBusMapWidget(
@@ -252,68 +267,77 @@ void main() {
       expect(find.text('19'), findsNothing);
     });
 
-    testWidgets('7. Tile loading skeleton base is rendered without white flashes', (tester) async {
-      await tester.pumpWidget(
-        createTestApp(
-          child: LiveBusMapWidget(
-            telemetry: activeTelemetry,
-            routeStops: testStops,
-            status: LiveTrackingStatus.online,
-          ),
-        ),
-      );
-      await pumpAndAdvance(tester);
-
-      // Skeleton base container has color #F1F3F5
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      final hasSkeleton = containers.any((c) => c.color == const Color(0xFFF1F3F5));
-      expect(hasSkeleton, isTrue);
-    });
-
-    testWidgets('8. Controlled unavailable state renders cleanly when tiles are disabled in release', (tester) async {
-      await tester.pumpWidget(
-        createTestApp(
-          child: const LiveBusMapWidget(
-            status: LiveTrackingStatus.online,
-          ),
-        ),
-      );
-      await pumpAndAdvance(tester);
-
-      // Google Map widget exists
-      expect(find.byType(GoogleMap), findsOneWidget);
-    });
-
-    testWidgets('9. Home mini-map and Full map share centralized MapTileConfig', (tester) async {
-      final repo = MockTrackingRepository(summary: activeSummary);
-      final cubit = TrackingCubit(repository: repo);
-      await cubit.loadTrackingData();
-
-      await tester.pumpWidget(
-        createTestApp(
-          child: SingleChildScrollView(
-            child: BlocProvider<TrackingCubit>.value(
-              value: cubit,
-              child: const HomeLiveTrackingCard(),
+    testWidgets(
+      '7. Tile loading skeleton base is rendered without white flashes',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestApp(
+            child: LiveBusMapWidget(
+              telemetry: activeTelemetry,
+              routeStops: testStops,
+              status: LiveTrackingStatus.online,
             ),
           ),
-        ),
-      );
-      await pumpAndAdvance(tester);
+        );
+        await pumpAndAdvance(tester);
 
-      expect(find.byType(LiveBusMapWidget), findsOneWidget);
-      await cubit.close();
-    });
+        // Skeleton base container has color #F1F3F5
+        final containers = tester.widgetList<Container>(find.byType(Container));
+        final hasSkeleton = containers.any(
+          (c) => c.color == const Color(0xFFF1F3F5),
+        );
+        expect(hasSkeleton, isTrue);
+      },
+    );
 
-    testWidgets('10. Follow bus control remains active on Full Live Map', (tester) async {
+    testWidgets(
+      '8. Controlled unavailable state renders cleanly when tiles are disabled in release',
+      (tester) async {
+        await tester.pumpWidget(
+          createTestApp(
+            child: const LiveBusMapWidget(status: LiveTrackingStatus.online),
+          ),
+        );
+        await pumpAndAdvance(tester);
+
+        // Google Map widget exists
+        expect(find.byType(GoogleMap), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '9. Home mini-map and Full map share centralized MapTileConfig',
+      (tester) async {
+        final repo = MockTrackingRepository(summary: activeSummary);
+        final cubit = TrackingCubit(repository: repo);
+        await cubit.loadTrackingData(tripId: 'trip-test');
+
+        await tester.pumpWidget(
+          createTestApp(
+            child: SingleChildScrollView(
+              child: BlocProvider<TrackingCubit>.value(
+                value: cubit,
+                child: const HomeLiveTrackingCard(),
+              ),
+            ),
+          ),
+        );
+        await pumpAndAdvance(tester);
+
+        expect(find.byType(LiveBusMapWidget), findsOneWidget);
+        await cubit.close();
+      },
+    );
+
+    testWidgets('10. Follow bus control remains active on Full Live Map', (
+      tester,
+    ) async {
       final repo = MockTrackingRepository(summary: activeSummary);
       final cubit = TrackingCubit(repository: repo);
-      await cubit.loadTrackingData();
+      await cubit.loadTrackingData(tripId: 'trip-test');
 
       await tester.pumpWidget(
-        createTestApp(
-          child: LiveMapScreen(trackingCubit: cubit),
-        ),
+        createTestApp(child: LiveMapScreen(trackingCubit: cubit)),
       );
       await pumpAndAdvance(tester);
 
@@ -339,9 +363,7 @@ void main() {
     });
 
     test('13. Reconnecting / stale bus marker uses amber ring styling', () {
-      const marker = AmomyBusMarker(
-        isStale: true,
-      );
+      const marker = AmomyBusMarker(isStale: true);
       expect(marker.isStale, isTrue);
     });
   });

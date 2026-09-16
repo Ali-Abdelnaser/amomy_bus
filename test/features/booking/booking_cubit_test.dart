@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:amomy_bus/core/error/failures.dart';
 import 'package:amomy_bus/core/typedefs/typedefs.dart';
 import 'package:amomy_bus/features/booking/domain/entities/booking_entities.dart';
+import 'package:amomy_bus/features/booking/domain/failures/booking_failures.dart';
 import 'package:amomy_bus/features/booking/domain/repositories/booking_repository.dart';
 import 'package:amomy_bus/features/booking/domain/usecases/booking_usecases.dart';
 import 'package:amomy_bus/features/booking/presentation/cubit/booking_cubit.dart';
@@ -141,6 +142,48 @@ class FakeBookingRepository implements BookingRepository {
     required String newSeatId,
   }) async {
     return const Success(null);
+  }
+}
+
+class FakeTestStopwatch implements Stopwatch {
+  int _elapsedMillis = 0;
+  bool _running = false;
+
+  void advance(Duration duration) {
+    _elapsedMillis += duration.inMilliseconds;
+  }
+
+  @override
+  Duration get elapsed => Duration(milliseconds: _elapsedMillis);
+
+  @override
+  int get elapsedMilliseconds => _elapsedMillis;
+
+  @override
+  int get elapsedMicroseconds => _elapsedMillis * 1000;
+
+  @override
+  int get elapsedTicks => _elapsedMillis;
+
+  @override
+  int get frequency => 1000;
+
+  @override
+  bool get isRunning => _running;
+
+  @override
+  void reset() {
+    _elapsedMillis = 0;
+  }
+
+  @override
+  void start() {
+    _running = true;
+  }
+
+  @override
+  void stop() {
+    _running = false;
   }
 }
 
@@ -498,6 +541,284 @@ void main() {
       expect(cubit.state.currentStep, BookingStep.success);
       expect(cubit.state.status, BookingStatus.confirmed);
       expect(cubit.state.confirmedBooking, sampleBooking);
+    },
+  );
+
+  test(
+    'C & I. HoldExpiredFailure during confirm cancels timer, clears hold, navigates to seatMap, and refreshes seat map',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
+      fakeRepo.failure = null;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      expect(cubit.state.currentStep, BookingStep.review);
+      expect(cubit.state.activeHold, isNotNull);
+      expect(cubit.state.selectedSeat, sampleSeat);
+
+      final initialSeatMapCalls = fakeRepo.seatMapCallCount;
+
+      // Fail with HoldExpiredFailure
+      fakeRepo.failure = const HoldExpiredFailure();
+      await cubit.confirmBooking();
+
+      expect(cubit.state.currentStep, BookingStep.seatMap);
+      expect(cubit.state.status, BookingStatus.error);
+      expect(cubit.state.activeHold, isNull);
+      expect(cubit.state.selectedSeat, isNull);
+      expect(cubit.state.holdSecondsRemaining, 0);
+      expect(cubit.state.errorMessage, contains('seat hold has expired'));
+      // Verifies seat-map refresh happens after HoldExpiredFailure (I)
+      expect(fakeRepo.seatMapCallCount, greaterThan(initialSeatMapCalls));
+    },
+  );
+
+  test(
+    'D. After HoldExpiredFailure, advancing time does not resurrect seatHeld or wipe error',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      fakeRepo.failure = const HoldExpiredFailure();
+      await cubit.confirmBooking();
+
+      expect(cubit.state.status, BookingStatus.error);
+      expect(cubit.state.errorMessage, contains('seat hold has expired'));
+
+      // Wait 1.5 seconds to ensure any residual periodic timer would have ticked
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+
+      // Error must NOT be wiped and status must NOT be seatHeld
+      expect(cubit.state.status, BookingStatus.error);
+      expect(cubit.state.errorMessage, contains('seat hold has expired'));
+      expect(cubit.state.activeHold, isNull);
+    },
+  );
+
+  test(
+    'G. Natural countdown reaching zero clears hold, resets to seatMap, and prevents confirmation',
+    () async {
+      // Hold with 1 second remaining
+      final expiringHold = BookingHold(
+        holdId: 'hold-short',
+        tripId: 'trip-1',
+        seatId: 'seat-7',
+        seatNumber: '7',
+        farePoints: 30.0,
+        expiresAt: DateTime.now().add(const Duration(seconds: 1)),
+        serverTime: DateTime.now(),
+        initialRemainingSeconds: 1,
+      );
+
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = expiringHold;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      // Wait for countdown to expire naturally
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      expect(cubit.state.currentStep, BookingStep.seatMap);
+      expect(cubit.state.activeHold, isNull);
+      expect(cubit.state.holdSecondsRemaining, 0);
+
+      // Attempting to confirm without active hold does nothing
+      await cubit.confirmBooking();
+      expect(cubit.state.status, isNot(BookingStatus.confirmed));
+    },
+  );
+
+  test(
+    'A. Server returns remaining_seconds = 231 -> countdown starts at 231',
+    () async {
+      final hold231 = BookingHold(
+        holdId: 'hold-231',
+        tripId: 'trip-1',
+        seatId: 'seat-7',
+        seatNumber: '7',
+        farePoints: 30.0,
+        expiresAt: DateTime.now().add(const Duration(seconds: 231)),
+        serverTime: DateTime.now(),
+        initialRemainingSeconds: 231,
+      );
+
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = hold231;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+
+      expect(cubit.state.status, BookingStatus.seatHeld);
+      expect(cubit.state.holdSecondsRemaining, 231);
+    },
+  );
+
+  test(
+    'B. expires_at is intentionally inconsistent with local device wall clock -> countdown still starts from 231',
+    () async {
+      final inconsistentHold = BookingHold(
+        holdId: 'hold-past-expires',
+        tripId: 'trip-1',
+        seatId: 'seat-7',
+        seatNumber: '7',
+        farePoints: 30.0,
+        expiresAt: DateTime.now().subtract(const Duration(hours: 5)),
+        serverTime: DateTime.now().subtract(
+          const Duration(hours: 5, seconds: 231),
+        ),
+        initialRemainingSeconds: 231,
+      );
+
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = inconsistentHold;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+
+      expect(cubit.state.status, BookingStatus.seatHeld);
+      expect(cubit.state.holdSecondsRemaining, 231);
+      expect(cubit.state.activeHold, isNotNull);
+    },
+  );
+
+  test(
+    'C. Simulated wall-clock change / monotonic elapsed time must not reset or increase countdown',
+    () async {
+      final fakeStopwatch = FakeTestStopwatch();
+      cubit.stopwatchFactory = () => fakeStopwatch;
+
+      final hold231 = BookingHold(
+        holdId: 'hold-monotonic',
+        tripId: 'trip-1',
+        seatId: 'seat-7',
+        seatNumber: '7',
+        farePoints: 30.0,
+        expiresAt: DateTime.now().add(const Duration(seconds: 231)),
+        serverTime: DateTime.now(),
+        initialRemainingSeconds: 231,
+      );
+
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = hold231;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+      expect(cubit.state.holdSecondsRemaining, 231);
+
+      // Advance monotonic elapsed time by 31 seconds
+      fakeStopwatch.advance(const Duration(seconds: 31));
+
+      // Simulate app resume resync
+      cubit.resyncHoldOnResume();
+
+      // Countdown strictly decreased to 200, did not reset to 300 or gain time
+      expect(cubit.state.holdSecondsRemaining, 200);
+
+      // Advancing further by 100 seconds
+      fakeStopwatch.advance(const Duration(seconds: 100));
+      cubit.resyncHoldOnResume();
+      expect(cubit.state.holdSecondsRemaining, 100);
+    },
+  );
+
+  test('D. Elapsed runtime decreases countdown correctly', () async {
+    final hold10 = BookingHold(
+      holdId: 'hold-runtime',
+      tripId: 'trip-1',
+      seatId: 'seat-7',
+      seatNumber: '7',
+      farePoints: 30.0,
+      expiresAt: DateTime.now().add(const Duration(seconds: 10)),
+      serverTime: DateTime.now(),
+      initialRemainingSeconds: 10,
+    );
+
+    fakeRepo.seats = [sampleSeat];
+    fakeRepo.hold = hold10;
+
+    cubit.selectTrip(sampleTrip);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await cubit.selectSeatAndHold(sampleSeat);
+    expect(cubit.state.holdSecondsRemaining, 10);
+
+    // Wait 1.1s of real runtime for periodic timer to tick
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    expect(cubit.state.holdSecondsRemaining, inInclusiveRange(8, 9));
+  });
+
+  test(
+    'E. Countdown reaches zero once -> hold invalid lifecycle executes',
+    () async {
+      final expiringHold = BookingHold(
+        holdId: 'hold-zero-lifecycle',
+        tripId: 'trip-1',
+        seatId: 'seat-7',
+        seatNumber: '7',
+        farePoints: 30.0,
+        expiresAt: DateTime.now().add(const Duration(seconds: 1)),
+        serverTime: DateTime.now(),
+        initialRemainingSeconds: 1,
+      );
+
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = expiringHold;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      // Wait for countdown to reach zero
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      expect(cubit.state.currentStep, BookingStep.seatMap);
+      expect(cubit.state.activeHold, isNull);
+      expect(cubit.state.selectedSeat, isNull);
+      expect(cubit.state.holdSecondsRemaining, 0);
+      expect(cubit.state.status, BookingStatus.error);
+      expect(cubit.state.errorMessage, 'HOLD_EXPIRED');
+
+      // Attempting to confirm without active hold fails/is blocked
+      await cubit.confirmBooking();
+      expect(cubit.state.status, isNot(BookingStatus.confirmed));
+    },
+  );
+
+  test(
+    'H. Back navigation releases hold, resets remaining to 0, and avoids duplicate timer on re-entry',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      expect(cubit.state.activeHold, isNotNull);
+
+      cubit.backToSeatMap();
+
+      expect(cubit.state.currentStep, BookingStep.seatMap);
+      expect(cubit.state.activeHold, isNull);
+      expect(cubit.state.selectedSeat, isNull);
+      expect(cubit.state.holdSecondsRemaining, 0);
     },
   );
 

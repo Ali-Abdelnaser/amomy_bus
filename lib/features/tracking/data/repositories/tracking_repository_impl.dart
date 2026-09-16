@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
-import '../../domain/models/bus_telemetry.dart';
 import '../../domain/models/tracking_summary.dart';
 import '../../domain/repositories/tracking_repository.dart';
 import '../datasources/tracking_remote_datasource.dart';
@@ -12,8 +11,8 @@ class TrackingRepositoryImpl implements TrackingRepository {
   TrackingRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) {
-    return remoteDataSource.getLiveTrackingSummary(includeQa: includeQa);
+  Future<TrackingSummary> getTripTracking({required String tripId}) {
+    return remoteDataSource.getTripTracking(tripId: tripId);
   }
 
   @override
@@ -28,8 +27,8 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() {
-    return remoteDataSource.subscribeToBusLiveLocation();
+  Stream<void> subscribeToTripTrackingState({required String tripId}) {
+    return remoteDataSource.subscribeToTripTrackingState(tripId: tripId);
   }
 
   @override

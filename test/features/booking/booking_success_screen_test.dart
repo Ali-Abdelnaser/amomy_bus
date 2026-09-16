@@ -69,8 +69,10 @@ void main() {
     bookedAt: DateTime(2026, 9, 12),
   );
 
-  group('BookingSuccessView digital boarding pass', () {
-    testWidgets('shows compact confirmation state', (tester) async {
+  group('BookingSuccessView Phase 10 digital boarding pass', () {
+    testWidgets('shows compact confirmation header without dispenser styling', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
       );
@@ -84,7 +86,47 @@ void main() {
       expect(find.text('AMOMY DIGITAL DISPENSER'), findsNothing);
     });
 
-    testWidgets('renders trip summary card with route and booking details', (
+    testWidgets(
+      'renders trip summary card with Cairo 12-hr time & route details',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Outbound Trip'), findsOneWidget);
+        expect(find.text('8:00 AM'), findsOneWidget);
+        expect(find.text('From'), findsOneWidget);
+        expect(find.text('Ezzat Bridge'), findsOneWidget);
+        expect(find.text('Mit Fadala'), findsOneWidget);
+        expect(find.text('To'), findsOneWidget);
+        expect(find.text('Toshka Gate'), findsOneWidget);
+        expect(find.text('Date'), findsOneWidget);
+        expect(find.text('12 Sep'), findsOneWidget);
+        expect(find.text('Seat'), findsOneWidget);
+        expect(find.text('7'), findsOneWidget);
+        expect(find.text('Fare'), findsOneWidget);
+        expect(find.text('30 Points'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'never exposes internal bus, driver, plate, or device identity',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Bus 1'), findsNothing);
+        expect(find.text('Bus'), findsNothing);
+        expect(find.textContaining('Plate'), findsNothing);
+        expect(find.textContaining('Driver'), findsNothing);
+        expect(find.textContaining('Device'), findsNothing);
+      },
+    );
+
+    testWidgets('renders compact QR boarding card with title and real token', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -92,46 +134,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Outbound Trip'), findsOneWidget);
-      expect(find.text('08:00'), findsOneWidget);
-      expect(find.text('From'), findsOneWidget);
-      expect(find.text('Ezzat Bridge'), findsOneWidget);
-      expect(find.text('Mit Fadala'), findsOneWidget);
-      expect(find.text('To'), findsOneWidget);
-      expect(find.text('Toshka Gate'), findsOneWidget);
-      expect(find.text('Date'), findsOneWidget);
-      expect(find.text('12 Sep'), findsOneWidget);
-      expect(find.text('Seat'), findsOneWidget);
-      expect(find.text('7'), findsOneWidget);
-      expect(find.text('Fare'), findsOneWidget);
-      expect(find.text('30 Points'), findsOneWidget);
-    });
-
-    testWidgets('does not expose internal bus identity', (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Bus 1'), findsNothing);
-      expect(find.text('Bus'), findsNothing);
-      expect(find.textContaining('Plate'), findsNothing);
-      expect(find.textContaining('Driver'), findsNothing);
-      expect(find.textContaining('Device'), findsNothing);
-    });
-
-    testWidgets('renders compact QR boarding card with real token', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Scan to board'), findsOneWidget);
+      expect(find.text('Scan to Board'), findsOneWidget);
       expect(find.text('Seat 7'), findsOneWidget);
       expect(
-        find.text('Use your NFC card or this QR code when boarding.'),
+        find.text('Present this QR code to the scanner upon boarding.'),
         findsOneWidget,
       );
 
@@ -140,6 +146,26 @@ void main() {
       final qrWidget = tester.widget<AppQrTicketWidget>(qrFinder);
       expect(qrWidget.data, 'AMY_TOKEN_SECURE_777');
       expect(qrWidget.size, lessThanOrEqualTo(172));
+    });
+
+    testWidgets('renders dedicated NFC helper card without exposing tokens', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('AMOMY Smart Card (NFC)'), findsOneWidget);
+      expect(
+        find.text(
+          'You can also tap your physical AMOMY card at the reader to board instantly.',
+        ),
+        findsOneWidget,
+      );
+      // Ensure no raw token/hashes are shown in NFC helper
+      expect(find.textContaining('TOKEN'), findsNothing);
+      expect(find.textContaining('hash'), findsNothing);
     });
 
     testWidgets('preserves legacy seat labels without changing booking data', (
@@ -151,7 +177,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Return Trip'), findsOneWidget);
-      expect(find.text('16:00'), findsOneWidget);
+      expect(find.text('4:00 PM'), findsOneWidget);
       expect(find.text('1A'), findsOneWidget);
       expect(find.text('Seat 1A'), findsOneWidget);
       expect(find.text('25 Points'), findsOneWidget);
@@ -173,10 +199,33 @@ void main() {
       expect(find.text('Back to Home'), findsOneWidget);
     });
 
+    testWidgets(
+      'shows Live Map action conditionally when state/route allows it',
+      (tester) async {
+        // By default without active live tracking, Live Map is omitted
+        await tester.pumpWidget(
+          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('View Live Map'), findsNothing);
+
+        // When state/route permits live map, Live Map action is shown
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingSuccessView(booking: sampleBooking, enableLiveMap: true),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('View Live Map'), findsOneWidget);
+        expect(find.text('View My Trips'), findsOneWidget);
+        expect(find.text('Back to Home'), findsOneWidget);
+      },
+    );
+
     testWidgets('renders RTL Arabic version correctly', (tester) async {
       await tester.pumpWidget(
         buildTestableWidget(
-          BookingSuccessView(booking: sampleBooking),
+          BookingSuccessView(booking: sampleBooking, enableLiveMap: true),
           locale: const Locale('ar'),
         ),
       );
@@ -187,6 +236,8 @@ void main() {
       expect(find.text('رحلة الذهاب'), findsOneWidget);
       expect(find.text('امسح للصعود'), findsOneWidget);
       expect(find.text('مقعد 7'), findsOneWidget);
+      expect(find.text('بطاقة عمومي الذكية (NFC)'), findsOneWidget);
+      expect(find.text('عرض الخريطة الحية'), findsOneWidget);
       expect(find.text('عرض رحلاتي'), findsOneWidget);
       expect(find.text('العودة للرئيسية'), findsOneWidget);
       expect(find.text('حافلة 1'), findsNothing);

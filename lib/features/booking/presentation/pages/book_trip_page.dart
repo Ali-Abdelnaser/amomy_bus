@@ -131,7 +131,8 @@ class _BookTripContent extends StatefulWidget {
   State<_BookTripContent> createState() => _BookTripContentState();
 }
 
-class _BookTripContentState extends State<_BookTripContent> with WidgetsBindingObserver {
+class _BookTripContentState extends State<_BookTripContent>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -158,11 +159,13 @@ class _BookTripContentState extends State<_BookTripContent> with WidgetsBindingO
 
     return BlocConsumer<BookingCubit, BookingState>(
       listenWhen: (previous, current) {
-        final hasNewError = current.errorMessage != null &&
+        final hasNewError =
+            current.errorMessage != null &&
             current.errorMessage!.isNotEmpty &&
             (current.errorMessage != previous.errorMessage ||
                 previous.status != current.status);
-        final hasNewAlert = current.autoTripAlert != null &&
+        final hasNewAlert =
+            current.autoTripAlert != null &&
             current.autoTripAlert!.isNotEmpty &&
             current.autoTripAlert != previous.autoTripAlert;
         return hasNewError || hasNewAlert;
@@ -180,7 +183,8 @@ class _BookTripContentState extends State<_BookTripContent> with WidgetsBindingO
 
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
           String displayMessage = state.errorMessage!;
-          if (displayMessage.contains('HOLD_EXPIRED')) {
+          if (displayMessage.contains('HOLD_EXPIRED') ||
+              displayMessage.contains('seat hold has expired')) {
             displayMessage = l10n.holdExpiredNotice;
           } else if (displayMessage.contains('SEAT_UNAVAILABLE') ||
               displayMessage.contains('SEAT_ALREADY_BOOKED') ||
@@ -405,7 +409,7 @@ class _SmartBookingSetupView extends StatelessWidget {
         state.selectedRouteStop != null &&
         state.selectedDestinationStop != null &&
         state.selectedTrip != null &&
-        state.selectedTrip!.availableSeatsCount > 0 &&
+        state.selectedTrip!.canBook &&
         (state.selectedDestinationStop!.stopOrder >
             state.selectedRouteStop!.stopOrder);
 
@@ -492,10 +496,10 @@ class _SmartBookingSetupView extends StatelessWidget {
       alertMsg = isAr
           ? 'يرجى اختيار موعد الرحلة المناسب'
           : 'Please select a departure time';
-    } else if (state.selectedTrip!.availableSeatsCount <= 0) {
+    } else if (!state.selectedTrip!.canBook) {
       alertMsg = isAr
-          ? 'هذه الرحلة ممتلئة، يرجى اختيار موعد آخر'
-          : 'This trip is fully booked. Please choose another time.';
+          ? 'هذه الرحلة غير متاحة للحجز، يرجى اختيار موعد آخر'
+          : 'This trip is not available for booking. Please choose another time.';
     }
 
     if (alertMsg.isNotEmpty) {

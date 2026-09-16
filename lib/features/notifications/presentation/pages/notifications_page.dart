@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -34,23 +35,25 @@ class _NotificationsView extends StatelessWidget {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   @override
   Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context);
-    final isAr = locale.languageCode == 'ar';
+    final l10n = context.l10n;
+    final isAr = context.isArabic;
 
     final title = isAr ? 'الإشعارات' : 'Notifications';
-    final markAllReadText = isAr ? 'تحديد الكل كمقروء' : 'Mark all as read';
-    final emptyTitle = isAr ? 'لا توجد إشعارات' : 'No notifications';
+    final markAllReadText = l10n.markAllAsRead;
+    final emptyTitle = l10n.noNotifications;
     final emptySubtitle = isAr
         ? 'ستظهر هنا تحديثات رحلاتك وحجوزاتك واقتراب الأتوبيس'
         : 'Updates on your trips, bookings, and bus arrivals will appear here';
-    final retryText = isAr ? 'إعادة المحاولة' : 'Retry';
-    final todayText = isAr ? 'اليوم' : 'TODAY';
-    final earlierText = isAr ? 'السابق' : 'EARLIER';
+    final retryText = l10n.retry;
+    final todayText = l10n.todayHeader;
+    final earlierText = l10n.earlierHeader;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -59,7 +62,10 @@ class _NotificationsView extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: AppColors.textPrimary),
+          icon: Icon(
+            isAr ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
@@ -72,11 +78,13 @@ class _NotificationsView extends StatelessWidget {
         actions: [
           BlocBuilder<NotificationCubit, NotificationState>(
             builder: (context, state) {
-              final hasUnread = state is NotificationLoaded && state.unreadCount > 0;
+              final hasUnread =
+                  state is NotificationLoaded && state.unreadCount > 0;
               if (!hasUnread) return const SizedBox.shrink();
 
               return TextButton(
-                onPressed: () => context.read<NotificationCubit>().markAllAsRead(),
+                onPressed: () =>
+                    context.read<NotificationCubit>().markAllAsRead(),
                 child: Text(
                   markAllReadText,
                   style: AppTextStyles.labelSmall.copyWith(
@@ -102,16 +110,23 @@ class _NotificationsView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(AppIcons.warningCircle, size: 48, color: AppColors.error),
+                    const Icon(
+                      AppIcons.warningCircle,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       state.message,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => context.read<NotificationCubit>().loadNotifications(),
+                      onPressed: () =>
+                          context.read<NotificationCubit>().loadNotifications(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -127,7 +142,9 @@ class _NotificationsView extends StatelessWidget {
           if (state is NotificationLoaded) {
             if (state.notifications.isEmpty) {
               return RefreshIndicator(
-                onRefresh: () => context.read<NotificationCubit>().loadNotifications(isRefresh: true),
+                onRefresh: () => context
+                    .read<NotificationCubit>()
+                    .loadNotifications(isRefresh: true),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
@@ -172,27 +189,40 @@ class _NotificationsView extends StatelessWidget {
               );
             }
 
-            final todayList = state.notifications.where((n) => _isToday(n.createdAt)).toList();
-            final earlierList = state.notifications.where((n) => !_isToday(n.createdAt)).toList();
+            final todayList = state.notifications
+                .where((n) => _isToday(n.createdAt))
+                .toList();
+            final earlierList = state.notifications
+                .where((n) => !_isToday(n.createdAt))
+                .toList();
 
             return RefreshIndicator(
-              onRefresh: () => context.read<NotificationCubit>().loadNotifications(isRefresh: true),
+              onRefresh: () => context
+                  .read<NotificationCubit>()
+                  .loadNotifications(isRefresh: true),
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 children: [
                   // 1. TODAY Section
                   if (todayList.isNotEmpty) ...[
                     _buildSectionHeader(todayText),
                     const SizedBox(height: 8),
-                    ...todayList.map((notification) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: NotificationTile(
-                            notification: notification,
-                            onMarkRead: () {
-                              context.read<NotificationCubit>().markAsRead(notification.id);
-                            },
-                          ),
-                        )),
+                    ...todayList.map(
+                      (notification) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: NotificationTile(
+                          notification: notification,
+                          onMarkRead: () {
+                            context.read<NotificationCubit>().markAsRead(
+                              notification.id,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                   ],
 
@@ -200,15 +230,19 @@ class _NotificationsView extends StatelessWidget {
                   if (earlierList.isNotEmpty) ...[
                     _buildSectionHeader(earlierText),
                     const SizedBox(height: 8),
-                    ...earlierList.map((notification) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: NotificationTile(
-                            notification: notification,
-                            onMarkRead: () {
-                              context.read<NotificationCubit>().markAsRead(notification.id);
-                            },
-                          ),
-                        )),
+                    ...earlierList.map(
+                      (notification) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: NotificationTile(
+                          notification: notification,
+                          onMarkRead: () {
+                            context.read<NotificationCubit>().markAsRead(
+                              notification.id,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

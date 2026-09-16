@@ -8,13 +8,11 @@ class AppBlocObserver extends BlocObserver {
   @override
   void onEvent(Bloc bloc, Object? event) {
     super.onEvent(bloc, event);
-    // Suppressed generic event logs temporarily for [IOS_PUSH_DIAG] investigation
   }
 
   @override
   void onChange(BlocBase bloc, Change change) {
     super.onChange(bloc, change);
-    // Suppressed generic verbose BLoC state/user dumping temporarily for [IOS_PUSH_DIAG] investigation
   }
 
   @override

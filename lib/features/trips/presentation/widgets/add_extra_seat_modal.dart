@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -293,8 +294,8 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
                         AppSpacing.gapH2,
                         Text(
                           isAr
-                              ? 'رحلة ${widget.trip.departureTime} — ${widget.trip.originName(isAr ? "ar" : "en")} ← ${widget.trip.destinationName(isAr ? "ar" : "en")}'
-                              : '${widget.trip.departureTime} Trip — ${widget.trip.originName("en")} ← ${widget.trip.destinationName("en")}',
+                              ? 'رحلة ${AppTimeFormatter.formatPassengerTodayTrip(widget.trip, isArabic: true)} — ${widget.trip.originName(isAr ? "ar" : "en")} ← ${widget.trip.destinationName(isAr ? "ar" : "en")}'
+                              : '${AppTimeFormatter.formatPassengerTodayTrip(widget.trip, isArabic: false)} Trip — ${widget.trip.originName("en")} ← ${widget.trip.destinationName("en")}',
                           style: AppTextStyles.labelSmall.copyWith(
                             color: const Color(0xFF667085),
                             fontWeight: FontWeight.w600,
