@@ -25,6 +25,7 @@ class HomeUpcomingTripCard extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: false,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

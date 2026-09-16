@@ -25,6 +25,11 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() {
+    return remoteDataSource.subscribeToNotificationUpdates();
+  }
+
+  @override
   Future<bool> markAsRead(String notificationId) {
     return remoteDataSource.markAsRead(notificationId);
   }
@@ -58,7 +63,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<SelfTestResult> sendSelfTestNotification({int? delaySeconds}) {
-    return remoteDataSource.sendSelfTestNotification(delaySeconds: delaySeconds);
+    return remoteDataSource.sendSelfTestNotification(
+      delaySeconds: delaySeconds,
+    );
   }
 
   @override
@@ -88,7 +95,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
   @override
   Future<NotificationPreferences> updatePreferences(
-      NotificationPreferences preferences) {
+    NotificationPreferences preferences,
+  ) {
     return remoteDataSource.updatePreferences(preferences);
   }
 }

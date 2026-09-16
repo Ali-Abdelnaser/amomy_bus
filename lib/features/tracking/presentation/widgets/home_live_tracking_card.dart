@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/live_tracking_status.dart';
 import '../../domain/services/stop_eta_engine.dart';
@@ -15,12 +19,17 @@ import 'live_bus_map_widget.dart';
 /// rich authoritative Last Stop (actual reached time) and Next Stop (estimated arrival ETA),
 /// robust offline behavior without fake progression, and clean Impeccable styling.
 class HomeLiveTrackingCard extends StatelessWidget {
+  /// TEMPORARY DIAGNOSTIC SWITCH FOR IOS CRASH INVESTIGATION (TEST C)
+  /// Set to true to isolate Google Maps / native map preview on iOS completely.
+  /// When true on iOS DEBUG:
+  /// - GoogleMap widget is NEVER constructed
+  /// - Native map platform view / controller is NEVER initialized
+  /// - Replaced with a clean static placeholder Container
+  static const bool debugDisableHomeMap = false;
+
   final VoidCallback? onViewMapTap;
 
-  const HomeLiveTrackingCard({
-    super.key,
-    this.onViewMapTap,
-  });
+  const HomeLiveTrackingCard({super.key, this.onViewMapTap});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +43,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
         final isOffline = state.isOffline;
         final isQaPreview = state.isQaPreview;
 
-        final directionLabel = summary?.activeDirection == TrackingDirection.returnDirection
+        final directionLabel =
+            summary?.activeDirection == TrackingDirection.returnDirection
             ? (locale == 'ar' ? 'رحلة العودة' : 'Return Trip')
             : (locale == 'ar' ? 'رحلة الذهاب' : 'Outbound Trip');
 
@@ -48,28 +58,43 @@ class HomeLiveTrackingCard extends StatelessWidget {
 
         if (isOffline) {
           currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName = currentStop?.localizedName(locale) ??
+          currentStopName =
+              currentStop?.localizedName(locale) ??
               (locale == 'ar' ? 'نهاية الخط' : 'Route Terminal');
           currentStopTimingText = '';
         } else if (state.isAtStop) {
           currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName = currentStop?.localizedName(locale) ??
+          currentStopName =
+              currentStop?.localizedName(locale) ??
               (locale == 'ar' ? 'بالمحطة' : 'At Stop');
           if (currentTiming?.actualArrivalTime != null) {
-            final clockStr = StopEtaEngine.formatClockTime(currentTiming!.actualArrivalTime!, locale);
-            currentStopTimingText = locale == 'ar' ? 'وصل الساعة $clockStr' : 'Arrived at $clockStr';
+            final clockStr = StopEtaEngine.formatClockTime(
+              currentTiming!.actualArrivalTime!,
+              locale,
+            );
+            currentStopTimingText = locale == 'ar'
+                ? 'وصل الساعة $clockStr'
+                : 'Arrived at $clockStr';
           } else {
             currentStopTimingText = locale == 'ar' ? 'صعود الركاب' : 'Boarding';
           }
         } else {
           currentStopLabel = locale == 'ar' ? 'آخر محطة' : 'Last';
-          currentStopName = currentStop?.localizedName(locale) ??
+          currentStopName =
+              currentStop?.localizedName(locale) ??
               (locale == 'ar' ? 'جاري التحديد...' : 'Locating...');
           if (currentTiming?.actualArrivalTime != null) {
-            final clockStr = StopEtaEngine.formatClockTime(currentTiming!.actualArrivalTime!, locale);
-            currentStopTimingText = locale == 'ar' ? 'وصل الساعة $clockStr' : 'Arrived at $clockStr';
+            final clockStr = StopEtaEngine.formatClockTime(
+              currentTiming!.actualArrivalTime!,
+              locale,
+            );
+            currentStopTimingText = locale == 'ar'
+                ? 'وصل الساعة $clockStr'
+                : 'Arrived at $clockStr';
           } else {
-            currentStopTimingText = locale == 'ar' ? 'وقت الوصول غير متاح' : 'Arrival time unavailable';
+            currentStopTimingText = locale == 'ar'
+                ? 'وقت الوصول غير متاح'
+                : 'Arrival time unavailable';
           }
         }
 
@@ -85,19 +110,26 @@ class HomeLiveTrackingCard extends StatelessWidget {
           nextStopLabel = locale == 'ar' ? 'المحطة التالية' : 'Next';
           nextStopName = summary?.nextWindowStartTime != null
               ? (locale == 'ar'
-                  ? 'الساعة ${summary!.nextWindowStartTime}'
-                  : summary!.nextWindowStartTime!)
+                    ? 'الساعة ${summary!.nextWindowStartTime}'
+                    : summary!.nextWindowStartTime!)
               : (locale == 'ar' ? '08:00 صباحاً' : '08:00 AM');
           nextStopTimingText = '';
         } else {
           nextStopLabel = locale == 'ar' ? 'المحطة التالية' : 'Next';
-          nextStopName = nextStop?.localizedName(locale) ??
+          nextStopName =
+              nextStop?.localizedName(locale) ??
               (locale == 'ar' ? 'جاري التحديد...' : 'Locating...');
-          if (nextTiming?.estimatedArrivalTime != null && (!nextStop!.isTemporaryQa || isQaPreview)) {
-            final remainingStr = StopEtaEngine.formatRemainingMinutes(nextTiming!.estimatedArrivalTime!, locale);
+          if (nextTiming?.estimatedArrivalTime != null &&
+              (!nextStop!.isTemporaryQa || isQaPreview)) {
+            final remainingStr = StopEtaEngine.formatRemainingMinutes(
+              nextTiming!.estimatedArrivalTime!,
+              locale,
+            );
             nextStopTimingText = remainingStr;
           } else if (nextStop?.isTemporaryQa == true && !isQaPreview) {
-            nextStopTimingText = locale == 'ar' ? 'قيد التدقيق' : 'Pending verification';
+            nextStopTimingText = locale == 'ar'
+                ? 'قيد التدقيق'
+                : 'Pending verification';
           } else {
             nextStopTimingText = locale == 'ar' ? 'قيد الحساب' : 'Estimating';
           }
@@ -116,7 +148,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
         } else if (telemetry != null) {
           final age = telemetry.ageSeconds;
           if (age < 30) {
-            lastUpdatedText = locale == 'ar' ? 'تم التحديث الآن' : 'Updated just now';
+            lastUpdatedText = locale == 'ar'
+                ? 'تم التحديث الآن'
+                : 'Updated just now';
           } else if (age < 120) {
             lastUpdatedText = locale == 'ar'
                 ? 'آخر تحديث منذ $age ثانية'
@@ -128,371 +162,458 @@ class HomeLiveTrackingCard extends StatelessWidget {
                 : 'Last updated $mins min ago';
           }
         } else {
-          lastUpdatedText = locale == 'ar' ? 'في انتظار الإشارة' : 'Waiting for signal';
+          lastUpdatedText = locale == 'ar'
+              ? 'في انتظار الإشارة'
+              : 'Waiting for signal';
         }
 
-        return Material(
-          color: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.06),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. Header: Bus Icon, Title, Direction & Status Pill
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 360;
+            final mapHeight = isNarrow ? 204.0 : 220.0;
+
+            return Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppRadius.radiusXl,
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: AppShadows.md,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
+                    // 1. Header: Bus Icon, Title, Direction & Status Pill
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.s16,
+                        isNarrow ? AppSpacing.s12 : 14,
+                        AppSpacing.s16,
+                        AppSpacing.s12,
                       ),
-                      child: const Icon(
-                        Icons.directions_bus_rounded,
-                        color: AppColors.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            locale == 'ar' ? 'تتبع الحافلة' : 'Bus Tracking',
-                            style: AppTextStyles.titleMedium.copyWith(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF0F172A),
+                          Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: AppRadius.radiusMd,
+                            ),
+                            child: const Icon(
+                              Icons.directions_bus_rounded,
+                              color: AppColors.primary,
+                              size: 22,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$directionLabel · $lastUpdatedText',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  locale == 'ar'
+                                      ? 'تتبع الحافلة'
+                                      : 'Bus Tracking',
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF0F172A),
+                                    height: 1.35,
+                                  ),
+                                ),
+                                AppSpacing.gapH2,
+                                Text(
+                                  '$directionLabel · $lastUpdatedText',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.35,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          AppSpacing.gapW10,
+                          // Status Pill
+                          _buildStatusPill(
+                            trackingStatus,
+                            locale,
+                            isAtStop: state.isAtStop,
                           ),
                         ],
                       ),
                     ),
-                    // Status Pill
-                    _buildStatusPill(trackingStatus, locale, isAtStop: state.isAtStop),
-                  ],
-                ),
-              ),
 
-              // 2. Large Interactive Mini Map Preview (Height: 225px, Rounded: 18px)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Container(
-                  height: 225,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(17),
-                    child: Stack(
-                      children: [
-                        LiveBusMapWidget(
-                          telemetry: telemetry,
-                          routeStops: summary?.routeStops ?? const [],
-                          status: trackingStatus,
-                          isCompactPreview: true,
-                          followBus: true,
-                          routeGeometry: state.routeGeometry,
+                    // 2. Large Interactive Mini Map Preview (Height: 225px, Rounded: 18px)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Container(
+                        height: mapHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: AppRadius.radiusLg,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
+                        child: ClipRRect(
+                          borderRadius: AppRadius.radiusLg,
+                          child: Stack(
+                            children: [
+                              if (kDebugMode &&
+                                  defaultTargetPlatform == TargetPlatform.iOS &&
+                                  debugDisableHomeMap) ...[
+                                Container(
+                                  color: const Color(0xFFF1F5F9),
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.map_outlined,
+                                        size: 32,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        locale == 'ar'
+                                            ? 'تم تعطيل الخريطة للاختبار التشخيصي'
+                                            : 'Map disabled for diagnostic test',
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else ...[
+                                LiveBusMapWidget(
+                                  telemetry: telemetry,
+                                  routeStops: summary?.routeStops ?? const [],
+                                  status: trackingStatus,
+                                  isCompactPreview: true,
+                                  followBus: true,
+                                  routeGeometry: state.routeGeometry,
+                                ),
+                              ],
 
-                        // Offline subtle frosted bottom bar
-                        if (isOffline)
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
+                              // Offline subtle frosted bottom bar
+                              if (isOffline)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.65,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.access_time_rounded,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            summary?.localizedNextWindowMessage(
+                                                  locale,
+                                                ) ??
+                                                (locale == 'ar'
+                                                    ? 'يستأنف التتبع الساعة 08:00 صباحاً'
+                                                    : 'Tracking resumes at 08:00 AM'),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    AppSpacing.gapH12,
+
+                    // 3. Last Stop & Next Stop Information Cells
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          // Last Stop Cell
+                          Expanded(
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
-                                vertical: 8,
+                                vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.65),
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: AppRadius.radiusMd,
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.access_time_rounded,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      summary?.localizedNextWindowMessage(locale) ??
-                                          (locale == 'ar'
-                                              ? 'يستأنف التتبع الساعة 08:00 صباحاً'
-                                              : 'Tracking resumes at 08:00 AM'),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: isQaPreview
+                                              ? const Color(0xFF818CF8)
+                                              : AppColors.accentYellow,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        currentStopLabel,
+                                        style: AppTextStyles.caption.copyWith(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  AppSpacing.gapH4,
+                                  Text(
+                                    currentStopName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: const Color(0xFF0F172A),
+                                      height: 1.3,
                                     ),
                                   ),
+                                  if (currentStopTimingText.isNotEmpty) ...[
+                                    AppSpacing.gapH2,
+                                    Text(
+                                      currentStopTimingText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: Color(0xFF64748B),
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+                          const SizedBox(width: 8),
 
-              const SizedBox(height: 12),
-
-              // 3. Last Stop & Next Stop Information Cells
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  children: [
-                    // Last Stop Cell
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 7,
-                                  height: 7,
-                                  decoration: BoxDecoration(
-                                    color: isQaPreview
-                                        ? const Color(0xFF818CF8)
-                                        : AppColors.accentYellow,
-                                    shape: BoxShape.circle,
-                                  ),
+                          // Next Stop Cell
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: AppRadius.radiusMd,
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  currentStopLabel,
-                                  style: AppTextStyles.caption.copyWith(
-                                    fontSize: 10.5,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w600,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        nextStopLabel,
+                                        style: AppTextStyles.caption.copyWith(
+                                          fontSize: 11,
+                                          color: AppColors.primaryDark,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                  AppSpacing.gapH4,
+                                  Text(
+                                    nextStopName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: const Color(0xFF0F172A),
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                  if (nextStopTimingText.isNotEmpty) ...[
+                                    AppSpacing.gapH2,
+                                    Text(
+                                      nextStopTimingText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              currentStopName,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    AppSpacing.gapH8,
+
+                    // 4. Last updated subtitle line
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isQaPreview
+                                ? Icons.auto_awesome_rounded
+                                : Icons.sync_rounded,
+                            size: 13,
+                            color: const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              lastUpdatedText,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12.5,
-                                color: const Color(0xFF0F172A),
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: const Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
+                                height: 1.3,
                               ),
                             ),
-                            if (currentStopTimingText.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                currentStopTimingText,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: Color(0xFF64748B),
-                                  fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    AppSpacing.gapH10,
+
+                    // 5. Action Button: View Live Map
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                      child: InkWell(
+                        onTap: () {
+                          if (onViewMapTap != null) {
+                            onViewMapTap!();
+                          } else {
+                            context.push(
+                              RoutePaths.liveTracking.replaceFirst(
+                                ':tripId',
+                                'active',
+                              ),
+                            );
+                          }
+                        },
+                        borderRadius: AppRadius.radiusMd,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: AppRadius.radiusMd,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.25,
                                 ),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Next Stop Cell
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 7,
-                                  height: 7,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  nextStopLabel,
-                                  style: AppTextStyles.caption.copyWith(
-                                    fontSize: 10.5,
-                                    color: AppColors.primaryDark,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              nextStopName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12.5,
-                                color: const Color(0xFF0F172A),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.map_rounded,
+                                color: Colors.white,
+                                size: 18,
                               ),
-                            ),
-                            if (nextStopTimingText.isNotEmpty) ...[
-                              const SizedBox(height: 2),
+                              const SizedBox(width: 8),
                               Text(
-                                nextStopTimingText,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
+                                locale == 'ar'
+                                    ? 'عرض الخريطة الحية'
+                                    : 'View Live Map',
+                                style: AppTextStyles.buttonMedium.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.3,
                                 ),
+                              ),
+                              const Spacer(),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: Colors.white,
+                                size: 13,
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // 4. Last updated subtitle line
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  children: [
-                    Icon(
-                      isQaPreview ? Icons.auto_awesome_rounded : Icons.sync_rounded,
-                      size: 13,
-                      color: const Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        lastUpdatedText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(
-                          fontSize: 11,
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // 5. Action Button: View Live Map
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                child: InkWell(
-                  onTap: () {
-                    if (onViewMapTap != null) {
-                      onViewMapTap!();
-                    } else {
-                      context.push(RoutePaths.liveTracking.replaceFirst(':tripId', 'active'));
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.map_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          locale == 'ar' ? 'عرض الخريطة الحية' : 'View Live Map',
-                          style: AppTextStyles.buttonMedium.copyWith(
-                            color: Colors.white,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: Colors.white,
-                          size: 13,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      );
-    },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -539,35 +660,42 @@ class HomeLiveTrackingCard extends StatelessWidget {
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: dotColor.withValues(alpha: 0.25), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: dotColor,
-              shape: BoxShape.circle,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 126),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: AppRadius.radiusCircular,
+          border: Border.all(color: dotColor.withValues(alpha: 0.25), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: dotColor,
-              letterSpacing: 0.3,
+            AppSpacing.gapW6,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: dotColor,
+                  height: 1.2,
+                  letterSpacing: 0,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

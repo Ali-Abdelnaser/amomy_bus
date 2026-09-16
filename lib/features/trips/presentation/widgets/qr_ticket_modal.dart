@@ -35,6 +35,7 @@ class QrTicketModal extends StatelessWidget {
   }) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       useRootNavigator: false,
       isScrollControlled: true,
       showDragHandle: false,

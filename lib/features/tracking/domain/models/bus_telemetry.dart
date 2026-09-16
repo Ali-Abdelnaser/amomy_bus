@@ -40,6 +40,16 @@ class BusTelemetry extends Equatable {
 
   bool get isMoving => speedKmh > 2.0;
 
+  bool get hasValidCoordinates =>
+      !latitude.isNaN &&
+      !longitude.isNaN &&
+      !latitude.isInfinite &&
+      !longitude.isInfinite &&
+      latitude >= -90.0 &&
+      latitude <= 90.0 &&
+      longitude >= -180.0 &&
+      longitude <= 180.0;
+
   BusTelemetry copyWith({
     double? latitude,
     double? longitude,
@@ -81,10 +91,12 @@ class BusTelemetry extends Equatable {
   factory BusTelemetry.fromJson(Map<String, dynamic> json) {
     final recordedAtRaw = json['gps_recorded_at'] ?? json['recorded_at'];
     final recordedAt = recordedAtRaw != null
-        ? DateTime.tryParse(recordedAtRaw.toString())?.toUtc() ?? DateTime.now().toUtc()
+        ? DateTime.tryParse(recordedAtRaw.toString())?.toUtc() ??
+              DateTime.now().toUtc()
         : DateTime.now().toUtc();
 
-    final age = (json['age_seconds'] as num?)?.toInt() ??
+    final age =
+        (json['age_seconds'] as num?)?.toInt() ??
         DateTime.now().toUtc().difference(recordedAt).inSeconds;
 
     return BusTelemetry(
@@ -108,41 +120,41 @@ class BusTelemetry extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'latitude': latitude,
-        'longitude': longitude,
-        'heading': heading,
-        'speed_kmh': speedKmh,
-        'gps_recorded_at': gpsRecordedAt.toIso8601String(),
-        'is_stale': isStale,
-        'age_seconds': ageSeconds,
-        'active_trip_id': activeTripId,
-        'service_run_time': serviceRunTime,
-        'service_state': serviceState,
-        'progress_state': progressState,
-        'current_stop_id': currentStopId,
-        'next_stop_id': nextStopId,
-        'current_stop_order': currentStopOrder,
-        'next_stop_order': nextStopOrder,
-        'source': source,
-      };
+    'latitude': latitude,
+    'longitude': longitude,
+    'heading': heading,
+    'speed_kmh': speedKmh,
+    'gps_recorded_at': gpsRecordedAt.toIso8601String(),
+    'is_stale': isStale,
+    'age_seconds': ageSeconds,
+    'active_trip_id': activeTripId,
+    'service_run_time': serviceRunTime,
+    'service_state': serviceState,
+    'progress_state': progressState,
+    'current_stop_id': currentStopId,
+    'next_stop_id': nextStopId,
+    'current_stop_order': currentStopOrder,
+    'next_stop_order': nextStopOrder,
+    'source': source,
+  };
 
   @override
   List<Object?> get props => [
-        latitude,
-        longitude,
-        heading,
-        speedKmh,
-        gpsRecordedAt,
-        isStale,
-        ageSeconds,
-        activeTripId,
-        serviceRunTime,
-        serviceState,
-        progressState,
-        currentStopId,
-        nextStopId,
-        currentStopOrder,
-        nextStopOrder,
-        source,
-      ];
+    latitude,
+    longitude,
+    heading,
+    speedKmh,
+    gpsRecordedAt,
+    isStale,
+    ageSeconds,
+    activeTripId,
+    serviceRunTime,
+    serviceState,
+    progressState,
+    currentStopId,
+    nextStopId,
+    currentStopOrder,
+    nextStopOrder,
+    source,
+  ];
 }

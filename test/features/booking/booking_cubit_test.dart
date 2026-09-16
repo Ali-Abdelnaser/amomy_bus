@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:amomy_bus/core/error/failures.dart';
 import 'package:amomy_bus/core/typedefs/typedefs.dart';
@@ -14,6 +16,11 @@ class FakeBookingRepository implements BookingRepository {
   BookingHold? hold;
   PassengerBooking? confirmedBooking;
   Failure? failure;
+  int seatMapCallCount = 0;
+  Duration seatMapDelay = Duration.zero;
+  List<List<TripSeat>> queuedSeatMapResponses = [];
+  bool seatUpdatesCancelled = false;
+  final seatUpdatesController = StreamController<void>.broadcast();
 
   @override
   ResultFuture<List<RouteStop>> getRouteStops({
@@ -35,7 +42,14 @@ class FakeBookingRepository implements BookingRepository {
 
   @override
   ResultFuture<List<TripSeat>> getTripSeatMap({required String tripId}) async {
+    seatMapCallCount++;
+    if (seatMapDelay > Duration.zero) {
+      await Future<void>.delayed(seatMapDelay);
+    }
     if (failure != null) return Error(failure!);
+    if (queuedSeatMapResponses.isNotEmpty) {
+      seats = queuedSeatMapResponses.removeAt(0);
+    }
     return Success(seats);
   }
 
@@ -57,7 +71,9 @@ class FakeBookingRepository implements BookingRepository {
   }
 
   @override
-  ResultFuture<PassengerBooking> confirmBooking({required String holdId}) async {
+  ResultFuture<PassengerBooking> confirmBooking({
+    required String holdId,
+  }) async {
     if (failure != null) return Error(failure!);
     return Success(confirmedBooking!);
   }
@@ -85,23 +101,32 @@ class FakeBookingRepository implements BookingRepository {
     required String originStopId,
     required String destinationStopId,
   }) async {
-    return Success(PassengerTripPreference(
-      originStopId: originStopId,
-      destinationStopId: destinationStopId,
-      originNameAr: 'ميت العامل',
-      originNameEn: 'Mit El Amel',
-      originLocalityAr: 'ميت العامل',
-      originLocalityEn: 'Mit El Amel',
-      destinationNameAr: 'بوابة حاسبات',
-      destinationNameEn: 'Computers Gate',
-      destinationLocalityAr: 'المنصورة',
-      destinationLocalityEn: 'Mansoura',
-      updatedAt: DateTime.now(),
-    ));
+    return Success(
+      PassengerTripPreference(
+        originStopId: originStopId,
+        destinationStopId: destinationStopId,
+        originNameAr: 'ميت العامل',
+        originNameEn: 'Mit El Amel',
+        originLocalityAr: 'ميت العامل',
+        originLocalityEn: 'Mit El Amel',
+        destinationNameAr: 'بوابة حاسبات',
+        destinationNameEn: 'Computers Gate',
+        destinationLocalityAr: 'المنصورة',
+        destinationLocalityEn: 'Mansoura',
+        updatedAt: DateTime.now(),
+      ),
+    );
   }
 
   @override
   Stream<void> subscribeToTripSeatUpdates(String tripId) {
+    return seatUpdatesController.stream.asBroadcastStream(
+      onCancel: (_) => seatUpdatesCancelled = true,
+    );
+  }
+
+  @override
+  Stream<void> subscribeToPassengerBookingUpdates() {
     return const Stream.empty();
   }
 
@@ -221,7 +246,11 @@ void main() {
 
   setUp(() {
     fakeRepo = FakeBookingRepository();
-    fakeRepo.routeStops = [sampleStopZone30, sampleStopZone25, sampleStopZone20];
+    fakeRepo.routeStops = [
+      sampleStopZone30,
+      sampleStopZone25,
+      sampleStopZone20,
+    ];
     getRouteStopsUseCase = GetRouteStopsUseCase(fakeRepo);
     getAvailableTripsUseCase = GetAvailableTripsUseCase(fakeRepo);
     getTripSeatMapUseCase = GetTripSeatMapUseCase(fakeRepo);
@@ -236,6 +265,7 @@ void main() {
       createBookingHoldUseCase: createBookingHoldUseCase,
       releaseBookingHoldUseCase: releaseBookingHoldUseCase,
       confirmBookingUseCase: confirmBookingUseCase,
+      bookingRepository: fakeRepo,
     );
   });
 
@@ -266,18 +296,21 @@ void main() {
     expect(cubit.state.currentStep, BookingStep.boardingStop);
   });
 
-  test('selectRouteStop sets stop and advances step to departureTime and loads trips', () async {
-    fakeRepo.trips = [sampleTrip];
+  test(
+    'selectRouteStop sets stop and advances step to departureTime and loads trips',
+    () async {
+      fakeRepo.trips = [sampleTrip];
 
-    cubit.selectRouteStop(sampleStopZone25);
+      cubit.selectRouteStop(sampleStopZone25);
 
-    expect(cubit.state.selectedRouteStop, sampleStopZone25);
-    expect(cubit.state.currentStep, BookingStep.departureTime);
+      expect(cubit.state.selectedRouteStop, sampleStopZone25);
+      expect(cubit.state.currentStep, BookingStep.departureTime);
 
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    expect(cubit.state.availableTrips, contains(sampleTrip));
-    expect(cubit.state.status, BookingStatus.tripsLoaded);
-  });
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(cubit.state.availableTrips, contains(sampleTrip));
+      expect(cubit.state.status, BookingStatus.tripsLoaded);
+    },
+  );
 
   test('selectTrip loads seat map and advances step to seatMap', () async {
     fakeRepo.seats = [sampleSeat];
@@ -292,54 +325,181 @@ void main() {
     expect(cubit.state.status, BookingStatus.seatMapLoaded);
   });
 
-  test('selectSeatAndHold on available seat calls createBookingHold and starts hold timer', () async {
+  test(
+    'no initial trip seat state row is required for active seat map subscription',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(cubit.state.seats, contains(sampleSeat));
+      expect(fakeRepo.seatMapCallCount, 1);
+      expect(fakeRepo.seatUpdatesController.hasListener, isTrue);
+    },
+  );
+
+  test(
+    'trip seat state insert event refreshes seats without manual reload',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(cubit.state.seats.single.status, SeatAvailabilityStatus.available);
+
+      final remotelyHeldSeat = TripSeat(
+        seatId: sampleSeat.seatId,
+        seatNumber: sampleSeat.seatNumber,
+        rowIndex: sampleSeat.rowIndex,
+        columnIndex: sampleSeat.columnIndex,
+        seatType: sampleSeat.seatType,
+        status: SeatAvailabilityStatus.held,
+        isMine: false,
+      );
+      fakeRepo.seats = [remotelyHeldSeat];
+      fakeRepo.seatUpdatesController.add(null);
+      await pumpEventQueue();
+
+      expect(cubit.state.seats.single.status, SeatAvailabilityStatus.held);
+    },
+  );
+
+  test(
+    'trip seat state revision update refreshes seats without manual reload',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final remotelyBookedSeat = TripSeat(
+        seatId: sampleSeat.seatId,
+        seatNumber: sampleSeat.seatNumber,
+        rowIndex: sampleSeat.rowIndex,
+        columnIndex: sampleSeat.columnIndex,
+        seatType: sampleSeat.seatType,
+        status: SeatAvailabilityStatus.booked,
+        isMine: false,
+      );
+      fakeRepo.seats = [remotelyBookedSeat];
+      fakeRepo.seatUpdatesController.add(null);
+      await pumpEventQueue();
+
+      expect(cubit.state.seats.single.status, SeatAvailabilityStatus.booked);
+    },
+  );
+
+  test(
+    'rapid trip seat state events coalesce without stale seat map overwrite',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final heldSeat = TripSeat(
+        seatId: sampleSeat.seatId,
+        seatNumber: sampleSeat.seatNumber,
+        rowIndex: sampleSeat.rowIndex,
+        columnIndex: sampleSeat.columnIndex,
+        seatType: sampleSeat.seatType,
+        status: SeatAvailabilityStatus.held,
+        isMine: false,
+      );
+      final bookedSeat = TripSeat(
+        seatId: sampleSeat.seatId,
+        seatNumber: sampleSeat.seatNumber,
+        rowIndex: sampleSeat.rowIndex,
+        columnIndex: sampleSeat.columnIndex,
+        seatType: sampleSeat.seatType,
+        status: SeatAvailabilityStatus.booked,
+        isMine: false,
+      );
+
+      fakeRepo.seatMapDelay = const Duration(milliseconds: 20);
+      fakeRepo.queuedSeatMapResponses = [
+        [heldSeat],
+        [bookedSeat],
+      ];
+
+      fakeRepo.seatUpdatesController.add(null);
+      fakeRepo.seatUpdatesController.add(null);
+      fakeRepo.seatUpdatesController.add(null);
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+
+      expect(fakeRepo.seatMapCallCount, 3);
+      expect(cubit.state.seats.single.status, SeatAvailabilityStatus.booked);
+    },
+  );
+
+  test('trip seat state subscription is cancelled on cubit close', () async {
     fakeRepo.seats = [sampleSeat];
-    fakeRepo.hold = sampleHold;
 
     cubit.selectTrip(sampleTrip);
     await Future<void>.delayed(const Duration(milliseconds: 50));
+    await cubit.close();
 
-    await cubit.selectSeatAndHold(sampleSeat);
-
-    expect(cubit.state.activeHold, sampleHold);
-    expect(cubit.state.selectedSeat, sampleSeat);
-    expect(cubit.state.status, BookingStatus.seatHeld);
-    expect(cubit.state.holdSecondsRemaining, inInclusiveRange(290, 300));
+    expect(fakeRepo.seatUpdatesCancelled, isTrue);
   });
 
-  test('selectSeatAndHold fails with InsufficientPoints failure and reports error', () async {
-    fakeRepo.seats = [sampleSeat];
-    fakeRepo.failure = const ServerFailure(message: 'INSUFFICIENT_POINTS');
+  test(
+    'selectSeatAndHold on available seat calls createBookingHold and starts hold timer',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
 
-    cubit.selectTrip(sampleTrip);
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    await cubit.selectSeatAndHold(sampleSeat);
+      await cubit.selectSeatAndHold(sampleSeat);
 
-    expect(cubit.state.activeHold, isNull);
-    expect(cubit.state.status, BookingStatus.error);
-    expect(cubit.state.errorMessage, 'INSUFFICIENT_POINTS');
-  });
+      expect(cubit.state.activeHold, sampleHold);
+      expect(cubit.state.selectedSeat, sampleSeat);
+      expect(cubit.state.status, BookingStatus.seatHeld);
+      expect(cubit.state.holdSecondsRemaining, inInclusiveRange(290, 300));
+    },
+  );
 
-  test('confirmBooking succeeds, marks step as success and stores confirmedBooking', () async {
-    fakeRepo.seats = [sampleSeat];
-    fakeRepo.hold = sampleHold;
-    fakeRepo.confirmedBooking = sampleBooking;
+  test(
+    'selectSeatAndHold fails with InsufficientPoints failure and reports error',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.failure = const ServerFailure(message: 'INSUFFICIENT_POINTS');
 
-    cubit.selectTrip(sampleTrip);
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    await cubit.selectSeatAndHold(sampleSeat);
-    cubit.proceedToReview();
+      await cubit.selectSeatAndHold(sampleSeat);
 
-    expect(cubit.state.currentStep, BookingStep.review);
+      expect(cubit.state.activeHold, isNull);
+      expect(cubit.state.status, BookingStatus.error);
+      expect(cubit.state.errorMessage, 'INSUFFICIENT_POINTS');
+    },
+  );
 
-    await cubit.confirmBooking();
+  test(
+    'confirmBooking succeeds, marks step as success and stores confirmedBooking',
+    () async {
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
+      fakeRepo.confirmedBooking = sampleBooking;
 
-    expect(cubit.state.currentStep, BookingStep.success);
-    expect(cubit.state.status, BookingStatus.confirmed);
-    expect(cubit.state.confirmedBooking, sampleBooking);
-  });
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      await cubit.selectSeatAndHold(sampleSeat);
+      cubit.proceedToReview();
+
+      expect(cubit.state.currentStep, BookingStep.review);
+
+      await cubit.confirmBooking();
+
+      expect(cubit.state.currentStep, BookingStep.success);
+      expect(cubit.state.status, BookingStatus.confirmed);
+      expect(cubit.state.confirmedBooking, sampleBooking);
+    },
+  );
 
   test('backToTrips resets state back to departureTime step', () async {
     fakeRepo.seats = [sampleSeat];
@@ -356,53 +516,65 @@ void main() {
     expect(cubit.state.activeHold, isNull);
   });
 
-  test('loadRouteStops populates stops and defaults to first stop (Zone 30: 30 pts)', () async {
-    await cubit.loadRouteStops();
+  test(
+    'loadRouteStops populates stops and defaults to first stop (Zone 30: 30 pts)',
+    () async {
+      await cubit.loadRouteStops();
 
-    expect(cubit.state.routeStops.length, 3);
-    expect(cubit.state.selectedRouteStop, sampleStopZone30);
-    expect(cubit.state.selectedRouteStop!.farePoints, 30.0);
-  });
+      expect(cubit.state.routeStops.length, 3);
+      expect(cubit.state.selectedRouteStop, sampleStopZone30);
+      expect(cubit.state.selectedRouteStop!.farePoints, 30.0);
+    },
+  );
 
-  test('selectRouteStop updates selected stop to Zone 25 (25 pts) and reloads trips', () async {
-    await cubit.loadRouteStops();
-    fakeRepo.trips = [sampleTrip];
+  test(
+    'selectRouteStop updates selected stop to Zone 25 (25 pts) and reloads trips',
+    () async {
+      await cubit.loadRouteStops();
+      fakeRepo.trips = [sampleTrip];
 
-    cubit.selectRouteStop(sampleStopZone25);
+      cubit.selectRouteStop(sampleStopZone25);
 
-    expect(cubit.state.selectedRouteStop, sampleStopZone25);
-    expect(cubit.state.selectedRouteStop!.farePoints, 25.0);
+      expect(cubit.state.selectedRouteStop, sampleStopZone25);
+      expect(cubit.state.selectedRouteStop!.farePoints, 25.0);
 
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    expect(cubit.state.availableTrips, contains(sampleTrip));
-  });
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(cubit.state.availableTrips, contains(sampleTrip));
+    },
+  );
 
-  test('selectRouteStop updates selected stop to Zone 20 (20 pts) and reloads trips', () async {
-    await cubit.loadRouteStops();
-    fakeRepo.trips = [sampleTrip];
+  test(
+    'selectRouteStop updates selected stop to Zone 20 (20 pts) and reloads trips',
+    () async {
+      await cubit.loadRouteStops();
+      fakeRepo.trips = [sampleTrip];
 
-    cubit.selectRouteStop(sampleStopZone20);
+      cubit.selectRouteStop(sampleStopZone20);
 
-    expect(cubit.state.selectedRouteStop, sampleStopZone20);
-    expect(cubit.state.selectedRouteStop!.farePoints, 20.0);
+      expect(cubit.state.selectedRouteStop, sampleStopZone20);
+      expect(cubit.state.selectedRouteStop!.farePoints, 20.0);
 
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    expect(cubit.state.availableTrips, contains(sampleTrip));
-  });
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(cubit.state.availableTrips, contains(sampleTrip));
+    },
+  );
 
-  test('selectSeatAndHold passes selectedRouteStop id to backend hold RPC', () async {
-    await cubit.loadRouteStops();
-    cubit.selectRouteStop(sampleStopZone25);
+  test(
+    'selectSeatAndHold passes selectedRouteStop id to backend hold RPC',
+    () async {
+      await cubit.loadRouteStops();
+      cubit.selectRouteStop(sampleStopZone25);
 
-    fakeRepo.seats = [sampleSeat];
-    fakeRepo.hold = sampleHold;
+      fakeRepo.seats = [sampleSeat];
+      fakeRepo.hold = sampleHold;
 
-    cubit.selectTrip(sampleTrip);
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+      cubit.selectTrip(sampleTrip);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    await cubit.selectSeatAndHold(sampleSeat);
+      await cubit.selectSeatAndHold(sampleSeat);
 
-    expect(cubit.state.activeHold?.farePoints, 25.0);
-    expect(cubit.state.activeHold?.routeStopId, 'rs-6');
-  });
+      expect(cubit.state.activeHold?.farePoints, 25.0);
+      expect(cubit.state.activeHold?.routeStopId, 'rs-6');
+    },
+  );
 }

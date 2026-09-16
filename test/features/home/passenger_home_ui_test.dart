@@ -79,8 +79,10 @@ void main() {
     }
   });
 
-  Widget buildTestableWidget(Widget child,
-      {Locale locale = const Locale('en')}) {
+  Widget buildTestableWidget(
+    Widget child, {
+    Locale locale = const Locale('en'),
+  }) {
     return MaterialApp(
       locale: locale,
       localizationsDelegates: const [
@@ -130,8 +132,7 @@ void main() {
       titleAr: 'تنبيه الرحلات',
       titleEn: 'Trip Alert',
       descriptionAr: 'تابع مواعيد رحلاتك من التطبيق قبل التحرك.',
-      descriptionEn:
-          'Track your trip schedules from the app before departure.',
+      descriptionEn: 'Track your trip schedules from the app before departure.',
       type: 'announcement',
       sortOrder: 1,
     ),
@@ -147,8 +148,71 @@ void main() {
   ];
 
   group('Passenger Home Screen UI Tests', () {
-    testWidgets('Renders all 6 core production sections in loaded state',
-        (tester) async {
+    testWidgets('Home bell unread badge handles 0, 1, 9, and 10+', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: HomeAppBar(
+              fullName: 'Ali Commuter',
+              unreadNotificationsCount: 0,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsNothing);
+      expect(find.text('9'), findsNothing);
+      expect(find.text('9+'), findsNothing);
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: HomeAppBar(
+              fullName: 'Ali Commuter',
+              unreadNotificationsCount: 1,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsOneWidget);
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: HomeAppBar(
+              fullName: 'Ali Commuter',
+              unreadNotificationsCount: 9,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('9'), findsOneWidget);
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: HomeAppBar(
+              fullName: 'Ali Commuter',
+              unreadNotificationsCount: 10,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('9+'), findsOneWidget);
+    });
+
+    testWidgets('Renders all 6 core production sections in loaded state', (
+      tester,
+    ) async {
       final cubit = HomeCubit.idle(
         initialState: HomeState(
           status: HomeStatus.loaded,
@@ -158,9 +222,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        buildTestableWidget(
-          PassengerHomePage(homeCubit: cubit),
-        ),
+        buildTestableWidget(PassengerHomePage(homeCubit: cubit)),
       );
       await tester.pumpAndSettle();
 
@@ -197,8 +259,9 @@ void main() {
       expect(find.text('No missed trips this month.'), findsOneWidget);
     });
 
-    testWidgets('Hides Announcements section cleanly when empty',
-        (tester) async {
+    testWidgets('Hides Announcements section cleanly when empty', (
+      tester,
+    ) async {
       final cubit = HomeCubit.idle(
         initialState: HomeState(
           status: HomeStatus.loaded,
@@ -208,9 +271,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        buildTestableWidget(
-          PassengerHomePage(homeCubit: cubit),
-        ),
+        buildTestableWidget(PassengerHomePage(homeCubit: cubit)),
       );
       await tester.pumpAndSettle();
 
@@ -218,8 +279,9 @@ void main() {
       expect(find.byType(AmomyAnnouncementCard), findsNothing);
     });
 
-    testWidgets('Renders clean empty state when there is no upcoming trip',
-        (tester) async {
+    testWidgets('Renders clean empty state when there is no upcoming trip', (
+      tester,
+    ) async {
       final summaryNoTrip = HomeSummary(
         profile: testSummary.profile,
         availablePoints: 500,
@@ -241,9 +303,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        buildTestableWidget(
-          PassengerHomePage(homeCubit: cubit),
-        ),
+        buildTestableWidget(PassengerHomePage(homeCubit: cubit)),
       );
       await tester.pumpAndSettle();
 
@@ -281,40 +341,40 @@ void main() {
       expect(find.text('رحلات هذا الشهر'), findsOneWidget);
     });
 
-    testWidgets('Displays authoritative live points from shared WalletCubit instead of stale home summary', (tester) async {
-      final homeCubit = HomeCubit.idle(
-        initialState: HomeState(
-          status: HomeStatus.loaded,
-          summary: testSummary, // has availablePoints: 2450
-          announcements: testAnnouncements,
-        ),
-      );
-
-      final walletCubit = FakeWalletCubit(
-        const WalletState(
-          status: WalletStatus.loaded,
-          summary: WalletSummary(
-            totalAvailablePoints: 500,
-            cashPoints: 500,
-            subscriptionPoints: 0,
+    testWidgets(
+      'Displays authoritative live points from shared WalletCubit instead of stale home summary',
+      (tester) async {
+        final homeCubit = HomeCubit.idle(
+          initialState: HomeState(
+            status: HomeStatus.loaded,
+            summary: testSummary, // has availablePoints: 2450
+            announcements: testAnnouncements,
           ),
-        ),
-      );
+        );
 
-      await tester.pumpWidget(
-        buildTestableWidget(
-          PassengerHomePage(
-            homeCubit: homeCubit,
-            walletCubit: walletCubit,
+        final walletCubit = FakeWalletCubit(
+          const WalletState(
+            status: WalletStatus.loaded,
+            summary: WalletSummary(
+              totalAvailablePoints: 500,
+              cashPoints: 500,
+              subscriptionPoints: 0,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
 
-      // Must display 500 from the authoritative WalletCubit, NOT 2,450 from stale summary
-      expect(find.textContaining('500'), findsOneWidget);
-      expect(find.textContaining('2,450'), findsNothing);
-    });
+        await tester.pumpWidget(
+          buildTestableWidget(
+            PassengerHomePage(homeCubit: homeCubit, walletCubit: walletCubit),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Must display 500 from the authoritative WalletCubit, NOT 2,450 from stale summary
+        expect(find.textContaining('500'), findsOneWidget);
+        expect(find.textContaining('2,450'), findsNothing);
+      },
+    );
   });
 }
 
@@ -324,4 +384,3 @@ class FakeWalletCubit extends Cubit<WalletState> implements WalletCubit {
   @override
   Future<void> loadWalletSummary(String userId) async {}
 }
-

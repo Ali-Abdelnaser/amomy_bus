@@ -39,6 +39,7 @@ class ProfileIdentityHeader extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => AmomySheetContainer(

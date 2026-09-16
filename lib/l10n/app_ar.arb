@@ -48,6 +48,18 @@
     }
   },
   "changeEmail": "تغيير البريد / رجوع",
+  "didntReceiveCode": "لم تستلم الرمز؟",
+  "wrongEmailPrompt": "البريد الإلكتروني غير صحيح؟",
+  "changeEmailAction": "تغيير البريد",
+  "otpInvalid": "رمز التحقق غير صحيح.",
+  "otpExpired": "انتهت صلاحية هذا الرمز. يرجى طلب رمز جديد.",
+  "otpRateLimited": "يرجى الانتظار قليلاً قبل طلب رمز جديد.",
+  "otpNetworkError": "تعذر التحقق من الرمز. تحقق من اتصالك وحاول مرة أخرى.",
+  "selectDateTitle": "تحديد التاريخ",
+  "confirmDate": "تأكيد التاريخ",
+  "dayColumnLabel": "اليوم",
+  "monthColumnLabel": "الشهر",
+  "yearColumnLabel": "السنة",
   "completeProfileTitle": "استكمال البيانات",
   "completeProfileSubtitle": "يرجى استكمال البيانات المطلوبة لإنهاء تسجيل حسابك",
   "saveAndContinue": "حفظ ومتابعة",
@@ -175,6 +187,14 @@
   "bookingSuccessSubtitle": "تم حجز مقعدك بنجاح وجاهز لرحلتك القادمة.",
   "qrTicketInstruction": "قم بإبراز رمز الـ QR هذا للمسؤول أو الماسح الضوئي عند صعود الحافلة.",
   "viewMyTrips": "عرض رحلاتي",
+  "mitFadalaStopName": "ميت فضالة",
+  "departureBusAtFirstStop": "موعد الباص في {stopName}",
+  "@departureBusAtFirstStop": {
+    "placeholders": {
+      "stopName": {}
+    }
+  },
+  "firstStopLabel": "أول نقطة انطلاق",
   "tripDetailsDirection": "اتجاه الرحلة",
   "tripDetailsDate": "تاريخ الرحلة",
   "tripDetailsTime": "موعد التحرك",
@@ -270,6 +290,9 @@
   "toStop": "إلى",
   "departureTimeTitle": "ميعاد الرحلة",
   "departureSelected": "تم الاختيار",
+  "departureSelectedTrip": "الرحلة المختارة",
+  "departureAvailable": "متاح",
+  "departureFullyBooked": "مكتمل",
   "departureAvailableNow": "متاح الآن",
   "fewSeatsLeft": "مقاعد محدودة",
   "alreadyBookedTrip": "لقد قمت بحجز هذه الرحلة بالفعل.",
@@ -399,5 +422,11 @@
   "developerWebsiteLabel": "الموقع الإلكتروني",
   "developerLinkedInLabel": "لينكد إن",
   "appVersion": "الإصدار {version}",
-  "allRightsReserved": "جميع الحقوق محفوظة."
+  "allRightsReserved": "جميع الحقوق محفوظة.",
+  "privacyPolicyUrl": "https://amomy.com/privacy-policy",
+  "termsAndConditionsUrl": "https://amomy.com/terms-and-conditions",
+  "privacyPolicyTitle": "سياسة الخصوصية",
+  "privacyPolicyContent": "نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية. يتم جمع البيانات فقط لأغراض تحسين تجربة المستخدم وتقديم خدماتنا بشكل أفضل. لمزيد من التفاصيل، يرجى مراجعة سياسة الخصوصية الكاملة على موقعنا.",
+  "termsAndConditionsTitle": "الشروط والأحكام",
+  "termsAndConditionsContent": "باستخدامك لتطبيق عمومي باص، فإنك توافق على الالتزام بالشروط والأحكام الموضحة هنا. يرجى قراءة هذه الشروط بعناية قبل استخدام التطبيق. لمزيد من التفاصيل، يرجى مراجعة الشروط والأحكام الكاملة على موقعنا."
 }

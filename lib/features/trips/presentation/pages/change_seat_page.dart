@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,7 +10,7 @@ import '../../../../core/widgets/amomy_floating_alert.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
-import '../../../booking/presentation/widgets/professional_bus_seat_map.dart';
+import '../../../booking/presentation/widgets/bus_seat_map_widget.dart';
 import '../cubit/passenger_trips_cubit.dart';
 
 /// Full-page interactive seat selection screen for changing a passenger's seat.
@@ -36,48 +38,103 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
   List<TripSeat> _seats = [];
   TripSeat? _selectedNewSeat;
   bool _isSubmitting = false;
+  bool _seatFetchInFlight = false;
+  bool _seatFetchQueued = false;
+  StreamSubscription<void>? _seatUpdatesSubscription;
 
   @override
   void initState() {
     super.initState();
     _fetchSeats();
+    _startSeatUpdatesSubscription();
   }
 
-  Future<void> _fetchSeats() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _seatUpdatesSubscription?.cancel();
+    super.dispose();
+  }
 
+  void _startSeatUpdatesSubscription() {
+    final repo = getIt.isRegistered<BookingRepository>()
+        ? getIt<BookingRepository>()
+        : null;
+    if (repo == null) return;
+
+    _seatUpdatesSubscription?.cancel();
+    _seatUpdatesSubscription = repo
+        .subscribeToTripSeatUpdates(widget.trip.tripId)
+        .listen(
+          (_) => _fetchSeats(silent: true),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
+  }
+
+  Future<void> _fetchSeats({bool silent = false}) async {
+    if (_seatFetchInFlight) {
+      if (silent) _seatFetchQueued = true;
+      return;
+    }
+
+    _seatFetchInFlight = true;
+    var showLoading = !silent;
     final repo = getIt.isRegistered<BookingRepository>()
         ? getIt<BookingRepository>()
         : null;
 
     if (repo == null) {
       setState(() {
-        _isLoading = false;
+        if (!silent) _isLoading = false;
         _error = 'Repository not available';
       });
+      _seatFetchInFlight = false;
       return;
     }
 
-    final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
-    if (!mounted) return;
+    try {
+      do {
+        _seatFetchQueued = false;
+        if (showLoading && mounted) {
+          setState(() {
+            _isLoading = true;
+            _error = null;
+          });
+          showLoading = false;
+        }
 
-    result.fold(
-      onSuccess: (seats) {
-        setState(() {
-          _seats = seats;
-          _isLoading = false;
-        });
-      },
-      onError: (failure) {
-        setState(() {
-          _error = failure.message;
-          _isLoading = false;
-        });
-      },
-    );
+        final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
+        if (!mounted) return;
+
+        result.fold(
+          onSuccess: (seats) {
+            final selectedSeatStillAvailable =
+                _selectedNewSeat != null &&
+                seats.any(
+                  (seat) =>
+                      seat.seatId == _selectedNewSeat!.seatId &&
+                      seat.isAvailable,
+                );
+            setState(() {
+              _seats = seats;
+              _isLoading = false;
+              if (!selectedSeatStillAvailable) {
+                _selectedNewSeat = null;
+              }
+            });
+          },
+          onError: (failure) {
+            if (silent) return;
+            setState(() {
+              _error = failure.message;
+              _isLoading = false;
+            });
+          },
+        );
+      } while (_seatFetchQueued && mounted);
+    } finally {
+      _seatFetchInFlight = false;
+    }
   }
 
   Future<void> _onConfirmChange() async {
@@ -95,7 +152,9 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
 
     if (success) {
       Navigator.of(context).pop();
-      final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+      final isAr = Localizations.localeOf(
+        context,
+      ).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
         title: isAr
@@ -104,10 +163,13 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
         variant: AmomyAlertVariant.success,
       );
     } else {
-      final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+      final isAr = Localizations.localeOf(
+        context,
+      ).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
-        title: widget.tripsCubit.state.errorMessage ??
+        title:
+            widget.tripsCubit.state.errorMessage ??
             (isAr ? 'فشل تغيير المقعد' : 'Failed to change seat'),
         variant: AmomyAlertVariant.error,
       );
@@ -420,39 +482,36 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                         AppSpacing.gapH16,
 
                         // Physical 28-Seat Bus Interior Map
-                        SizedBox(
-                          height: 520,
-                          child: ProfessionalBusSeatMap(
-                            seats: _seats,
-                            selectedSeat: _selectedNewSeat,
-                            onSeatTap: (seat) {
-                              if (seat.seatNumber == currentSeatNumber) {
-                                AmomyFloatingAlert.show(
-                                  context,
-                                  title: isAr
-                                      ? 'هذا هو مقعدك الحالي المحجوز'
-                                      : 'This is your current booked seat',
-                                  variant: AmomyAlertVariant.info,
-                                );
-                                return;
-                              }
+                        BusSeatMapWidget(
+                          seats: _seats,
+                          selectedSeat: _selectedNewSeat,
+                          onSeatTap: (seat) {
+                            if (seat.seatNumber == currentSeatNumber) {
+                              AmomyFloatingAlert.show(
+                                context,
+                                title: isAr
+                                    ? 'هذا هو مقعدك الحالي المحجوز'
+                                    : 'This is your current booked seat',
+                                variant: AmomyAlertVariant.info,
+                              );
+                              return;
+                            }
 
-                              if (!seat.isAvailable) {
-                                AmomyFloatingAlert.show(
-                                  context,
-                                  title: isAr
-                                      ? 'هذا المقعد غير متاح للاختيار'
-                                      : 'This seat is unavailable',
-                                  variant: AmomyAlertVariant.warning,
-                                );
-                                return;
-                              }
+                            if (!seat.isAvailable) {
+                              AmomyFloatingAlert.show(
+                                context,
+                                title: isAr
+                                    ? 'هذا المقعد غير متاح للاختيار'
+                                    : 'This seat is unavailable',
+                                variant: AmomyAlertVariant.warning,
+                              );
+                              return;
+                            }
 
-                              setState(() {
-                                _selectedNewSeat = seat;
-                              });
-                            },
-                          ),
+                            setState(() {
+                              _selectedNewSeat = seat;
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -467,9 +526,7 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFE4E7EC)),
-                  ),
+                  border: Border(top: BorderSide(color: Color(0xFFE4E7EC))),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x0A000000),
@@ -487,8 +544,9 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor:
-                          AppColors.primary.withValues(alpha: 0.35),
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 0.35,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -500,18 +558,19 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
                             _selectedNewSeat == null
                                 ? (isAr
-                                    ? 'اختر مقعدًا جديدًا من المخطط'
-                                    : 'Select a new seat from map')
+                                      ? 'اختر مقعدًا جديدًا من المخطط'
+                                      : 'Select a new seat from map')
                                 : (isAr
-                                    ? 'تأكيد الانتقال إلى مقعد (${_selectedNewSeat!.seatNumber})'
-                                    : 'Confirm Change to Seat (${_selectedNewSeat!.seatNumber})'),
+                                      ? 'تأكيد الانتقال إلى مقعد (${_selectedNewSeat!.seatNumber})'
+                                      : 'Confirm Change to Seat (${_selectedNewSeat!.seatNumber})'),
                             style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,

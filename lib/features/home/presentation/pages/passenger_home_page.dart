@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -24,6 +25,9 @@ import '../../../tracking/presentation/widgets/home_live_tracking_card.dart';
 import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 import '../../../wallet/presentation/cubit/wallet_state.dart';
 
+import '../../../notifications/domain/repositories/notification_repository.dart';
+import '../../../notifications/presentation/cubit/notification_cubit.dart';
+import '../../../notifications/presentation/cubit/notification_state.dart';
 import '../../../notifications/presentation/services/notification_service.dart';
 
 class PassengerHomePage extends StatefulWidget {
@@ -88,6 +92,9 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
   @override
   void initState() {
     super.initState();
+    if (kDebugMode) {
+      debugPrint('[IOS_PUSH_DIAG] 02 home mounted');
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotificationPermission();
     });
@@ -102,6 +109,10 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasNotificationRealtime =
+        getIt.isRegistered<NotificationCubit>() ||
+        getIt.isRegistered<NotificationRepository>();
+
     return MultiBlocProvider(
       providers: [
         BlocProvider<HomeCubit>(
@@ -115,10 +126,23 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
           create: (context) =>
               widget.trackingCubit ??
               (getIt.isRegistered<TrackingCubit>()
-                    ? (getIt<TrackingCubit>()..loadTrackingData())
-                    : TrackingCubit(repository: getIt())
-                ..loadTrackingData()),
+                  ? (getIt<TrackingCubit>()..loadTrackingData())
+                  : (TrackingCubit(repository: getIt())..loadTrackingData())),
         ),
+        if (hasNotificationRealtime)
+          BlocProvider<NotificationCubit>(
+            create: (context) =>
+                getIt.isRegistered<NotificationCubit>()
+                      ? (getIt<NotificationCubit>()..loadNotifications())
+                      : NotificationCubit(
+                          repository: getIt<NotificationRepository>(),
+                          notificationService:
+                              getIt.isRegistered<NotificationService>()
+                              ? getIt<NotificationService>()
+                              : null,
+                        )
+                  ..loadNotifications(),
+          ),
       ],
       child: AppScaffold(
         body: SafeArea(
@@ -162,7 +186,8 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
 
               // Loading / Skeleton State
               final isLoading = state.isLoading || state.isInitial;
-              final summary = state.summary ?? PassengerHomePage._skeletonSummary;
+              final summary =
+                  state.summary ?? PassengerHomePage._skeletonSummary;
               final announcements = state.isLoaded
                   ? state.announcements
                   : PassengerHomePage._skeletonAnnouncements;
@@ -178,7 +203,8 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                     ),
                   ];
                   try {
-                    final cubit = widget.walletCubit ?? context.read<WalletCubit>();
+                    final cubit =
+                        widget.walletCubit ?? context.read<WalletCubit>();
                     final authState = context.read<AuthBloc>().state;
                     final userId = authState is Authenticated
                         ? authState.user.id
@@ -201,10 +227,25 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // 1. Custom App Bar
-                        HomeAppBar(
-                          fullName: summary.profile.fullName,
-                          avatarUrl: summary.profile.avatarUrl,
-                        ),
+                        if (hasNotificationRealtime)
+                          BlocBuilder<NotificationCubit, NotificationState>(
+                            builder: (context, notificationState) {
+                              final unreadCount =
+                                  notificationState is NotificationLoaded
+                                  ? notificationState.unreadCount
+                                  : 0;
+                              return HomeAppBar(
+                                fullName: summary.profile.fullName,
+                                avatarUrl: summary.profile.avatarUrl,
+                                unreadNotificationsCount: unreadCount,
+                              );
+                            },
+                          )
+                        else
+                          HomeAppBar(
+                            fullName: summary.profile.fullName,
+                            avatarUrl: summary.profile.avatarUrl,
+                          ),
                         AppSpacing.gapH20,
 
                         // 2. Announcements Carousel

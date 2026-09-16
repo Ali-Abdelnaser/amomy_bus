@@ -156,8 +156,8 @@
 ## ADR 019: Google Maps Platform & Road-Following Google Routes Geometry
 - **Status**: Accepted
 - **Context**: Generic OSM/raster map tiles and straight-line waypoint connections exhibited visual stutter, white flashes, and unrealistic bus paths across water and fields.
-- **Decision**: Migrate entirely to official Google Maps Platform (`google_maps_flutter`), generate road-following high-precision polylines via Google Routes API Edge Function, and apply custom Silver monochrome map styling with upright circular bus markers and teardrop stop pins.
-- **Consequences**: Fluid 60fps vector map rendering, exact road alignment, zero tile pop-in, and premium brand aesthetics.
+- **Decision**: Migrate entirely to official Google Maps Platform (`google_maps_flutter`), generate road-following high-precision polylines via Google Routes API Edge Function, and use the native default Google Maps visual style with upright circular bus markers and teardrop stop pins.
+- **Consequences**: Fluid 60fps vector map rendering, exact road alignment, zero tile pop-in, and familiar Google Maps base-map colors.
 
 ---
 
@@ -185,6 +185,5 @@
 
 ---
 **Last Updated**: 2026-09-14
-
 
 

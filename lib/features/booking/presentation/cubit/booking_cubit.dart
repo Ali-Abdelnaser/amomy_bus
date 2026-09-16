@@ -18,9 +18,12 @@ class BookingCubit extends Cubit<BookingState> {
   final ConfirmBookingUseCase _confirmBookingUseCase;
   final GetMyTripPreferencesUseCase? _getMyTripPreferencesUseCase;
   final GetPassengerBookingsUseCase? _getPassengerBookingsUseCase;
+  final BookingRepository? _bookingRepository;
 
   Timer? _countdownTimer;
   StreamSubscription? _seatSubscription;
+  bool _seatMapRefreshInFlight = false;
+  bool _seatMapRefreshQueued = false;
 
   BookingCubit({
     required GetRouteStopsUseCase getRouteStopsUseCase,
@@ -31,15 +34,17 @@ class BookingCubit extends Cubit<BookingState> {
     required ConfirmBookingUseCase confirmBookingUseCase,
     GetMyTripPreferencesUseCase? getMyTripPreferencesUseCase,
     GetPassengerBookingsUseCase? getPassengerBookingsUseCase,
-  })  : _getRouteStopsUseCase = getRouteStopsUseCase,
-        _getAvailableTripsUseCase = getAvailableTripsUseCase,
-        _getTripSeatMapUseCase = getTripSeatMapUseCase,
-        _createBookingHoldUseCase = createBookingHoldUseCase,
-        _releaseBookingHoldUseCase = releaseBookingHoldUseCase,
-        _confirmBookingUseCase = confirmBookingUseCase,
-        _getMyTripPreferencesUseCase = getMyTripPreferencesUseCase,
-        _getPassengerBookingsUseCase = getPassengerBookingsUseCase,
-        super(const BookingState());
+    BookingRepository? bookingRepository,
+  }) : _getRouteStopsUseCase = getRouteStopsUseCase,
+       _getAvailableTripsUseCase = getAvailableTripsUseCase,
+       _getTripSeatMapUseCase = getTripSeatMapUseCase,
+       _createBookingHoldUseCase = createBookingHoldUseCase,
+       _releaseBookingHoldUseCase = releaseBookingHoldUseCase,
+       _confirmBookingUseCase = confirmBookingUseCase,
+       _getMyTripPreferencesUseCase = getMyTripPreferencesUseCase,
+       _getPassengerBookingsUseCase = getPassengerBookingsUseCase,
+       _bookingRepository = bookingRepository,
+       super(const BookingState());
 
   /// Initializes smart booking:
   /// - If `initialTripId` is passed (e.g. from a specific trip card), the trip is pre-selected and locked.
@@ -52,18 +57,20 @@ class BookingCubit extends Cubit<BookingState> {
     String? initialDestinationStopId,
   }) async {
     final direction = initialDirection ?? state.selectedDirection;
-    emit(state.copyWith(
-      status: BookingStatus.loading,
-      currentStep: BookingStep.setup,
-      selectedDirection: direction,
-      isTripLocked: initialTripId != null,
-      clearAvailableTrips: true,
-      clearSelectedTrip: true,
-      clearSelectedRouteStop: true,
-      clearSelectedDestinationStop: true,
-      clearError: true,
-      clearAutoTripAlert: true,
-    ));
+    emit(
+      state.copyWith(
+        status: BookingStatus.loading,
+        currentStep: BookingStep.setup,
+        selectedDirection: direction,
+        isTripLocked: initialTripId != null,
+        clearAvailableTrips: true,
+        clearSelectedTrip: true,
+        clearSelectedRouteStop: true,
+        clearSelectedDestinationStop: true,
+        clearError: true,
+        clearAutoTripAlert: true,
+      ),
+    );
 
     // 1. Fetch preferred journey from backend if not provided explicitly
     PassengerTripPreference? pref;
@@ -82,10 +89,9 @@ class BookingCubit extends Cubit<BookingState> {
     List<RouteStop> stops = [];
     stopsRes.fold(
       onSuccess: (s) => stops = s,
-      onError: (err) => emit(state.copyWith(
-        status: BookingStatus.error,
-        errorMessage: err.message,
-      )),
+      onError: (err) => emit(
+        state.copyWith(status: BookingStatus.error, errorMessage: err.message),
+      ),
     );
 
     // Resolve Origin and Destination stops
@@ -97,19 +103,19 @@ class BookingCubit extends Cubit<BookingState> {
 
     if (targetOriginId != null) {
       resolvedOrigin = stops.cast<RouteStop?>().firstWhere(
-            (s) => s?.stopId == targetOriginId,
-            orElse: () => null,
-          );
+        (s) => s?.stopId == targetOriginId,
+        orElse: () => null,
+      );
     }
     resolvedOrigin ??= stops.isNotEmpty ? stops.first : null;
 
     if (targetDestId != null) {
       resolvedDestination = stops.cast<RouteStop?>().firstWhere(
-            (s) =>
-                s?.stopId == targetDestId &&
-                (resolvedOrigin == null || s!.stopOrder > resolvedOrigin.stopOrder),
-            orElse: () => null,
-          );
+        (s) =>
+            s?.stopId == targetDestId &&
+            (resolvedOrigin == null || s!.stopOrder > resolvedOrigin.stopOrder),
+        orElse: () => null,
+      );
     }
     resolvedDestination ??= stops.length > 1 ? stops.last : null;
 
@@ -126,10 +132,10 @@ class BookingCubit extends Cubit<BookingState> {
       onError: (err) => tripErrorMessage = err.message,
     );
 
-
     final bookedTripIds = await _fetchActiveBookedTripIds();
-    final availableTrips =
-        trips.where((t) => !bookedTripIds.contains(t.tripId)).toList();
+    final availableTrips = trips
+        .where((t) => !bookedTripIds.contains(t.tripId))
+        .toList();
 
     // 4. Resolve trip
     TripOption? resolvedTrip;
@@ -142,16 +148,17 @@ class BookingCubit extends Cubit<BookingState> {
         isLocked = false;
       } else {
         resolvedTrip = availableTrips.cast<TripOption?>().firstWhere(
-              (t) => t?.tripId == initialTripId,
-              orElse: () => null,
-            );
+          (t) => t?.tripId == initialTripId,
+          orElse: () => null,
+        );
       }
     }
 
     if (resolvedTrip == null) {
       // Pick next available bookable trip for today
-      final bookableTrips =
-          availableTrips.where((t) => t.availableSeatsCount > 0).toList();
+      final bookableTrips = availableTrips
+          .where((t) => t.availableSeatsCount > 0)
+          .toList();
       if (bookableTrips.isNotEmpty) {
         resolvedTrip = bookableTrips.first;
       } else if (availableTrips.isNotEmpty) {
@@ -159,26 +166,29 @@ class BookingCubit extends Cubit<BookingState> {
       }
     }
 
-    emit(state.copyWith(
-      status: tripErrorMessage != null
-          ? BookingStatus.error
-          : BookingStatus.tripsLoaded,
-      errorMessage: tripErrorMessage,
-      currentStep: BookingStep.setup,
-      selectedDirection: direction,
-      routeStops: stops,
-      selectedRouteStop: resolvedOrigin,
-      selectedDestinationStop: resolvedDestination,
-      availableTrips: availableTrips,
-      selectedTrip: resolvedTrip,
-      isTripLocked: isLocked && resolvedTrip != null,
-      autoTripAlert: tripAlert,
-    ));
+    emit(
+      state.copyWith(
+        status: tripErrorMessage != null
+            ? BookingStatus.error
+            : BookingStatus.tripsLoaded,
+        errorMessage: tripErrorMessage,
+        currentStep: BookingStep.setup,
+        selectedDirection: direction,
+        routeStops: stops,
+        selectedRouteStop: resolvedOrigin,
+        selectedDestinationStop: resolvedDestination,
+        availableTrips: availableTrips,
+        selectedTrip: resolvedTrip,
+        isTripLocked: isLocked && resolvedTrip != null,
+        autoTripAlert: tripAlert,
+      ),
+    );
   }
 
   Future<Set<String>> _fetchActiveBookedTripIds() async {
     final bookedTripIds = <String>{};
-    final useCase = _getPassengerBookingsUseCase ??
+    final useCase =
+        _getPassengerBookingsUseCase ??
         (getIt.isRegistered<GetPassengerBookingsUseCase>()
             ? getIt<GetPassengerBookingsUseCase>()
             : null);
@@ -198,22 +208,25 @@ class BookingCubit extends Cubit<BookingState> {
     return bookedTripIds;
   }
 
-
   /// Sets direction and refreshes route stops & trips.
   void setDirection(BookingDirection direction) {
     if (state.currentStep == BookingStep.setup) {
-      if (state.selectedDirection == direction && state.routeStops.isNotEmpty) return;
+      if (state.selectedDirection == direction && state.routeStops.isNotEmpty) {
+        return;
+      }
       initBooking(initialDirection: direction);
     } else {
-      emit(state.copyWith(
-        selectedDirection: direction,
-        currentStep: BookingStep.direction,
-        clearSelectedRouteStop: true,
-        clearSelectedTrip: true,
-        clearSelectedSeat: true,
-        clearActiveHold: true,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          selectedDirection: direction,
+          currentStep: BookingStep.direction,
+          clearSelectedRouteStop: true,
+          clearSelectedTrip: true,
+          clearSelectedSeat: true,
+          clearActiveHold: true,
+          clearError: true,
+        ),
+      );
       loadRouteStops();
     }
   }
@@ -223,46 +236,50 @@ class BookingCubit extends Cubit<BookingState> {
     RouteStop? currentDest = state.selectedDestinationStop;
     // If destination is before new origin, pick last stop
     if (currentDest != null && currentDest.stopOrder <= stop.stopOrder) {
-      final validStops =
-          state.routeStops.where((s) => s.stopOrder > stop.stopOrder).toList();
+      final validStops = state.routeStops
+          .where((s) => s.stopOrder > stop.stopOrder)
+          .toList();
       currentDest = validStops.isNotEmpty ? validStops.last : null;
     }
 
-    emit(state.copyWith(
-      selectedRouteStop: stop,
-      selectedDestinationStop: currentDest,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        selectedRouteStop: stop,
+        selectedDestinationStop: currentDest,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        clearError: true,
+      ),
+    );
     loadAvailableTrips();
   }
 
   /// Selects Destination (Drop-off) Stop
   void selectDestinationStop(RouteStop stop) {
-    emit(state.copyWith(
-      selectedDestinationStop: stop,
-      clearError: true,
-    ));
+    emit(state.copyWith(selectedDestinationStop: stop, clearError: true));
   }
 
   /// Selects a trip departure
   void selectTrip(TripOption trip) {
     if (state.currentStep == BookingStep.setup) {
-      emit(state.copyWith(
-        selectedTrip: trip,
-        clearSelectedSeat: true,
-        clearActiveHold: true,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          selectedTrip: trip,
+          clearSelectedSeat: true,
+          clearActiveHold: true,
+          clearError: true,
+        ),
+      );
     } else {
-      emit(state.copyWith(
-        selectedTrip: trip,
-        currentStep: BookingStep.seatMap,
-        clearSelectedSeat: true,
-        clearActiveHold: true,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          selectedTrip: trip,
+          currentStep: BookingStep.seatMap,
+          clearSelectedSeat: true,
+          clearActiveHold: true,
+          clearError: true,
+        ),
+      );
       loadSeatMap(trip.tripId);
     }
   }
@@ -277,40 +294,50 @@ class BookingCubit extends Cubit<BookingState> {
     if (state.selectedRouteStop == null ||
         state.selectedDestinationStop == null ||
         state.selectedTrip == null) {
-      emit(state.copyWith(
-        errorMessage: 'يرجى تحديد محطة الركوب، محطة النزول، وموعد الرحلة.',
-      ));
+      emit(
+        state.copyWith(
+          errorMessage: 'يرجى تحديد محطة الركوب، محطة النزول، وموعد الرحلة.',
+        ),
+      );
       return;
     }
 
     final trip = state.selectedTrip!;
-    emit(state.copyWith(
-      currentStep: BookingStep.seatMap,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        currentStep: BookingStep.seatMap,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        clearError: true,
+      ),
+    );
     loadSeatMap(trip.tripId);
   }
 
   /// Loads route stops
   Future<void> loadRouteStops() async {
     emit(state.copyWith(status: BookingStatus.loading, clearError: true));
-    final result = await _getRouteStopsUseCase(direction: state.selectedDirection);
+    final result = await _getRouteStopsUseCase(
+      direction: state.selectedDirection,
+    );
     result.fold(
       onSuccess: (stops) {
-        emit(state.copyWith(
-          status: BookingStatus.routeStopsLoaded,
-          routeStops: stops,
-          selectedRouteStop: stops.isNotEmpty ? stops.first : null,
-          selectedDestinationStop: stops.length > 1 ? stops.last : null,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.routeStopsLoaded,
+            routeStops: stops,
+            selectedRouteStop: stops.isNotEmpty ? stops.first : null,
+            selectedDestinationStop: stops.length > 1 ? stops.last : null,
+          ),
+        );
       },
       onError: (failure) {
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
       },
     );
   }
@@ -325,16 +352,19 @@ class BookingCubit extends Cubit<BookingState> {
 
     result.fold(
       onSuccess: (rawTrips) {
-        final trips =
-            rawTrips.where((t) => !bookedTripIds.contains(t.tripId)).toList();
+        final trips = rawTrips
+            .where((t) => !bookedTripIds.contains(t.tripId))
+            .toList();
         TripOption? current = state.selectedTrip;
         String? alert;
         if (current != null && !state.isTripLocked) {
           final stillValid = trips.any(
-              (t) => t.tripId == current!.tripId && t.availableSeatsCount > 0);
+            (t) => t.tripId == current!.tripId && t.availableSeatsCount > 0,
+          );
           if (!stillValid) {
-            final next =
-                trips.where((t) => t.availableSeatsCount > 0).firstOrNull;
+            final next = trips
+                .where((t) => t.availableSeatsCount > 0)
+                .firstOrNull;
             if (next != null) {
               alert =
                   'رحلة ${current.departureTime} غير متاحة، تم اختيار رحلة ${next.departureTime}';
@@ -348,23 +378,28 @@ class BookingCubit extends Cubit<BookingState> {
         } else if (current == null && trips.isNotEmpty) {
           current =
               trips.where((t) => t.availableSeatsCount > 0).firstOrNull ??
-                  trips.first;
+              trips.first;
         } else if (current != null && bookedTripIds.contains(current.tripId)) {
-          current = trips.where((t) => t.availableSeatsCount > 0).firstOrNull ??
+          current =
+              trips.where((t) => t.availableSeatsCount > 0).firstOrNull ??
               (trips.isNotEmpty ? trips.first : null);
         }
-        emit(state.copyWith(
-          status: BookingStatus.tripsLoaded,
-          availableTrips: trips,
-          selectedTrip: current,
-          autoTripAlert: alert,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.tripsLoaded,
+            availableTrips: trips,
+            selectedTrip: current,
+            autoTripAlert: alert,
+          ),
+        );
       },
       onError: (failure) {
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
       },
     );
   }
@@ -377,18 +412,85 @@ class BookingCubit extends Cubit<BookingState> {
 
     result.fold(
       onSuccess: (seats) {
-        emit(state.copyWith(
-          status: BookingStatus.seatMapLoaded,
-          seats: seats,
-        ));
+        emit(state.copyWith(status: BookingStatus.seatMapLoaded, seats: seats));
+        _startSeatUpdatesSubscription(tripId);
       },
       onError: (failure) {
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
       },
     );
+  }
+
+  Future<void> _refreshSeatMapSilently(String tripId) async {
+    if (_seatMapRefreshInFlight) {
+      _seatMapRefreshQueued = true;
+      return;
+    }
+
+    _seatMapRefreshInFlight = true;
+    try {
+      do {
+        _seatMapRefreshQueued = false;
+        final result = await _getTripSeatMapUseCase(tripId: tripId);
+        if (isClosed || state.selectedTrip?.tripId != tripId) return;
+
+        result.fold(
+          onSuccess: (seats) {
+            if (isClosed) return;
+            final currentSeat = state.selectedSeat;
+            final refreshedSelectedSeat = currentSeat == null
+                ? null
+                : seats.cast<TripSeat?>().firstWhere(
+                    (seat) => seat?.seatId == currentSeat.seatId,
+                    orElse: () => null,
+                  );
+            final canKeepSelectedSeat =
+                refreshedSelectedSeat != null &&
+                (refreshedSelectedSeat.isAvailable ||
+                    refreshedSelectedSeat.isMine ||
+                    state.activeHold?.seatId == refreshedSelectedSeat.seatId);
+
+            emit(
+              state.copyWith(
+                seats: seats,
+                selectedSeat: canKeepSelectedSeat
+                    ? refreshedSelectedSeat
+                    : null,
+                clearSelectedSeat: currentSeat != null && !canKeepSelectedSeat,
+              ),
+            );
+          },
+          onError: (_) {},
+        );
+      } while (_seatMapRefreshQueued &&
+          !isClosed &&
+          state.selectedTrip?.tripId == tripId);
+    } finally {
+      _seatMapRefreshInFlight = false;
+    }
+  }
+
+  void _startSeatUpdatesSubscription(String tripId) {
+    _seatSubscription?.cancel();
+    final repo =
+        _bookingRepository ??
+        (getIt.isRegistered<BookingRepository>()
+            ? getIt<BookingRepository>()
+            : null);
+    if (repo == null) return;
+
+    _seatSubscription = repo
+        .subscribeToTripSeatUpdates(tripId)
+        .listen(
+          (_) => _refreshSeatMapSilently(tripId),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
   }
 
   /// Selects a seat and creates a server hold snapshotting stop fare and destination.
@@ -410,12 +512,14 @@ class BookingCubit extends Cubit<BookingState> {
       _releaseBookingHoldUseCase(holdId: oldHold.holdId);
     }
 
-    emit(state.copyWith(
-      status: BookingStatus.holdingSeat,
-      clearError: true,
-      clearActiveHold: true,
-      holdSecondsRemaining: 0,
-    ));
+    emit(
+      state.copyWith(
+        status: BookingStatus.holdingSeat,
+        clearError: true,
+        clearActiveHold: true,
+        holdSecondsRemaining: 0,
+      ),
+    );
 
     final result = await _createBookingHoldUseCase(
       tripId: currentTrip.tripId,
@@ -427,20 +531,24 @@ class BookingCubit extends Cubit<BookingState> {
     result.fold(
       onSuccess: (hold) {
         _startHoldTimer(hold);
-        emit(state.copyWith(
-          status: BookingStatus.seatHeld,
-          selectedSeat: seat,
-          activeHold: hold,
-          holdSecondsRemaining: hold.remainingSeconds,
-          clearError: true,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.seatHeld,
+            selectedSeat: seat,
+            activeHold: hold,
+            holdSecondsRemaining: hold.remainingSeconds,
+            clearError: true,
+          ),
+        );
       },
       onError: (failure) {
         loadSeatMap(currentTrip.tripId);
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
       },
     );
   }
@@ -458,12 +566,14 @@ class BookingCubit extends Cubit<BookingState> {
     if (hold != null) {
       _releaseBookingHoldUseCase(holdId: hold.holdId);
     }
-    emit(state.copyWith(
-      currentStep: BookingStep.setup,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        currentStep: BookingStep.setup,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        clearError: true,
+      ),
+    );
   }
 
   /// Navigation: Back to Seat Map
@@ -474,14 +584,16 @@ class BookingCubit extends Cubit<BookingState> {
     if (hold != null) {
       _releaseBookingHoldUseCase(holdId: hold.holdId);
     }
-    emit(state.copyWith(
-      status: BookingStatus.seatMapLoaded,
-      currentStep: BookingStep.seatMap,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      holdSecondsRemaining: 0,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        status: BookingStatus.seatMapLoaded,
+        currentStep: BookingStep.seatMap,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        holdSecondsRemaining: 0,
+        clearError: true,
+      ),
+    );
     if (state.selectedTrip != null) {
       loadSeatMap(state.selectedTrip!.tripId);
     }
@@ -497,26 +609,26 @@ class BookingCubit extends Cubit<BookingState> {
     if (hold != null) {
       _releaseBookingHoldUseCase(holdId: hold.holdId);
     }
-    emit(state.copyWith(
-      currentStep: BookingStep.departureTime,
-      clearSelectedTrip: true,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        currentStep: BookingStep.departureTime,
+        clearSelectedTrip: true,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        clearError: true,
+      ),
+    );
   }
+
   void proceedToBoardingStop() {
-    emit(state.copyWith(
-      currentStep: BookingStep.boardingStop,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(currentStep: BookingStep.boardingStop, clearError: true),
+    );
   }
 
   void selectRouteStop(RouteStop stop) {
     selectOriginStop(stop);
-    emit(state.copyWith(
-      currentStep: BookingStep.departureTime,
-    ));
+    emit(state.copyWith(currentStep: BookingStep.departureTime));
   }
 
   /// Cancels hold and resets to setup
@@ -526,12 +638,14 @@ class BookingCubit extends Cubit<BookingState> {
     if (hold != null) {
       await _releaseBookingHoldUseCase(holdId: hold.holdId);
     }
-    emit(state.copyWith(
-      currentStep: BookingStep.setup,
-      clearSelectedSeat: true,
-      clearActiveHold: true,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        currentStep: BookingStep.setup,
+        clearSelectedSeat: true,
+        clearActiveHold: true,
+        clearError: true,
+      ),
+    );
     if (state.selectedTrip != null) {
       loadSeatMap(state.selectedTrip!.tripId);
     }
@@ -551,19 +665,23 @@ class BookingCubit extends Cubit<BookingState> {
     result.fold(
       onSuccess: (booking) {
         _cancelHoldTimer();
-        emit(state.copyWith(
-          status: BookingStatus.confirmed,
-          currentStep: BookingStep.success,
-          confirmedBooking: booking,
-          clearActiveHold: true,
-          clearError: true,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.confirmed,
+            currentStep: BookingStep.success,
+            confirmedBooking: booking,
+            clearActiveHold: true,
+            clearError: true,
+          ),
+        );
       },
       onError: (failure) {
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
       },
     );
   }
@@ -571,12 +689,14 @@ class BookingCubit extends Cubit<BookingState> {
   /// Consumes and clears transient error, restoring stable status without resetting user selections
   void clearError() {
     if (state.errorMessage != null || state.status == BookingStatus.error) {
-      emit(state.copyWith(
-        status: state.activeHold != null
-            ? BookingStatus.seatHeld
-            : BookingStatus.seatMapLoaded,
-        clearError: true,
-      ));
+      emit(
+        state.copyWith(
+          status: state.activeHold != null
+              ? BookingStatus.seatHeld
+              : BookingStatus.seatMapLoaded,
+          clearError: true,
+        ),
+      );
     }
   }
 
@@ -587,21 +707,21 @@ class BookingCubit extends Cubit<BookingState> {
     final remaining = hold.remainingSeconds;
     if (remaining <= 0) {
       _cancelHoldTimer();
-      emit(state.copyWith(
-        status: BookingStatus.error,
-        holdSecondsRemaining: 0,
-        currentStep: BookingStep.seatMap,
-        clearActiveHold: true,
-        clearSelectedSeat: true,
-        errorMessage: 'HOLD_EXPIRED',
-      ));
+      emit(
+        state.copyWith(
+          status: BookingStatus.error,
+          holdSecondsRemaining: 0,
+          currentStep: BookingStep.seatMap,
+          clearActiveHold: true,
+          clearSelectedSeat: true,
+          errorMessage: 'HOLD_EXPIRED',
+        ),
+      );
       if (state.selectedTrip != null) {
         loadSeatMap(state.selectedTrip!.tripId);
       }
     } else {
-      emit(state.copyWith(
-        holdSecondsRemaining: remaining,
-      ));
+      emit(state.copyWith(holdSecondsRemaining: remaining));
     }
   }
 
@@ -611,25 +731,30 @@ class BookingCubit extends Cubit<BookingState> {
       final remaining = hold.remainingSeconds;
       if (remaining <= 0) {
         _cancelHoldTimer();
-        emit(state.copyWith(
-          status: BookingStatus.error,
-          holdSecondsRemaining: 0,
-          currentStep: BookingStep.seatMap,
-          clearActiveHold: true,
-          clearSelectedSeat: true,
-          errorMessage: 'HOLD_EXPIRED',
-        ));
+        emit(
+          state.copyWith(
+            status: BookingStatus.error,
+            holdSecondsRemaining: 0,
+            currentStep: BookingStep.seatMap,
+            clearActiveHold: true,
+            clearSelectedSeat: true,
+            errorMessage: 'HOLD_EXPIRED',
+          ),
+        );
         if (state.selectedTrip != null) {
           loadSeatMap(state.selectedTrip!.tripId);
         }
       } else {
         // Countdown ticks must NEVER re-emit or retain error status / messages
-        final hasError = state.errorMessage != null || state.status == BookingStatus.error;
-        emit(state.copyWith(
-          holdSecondsRemaining: remaining,
-          status: hasError ? BookingStatus.seatHeld : state.status,
-          clearError: hasError,
-        ));
+        final hasError =
+            state.errorMessage != null || state.status == BookingStatus.error;
+        emit(
+          state.copyWith(
+            holdSecondsRemaining: remaining,
+            status: hasError ? BookingStatus.seatHeld : state.status,
+            clearError: hasError,
+          ),
+        );
       }
     });
   }

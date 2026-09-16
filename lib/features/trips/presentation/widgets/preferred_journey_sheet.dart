@@ -47,6 +47,7 @@ class PreferredJourneySheet extends StatefulWidget {
     final cubit = context.read<PassengerTripsCubit>();
     return showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       useRootNavigator: false,
       isScrollControlled: true,
       showDragHandle: false,

@@ -344,6 +344,78 @@ abstract class AppLocalizations {
   /// **'Change Email / Back'**
   String get changeEmail;
 
+  /// No description provided for @didntReceiveCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t receive the code?'**
+  String get didntReceiveCode;
+
+  /// No description provided for @wrongEmailPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email?'**
+  String get wrongEmailPrompt;
+
+  /// No description provided for @changeEmailAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get changeEmailAction;
+
+  /// No description provided for @otpInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The verification code is incorrect.'**
+  String get otpInvalid;
+
+  /// No description provided for @otpExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Request a new one.'**
+  String get otpExpired;
+
+  /// No description provided for @otpRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait before requesting another code.'**
+  String get otpRateLimited;
+
+  /// No description provided for @otpNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t verify the code. Check your connection and try again.'**
+  String get otpNetworkError;
+
+  /// No description provided for @selectDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDateTitle;
+
+  /// No description provided for @confirmDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Date'**
+  String get confirmDate;
+
+  /// No description provided for @dayColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get dayColumnLabel;
+
+  /// No description provided for @monthColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get monthColumnLabel;
+
+  /// No description provided for @yearColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearColumnLabel;
+
   /// No description provided for @completeProfileTitle.
   ///
   /// In en, this message translates to:
@@ -1022,6 +1094,24 @@ abstract class AppLocalizations {
   /// **'View My Trips'**
   String get viewMyTrips;
 
+  /// No description provided for @mitFadalaStopName.
+  ///
+  /// In en, this message translates to:
+  /// **'Mit Fadala'**
+  String get mitFadalaStopName;
+
+  /// No description provided for @departureBusAtFirstStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus at {stopName}'**
+  String departureBusAtFirstStop(Object stopName);
+
+  /// No description provided for @firstStopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First stop'**
+  String get firstStopLabel;
+
   /// No description provided for @tripDetailsDirection.
   ///
   /// In en, this message translates to:
@@ -1507,6 +1597,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Selected'**
   String get departureSelected;
+
+  /// No description provided for @departureSelectedTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Trip'**
+  String get departureSelectedTrip;
+
+  /// No description provided for @departureAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get departureAvailable;
+
+  /// No description provided for @departureFullyBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully booked'**
+  String get departureFullyBooked;
 
   /// No description provided for @departureAvailableNow.
   ///
@@ -2245,6 +2353,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All rights reserved.'**
   String get allRightsReserved;
+
+  /// No description provided for @privacyPolicyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://amomy.com/privacy-policy'**
+  String get privacyPolicyUrl;
+
+  /// No description provided for @termsAndConditionsUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://amomy.com/terms-and-conditions'**
+  String get termsAndConditionsUrl;
 }
 
 class _AppLocalizationsDelegate

@@ -57,93 +57,66 @@ class _SplashView extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Subtle background splash composition asset
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.10,
-                  child: Image.asset(
-                    AppAssets.splash,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ).animate().fadeIn(duration: 800.ms),
-
-              // 2. Centralized Logo & Branding Experience
               SafeArea(
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Transparent logo with smooth scale-in and fade-in
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final logoSize = (constraints.maxWidth * 0.78).clamp(
+                        280.0,
+                        420.0,
+                      );
+
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Matches the native launch image so the first Flutter frame
+                          // continues the same white AMOMY splash without a visual jump.
+                          SizedBox.square(
+                            dimension: logoSize,
+                            child: Image.asset(
+                              AppAssets.splash,
+                              fit: BoxFit.contain,
                             ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(AppSpacing.s16),
-                        child: Image.asset(
-                          AppAssets.logoTransparent,
-                          fit: BoxFit.contain,
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(duration: 600.ms)
-                          .scale(
-                            begin: const Offset(0.8, 0.8),
-                            end: const Offset(1.0, 1.0),
-                            duration: 700.ms,
-                            curve: Curves.easeOutBack,
                           ),
 
-                      AppSpacing.gapH24,
+                          AppSpacing.gapH12,
 
-                      // App Name
-                      Text(
-                        context.l10n.appName,
-                        style: AppTextStyles.headlineLarge.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(delay: 250.ms, duration: 500.ms)
-                          .slideY(begin: 0.2, end: 0, duration: 500.ms),
+                          // App Name
+                          Text(
+                            context.l10n.appName,
+                            style: AppTextStyles.titleLarge.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ).animate().fadeIn(delay: 250.ms, duration: 450.ms),
 
-                      AppSpacing.gapH8,
+                          AppSpacing.gapH8,
 
-                      // Version Indicator
-                      Text(
-                        'v${AppConstants.appVersion}',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
+                          // Version Indicator
+                          Text(
+                            'v${AppConstants.appVersion}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ).animate().fadeIn(delay: 350.ms, duration: 350.ms),
 
-                      AppSpacing.gapH32,
+                          AppSpacing.gapH24,
 
-                      // Subtle Circular Brand Indicator
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator.adaptive(
-                          strokeWidth: 2.5,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                          backgroundColor: AppColors.primaryLight,
-                        ),
-                      ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
-                    ],
+                          // Subtle Circular Brand Indicator
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2.5,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                              backgroundColor: AppColors.primaryLight,
+                            ),
+                          ).animate().fadeIn(delay: 450.ms, duration: 350.ms),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

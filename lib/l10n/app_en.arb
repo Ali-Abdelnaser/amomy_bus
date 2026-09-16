@@ -51,6 +51,18 @@
     }
   },
   "changeEmail": "Change Email / Back",
+  "didntReceiveCode": "Didn't receive the code?",
+  "wrongEmailPrompt": "Wrong email?",
+  "changeEmailAction": "Change email",
+  "otpInvalid": "The verification code is incorrect.",
+  "otpExpired": "This code has expired. Request a new one.",
+  "otpRateLimited": "Please wait before requesting another code.",
+  "otpNetworkError": "Couldn't verify the code. Check your connection and try again.",
+  "selectDateTitle": "Select Date",
+  "confirmDate": "Confirm Date",
+  "dayColumnLabel": "Day",
+  "monthColumnLabel": "Month",
+  "yearColumnLabel": "Year",
   "completeProfileTitle": "Complete Your Profile",
   "completeProfileSubtitle": "Please provide your details to complete your account setup",
   "saveAndContinue": "Save & Continue",
@@ -178,6 +190,14 @@
   "bookingSuccessSubtitle": "Your trip seat is successfully reserved.",
   "qrTicketInstruction": "Present this QR code to the driver or scanner upon boarding.",
   "viewMyTrips": "View My Trips",
+  "mitFadalaStopName": "Mit Fadala",
+  "departureBusAtFirstStop": "Bus at {stopName}",
+  "@departureBusAtFirstStop": {
+    "placeholders": {
+      "stopName": {}
+    }
+  },
+  "firstStopLabel": "First stop",
   "tripDetailsDirection": "Direction",
   "tripDetailsDate": "Date",
   "tripDetailsTime": "Departure Time",
@@ -273,6 +293,9 @@
   "toStop": "To",
   "departureTimeTitle": "Departure Time",
   "departureSelected": "Selected",
+  "departureSelectedTrip": "Selected Trip",
+  "departureAvailable": "Available",
+  "departureFullyBooked": "Fully booked",
   "departureAvailableNow": "Available now",
   "fewSeatsLeft": "Few seats left",
   "alreadyBookedTrip": "You already have an active booking for this trip.",
@@ -419,5 +442,7 @@
       }
     }
   },
-  "allRightsReserved": "All rights reserved."
+  "allRightsReserved": "All rights reserved.",
+  "privacyPolicyUrl": "https://amomy.com/privacy-policy",
+  "termsAndConditionsUrl": "https://amomy.com/terms-and-conditions"
 }

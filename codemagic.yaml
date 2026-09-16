@@ -79,7 +79,7 @@ workflows:
           mkdir -p ios/Flutter
 
           cat > ios/Flutter/Secrets.xcconfig <<EOF
-          GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_IOS_API_KEY
+          GOOGLE_MAPS_IOS_API_KEY=$GOOGLE_MAPS_IOS_API_KEY
           EOF
 
           echo "Generated ios/Flutter/Secrets.xcconfig"
@@ -233,6 +233,41 @@ workflows:
 
           echo "Marketing version: $APP_STORE_VERSION"
           echo "Build number: $IOS_BUILD_NUMBER"
+
+          echo "========================================"
+          echo "Verifying Signed Entitlements (APNs)"
+          echo "========================================"
+          TEMP_UNZIP_DIR=$(mktemp -d)
+          unzip -q "$IPA_FILE" -d "$TEMP_UNZIP_DIR"
+          APP_PATH="$TEMP_UNZIP_DIR/Payload/Runner.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: Runner.app not found inside IPA."
+            rm -rf "$TEMP_UNZIP_DIR"
+            exit 1
+          fi
+
+          ENTITLEMENTS=$(codesign -d --entitlements :- "$APP_PATH" 2>&1)
+          rm -rf "$TEMP_UNZIP_DIR"
+
+          echo "Embedded Signed Entitlements:"
+          echo "$ENTITLEMENTS"
+
+          if echo "$ENTITLEMENTS" | grep -q "<key>aps-environment</key>"; then
+            APS_ENV=$(echo "$ENTITLEMENTS" | grep -A1 "<key>aps-environment</key>" | tail -n 1)
+            echo "Detected aps-environment: $APS_ENV"
+
+            if echo "$APS_ENV" | grep -q "production"; then
+              echo "PASS: Final signed IPA has aps-environment = production."
+            else
+              echo "FAIL: Final signed IPA has non-production aps-environment: $APS_ENV"
+              echo "Do NOT upload to TestFlight."
+              exit 1
+            fi
+          else
+            echo "FAIL: aps-environment key missing from signed entitlements."
+            exit 1
+          fi
 
     artifacts:
       - build/ios/ipa/*.ipa

@@ -5,9 +5,7 @@ import '../../domain/entities/booking_entities.dart';
 import '../models/booking_models.dart';
 
 abstract class BookingRemoteDataSource {
-  Future<List<RouteStopModel>> getRouteStops({
-    required String direction,
-  });
+  Future<List<RouteStopModel>> getRouteStops({required String direction});
 
   Future<List<TripOptionModel>> getAvailableTrips({
     required String direction,
@@ -15,9 +13,7 @@ abstract class BookingRemoteDataSource {
     String? routeStopId,
   });
 
-  Future<List<TripSeatModel>> getTripSeatMap({
-    required String tripId,
-  });
+  Future<List<TripSeatModel>> getTripSeatMap({required String tripId});
 
   Future<BookingHoldModel> createBookingHold({
     required String tripId,
@@ -26,13 +22,9 @@ abstract class BookingRemoteDataSource {
     String? destinationRouteStopId,
   });
 
-  Future<void> releaseBookingHold({
-    required String holdId,
-  });
+  Future<void> releaseBookingHold({required String holdId});
 
-  Future<PassengerBookingModel> confirmBooking({
-    required String holdId,
-  });
+  Future<PassengerBookingModel> confirmBooking({required String holdId});
 
   Future<List<PassengerBookingModel>> getPassengerBookings();
 
@@ -56,6 +48,8 @@ abstract class BookingRemoteDataSource {
   });
 
   Stream<void> subscribeToTripSeatUpdates(String tripId);
+
+  Stream<void> subscribeToPassengerBookingUpdates();
 }
 
 @LazySingleton(as: BookingRemoteDataSource)
@@ -70,9 +64,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }) async {
     final response = await _supabase.rpc(
       'get_route_stops',
-      params: {
-        'p_direction': direction,
-      },
+      params: {'p_direction': direction},
     );
 
     final list = response as List<dynamic>;
@@ -87,9 +79,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     String? date,
     String? routeStopId,
   }) async {
-    final params = <String, dynamic>{
-      'p_direction': direction,
-    };
+    final params = <String, dynamic>{'p_direction': direction};
     if (routeStopId != null) {
       params['p_route_stop_id'] = routeStopId;
     }
@@ -106,14 +96,10 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<List<TripSeatModel>> getTripSeatMap({
-    required String tripId,
-  }) async {
+  Future<List<TripSeatModel>> getTripSeatMap({required String tripId}) async {
     final response = await _supabase.rpc(
       'get_trip_seat_map',
-      params: {
-        'p_trip_id': tripId,
-      },
+      params: {'p_trip_id': tripId},
     );
 
     final list = response as List<dynamic>;
@@ -129,10 +115,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     String? routeStopId,
     String? destinationRouteStopId,
   }) async {
-    final params = <String, dynamic>{
-      'p_trip_id': tripId,
-      'p_seat_id': seatId,
-    };
+    final params = <String, dynamic>{'p_trip_id': tripId, 'p_seat_id': seatId};
     if (routeStopId != null) {
       params['p_route_stop_id'] = routeStopId;
     }
@@ -140,35 +123,21 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       params['p_destination_route_stop_id'] = destinationRouteStopId;
     }
 
-    final response = await _supabase.rpc(
-      'create_booking_hold',
-      params: params,
-    );
+    final response = await _supabase.rpc('create_booking_hold', params: params);
 
     return BookingHoldModel.fromJson(response as Map<String, dynamic>);
   }
 
   @override
-  Future<void> releaseBookingHold({
-    required String holdId,
-  }) async {
-    await _supabase.rpc(
-      'release_booking_hold',
-      params: {
-        'p_hold_id': holdId,
-      },
-    );
+  Future<void> releaseBookingHold({required String holdId}) async {
+    await _supabase.rpc('release_booking_hold', params: {'p_hold_id': holdId});
   }
 
   @override
-  Future<PassengerBookingModel> confirmBooking({
-    required String holdId,
-  }) async {
+  Future<PassengerBookingModel> confirmBooking({required String holdId}) async {
     final response = await _supabase.rpc(
       'confirm_booking',
-      params: {
-        'p_hold_id': holdId,
-      },
+      params: {'p_hold_id': holdId},
     );
 
     final bookingJson = response as Map<String, dynamic>;
@@ -188,7 +157,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
         serviceDate: DateTime.now(),
         departureTime: '',
         departureAt: DateTime.now(),
-        seatNumber: (bookingJson['seat'] ?? bookingJson['seat_number']) as String? ?? '',
+        seatNumber:
+            (bookingJson['seat'] ?? bookingJson['seat_number']) as String? ??
+            '',
         farePoints: (bookingJson['fare_points'] as num? ?? 0).toDouble(),
         status: 'confirmed',
         qrToken: bookingJson['qr_token'] as String? ?? '',
@@ -235,7 +206,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<PassengerTripPreferenceModel?> getMyTripPreferences() async {
     final response = await _supabase.rpc('get_my_trip_preferences');
     if (response == null) return null;
-    return PassengerTripPreferenceModel.fromJson(response as Map<String, dynamic>);
+    return PassengerTripPreferenceModel.fromJson(
+      response as Map<String, dynamic>,
+    );
   }
 
   @override
@@ -251,7 +224,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       },
     );
 
-    return PassengerTripPreferenceModel.fromJson(response as Map<String, dynamic>);
+    return PassengerTripPreferenceModel.fromJson(
+      response as Map<String, dynamic>,
+    );
   }
 
   @override
@@ -269,10 +244,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }) async {
     await _supabase.rpc(
       'change_booking_seat',
-      params: {
-        'p_booking_id': bookingId,
-        'p_new_seat_id': newSeatId,
-      },
+      params: {'p_booking_id': bookingId, 'p_new_seat_id': newSeatId},
     );
   }
 
@@ -283,16 +255,59 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
     controller = StreamController<void>.broadcast(
       onListen: () {
-        channel = _supabase.channel('trip_seats_$tripId');
+        channel = _supabase.channel(
+          'trip_seats_${tripId}_${identityHashCode(controller)}',
+        );
         channel!
             .onPostgresChanges(
               event: PostgresChangeEvent.all,
               schema: 'public',
-              table: 'seat_holds',
+              table: 'trip_seat_state',
               filter: PostgresChangeFilter(
                 type: PostgresChangeFilterType.eq,
                 column: 'trip_id',
                 value: tripId,
+              ),
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () {
+        if (channel != null) {
+          _supabase.removeChannel(channel!);
+        }
+      },
+    );
+
+    return controller.stream;
+  }
+
+  @override
+  Stream<void> subscribeToPassengerBookingUpdates() {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      return const Stream.empty();
+    }
+
+    late final StreamController<void> controller;
+    RealtimeChannel? channel;
+
+    controller = StreamController<void>.broadcast(
+      onListen: () {
+        channel = _supabase.channel(
+          'passenger_bookings_${identityHashCode(controller)}',
+        );
+        channel!
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'bookings',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'user_id',
+                value: userId,
               ),
               callback: (_) {
                 if (!controller.isClosed) controller.add(null);

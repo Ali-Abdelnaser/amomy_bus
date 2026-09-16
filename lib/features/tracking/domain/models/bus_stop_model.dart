@@ -38,7 +38,17 @@ class BusStopModel extends Equatable {
     this.estimatedArrivalTime,
   });
 
-  bool get hasCoordinates => latitude != null && longitude != null;
+  bool get hasCoordinates =>
+      latitude != null &&
+      longitude != null &&
+      !latitude!.isNaN &&
+      !longitude!.isNaN &&
+      !latitude!.isInfinite &&
+      !longitude!.isInfinite &&
+      latitude! >= -90.0 &&
+      latitude! <= 90.0 &&
+      longitude! >= -180.0 &&
+      longitude! <= 180.0;
 
   BusStopModel copyWith({
     String? id,
@@ -93,7 +103,8 @@ class BusStopModel extends Equatable {
   }
 
   factory BusStopModel.fromJson(Map<String, dynamic> json) {
-    final isQa = (json['is_qa_coord'] as bool?) ??
+    final isQa =
+        (json['is_qa_coord'] as bool?) ??
         (json['source'] == 'temporary_qa' ||
             json['coordinate_source'] == 'temporary_qa');
 
@@ -113,50 +124,57 @@ class BusStopModel extends Equatable {
       isBoarding: (json['is_boarding'] as bool?) ?? true,
       isDropoff: (json['is_dropoff'] as bool?) ?? true,
       isTemporaryQa: isQa,
-      coordinateSource: json['coordinate_source'] as String? ??
-          (isQa ? 'temporary_qa' : (json['latitude'] != null ? 'verified' : null)),
+      coordinateSource:
+          json['coordinate_source'] as String? ??
+          (isQa
+              ? 'temporary_qa'
+              : (json['latitude'] != null ? 'verified' : null)),
       farePoints: (json['fare_points'] as num?)?.toInt() ?? 20,
-      actualArrivalTime: actualRaw != null ? DateTime.tryParse(actualRaw.toString()) : null,
-      estimatedArrivalTime: estRaw != null ? DateTime.tryParse(estRaw.toString()) : null,
+      actualArrivalTime: actualRaw != null
+          ? DateTime.tryParse(actualRaw.toString())
+          : null,
+      estimatedArrivalTime: estRaw != null
+          ? DateTime.tryParse(estRaw.toString())
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'route_stop_id': routeStopId,
-        'stop_order': stopOrder,
-        'name_ar': nameAr,
-        'name_en': nameEn,
-        'locality_ar': localityAr,
-        'locality_en': localityEn,
-        'latitude': latitude,
-        'longitude': longitude,
-        'is_boarding': isBoarding,
-        'is_dropoff': isDropoff,
-        'is_qa_coord': isTemporaryQa,
-        'coordinate_source': coordinateSource,
-        'fare_points': farePoints,
-        'actual_arrival_time': actualArrivalTime?.toIso8601String(),
-        'estimated_arrival_time': estimatedArrivalTime?.toIso8601String(),
-      };
+    'id': id,
+    'route_stop_id': routeStopId,
+    'stop_order': stopOrder,
+    'name_ar': nameAr,
+    'name_en': nameEn,
+    'locality_ar': localityAr,
+    'locality_en': localityEn,
+    'latitude': latitude,
+    'longitude': longitude,
+    'is_boarding': isBoarding,
+    'is_dropoff': isDropoff,
+    'is_qa_coord': isTemporaryQa,
+    'coordinate_source': coordinateSource,
+    'fare_points': farePoints,
+    'actual_arrival_time': actualArrivalTime?.toIso8601String(),
+    'estimated_arrival_time': estimatedArrivalTime?.toIso8601String(),
+  };
 
   @override
   List<Object?> get props => [
-        id,
-        routeStopId,
-        stopOrder,
-        nameAr,
-        nameEn,
-        localityAr,
-        localityEn,
-        latitude,
-        longitude,
-        isBoarding,
-        isDropoff,
-        isTemporaryQa,
-        coordinateSource,
-        farePoints,
-        actualArrivalTime,
-        estimatedArrivalTime,
-      ];
+    id,
+    routeStopId,
+    stopOrder,
+    nameAr,
+    nameEn,
+    localityAr,
+    localityEn,
+    latitude,
+    longitude,
+    isBoarding,
+    isDropoff,
+    isTemporaryQa,
+    coordinateSource,
+    farePoints,
+    actualArrivalTime,
+    estimatedArrivalTime,
+  ];
 }

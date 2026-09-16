@@ -11,7 +11,10 @@ import 'package:amomy_bus/features/booking/presentation/widgets/app_qr_ticket_wi
 import 'package:amomy_bus/features/booking/presentation/widgets/booking_success_view.dart';
 
 void main() {
-  Widget buildTestableWidget(Widget child, {Locale locale = const Locale('en')}) {
+  Widget buildTestableWidget(
+    Widget child, {
+    Locale locale = const Locale('en'),
+  }) {
     return MaterialApp(
       locale: locale,
       localizationsDelegates: const [
@@ -89,7 +92,9 @@ void main() {
   );
 
   group('DirectionSelector Widget', () {
-    testWidgets('renders Outbound and Return options in English', (tester) async {
+    testWidgets('renders Outbound and Return options in English', (
+      tester,
+    ) async {
       BookingDirection? selectedDirection;
       await tester.pumpWidget(
         buildTestableWidget(
@@ -126,7 +131,9 @@ void main() {
   });
 
   group('DepartureTimeSelector Widget', () {
-    testWidgets('renders vertical radio rows for trips and selects on tap', (tester) async {
+    testWidgets('renders vertical radio rows for trips and selects on tap', (
+      tester,
+    ) async {
       TripOption? selected;
       await tester.pumpWidget(
         buildTestableWidget(
@@ -141,13 +148,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('08:00'), findsOneWidget);
-      expect(find.text('Available now'), findsOneWidget);
+      expect(find.text('Bus at Mit Fadala'), findsOneWidget);
+      expect(find.text('First stop · Available'), findsOneWidget);
 
       await tester.tap(find.text('08:00'));
       expect(selected, sampleTrip);
     });
 
-    testWidgets('renders end-of-day empty state when trips are finished', (tester) async {
+    testWidgets('renders end-of-day empty state when trips are finished', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           DepartureTimeSelector(
@@ -162,7 +172,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('انتهت رحلات اليوم'), findsOneWidget);
-      expect(find.text('تابع التطبيق غداً لمواعيد الرحلات الجديدة.'), findsOneWidget);
+      expect(
+        find.text('تابع التطبيق غداً لمواعيد الرحلات الجديدة.'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -190,7 +203,9 @@ void main() {
   });
 
   group('AppQrTicketWidget', () {
-    testWidgets('renders deterministic QR matrix and custom paint', (tester) async {
+    testWidgets('renders deterministic QR matrix and custom paint', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           const AppQrTicketWidget(
@@ -206,56 +221,58 @@ void main() {
   });
 
   group('BookingReviewCard', () {
-    testWidgets('displays boarding stop, seat, dynamic fare and available points', (tester) async {
-      bool confirmed = false;
-      const sampleStop = RouteStop(
-        routeStopId: 'rs-6',
-        stopId: 'stop-6',
-        stopOrder: 6,
-        stopNameAr: 'القنطرة البيضة',
-        stopNameEn: 'El Qantara El Baida',
-        localityAr: 'ميت العامل',
-        localityEn: 'Meet El Amel',
-        fareZoneId: 'zone-25',
-        farePoints: 25.0,
-      );
+    testWidgets(
+      'displays boarding stop, seat, dynamic fare and available points',
+      (tester) async {
+        bool confirmed = false;
+        const sampleStop = RouteStop(
+          routeStopId: 'rs-6',
+          stopId: 'stop-6',
+          stopOrder: 6,
+          stopNameAr: 'القنطرة البيضة',
+          stopNameEn: 'El Qantara El Baida',
+          localityAr: 'ميت العامل',
+          localityEn: 'Meet El Amel',
+          fareZoneId: 'zone-25',
+          farePoints: 25.0,
+        );
 
-      await tester.pumpWidget(
-        buildTestableWidget(
-          BookingReviewCard(
-            trip: sampleTrip,
-            seat: sampleSeats.first,
-            routeStop: sampleStop,
-            userAvailablePoints: 200.0,
-            onConfirm: () => confirmed = true,
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingReviewCard(
+              trip: sampleTrip,
+              seat: sampleSeats.first,
+              routeStop: sampleStop,
+              userAvailablePoints: 200.0,
+              onConfirm: () => confirmed = true,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('1A'), findsOneWidget);
-      expect(find.text('25 Points'), findsNWidgets(2)); // Trip fare and Total
-      expect(find.text('200 Points'), findsOneWidget);
-      expect(find.text('175 Points'), findsOneWidget); // Balance after booking
-      expect(find.text('El Qantara El Baida'), findsOneWidget);
+        expect(find.text('1A'), findsOneWidget);
+        expect(find.text('25 Points'), findsNWidgets(2)); // Trip fare and Total
+        expect(find.text('200 Points'), findsOneWidget);
+        expect(
+          find.text('175 Points'),
+          findsOneWidget,
+        ); // Balance after booking
+        expect(find.text('El Qantara El Baida'), findsOneWidget);
 
-      await tester.tap(find.text('Confirm Booking'));
-      expect(confirmed, isTrue);
-    });
+        await tester.tap(find.text('Confirm Booking'));
+        expect(confirmed, isTrue);
+      },
+    );
   });
 
   group('BookingSuccessView', () {
     testWidgets('renders confirmation pass and QR code', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidget(
-          BookingSuccessView(
-            booking: sampleBooking,
-          ),
-        ),
+        buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Booking Confirmed!'), findsOneWidget);
+      expect(find.text('Booking Confirmed'), findsOneWidget);
       expect(find.text('1A'), findsOneWidget);
       expect(find.text('View My Trips'), findsOneWidget);
       expect(find.byType(AppQrTicketWidget), findsOneWidget);

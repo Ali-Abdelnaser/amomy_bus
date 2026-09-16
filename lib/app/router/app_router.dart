@@ -35,8 +35,9 @@ import '../../features/wallet/presentation/pages/wallet_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
 
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'rootNavigator',
+);
 
 /// Converts Stream to Listenable for GoRouter refresh
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -117,9 +118,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
           key: state.pageKey,
           name: state.name,
-          child: EmailVerificationPage(
-            email: state.extra as String?,
-          ),
+          child: EmailVerificationPage(email: state.extra as String?),
         ),
       ),
 
@@ -237,7 +236,8 @@ class AppRouter {
               initialTripId: extra?['trip_id'] as String?,
               initialDirection: extra?['direction'] as BookingDirection?,
               initialOriginStopId: extra?['origin_stop_id'] as String?,
-              initialDestinationStopId: extra?['destination_stop_id'] as String?,
+              initialDestinationStopId:
+                  extra?['destination_stop_id'] as String?,
             ),
           );
         },
@@ -401,7 +401,8 @@ class AppRouter {
     final isSplash = location == RoutePaths.splash;
     final isOnboarding = location == RoutePaths.onboarding;
     final isDesignSystem = location == RoutePaths.designSystemPreview;
-    final isAuthRoute = location == RoutePaths.login ||
+    final isAuthRoute =
+        location == RoutePaths.login ||
         location == RoutePaths.register ||
         location == RoutePaths.forgotPassword ||
         location == RoutePaths.resetPassword ||
@@ -423,7 +424,9 @@ class AppRouter {
 
     // If an auth operation failed: never redirect to login from completeProfile
     if (authState is AuthFailureState) {
-      if (isOnboarding || isAuthRoute || location == RoutePaths.completeProfile) {
+      if (isOnboarding ||
+          isAuthRoute ||
+          location == RoutePaths.completeProfile) {
         return null;
       }
       return RoutePaths.login;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/booking_entities.dart';
 
 /// Clean, vertical radio-list departure time selector for today's trips.
@@ -13,7 +15,7 @@ import '../../domain/entities/booking_entities.dart';
 ///   * Unselected: Crisp white card, subtle border, muted secondary text.
 ///   * Specific Trip entry (`isTripLocked: true`): Reuses the exact same premium
 ///     selected radio-row visual, non-interactive without fake change buttons.
-/// - Subtle availability cues ("Available now", "Few seats left") without
+/// - Subtle availability cues ("Available", "Few seats left") without
 ///   raw seat count noise.
 /// - End-of-day empty state when no bookable trips remain.
 class DepartureTimeSelector extends StatelessWidget {
@@ -44,7 +46,7 @@ class DepartureTimeSelector extends StatelessWidget {
       children: [
         // Section Title
         Text(
-          isAr ? 'ميعاد الرحلة' : 'Departure Time',
+          context.l10n.departureTimeTitle,
           style: const TextStyle(
             fontSize: 16.5,
             fontWeight: FontWeight.w800,
@@ -64,7 +66,10 @@ class DepartureTimeSelector extends StatelessWidget {
                 child: Container(
                   height: 64,
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
@@ -77,7 +82,10 @@ class DepartureTimeSelector extends StatelessWidget {
                         height: 20,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFCBD5E1), width: 2),
+                          border: Border.all(
+                            color: const Color(0xFFCBD5E1),
+                            width: 2,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -110,7 +118,6 @@ class DepartureTimeSelector extends StatelessWidget {
               ),
             ),
           )
-
         // 2. Specific Trip Entry: Locked single selected trip row
         else if (isTripLocked && selectedTrip != null)
           _DepartureTimeCard(
@@ -120,7 +127,6 @@ class DepartureTimeSelector extends StatelessWidget {
             isAr: isAr,
             onTap: null,
           )
-
         // 3. No Available Trips Left
         else if (trips.isEmpty)
           Container(
@@ -174,7 +180,6 @@ class DepartureTimeSelector extends StatelessWidget {
               ],
             ),
           )
-
         // 4. Vertical Radio List of Trips
         else
           Column(
@@ -219,16 +224,18 @@ class _DepartureTimeCard extends StatelessWidget {
     final isFull = trip.availableSeatsCount <= 0;
     final isFewSeats = !isFull && trip.availableSeatsCount <= 5;
 
-    // Subtitle text determination
-    String subtitleText;
+    final l10n = context.l10n;
+
+    // Status text determination
+    String statusText;
     if (isFull) {
-      subtitleText = isAr ? 'مكتمل' : 'Fully booked';
+      statusText = l10n.departureFullyBooked;
     } else if (isSelected) {
-      subtitleText = isLocked
-          ? (isAr ? 'الرحلة المختارة' : 'Selected Trip')
-          : (isAr ? 'تم الاختيار' : 'Selected');
+      statusText = isLocked
+          ? l10n.departureSelectedTrip
+          : l10n.departureSelected;
     } else {
-      subtitleText = isAr ? 'متاح الآن' : 'Available now';
+      statusText = l10n.departureAvailable;
     }
 
     return Material(
@@ -249,7 +256,9 @@ class _DepartureTimeCard extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
-                  : (isFull ? const Color(0xFFE2E8F0) : const Color(0xFFCBD5E1)),
+                  : (isFull
+                        ? const Color(0xFFE2E8F0)
+                        : const Color(0xFFCBD5E1)),
               width: isSelected ? 1.6 : 1.0,
             ),
             boxShadow: isSelected
@@ -265,10 +274,7 @@ class _DepartureTimeCard extends StatelessWidget {
           child: Row(
             children: [
               // 1. Radio Button Indicator
-              _RadioIndicator(
-                isSelected: isSelected,
-                isFull: isFull,
-              ),
+              _RadioIndicator(isSelected: isSelected, isFull: isFull),
 
               const SizedBox(width: 14),
 
@@ -282,27 +288,60 @@ class _DepartureTimeCard extends StatelessWidget {
                       trip.departureTime,
                       style: TextStyle(
                         fontSize: 17.5,
-                        fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                        fontWeight: isSelected
+                            ? FontWeight.w900
+                            : FontWeight.w700,
                         color: isSelected
                             ? AppColors.primaryDark
                             : (isFull
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF101828)),
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF101828)),
                         letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      subtitleText,
-                      style: TextStyle(
+                      l10n.departureBusAtFirstStop(l10n.mitFadalaStopName),
+                      style: AppTextStyles.labelMedium.copyWith(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: isSelected
                             ? const Color(0xFF0284C7)
                             : (isFull
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF64748B)),
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B)),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          AppIcons.location,
+                          size: 12,
+                          color: isSelected
+                              ? AppColors.primary
+                              : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '${l10n.firstStopLabel} · $statusText',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : const Color(0xFF64748B),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -311,7 +350,10 @@ class _DepartureTimeCard extends StatelessWidget {
               // 3. Subtle Non-Intrusive Metadata Badge
               if (isFull)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3.5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(6),
@@ -327,7 +369,10 @@ class _DepartureTimeCard extends StatelessWidget {
                 )
               else if (isFewSeats)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(6),
@@ -360,10 +405,7 @@ class _RadioIndicator extends StatelessWidget {
   final bool isSelected;
   final bool isFull;
 
-  const _RadioIndicator({
-    required this.isSelected,
-    required this.isFull,
-  });
+  const _RadioIndicator({required this.isSelected, required this.isFull});
 
   @override
   Widget build(BuildContext context) {

@@ -15,6 +15,7 @@ class NotificationDebugSheet extends StatefulWidget {
     if (!kDebugMode) return Future.value();
     return showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const NotificationDebugSheet(),

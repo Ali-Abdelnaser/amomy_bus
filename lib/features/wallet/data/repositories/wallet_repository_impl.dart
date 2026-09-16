@@ -28,7 +28,10 @@ class WalletRepositoryImpl implements WalletRepository {
     int limit = 20,
   }) async {
     try {
-      final result = await _remoteDataSource.getTransactions(userId, limit: limit);
+      final result = await _remoteDataSource.getTransactions(
+        userId,
+        limit: limit,
+      );
       return Success(result);
     } catch (e) {
       return Error(ErrorHandler.handle(e));
@@ -38,5 +41,10 @@ class WalletRepositoryImpl implements WalletRepository {
   @override
   Stream<int> subscribeToWalletBalance(String userId) {
     return _remoteDataSource.subscribeToWalletBalance(userId);
+  }
+
+  @override
+  Stream<PointTransaction> subscribeToPointTransactions(String userId) {
+    return _remoteDataSource.subscribeToPointTransactions(userId);
   }
 }

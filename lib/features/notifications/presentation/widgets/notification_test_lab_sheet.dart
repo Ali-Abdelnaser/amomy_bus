@@ -20,6 +20,7 @@ class NotificationTestLabSheet extends StatefulWidget {
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

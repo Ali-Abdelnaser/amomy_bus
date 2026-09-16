@@ -1,4 +1,3 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
@@ -31,7 +30,6 @@ class AmomyApp extends StatelessWidget {
             themeMode: ThemeMode.system,
             routerConfig: appRouter.router,
             locale: locale,
-            builder: DevicePreview.appBuilder,
             supportedLocales: LocalizationHelper.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
           );

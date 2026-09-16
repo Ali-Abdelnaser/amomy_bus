@@ -76,6 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -84,42 +85,61 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => AmomySheetContainer(
         hasBottomNav: true,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               l10n.language,
-              style: AppTextStyles.titleMedium.copyWith(
-                fontWeight: FontWeight.w700,
+              style: AppTextStyles.headlineSmall.copyWith(
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
+              textAlign: TextAlign.center,
             ),
-            AppSpacing.gapH12,
+            AppSpacing.gapH16,
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+              minVerticalPadding: 12,
+              selected: controller.isArabic,
+              selectedTileColor: AppColors.primaryLight.withValues(alpha: 0.55),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               leading: Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(AppIcons.languages, size: 18, color: AppColors.primary),
+                child: const Icon(
+                  AppIcons.languages,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
               ),
               title: Text(
                 'العربية',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: controller.isArabic ? FontWeight.w700 : FontWeight.w500,
-                  color: controller.isArabic ? AppColors.primary : AppColors.textPrimary,
+                  fontWeight: controller.isArabic
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color: controller.isArabic
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
                 ),
               ),
               trailing: controller.isArabic
-                  ? const Icon(AppIcons.check, color: AppColors.primary, size: 20)
+                  ? const Icon(
+                      AppIcons.check,
+                      color: AppColors.primary,
+                      size: 20,
+                    )
                   : null,
               onTap: () {
                 if (!controller.isArabic) {
@@ -128,30 +148,51 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.of(ctx).pop();
               },
             ),
-            const Divider(height: 1, indent: 60, color: AppColors.borderSubtle),
+            const Padding(
+              padding: EdgeInsetsDirectional.only(start: 60),
+              child: Divider(height: 12, color: AppColors.borderSubtle),
+            ),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+              minVerticalPadding: 12,
+              selected: !controller.isArabic,
+              selectedTileColor: AppColors.primaryLight.withValues(alpha: 0.55),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               leading: Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(AppIcons.languages, size: 18, color: AppColors.primary),
+                child: const Icon(
+                  AppIcons.languages,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
               ),
               title: Text(
                 'English',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: !controller.isArabic ? FontWeight.w700 : FontWeight.w500,
-                  color: !controller.isArabic ? AppColors.primary : AppColors.textPrimary,
+                  fontWeight: !controller.isArabic
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color: !controller.isArabic
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
                 ),
               ),
               trailing: !controller.isArabic
-                  ? const Icon(AppIcons.check, color: AppColors.primary, size: 20)
+                  ? const Icon(
+                      AppIcons.check,
+                      color: AppColors.primary,
+                      size: 20,
+                    )
                   : null,
               onTap: () {
                 if (controller.isArabic) {
@@ -171,6 +212,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => AmomySheetContainer(
@@ -189,7 +231,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: AppColors.primaryLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(AppIcons.logOut, color: AppColors.primary, size: 24),
+                  child: const Icon(
+                    AppIcons.logOut,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
                 ),
               ),
               AppSpacing.gapH16,
@@ -217,12 +263,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: () => Navigator.of(sheetCtx).pop(),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.border),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
                         l10n.cancel,
-                        style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ),
@@ -237,7 +287,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
@@ -305,7 +357,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 body: SafeArea(
                   bottom: false,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -320,7 +375,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.userRound,
                               title: l10n.personalInfo,
-                              onTap: () => context.push(RoutePaths.personalInformation),
+                              onTap: () =>
+                                  context.push(RoutePaths.personalInformation),
                             ),
                           ],
                         ),
@@ -333,7 +389,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.notification,
                               title: l10n.notificationSettings,
-                              onTap: () => context.push(RoutePaths.notificationSettings),
+                              onTap: () =>
+                                  context.push(RoutePaths.notificationSettings),
                             ),
                             ProfileSettingTile(
                               icon: AppIcons.languages,
@@ -360,7 +417,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
                         // SECTION 4: ABOUT & LEGAL
                         ProfileSection(
-                          title: isAr ? 'حول التطبيق والقانونية' : 'ABOUT & LEGAL',
+                          title: isAr
+                              ? 'حول التطبيق والقانونية'
+                              : 'ABOUT & LEGAL',
                           children: [
                             ProfileSettingTile(
                               icon: AppIcons.info,
@@ -370,12 +429,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.shield,
                               title: l10n.privacyPolicy,
-                              onTap: () => context.push(RoutePaths.privacyPolicy),
+                              onTap: () =>
+                                  context.push(RoutePaths.privacyPolicy),
                             ),
                             ProfileSettingTile(
                               icon: AppIcons.fileText,
                               title: l10n.termsAndConditions,
-                              onTap: () => context.push(RoutePaths.termsAndConditions),
+                              onTap: () =>
+                                  context.push(RoutePaths.termsAndConditions),
                             ),
                           ],
                         ),
@@ -393,7 +454,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                 color: AppColors.primaryLight,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: AppColors.primary.withValues(alpha: 0.18),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.18,
+                                  ),
                                   width: 1,
                                 ),
                               ),

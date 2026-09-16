@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/router/route_paths.dart';
+import 'notification_payload_parser.dart';
 
 class NotificationRouter {
   NotificationRouter._();
@@ -9,18 +10,35 @@ class NotificationRouter {
   /// Resolves the destination route path from a notification data payload.
   /// Falls back safely to '/notifications' or '/home' on unknown or malformed payloads.
   static String resolveRoute(Map<String, dynamic>? data) {
-    if (data == null || data.isEmpty) {
+    final routingData = NotificationPayloadParser.routingDataFrom(data);
+    if (routingData.isEmpty) {
       return RoutePaths.notifications;
     }
 
     try {
-      final screen = (data['screen'] ?? data['destination'] ?? data['type'])
+      final screen =
+          (routingData['screen'] ??
+                  routingData['destination'] ??
+                  routingData['route'] ??
+                  routingData['type'])
+              ?.toString()
+              .toLowerCase()
+              .trim();
+
+      final bookingId = (routingData['booking_id'] ?? routingData['bookingId'])
           ?.toString()
-          .toLowerCase()
+          .trim();
+      final tripId = (routingData['trip_id'] ?? routingData['tripId'])
+          ?.toString()
           .trim();
 
-      final bookingId = (data['booking_id'] ?? data['bookingId'])?.toString().trim();
-      final tripId = (data['trip_id'] ?? data['tripId'])?.toString().trim();
+      if (_isBookingQrRoute(screen) || _isBookingLifecyclePayload(screen)) {
+        return RoutePaths.trips;
+      }
+
+      if (_isBookingRefundPayload(screen, bookingId: bookingId)) {
+        return RoutePaths.trips;
+      }
 
       // Explicit route matching
       switch (screen) {
@@ -39,11 +57,6 @@ class NotificationRouter {
         case 'booking_qr':
         case 'booking_confirmed':
         case 'seat_changed':
-          if (bookingId != null && bookingId.isNotEmpty) {
-            return '/bookings/$bookingId/qr';
-          }
-          return RoutePaths.trips;
-
         case 'trips':
         case 'my_trips':
         case 'booking_cancelled':
@@ -78,9 +91,6 @@ class NotificationRouter {
 
         default:
           // Fallback based on specific ID presence
-          if (bookingId != null && bookingId.isNotEmpty) {
-            return '/bookings/$bookingId/qr';
-          }
           if (tripId != null && tripId.isNotEmpty) {
             return '/trips/$tripId/tracking';
           }
@@ -92,6 +102,36 @@ class NotificationRouter {
     }
   }
 
+  static bool _isBookingQrRoute(String? value) {
+    if (value == null || value.isEmpty) return false;
+    final normalized = value.replaceAll(RegExp(r'/+'), '/');
+    return RegExp(r'^/bookings?/[^/]+/qr$').hasMatch(normalized);
+  }
+
+  static bool _isBookingLifecyclePayload(String? value) {
+    if (value == null || value.isEmpty) return false;
+    return value == 'ticket' ||
+        value == 'booking' ||
+        value == 'booking_qr' ||
+        value == 'booking_confirmed' ||
+        value == 'booking_cancelled' ||
+        value == 'booking_refunded' ||
+        value == 'booking_refund' ||
+        value == 'refund_booking' ||
+        value == 'seat_changed' ||
+        value == 'extra_seat_confirmed' ||
+        value == 'extra_seat_cancelled';
+  }
+
+  static bool _isBookingRefundPayload(String? value, {String? bookingId}) {
+    if (value == null || value.isEmpty) return false;
+    if (bookingId == null || bookingId.isEmpty) return false;
+    return value == 'refund' ||
+        value == 'refunded' ||
+        value == 'wallet_refund' ||
+        value == 'points_refunded';
+  }
+
   /// Navigates safely using root navigator context / GoRouter.
   static void navigateToDestination(Map<String, dynamic>? data) {
     final route = resolveRoute(data);
@@ -99,7 +139,9 @@ class NotificationRouter {
     if (context != null && context.mounted) {
       GoRouter.of(context).push(route);
     } else {
-      debugPrint('[NotificationRouter] Root navigator context not ready for route: $route');
+      debugPrint(
+        '[NotificationRouter] Root navigator context not ready for route: $route',
+      );
     }
   }
 }

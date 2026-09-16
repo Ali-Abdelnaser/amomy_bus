@@ -15,12 +15,19 @@ class _MockNotificationRepo implements NotificationRepository {
   int unread = 0;
 
   @override
-  Future<List<AppNotification>> getNotifications({int limit = 50, int offset = 0}) async {
+  Future<List<AppNotification>> getNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async {
     return notifications;
   }
 
   @override
   Future<int> getUnreadCount() async => unread;
+
+  @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() =>
+      const Stream.empty();
 
   @override
   Future<bool> markAsRead(String notificationId) async {
@@ -42,8 +49,7 @@ class _MockNotificationRepo implements NotificationRepository {
     String? installationId,
     String? deviceName,
     String? appVersion,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Future<bool> deactivateDeviceToken(String token) async => true;
@@ -67,18 +73,20 @@ class _MockNotificationRepo implements NotificationRepository {
     bool forceDelivery = false,
     Map<String, dynamic>? customData,
     int? delaySeconds,
-  }) async =>
-      const NotificationTestEventResult(
-        success: true,
-        eventType: 'test',
-        category: 'service_updates',
-      );
+  }) async => const NotificationTestEventResult(
+    success: true,
+    eventType: 'test',
+    category: 'service_updates',
+  );
 
   @override
-  Future<NotificationPreferences> getPreferences() async => const NotificationPreferences();
+  Future<NotificationPreferences> getPreferences() async =>
+      const NotificationPreferences();
 
   @override
-  Future<NotificationPreferences> updatePreferences(NotificationPreferences preferences) async => preferences;
+  Future<NotificationPreferences> updatePreferences(
+    NotificationPreferences preferences,
+  ) async => preferences;
 }
 
 void main() {
@@ -104,7 +112,9 @@ void main() {
     );
   }
 
-  testWidgets('renders empty state when there are no notifications', (tester) async {
+  testWidgets('renders empty state when there are no notifications', (
+    tester,
+  ) async {
     mockRepo.notifications = [];
     mockRepo.unread = 0;
 
@@ -157,7 +167,9 @@ void main() {
     expect(find.text('Debug'), findsNothing);
   });
 
-  testWidgets('does not show Mark all as read when unread count is zero', (tester) async {
+  testWidgets('does not show Mark all as read when unread count is zero', (
+    tester,
+  ) async {
     mockRepo.notifications = [
       AppNotification(
         id: 'n1',

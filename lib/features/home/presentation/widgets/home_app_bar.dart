@@ -11,8 +11,14 @@ import '../../../../core/theme/app_text_styles.dart';
 class HomeAppBar extends StatelessWidget {
   final String fullName;
   final String? avatarUrl;
+  final int unreadNotificationsCount;
 
-  const HomeAppBar({super.key, required this.fullName, this.avatarUrl});
+  const HomeAppBar({
+    super.key,
+    required this.fullName,
+    this.avatarUrl,
+    this.unreadNotificationsCount = 0,
+  });
 
   String _getInitials() {
     final trimmed = fullName.trim();
@@ -51,10 +57,23 @@ class HomeAppBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.border),
                 ),
-                child: const Icon(
-                  AppIcons.notification,
-                  size: 20,
-                  color: AppColors.textPrimary,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Center(
+                      child: Icon(
+                        AppIcons.notification,
+                        size: 20,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (unreadNotificationsCount > 0)
+                      PositionedDirectional(
+                        top: -4,
+                        end: -4,
+                        child: _UnreadBadge(count: unreadNotificationsCount),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -112,6 +131,37 @@ class HomeAppBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  final int count;
+
+  const _UnreadBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 9 ? '9+' : '$count';
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          height: 1,
+        ),
       ),
     );
   }

@@ -12,7 +12,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _MockTestLabRepository implements NotificationRepository {
   bool isTester = false;
-  NotificationPreferences preferences = const NotificationPreferences(allEnabled: true);
+  NotificationPreferences preferences = const NotificationPreferences(
+    allEnabled: true,
+  );
   NotificationTestEventResult? mockTestResult;
   Exception? errorToThrow;
   String? lastAction;
@@ -47,7 +49,9 @@ class _MockTestLabRepository implements NotificationRepository {
     }
 
     final catalogItem = NotificationEventCatalog.find(eventType);
-    if (eventType != 'unknown_event_xyz' && catalogItem.eventType == 'system' && eventType != 'system') {
+    if (eventType != 'unknown_event_xyz' &&
+        catalogItem.eventType == 'system' &&
+        eventType != 'system') {
       return NotificationTestEventResult(
         success: false,
         eventType: eventType,
@@ -73,16 +77,25 @@ class _MockTestLabRepository implements NotificationRepository {
   Future<NotificationPreferences> getPreferences() async => preferences;
 
   @override
-  Future<NotificationPreferences> updatePreferences(NotificationPreferences prefs) async {
+  Future<NotificationPreferences> updatePreferences(
+    NotificationPreferences prefs,
+  ) async {
     preferences = prefs;
     return preferences;
   }
 
   @override
-  Future<List<AppNotification>> getNotifications({int limit = 50, int offset = 0}) async => [];
+  Future<List<AppNotification>> getNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async => [];
 
   @override
   Future<int> getUnreadCount() async => 0;
+
+  @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() =>
+      const Stream.empty();
 
   @override
   Future<bool> markAsRead(String notificationId) async => true;
@@ -139,36 +152,40 @@ void main() {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const Scaffold(
-        body: NotificationTestLabSheet(),
-      ),
+      home: const Scaffold(body: NotificationTestLabSheet()),
     );
   }
 
   group('Notification Test Lab Routing & Security Tests', () {
-    test('1. test_event reaches dedicated test_event action with correct parameters', () async {
-      mockRepo.isTester = true;
-      final res = await mockRepo.sendTestEvent(
-        eventType: 'service_update',
-        forceDelivery: false,
-      );
+    test(
+      '1. test_event reaches dedicated test_event action with correct parameters',
+      () async {
+        mockRepo.isTester = true;
+        final res = await mockRepo.sendTestEvent(
+          eventType: 'service_update',
+          forceDelivery: false,
+        );
 
-      expect(mockRepo.lastAction, 'test_event');
-      expect(mockRepo.lastEventType, 'service_update');
-      expect(mockRepo.lastForceDelivery, isFalse);
-      expect(res.success, isTrue);
-    });
+        expect(mockRepo.lastAction, 'test_event');
+        expect(mockRepo.lastEventType, 'service_update');
+        expect(mockRepo.lastForceDelivery, isFalse);
+        expect(res.success, isTrue);
+      },
+    );
 
-    test('2. normal user (isTester=false) is denied by backend test endpoint', () async {
-      mockRepo.isTester = false;
-      final res = await mockRepo.sendTestEvent(
-        eventType: 'booking_confirmed',
-        forceDelivery: false,
-      );
+    test(
+      '2. normal user (isTester=false) is denied by backend test endpoint',
+      () async {
+        mockRepo.isTester = false;
+        final res = await mockRepo.sendTestEvent(
+          eventType: 'booking_confirmed',
+          forceDelivery: false,
+        );
 
-      expect(res.success, isFalse);
-      expect(res.error, contains('Notification Test Lab access denied'));
-    });
+        expect(res.success, isFalse);
+        expect(res.error, contains('Notification Test Lab access denied'));
+      },
+    );
 
     test('3. authorized tester is allowed to dispatch test event', () async {
       mockRepo.isTester = true;
@@ -241,30 +258,38 @@ void main() {
       expect(res.delivered, 1);
     });
 
-    testWidgets('7. raw FunctionsHttpException is cleaned and not displayed raw in UI', (tester) async {
-      mockRepo.isTester = true;
-      mockRepo.mockTestResult = const NotificationTestEventResult(
-        success: false,
-        eventType: 'service_update',
-        category: 'service_updates',
-        error: 'Forbidden: Notification Test Lab access denied.',
-      );
+    testWidgets(
+      '7. raw FunctionsHttpException is cleaned and not displayed raw in UI',
+      (tester) async {
+        mockRepo.isTester = true;
+        mockRepo.mockTestResult = const NotificationTestEventResult(
+          success: false,
+          eventType: 'service_update',
+          category: 'service_updates',
+          error: 'Forbidden: Notification Test Lab access denied.',
+        );
 
-      await tester.pumpWidget(buildTestSheet());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(buildTestSheet());
+        await tester.pumpAndSettle();
 
-      final sendButtons = find.text('Send Test');
-      expect(sendButtons, findsWidgets);
+        final sendButtons = find.text('Send Test');
+        expect(sendButtons, findsWidgets);
 
-      await tester.tap(sendButtons.first);
-      await tester.pumpAndSettle();
+        await tester.tap(sendButtons.first);
+        await tester.pumpAndSettle();
 
-      // UI should format error cleanly without FunctionsHttpException
-      expect(find.textContaining('FunctionsHttpException'), findsNothing);
-      expect(find.textContaining('Tester authorization failed'), findsOneWidget);
-    });
+        // UI should format error cleanly without FunctionsHttpException
+        expect(find.textContaining('FunctionsHttpException'), findsNothing);
+        expect(
+          find.textContaining('Tester authorization failed'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('8. No active devices error is displayed cleanly in UI', (tester) async {
+    testWidgets('8. No active devices error is displayed cleanly in UI', (
+      tester,
+    ) async {
       mockRepo.isTester = true;
       mockRepo.mockTestResult = const NotificationTestEventResult(
         success: false,
@@ -280,27 +305,35 @@ void main() {
       await tester.tap(sendButtons.first);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('No active notification device found'), findsOneWidget);
-    });
-
-    testWidgets('9. APNs credential error is mapped to safe user message in UI', (tester) async {
-      mockRepo.isTester = true;
-      mockRepo.mockTestResult = const NotificationTestEventResult(
-        success: false,
-        eventType: 'service_update',
-        category: 'service_updates',
-        error: 'Invalid APNs credential.',
+      expect(
+        find.textContaining('No active notification device found'),
+        findsOneWidget,
       );
-
-      await tester.pumpWidget(buildTestSheet());
-      await tester.pumpAndSettle();
-
-      final sendButtons = find.text('Send Test');
-      await tester.tap(sendButtons.first);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Apple push credentials are not configured correctly.'), findsOneWidget);
     });
+
+    testWidgets(
+      '9. APNs credential error is mapped to safe user message in UI',
+      (tester) async {
+        mockRepo.isTester = true;
+        mockRepo.mockTestResult = const NotificationTestEventResult(
+          success: false,
+          eventType: 'service_update',
+          category: 'service_updates',
+          error: 'Invalid APNs credential.',
+        );
+
+        await tester.pumpWidget(buildTestSheet());
+        await tester.pumpAndSettle();
+
+        final sendButtons = find.text('Send Test');
+        await tester.tap(sendButtons.first);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Apple push credentials are not configured correctly.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }
-

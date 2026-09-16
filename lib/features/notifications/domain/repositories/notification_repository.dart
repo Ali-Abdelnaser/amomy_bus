@@ -13,6 +13,13 @@ abstract class NotificationRepository {
   /// Returns count of unread notifications.
   Future<int> getUnreadCount();
 
+  /// Emits whenever the authenticated user's notification rows change.
+  ///
+  /// Insert events include the inserted notification row so foreground
+  /// presentation can be deduplicated against FCM. Update/delete events emit
+  /// null and are used only to refresh the inbox and badge.
+  Stream<AppNotification?> subscribeToNotificationUpdates();
+
   /// Marks a specific notification as read.
   Future<bool> markAsRead(String notificationId);
 
@@ -50,5 +57,6 @@ abstract class NotificationRepository {
 
   /// Updates and persists the authenticated passenger's notification push preferences.
   Future<NotificationPreferences> updatePreferences(
-      NotificationPreferences preferences);
+    NotificationPreferences preferences,
+  );
 }

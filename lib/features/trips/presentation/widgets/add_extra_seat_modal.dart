@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -35,14 +37,12 @@ class AddExtraSeatModal extends StatefulWidget {
   }) {
     return showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
-      builder: (_) => AddExtraSeatModal(
-        trip: trip,
-        tripsCubit: tripsCubit,
-      ),
+      builder: (_) => AddExtraSeatModal(trip: trip, tripsCubit: tripsCubit),
     );
   }
 
@@ -56,48 +56,103 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
   List<TripSeat> _seats = [];
   TripSeat? _selectedExtraSeat;
   bool _isSubmitting = false;
+  bool _seatFetchInFlight = false;
+  bool _seatFetchQueued = false;
+  StreamSubscription<void>? _seatUpdatesSubscription;
 
   @override
   void initState() {
     super.initState();
     _fetchSeats();
+    _startSeatUpdatesSubscription();
   }
 
-  Future<void> _fetchSeats() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _seatUpdatesSubscription?.cancel();
+    super.dispose();
+  }
 
+  void _startSeatUpdatesSubscription() {
+    final repo = getIt.isRegistered<BookingRepository>()
+        ? getIt<BookingRepository>()
+        : null;
+    if (repo == null) return;
+
+    _seatUpdatesSubscription?.cancel();
+    _seatUpdatesSubscription = repo
+        .subscribeToTripSeatUpdates(widget.trip.tripId)
+        .listen(
+          (_) => _fetchSeats(silent: true),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
+  }
+
+  Future<void> _fetchSeats({bool silent = false}) async {
+    if (_seatFetchInFlight) {
+      if (silent) _seatFetchQueued = true;
+      return;
+    }
+
+    _seatFetchInFlight = true;
+    var showLoading = !silent;
     final repo = getIt.isRegistered<BookingRepository>()
         ? getIt<BookingRepository>()
         : null;
 
     if (repo == null) {
       setState(() {
-        _isLoading = false;
+        if (!silent) _isLoading = false;
         _error = 'Repository not available';
       });
+      _seatFetchInFlight = false;
       return;
     }
 
-    final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
-    if (!mounted) return;
+    try {
+      do {
+        _seatFetchQueued = false;
+        if (showLoading && mounted) {
+          setState(() {
+            _isLoading = true;
+            _error = null;
+          });
+          showLoading = false;
+        }
 
-    result.fold(
-      onSuccess: (seats) {
-        setState(() {
-          _seats = seats;
-          _isLoading = false;
-        });
-      },
-      onError: (failure) {
-        setState(() {
-          _error = failure.message;
-          _isLoading = false;
-        });
-      },
-    );
+        final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
+        if (!mounted) return;
+
+        result.fold(
+          onSuccess: (seats) {
+            final selectedSeatStillAvailable =
+                _selectedExtraSeat != null &&
+                seats.any(
+                  (seat) =>
+                      seat.seatId == _selectedExtraSeat!.seatId &&
+                      seat.isAvailable,
+                );
+            setState(() {
+              _seats = seats;
+              _isLoading = false;
+              if (!selectedSeatStillAvailable) {
+                _selectedExtraSeat = null;
+              }
+            });
+          },
+          onError: (failure) {
+            if (silent) return;
+            setState(() {
+              _error = failure.message;
+              _isLoading = false;
+            });
+          },
+        );
+      } while (_seatFetchQueued && mounted);
+    } finally {
+      _seatFetchInFlight = false;
+    }
   }
 
   Future<void> _confirmBookingExtraSeat() async {
@@ -262,7 +317,10 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(12),
@@ -371,93 +429,96 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
               child: _isLoading
                   ? const Center(child: AmomyBusLoading())
                   : _error != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _error!,
-                                style: AppTextStyles.bodyMedium
-                                    .copyWith(color: AppColors.error),
-                                textAlign: TextAlign.center,
-                              ),
-                              AppSpacing.gapH12,
-                              ElevatedButton(
-                                onPressed: _fetchSeats,
-                                child: Text(isAr ? 'إعادة المحاولة' : 'Retry'),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.error,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        )
-                      : !hasAvailable
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.event_seat_outlined,
-                                      size: 48,
-                                      color: Color(0xFF98A2B3),
-                                    ),
-                                    AppSpacing.gapH12,
-                                    Text(
-                                      isAr
-                                          ? 'لا توجد مقاعد إضافية شاغرة'
-                                          : 'No extra seats available',
-                                      style: AppTextStyles.titleMedium
-                                          .copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    AppSpacing.gapH4,
-                                    Text(
-                                      isAr
-                                          ? 'الحافلة ممتلئة بالكامل حاليًا. مقعدك الحالي محمي وهو المقعد (${widget.trip.seatNumber ?? "—"}).'
-                                          : 'The bus is fully booked. Your current seat (${widget.trip.seatNumber ?? "—"}) is protected.',
-                                      style: AppTextStyles.bodySmall
-                                          .copyWith(color: const Color(0xFF667085)),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: ProfessionalBusSeatMap(
-                                seats: _seats,
-                                selectedSeat: _selectedExtraSeat,
-                                onSeatTap: (seat) {
-                                  if (currentSeats.contains(seat.seatNumber)) {
-                                    AmomyFloatingAlert.show(
-                                      context,
-                                      title: isAr
-                                          ? 'هذا مقعدك الحالي بالفعل'
-                                          : 'Already your seat',
-                                      message: isAr
-                                          ? 'المقعد (${seat.seatNumber}) محجوز لك مسبقًا.'
-                                          : 'Seat (${seat.seatNumber}) is already booked by you.',
-                                      variant: AmomyAlertVariant.info,
-                                    );
-                                    return;
-                                  }
-                                  if (!seat.isAvailable) {
-                                    AmomyFloatingAlert.show(
-                                      context,
-                                      title: isAr
-                                          ? 'المقعد غير متاح'
-                                          : 'Seat unavailable',
-                                      variant: AmomyAlertVariant.warning,
-                                    );
-                                    return;
-                                  }
-                                  setState(() => _selectedExtraSeat = seat);
-                                },
+                          AppSpacing.gapH12,
+                          ElevatedButton(
+                            onPressed: _fetchSeats,
+                            child: Text(isAr ? 'إعادة المحاولة' : 'Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : !hasAvailable
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.event_seat_outlined,
+                              size: 48,
+                              color: Color(0xFF98A2B3),
+                            ),
+                            AppSpacing.gapH12,
+                            Text(
+                              isAr
+                                  ? 'لا توجد مقاعد إضافية شاغرة'
+                                  : 'No extra seats available',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            AppSpacing.gapH4,
+                            Text(
+                              isAr
+                                  ? 'الحافلة ممتلئة بالكامل حاليًا. مقعدك الحالي محمي وهو المقعد (${widget.trip.seatNumber ?? "—"}).'
+                                  : 'The bus is fully booked. Your current seat (${widget.trip.seatNumber ?? "—"}) is protected.',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: const Color(0xFF667085),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ProfessionalBusSeatMap(
+                        seats: _seats,
+                        selectedSeat: _selectedExtraSeat,
+                        onSeatTap: (seat) {
+                          if (currentSeats.contains(seat.seatNumber)) {
+                            AmomyFloatingAlert.show(
+                              context,
+                              title: isAr
+                                  ? 'هذا مقعدك الحالي بالفعل'
+                                  : 'Already your seat',
+                              message: isAr
+                                  ? 'المقعد (${seat.seatNumber}) محجوز لك مسبقًا.'
+                                  : 'Seat (${seat.seatNumber}) is already booked by you.',
+                              variant: AmomyAlertVariant.info,
+                            );
+                            return;
+                          }
+                          if (!seat.isAvailable) {
+                            AmomyFloatingAlert.show(
+                              context,
+                              title: isAr
+                                  ? 'المقعد غير متاح'
+                                  : 'Seat unavailable',
+                              variant: AmomyAlertVariant.warning,
+                            );
+                            return;
+                          }
+                          setState(() => _selectedExtraSeat = seat);
+                        },
+                      ),
+                    ),
             ),
 
             // Bottom Confirmation Bar
@@ -465,9 +526,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Color(0xFFEAECF0)),
-                ),
+                border: Border(top: BorderSide(color: Color(0xFFEAECF0))),
               ),
               child: Row(
                 children: [
@@ -479,11 +538,11 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
                         Text(
                           _selectedExtraSeat != null
                               ? (isAr
-                                  ? 'المقعد الإضافي: (${_selectedExtraSeat!.seatNumber})'
-                                  : 'Extra Seat: (${_selectedExtraSeat!.seatNumber})')
+                                    ? 'المقعد الإضافي: (${_selectedExtraSeat!.seatNumber})'
+                                    : 'Extra Seat: (${_selectedExtraSeat!.seatNumber})')
                               : (isAr
-                                  ? 'اختر مقعدًا من الخريطة'
-                                  : 'Select a seat from map'),
+                                    ? 'اختر مقعدًا من الخريطة'
+                                    : 'Select a seat from map'),
                           style: AppTextStyles.titleSmall.copyWith(
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF101828),
@@ -495,11 +554,11 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
                         Text(
                           _selectedExtraSeat != null
                               ? (isAr
-                                  ? 'سيتم خصم ${widget.trip.farePoints.toInt()} نقطة من محفظتك'
-                                  : '${widget.trip.farePoints.toInt()} pts will be deducted')
+                                    ? 'سيتم خصم ${widget.trip.farePoints.toInt()} نقطة من محفظتك'
+                                    : '${widget.trip.farePoints.toInt()} pts will be deducted')
                               : (isAr
-                                  ? '${widget.trip.availableSeats} مقاعد متاحة'
-                                  : '${widget.trip.availableSeats} seats available'),
+                                    ? '${widget.trip.availableSeats} مقاعد متاحة'
+                                    : '${widget.trip.availableSeats} seats available'),
                           style: AppTextStyles.labelSmall.copyWith(
                             color: const Color(0xFF667085),
                             fontWeight: FontWeight.w600,
@@ -560,10 +619,7 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
 
-  const _LegendItem({
-    required this.color,
-    required this.label,
-  });
+  const _LegendItem({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {

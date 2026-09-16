@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/topup_entities.dart';
@@ -57,7 +57,11 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
     final response = await _supabase.rpc('get_active_payment_methods');
     if (response is List) {
       return response
-          .map((item) => PaymentMethodModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => PaymentMethodModel.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
           .toList();
     }
     return [];
@@ -85,13 +89,17 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
         requestId: map['request_id'] as String,
         publicId: map['public_id'] as String? ?? 'AMY-TOPUP',
         requestedPoints: (map['requested_points'] as num?)?.toInt() ?? amount,
-        expectedAmountEgp: (map['expected_amount_egp'] as num?)?.toDouble() ?? amount.toDouble(),
+        expectedAmountEgp:
+            (map['expected_amount_egp'] as num?)?.toDouble() ??
+            amount.toDouble(),
         receivingPhone: map['receiving_phone'] as String? ?? '01000000000',
         conversionRate: (map['conversion_rate'] as num?)?.toDouble() ?? 1.0,
         status: TopUpStatus.fromString(map['status'] as String?),
       );
     }
-    throw const FormatException('Failed to obtain top-up request details from backend.');
+    throw const FormatException(
+      'Failed to obtain top-up request details from backend.',
+    );
   }
 
   @override
@@ -127,13 +135,12 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
     final storagePath = '$userId/$requestId/$filename';
 
     // 1. Upload bytes directly to private bucket 'payment-proofs'
-    await _supabase.storage.from('payment-proofs').uploadBinary(
+    await _supabase.storage
+        .from('payment-proofs')
+        .uploadBinary(
           storagePath,
           Uint8List.fromList(fileBytes),
-          fileOptions: FileOptions(
-            contentType: contentType,
-            upsert: true,
-          ),
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
         );
 
     // 2. Submit payment proof to top-up request via server-validated RPC
@@ -170,7 +177,11 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
     final response = await _supabase.rpc('get_my_topup_requests');
     if (response is List) {
       return response
-          .map((item) => TopUpRequestModel.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => TopUpRequestModel.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
           .toList();
     }
     return [];
@@ -183,10 +194,18 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
       return const Stream.empty();
     }
 
+    debugPrint('[REALTIME_DIAG] topup_requests subscribe start');
     return _supabase
         .from('topup_requests')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
-        .map((_) {});
+        .map((_) {
+          debugPrint('[REALTIME_DIAG] topup_requests event');
+        })
+        .handleError((error, stackTrace) {
+          debugPrint(
+            '[REALTIME_DIAG] topup_requests error: ${error.runtimeType}',
+          );
+        });
   }
 }

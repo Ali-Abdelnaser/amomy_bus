@@ -6,6 +6,7 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_date_picker_modal.dart';
 
 class TransferDetailsStepWidget extends StatefulWidget {
   final int points;
@@ -26,7 +27,8 @@ class TransferDetailsStepWidget extends StatefulWidget {
     required List<int> bytes,
     required String extension,
     required String fileName,
-  }) onProofSelected;
+  })
+  onProofSelected;
   final VoidCallback onClearProof;
   final VoidCallback onSubmit;
   final VoidCallback onBack;
@@ -54,7 +56,8 @@ class TransferDetailsStepWidget extends StatefulWidget {
   });
 
   @override
-  State<TransferDetailsStepWidget> createState() => _TransferDetailsStepWidgetState();
+  State<TransferDetailsStepWidget> createState() =>
+      _TransferDetailsStepWidgetState();
 }
 
 class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
@@ -87,7 +90,8 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
     return RegExp(r'^01[0125][0-9]{8}$').hasMatch(normalized);
   }
 
-  bool get _hasProof => widget.proofBytes != null && widget.proofBytes!.isNotEmpty;
+  bool get _hasProof =>
+      widget.proofBytes != null && widget.proofBytes!.isNotEmpty;
 
   bool get _canSubmit => _isPhoneValid && _hasProof && !widget.isSubmitting;
 
@@ -108,11 +112,7 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
         final name = file.name;
         final ext = name.contains('.') ? name.split('.').last : 'jpg';
 
-        widget.onProofSelected(
-          bytes: bytes,
-          extension: ext,
-          fileName: name,
-        );
+        widget.onProofSelected(bytes: bytes, extension: ext, fileName: name);
       }
     } catch (e) {
       if (mounted) {
@@ -131,7 +131,7 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
   }
 
   Future<void> _selectDateTime() async {
-    final pickedDate = await showDatePicker(
+    final pickedDate = await showAppDatePicker(
       context: context,
       initialDate: _selectedDateTime,
       firstDate: DateTime.now().subtract(const Duration(days: 7)),
@@ -205,7 +205,10 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FC),
                     borderRadius: BorderRadius.circular(8),
@@ -236,7 +239,11 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.error_outline_rounded, size: 18, color: Color(0xFFD92D20)),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 18,
+                    color: Color(0xFFD92D20),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -293,16 +300,26 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
             ),
             decoration: InputDecoration(
               hintText: l10n.senderPhoneHint,
-              prefixIcon: const Icon(Icons.phone_rounded, color: AppColors.primary, size: 20),
+              prefixIcon: const Icon(
+                Icons.phone_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
             onChanged: (val) {
               widget.onSenderPhoneChanged(val);
@@ -334,16 +351,26 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               hintText: l10n.transferReferenceOptional,
-              prefixIcon: const Icon(Icons.tag_rounded, color: AppColors.textSecondary, size: 20),
+              prefixIcon: const Icon(
+                Icons.tag_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
             onChanged: (val) {
               widget.onReferenceChanged(val);
@@ -374,7 +401,11 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
+                  const Icon(
+                    Icons.calendar_today_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
                   AppSpacing.gapW10,
                   Expanded(
                     child: Text(
@@ -386,7 +417,11 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                       ),
                     ),
                   ),
-                  const Icon(Icons.edit_calendar_rounded, size: 18, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.edit_calendar_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -409,11 +444,17 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
               onTap: _isPicking ? null : () => _pickImage(ImageSource.gallery),
               borderRadius: BorderRadius.circular(14),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
+                  border: Border.all(
+                    color: const Color(0xFFCBD5E1),
+                    style: BorderStyle.solid,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -424,7 +465,11 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                         color: Color(0xFFEFF6FC),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.add_photo_alternate_rounded, color: AppColors.primary, size: 22),
+                      child: const Icon(
+                        Icons.add_photo_alternate_rounded,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
                     ),
                     AppSpacing.gapH10,
                     Text(
@@ -438,7 +483,10 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                     const SizedBox(height: 3),
                     const Text(
                       'JPG, PNG, WebP (Max 10MB)',
-                      style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ],
                 ),
@@ -481,7 +529,11 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                         const SizedBox(height: 3),
                         Row(
                           children: [
-                            const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF16A34A)),
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 14,
+                              color: Color(0xFF16A34A),
+                            ),
                             AppSpacing.gapW4,
                             Text(
                               l10n.screenshotAttached,
@@ -497,11 +549,19 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     onPressed: () => _pickImage(ImageSource.gallery),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.error, size: 20),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.error,
+                      size: 20,
+                    ),
                     onPressed: widget.onClearProof,
                   ),
                 ],
@@ -525,7 +585,9 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
               Expanded(
                 flex: 2,
                 child: AppButton(
-                  label: widget.isResubmit ? l10n.resubmitForReview : l10n.submitDetailsAction,
+                  label: widget.isResubmit
+                      ? l10n.resubmitForReview
+                      : l10n.submitDetailsAction,
                   isLoading: widget.isSubmitting,
                   onPressed: _canSubmit ? widget.onSubmit : null,
                 ),

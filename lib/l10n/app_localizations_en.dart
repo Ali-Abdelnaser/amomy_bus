@@ -135,6 +135,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changeEmail => 'Change Email / Back';
 
   @override
+  String get didntReceiveCode => 'Didn\'t receive the code?';
+
+  @override
+  String get wrongEmailPrompt => 'Wrong email?';
+
+  @override
+  String get changeEmailAction => 'Change email';
+
+  @override
+  String get otpInvalid => 'The verification code is incorrect.';
+
+  @override
+  String get otpExpired => 'This code has expired. Request a new one.';
+
+  @override
+  String get otpRateLimited => 'Please wait before requesting another code.';
+
+  @override
+  String get otpNetworkError =>
+      'Couldn\'t verify the code. Check your connection and try again.';
+
+  @override
+  String get selectDateTitle => 'Select Date';
+
+  @override
+  String get confirmDate => 'Confirm Date';
+
+  @override
+  String get dayColumnLabel => 'Day';
+
+  @override
+  String get monthColumnLabel => 'Month';
+
+  @override
+  String get yearColumnLabel => 'Year';
+
+  @override
   String get completeProfileTitle => 'Complete Your Profile';
 
   @override
@@ -504,6 +541,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewMyTrips => 'View My Trips';
 
   @override
+  String get mitFadalaStopName => 'Mit Fadala';
+
+  @override
+  String departureBusAtFirstStop(Object stopName) {
+    return 'Bus at $stopName';
+  }
+
+  @override
+  String get firstStopLabel => 'First stop';
+
+  @override
   String get tripDetailsDirection => 'Direction';
 
   @override
@@ -762,6 +810,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get departureSelected => 'Selected';
+
+  @override
+  String get departureSelectedTrip => 'Selected Trip';
+
+  @override
+  String get departureAvailable => 'Available';
+
+  @override
+  String get departureFullyBooked => 'Fully booked';
 
   @override
   String get departureAvailableNow => 'Available now';
@@ -1150,4 +1207,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allRightsReserved => 'All rights reserved.';
+
+  @override
+  String get privacyPolicyUrl => 'https://amomy.com/privacy-policy';
+
+  @override
+  String get termsAndConditionsUrl => 'https://amomy.com/terms-and-conditions';
 }

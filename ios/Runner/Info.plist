@@ -100,7 +100,7 @@
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>AMOMY Bus may use your location to support map-related features and help you identify nearby stops.</string>
 		<key>GoogleMapsApiKey</key>
-		<string>$(GOOGLE_MAPS_API_KEY)</string>
+		<string>$(GOOGLE_MAPS_IOS_API_KEY)</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>fetch</string>

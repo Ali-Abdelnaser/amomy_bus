@@ -1,0 +1,16 @@
+{
+  "Simulator Target Bundle": "com.aliabdelnaser.amomy",
+  "aps": {
+    "alert": {
+      "title": "AMOMY Bus",
+      "body": "This is an iOS simulator notification test."
+    },
+    "sound": "default",
+    "badge": 1
+  },
+  "type": "trip_update",
+  "notification_id": "debug-ios-simulator-notification",
+  "booking_id": "debug-booking-001",
+  "trip_id": "debug-trip-001",
+  "route": "live_tracking"
+}

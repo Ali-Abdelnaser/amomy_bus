@@ -4,11 +4,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/notification_diagnostic_data.dart';
 import '../../domain/entities/self_test_result.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../widgets/notification_permission_sheet.dart';
 import 'local_notification_service.dart';
+import 'notification_payload_parser.dart';
 import 'notification_router.dart';
 
 /// Top-level background message handler required by Firebase Messaging.
@@ -24,6 +26,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class NotificationService with WidgetsBindingObserver {
+  /// TEMPORARY DIAGNOSTIC SWITCH FOR IOS CRASH INVESTIGATION
+  /// Set to true to isolate iOS push startup completely (skips permission prompt, APNs check, getToken, backend sync).
+  /// If Home stays alive with this true, push startup area is definitively confirmed.
+  /// Set to false to run normal startup with focused [IOS_PUSH_DIAG] logging.
+  static const bool debugDisableIosPushStartup =
+      false; // Set to false for normal startup
+
   final NotificationRepository repository;
   final FirebaseMessaging _messaging;
   final LocalNotificationService _localNotifications;
@@ -38,8 +47,10 @@ class NotificationService with WidgetsBindingObserver {
   StreamSubscription<RemoteMessage>? _foregroundMessageSub;
   StreamSubscription<RemoteMessage>? _messageOpenedSub;
 
-  // Deduplication cache to prevent duplicate local presentations
+  // Deduplication cache to prevent duplicate visual presentations across
+  // FCM and notifications-table realtime for the same logical event.
   final Set<String> _processedMessageKeys = <String>{};
+  final List<String> _processedMessageKeyOrder = <String>[];
   static const int _maxDedupeCacheSize = 200;
 
   String? _lastKnownToken;
@@ -61,9 +72,9 @@ class NotificationService with WidgetsBindingObserver {
     FirebaseMessaging? messaging,
     LocalNotificationService? localNotifications,
     SharedPreferences? preferences,
-  })  : _messaging = messaging ?? FirebaseMessaging.instance,
-        _localNotifications = localNotifications ?? LocalNotificationService(),
-        _prefs = preferences {
+  }) : _messaging = messaging ?? FirebaseMessaging.instance,
+       _localNotifications = localNotifications ?? LocalNotificationService(),
+       _prefs = preferences {
     try {
       WidgetsBinding.instance.addObserver(this);
     } catch (_) {}
@@ -106,18 +117,22 @@ class NotificationService with WidgetsBindingObserver {
       // 2. Initialize local notification service & Android channel
       await _localNotifications.initialize();
 
-      // 3. Configure iOS native foreground presentation options (alert, badge, sound)
+      // 3. Foreground FCM display is routed through this service's local
+      // notification path so it can be deduplicated against realtime rows.
       await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false,
         badge: true,
-        sound: true,
+        sound: false,
       );
+      await _logIosLocalNotificationSettings();
 
       // 4. Check for initial cold-start notification tap
       final initialMessage = await _messaging.getInitialMessage();
       if (initialMessage != null) {
         if (kDebugMode) {
-          debugPrint('[AMOMY_NOTIF] Cold start from FCM notification: ${initialMessage.messageId}');
+          debugPrint(
+            '[AMOMY_NOTIF] Cold start from FCM notification: ${initialMessage.messageId}',
+          );
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           NotificationRouter.navigateToDestination(initialMessage.data);
@@ -125,18 +140,21 @@ class NotificationService with WidgetsBindingObserver {
       }
 
       // 5. Listen to notification taps when app is opened from background
-      _messageOpenedSub =
-          FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      _messageOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((
+        message,
+      ) {
         if (kDebugMode) {
           debugPrint(
-              '[AMOMY_NOTIF] App opened from background notification: ${message.messageId}');
+            '[AMOMY_NOTIF] App opened from background notification: ${message.messageId}',
+          );
         }
         NotificationRouter.navigateToDestination(message.data);
       });
 
       // 6. Listen to foreground notifications
-      _foregroundMessageSub =
-          FirebaseMessaging.onMessage.listen((message) async {
+      _foregroundMessageSub = FirebaseMessaging.onMessage.listen((
+        message,
+      ) async {
         await handleForegroundMessage(message);
       });
 
@@ -144,14 +162,17 @@ class NotificationService with WidgetsBindingObserver {
       _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) {
         _lastKnownToken = newToken;
         if (kDebugMode) {
-          debugPrint('[AMOMY_NOTIF] FCM token refreshed: ${_maskToken(newToken)}');
+          debugPrint(
+            '[AMOMY_NOTIF] FCM token refreshed: ${_maskToken(newToken)}',
+          );
         }
         syncDeviceToken(forcedToken: newToken);
       });
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Foreground listener attached: true | Background handler registered: true');
+          '[AMOMY_NOTIF] Foreground listener attached: true | Background handler registered: true',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -164,73 +185,81 @@ class NotificationService with WidgetsBindingObserver {
   Future<void> handleForegroundMessage(RemoteMessage message) async {
     _lastForegroundFcmTime = DateTime.now();
     final dedupeKey = _extractDedupeKey(message);
+    final parsedPayload = NotificationPayloadParser.fromApnsPayload(
+      message.data,
+    );
 
     final hasNotificationPayload = message.notification != null;
-    final hasTitle = (message.notification?.title?.isNotEmpty ?? false) ||
+    final hasTitle =
+        (message.notification?.title?.isNotEmpty ?? false) ||
+        (parsedPayload.title?.isNotEmpty ?? false) ||
         (message.data['title']?.isNotEmpty ?? false) ||
         (message.data['title_en']?.isNotEmpty ?? false) ||
         (message.data['title_ar']?.isNotEmpty ?? false);
-    final hasBody = (message.notification?.body?.isNotEmpty ?? false) ||
+    final hasBody =
+        (message.notification?.body?.isNotEmpty ?? false) ||
+        (parsedPayload.body?.isNotEmpty ?? false) ||
         (message.data['body']?.isNotEmpty ?? false) ||
         (message.data['body_en']?.isNotEmpty ?? false) ||
         (message.data['body_ar']?.isNotEmpty ?? false);
 
     if (kDebugMode) {
       debugPrint(
-          '[AMOMY_NOTIF] onMessage received: '
-          'messageId=${message.messageId ?? "none"}, '
-          'has_notification_payload=$hasNotificationPayload, '
-          'has_title=$hasTitle, '
-          'has_body=$hasBody, '
-          'data_keys=${message.data.keys.toList()}');
+        '[AMOMY_NOTIF] onMessage received: '
+        'messageId=${message.messageId ?? "none"}, '
+        'has_notification_payload=$hasNotificationPayload, '
+        'has_title=$hasTitle, '
+        'has_body=$hasBody, '
+        'data_keys=${message.data.keys.toList()}',
+      );
     }
 
     // Deduplication check
-    if (dedupeKey != null && _processedMessageKeys.contains(dedupeKey)) {
+    final dedupeHit = _hasPresented(dedupeKey);
+    if (dedupeHit) {
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Skipping duplicate foreground message: $dedupeKey');
+        debugPrint('[AMOMY_NOTIF] Skipping duplicate foreground message');
       }
       return;
-    }
-
-    if (dedupeKey != null) {
-      if (_processedMessageKeys.length >= _maxDedupeCacheSize) {
-        _processedMessageKeys.remove(_processedMessageKeys.first);
-      }
-      _processedMessageKeys.add(dedupeKey);
     }
 
     // Notify stream subscribers for in-app inbox sync
     _foregroundMessageController.add(message);
 
-    // On Android: Show heads-up local notification
-    // (iOS handles foreground display natively via setForegroundNotificationPresentationOptions)
-    if (defaultTargetPlatform == TargetPlatform.android || kIsWeb) {
-      final title = message.notification?.title ??
-          message.data['title'] ??
-          message.data['title_en'] ??
-          message.data['title_ar'] ??
-          'AMOMY';
-      final body = message.notification?.body ??
-          message.data['body'] ??
-          message.data['body_en'] ??
-          message.data['body_ar'] ??
-          '';
+    final title =
+        message.notification?.title ??
+        parsedPayload.title ??
+        message.data['title'] ??
+        message.data['title_en'] ??
+        message.data['title_ar'] ??
+        'AMOMY';
+    final body =
+        message.notification?.body ??
+        parsedPayload.body ??
+        message.data['body'] ??
+        message.data['body_en'] ??
+        message.data['body_ar'] ??
+        '';
 
-      final notificationId = dedupeKey != null
-          ? (dedupeKey.hashCode & 0x7FFFFFFF)
-          : (DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF);
-
-      await _localNotifications.showForegroundNotification(
-        id: notificationId,
-        title: title,
-        body: body,
-        payload: message.data,
-      );
-    }
+    await _localNotifications.showForegroundNotification(
+      id: _notificationIdFromKey(dedupeKey),
+      title: title,
+      body: body,
+      payload: parsedPayload.data.isNotEmpty
+          ? parsedPayload.data
+          : message.data,
+    );
+    _rememberPresented(dedupeKey);
   }
 
   String? _extractDedupeKey(RemoteMessage message) {
+    if (message.data.containsKey('notification_id') &&
+        message.data['notification_id'] != null) {
+      return message.data['notification_id'].toString();
+    }
+    if (message.data.containsKey('id') && message.data['id'] != null) {
+      return message.data['id'].toString();
+    }
     if (message.data.containsKey('dedupe_key') &&
         message.data['dedupe_key'] != null) {
       return message.data['dedupe_key'].toString();
@@ -238,20 +267,151 @@ class NotificationService with WidgetsBindingObserver {
     if (message.messageId != null && message.messageId!.isNotEmpty) {
       return message.messageId;
     }
-    if (message.data.containsKey('id') && message.data['id'] != null) {
-      return message.data['id'].toString();
+    return null;
+  }
+
+  String? _extractNotificationDedupeKey(AppNotification notification) {
+    if (notification.id.trim().isNotEmpty) return notification.id.trim();
+    final payloadNotificationId = notification.data['notification_id'];
+    if (payloadNotificationId != null &&
+        payloadNotificationId.toString().trim().isNotEmpty) {
+      return payloadNotificationId.toString().trim();
+    }
+    if (notification.dedupeKey != null &&
+        notification.dedupeKey!.trim().isNotEmpty) {
+      return notification.dedupeKey!.trim();
     }
     return null;
+  }
+
+  bool _hasPresented(String? key) {
+    if (key == null || key.trim().isEmpty) return false;
+    return _processedMessageKeys.contains(key.trim());
+  }
+
+  void _rememberPresented(String? key) {
+    if (key == null || key.trim().isEmpty) return;
+    final normalized = key.trim();
+    if (_processedMessageKeys.contains(normalized)) return;
+
+    _processedMessageKeys.add(normalized);
+    _processedMessageKeyOrder.add(normalized);
+    while (_processedMessageKeyOrder.length > _maxDedupeCacheSize) {
+      final oldest = _processedMessageKeyOrder.removeAt(0);
+      _processedMessageKeys.remove(oldest);
+    }
+  }
+
+  int _notificationIdFromKey(String? key) {
+    if (key != null && key.trim().isNotEmpty) {
+      return key.trim().hashCode & 0x7FFFFFFF;
+    }
+    return DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
+  }
+
+  bool get _isForeground =>
+      _currentLifecycleState == AppLifecycleState.resumed ||
+      _currentLifecycleState == AppLifecycleState.inactive;
+
+  Future<void> _logIosLocalNotificationSettings() async {
+    if (!kDebugMode || defaultTargetPlatform != TargetPlatform.iOS) return;
+
+    try {
+      final settings = await _messaging.getNotificationSettings();
+      debugPrint(
+        '[IOS_LOCAL_NOTIF_DIAG] authorization=${settings.authorizationStatus.name}',
+      );
+      debugPrint('[IOS_LOCAL_NOTIF_DIAG] alert_setting=${settings.alert.name}');
+      debugPrint('[IOS_LOCAL_NOTIF_DIAG] sound_setting=${settings.sound.name}');
+      debugPrint('[IOS_LOCAL_NOTIF_DIAG] badge_setting=${settings.badge.name}');
+      debugPrint(
+        '[IOS_LOCAL_NOTIF_DIAG] notification_center_setting=${settings.notificationCenter.name}',
+      );
+      debugPrint(
+        '[IOS_LOCAL_NOTIF_DIAG] lock_screen_setting=${settings.lockScreen.name}',
+      );
+      debugPrint(
+        '[IOS_LOCAL_NOTIF_DIAG] plugin_initialized=${_localNotifications.isInitialized}',
+      );
+    } catch (e) {
+      debugPrint(
+        '[IOS_LOCAL_NOTIF_DIAG] notification_settings_error=${e.runtimeType}',
+      );
+    }
+  }
+
+  Future<bool> presentForegroundNotificationRow(
+    AppNotification notification,
+  ) async {
+    if (kDebugMode) {
+      debugPrint('[NOTIF_PRESENT_DIAG] realtime_insert_received');
+      debugPrint(
+        '[NOTIF_PRESENT_DIAG] lifecycle=${_currentLifecycleState.name}',
+      );
+    }
+
+    if (!_isForeground) return false;
+    if (notification.isRead) return false;
+
+    final dedupeKey = _extractNotificationDedupeKey(notification);
+    final dedupeHit = _hasPresented(dedupeKey);
+    if (kDebugMode) {
+      debugPrint('[NOTIF_PRESENT_DIAG] dedupe_hit=$dedupeHit');
+    }
+    if (dedupeHit) {
+      if (kDebugMode) {
+        debugPrint('[AMOMY_NOTIF] Skipping duplicate realtime notification');
+      }
+      return false;
+    }
+
+    final title = notification.titleEn.isNotEmpty
+        ? notification.titleEn
+        : (notification.titleAr.isNotEmpty ? notification.titleAr : 'AMOMY');
+    final body = notification.bodyEn.isNotEmpty
+        ? notification.bodyEn
+        : notification.bodyAr;
+
+    await _logIosLocalNotificationSettings();
+
+    final payload = <String, dynamic>{
+      ...notification.data,
+      'notification_id': notification.id,
+      'type': notification.type.toDbString(),
+      if (notification.entityType != null)
+        'entity_type': notification.entityType,
+      if (notification.entityId != null) 'entity_id': notification.entityId,
+    };
+
+    final shown = await _localNotifications.showForegroundNotification(
+      id: _notificationIdFromKey(dedupeKey),
+      title: title,
+      body: body,
+      payload: payload,
+    );
+    _rememberPresented(dedupeKey);
+    return shown;
   }
 
   /// Checks if the pre-permission bottom sheet should be presented to the passenger.
   /// Returns true only when:
   /// 1. The sheet has not yet been shown/dismissed (per SharedPreferences).
   /// 2. The OS permission is not yet authorized.
-  ///
-  /// Note: On Android 13+, fresh installs report 'denied' before POST_NOTIFICATIONS is requested.
-  /// We do NOT treat 'denied' on Android as proof that the user has already rejected our pre-permission flow.
   Future<bool> shouldShowPermissionPrompt() async {
+    if (kDebugMode) {
+      debugPrint('[IOS_PUSH_DIAG] 03 notification permission check start');
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        debugDisableIosPushStartup) {
+      if (kDebugMode) {
+        debugPrint(
+          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping permission prompt',
+        );
+      }
+      return false;
+    }
+
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       final hasSeen = prefs.getBool(promptShownKey) ?? false;
@@ -260,12 +420,13 @@ class NotificationService with WidgetsBindingObserver {
       final settings = await _messaging.getNotificationSettings();
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Permission status: ${settings.authorizationStatus.name}');
+          '[IOS_PUSH_DIAG] 04 current permission = ${settings.authorizationStatus.name}',
+        );
       }
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Already authorized on device, sync token and mark as shown
+        // Already authorized on device, sync token safely and mark as shown
         await syncDeviceToken();
         await prefs.setBool(promptShownKey, true);
         return false;
@@ -282,7 +443,9 @@ class NotificationService with WidgetsBindingObserver {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] shouldShowPermissionPrompt error: $e');
+        debugPrint(
+          '[IOS_PUSH_DIAG] 03 notification permission check error: ${e.runtimeType}',
+        );
       }
       return false;
     }
@@ -312,17 +475,29 @@ class NotificationService with WidgetsBindingObserver {
 
     final accepted = await NotificationPermissionSheet.show(context);
     if (accepted == true) {
-      final settings = await requestPermission(isManual: true);
-      if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] Permission requested after pre-sheet. Status: ${settings?.authorizationStatus.name}');
-      }
+      await requestPermission(isManual: true);
     }
   }
 
   /// Requests notification permission with platform-appropriate parameters.
-  Future<NotificationSettings?> requestPermission({bool isManual = false}) async {
+  Future<NotificationSettings?> requestPermission({
+    bool isManual = false,
+  }) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        debugDisableIosPushStartup) {
+      if (kDebugMode) {
+        debugPrint(
+          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping requestPermission',
+        );
+      }
+      return null;
+    }
+
     try {
+      if (kDebugMode) {
+        debugPrint('[IOS_PUSH_DIAG] 05 permission request start');
+      }
+
       final settings = await _messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -335,7 +510,8 @@ class NotificationService with WidgetsBindingObserver {
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Permission request returned: ${settings.authorizationStatus.name}');
+          '[IOS_PUSH_DIAG] 06 permission request returned = ${settings.authorizationStatus.name}',
+        );
       }
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
@@ -346,25 +522,83 @@ class NotificationService with WidgetsBindingObserver {
       return settings;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] requestPermission error: $e');
+        debugPrint(
+          '[IOS_PUSH_DIAG] 05 permission request error: ${e.runtimeType}',
+        );
       }
       return null;
     }
   }
 
+  /// Helper to verify APNs token readiness on iOS before attempting getToken.
+  /// Bounded retry: attempts up to 3 times with 500ms intervals, then stops quietly.
+  Future<bool> _isApnsReadyOnIos() async {
+    if (kDebugMode) {
+      debugPrint('[IOS_PUSH_DIAG] 07 getAPNSToken start');
+    }
+
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        final apnsToken = await _messaging.getAPNSToken();
+        final hasApns = apnsToken != null && apnsToken.trim().isNotEmpty;
+        if (kDebugMode) {
+          debugPrint(
+            '[IOS_PUSH_DIAG] 08 APNs token available = $hasApns (attempt $attempt/3)',
+          );
+        }
+        if (hasApns) return true;
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[IOS_PUSH_DIAG] 07 getAPNSToken error: ${e.runtimeType}');
+        }
+        return false;
+      }
+
+      if (attempt < 3) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+    }
+
+    if (kDebugMode) {
+      debugPrint(
+        '[IOS_PUSH_DIAG] APNs token not ready; stopping quietly without calling getToken',
+      );
+    }
+    return false;
+  }
+
   /// Syncs / upserts the current FCM device token into public.user_device_tokens.
   Future<bool> syncDeviceToken({String? forcedToken}) async {
-    try {
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        debugDisableIosPushStartup) {
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] getToken() called...');
+        debugPrint(
+          '[IOS_PUSH_DIAG] debugDisableIosPushStartup is true; skipping syncDeviceToken',
+        );
+      }
+      return false;
+    }
+
+    try {
+      // On iOS: verify APNs readiness first to prevent unready getToken crashes
+      if (defaultTargetPlatform == TargetPlatform.iOS && forcedToken == null) {
+        final apnsReady = await _isApnsReadyOnIos();
+        if (!apnsReady) {
+          _lastRegistrationStatus = 'apns_not_ready';
+          return false;
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('[IOS_PUSH_DIAG] 09 getToken start');
       }
 
       final token = forcedToken ?? await _messaging.getToken();
       final hasToken = token != null && token.trim().isNotEmpty;
 
       if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] FCM token available: $hasToken (${_maskToken(token)})');
+        final statusDesc = hasToken ? 'success' : 'null';
+        debugPrint('[IOS_PUSH_DIAG] 10 getToken $statusDesc');
       }
 
       if (!hasToken) {
@@ -373,20 +607,31 @@ class NotificationService with WidgetsBindingObserver {
       }
       _lastKnownToken = token;
 
-      final platformStr =
-          defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+      if (kDebugMode) {
+        debugPrint('[IOS_PUSH_DIAG] 11 backend token sync start');
+      }
+
+      final platformStr = defaultTargetPlatform == TargetPlatform.iOS
+          ? 'ios'
+          : 'android';
 
       final success = await repository.registerDeviceToken(
         token: token,
         platform: platformStr,
       );
 
+      if (kDebugMode) {
+        debugPrint(
+          '[IOS_PUSH_DIAG] 12 backend token sync ${success ? "success" : "error"}',
+        );
+      }
+
       _lastRegistrationStatus = success ? 'success' : 'failure';
       return success;
     } catch (e) {
       _lastRegistrationStatus = 'error: $e';
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] syncDeviceToken error: $e');
+        debugPrint('[IOS_PUSH_DIAG] syncDeviceToken error: ${e.runtimeType}');
       }
       return false;
     }
@@ -414,9 +659,15 @@ class NotificationService with WidgetsBindingObserver {
   Future<SelfTestResult> executeSelfTest({int? delaySeconds}) async {
     _lastSelfTestTime = DateTime.now();
     try {
-      final result = await repository.sendSelfTestNotification(delaySeconds: delaySeconds);
-      _lastSelfTestBackendResult = result.success ? 'success' : 'error: ${result.error ?? result.message}';
-      _lastFcmProviderResult = result.fcmSuccesses > 0 ? 'success' : (result.totalDevices == 0 ? 'no_devices' : 'failure');
+      final result = await repository.sendSelfTestNotification(
+        delaySeconds: delaySeconds,
+      );
+      _lastSelfTestBackendResult = result.success
+          ? 'success'
+          : 'error: ${result.error ?? result.message}';
+      _lastFcmProviderResult = result.fcmSuccesses > 0
+          ? 'success'
+          : (result.totalDevices == 0 ? 'no_devices' : 'failure');
       return result;
     } catch (e) {
       _lastSelfTestBackendResult = 'error: $e';
@@ -447,9 +698,12 @@ class NotificationService with WidgetsBindingObserver {
       final settings = await _messaging.getNotificationSettings();
       permStatus = settings.authorizationStatus.name;
       if (defaultTargetPlatform == TargetPlatform.android) {
-        postNotif = settings.authorizationStatus == AuthorizationStatus.authorized
+        postNotif =
+            settings.authorizationStatus == AuthorizationStatus.authorized
             ? 'granted'
-            : (settings.authorizationStatus == AuthorizationStatus.denied ? 'denied' : 'notDetermined');
+            : (settings.authorizationStatus == AuthorizationStatus.denied
+                  ? 'denied'
+                  : 'notDetermined');
       }
     } catch (e) {
       permStatus = 'error: $e';
@@ -475,14 +729,18 @@ class NotificationService with WidgetsBindingObserver {
         : (_lastRegistrationStatus == 'failure' ? 'false' : 'unknown');
 
     // 5. Active token row
-    final activeRow = tokenAvail && _lastRegistrationStatus == 'success' ? 'true' : 'unknown';
+    final activeRow = tokenAvail && _lastRegistrationStatus == 'success'
+        ? 'true'
+        : 'unknown';
 
     // 6. Local notifications
     final localInit = _localNotifications.isInitialized;
     final channelStatus = localInit ? 'created' : 'missing';
 
     // 7. Last timestamps formatting helper
-    String fmtTime(DateTime? dt) => dt != null ? dt.toIso8601String().split('T').last.split('.').first : 'none';
+    String fmtTime(DateTime? dt) => dt != null
+        ? dt.toIso8601String().split('T').last.split('.').first
+        : 'none';
 
     return NotificationDiagnosticData(
       firebaseInitialized: fbInit,
@@ -499,7 +757,9 @@ class NotificationService with WidgetsBindingObserver {
       foregroundListenerAttached: _foregroundMessageSub != null,
       backgroundHandlerRegistered: true,
       lastForegroundFcmMessage: fmtTime(_lastForegroundFcmTime),
-      lastLocalNotificationShowAttempt: fmtTime(_localNotifications.lastShowAttempt),
+      lastLocalNotificationShowAttempt: fmtTime(
+        _localNotifications.lastShowAttempt,
+      ),
       lastLocalNotificationResult: _localNotifications.lastShowResult ?? 'none',
       lastSelfTestRequest: fmtTime(_lastSelfTestTime),
       lastSelfTestBackendResult: _lastSelfTestBackendResult ?? 'none',

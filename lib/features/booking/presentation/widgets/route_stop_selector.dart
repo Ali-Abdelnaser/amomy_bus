@@ -128,6 +128,7 @@ class RouteStopSelector extends StatelessWidget {
   }) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       isScrollControlled: true,
       showDragHandle: false,
       elevation: 0,

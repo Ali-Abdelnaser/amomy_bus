@@ -134,6 +134,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get changeEmail => 'تغيير البريد / رجوع';
 
   @override
+  String get didntReceiveCode => 'لم تستلم الرمز؟';
+
+  @override
+  String get wrongEmailPrompt => 'البريد الإلكتروني غير صحيح؟';
+
+  @override
+  String get changeEmailAction => 'تغيير البريد';
+
+  @override
+  String get otpInvalid => 'رمز التحقق غير صحيح.';
+
+  @override
+  String get otpExpired => 'انتهت صلاحية هذا الرمز. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpRateLimited => 'يرجى الانتظار قليلاً قبل طلب رمز جديد.';
+
+  @override
+  String get otpNetworkError =>
+      'تعذر التحقق من الرمز. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get selectDateTitle => 'تحديد التاريخ';
+
+  @override
+  String get confirmDate => 'تأكيد التاريخ';
+
+  @override
+  String get dayColumnLabel => 'اليوم';
+
+  @override
+  String get monthColumnLabel => 'الشهر';
+
+  @override
+  String get yearColumnLabel => 'السنة';
+
+  @override
   String get completeProfileTitle => 'استكمال البيانات';
 
   @override
@@ -500,6 +537,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get viewMyTrips => 'عرض رحلاتي';
 
   @override
+  String get mitFadalaStopName => 'ميت فضالة';
+
+  @override
+  String departureBusAtFirstStop(Object stopName) {
+    return 'موعد الباص في $stopName';
+  }
+
+  @override
+  String get firstStopLabel => 'أول نقطة انطلاق';
+
+  @override
   String get tripDetailsDirection => 'اتجاه الرحلة';
 
   @override
@@ -754,6 +802,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get departureSelected => 'تم الاختيار';
+
+  @override
+  String get departureSelectedTrip => 'الرحلة المختارة';
+
+  @override
+  String get departureAvailable => 'متاح';
+
+  @override
+  String get departureFullyBooked => 'مكتمل';
 
   @override
   String get departureAvailableNow => 'متاح الآن';
@@ -1140,4 +1197,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get allRightsReserved => 'جميع الحقوق محفوظة.';
+
+  @override
+  String get privacyPolicyUrl => 'https://amomy.com/privacy-policy';
+
+  @override
+  String get termsAndConditionsUrl => 'https://amomy.com/terms-and-conditions';
 }

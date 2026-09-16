@@ -19,16 +19,14 @@ class MockBookingRepository implements BookingRepository {
   @override
   ResultFuture<List<RouteStop>> getRouteStops({
     required BookingDirection direction,
-  }) async =>
-      const Success([]);
+  }) async => const Success([]);
 
   @override
   ResultFuture<List<TripOption>> getAvailableTrips({
     required BookingDirection direction,
     DateTime? date,
     String? routeStopId,
-  }) async =>
-      const Success([]);
+  }) async => const Success([]);
 
   @override
   ResultFuture<List<TripSeat>> getTripSeatMap({required String tripId}) async =>
@@ -52,7 +50,9 @@ class MockBookingRepository implements BookingRepository {
   }
 
   @override
-  ResultFuture<PassengerBooking> confirmBooking({required String holdId}) async {
+  ResultFuture<PassengerBooking> confirmBooking({
+    required String holdId,
+  }) async {
     confirmBookingCallCount++;
     if (confirmFailure != null) {
       return Error(confirmFailure!);
@@ -68,22 +68,24 @@ class MockBookingRepository implements BookingRepository {
   ResultFuture<List<PassengerTodayTrip>> getPassengerTodayTrips({
     String? direction,
     String? originRouteStopId,
-  }) async =>
-      const Success([]);
+  }) async => const Success([]);
 
   @override
   ResultFuture<PassengerTripPreference?> getMyTripPreferences() async =>
       const Success(null);
 
   @override
-  Stream<void> subscribeToTripSeatUpdates(String tripId) => const Stream.empty();
+  Stream<void> subscribeToTripSeatUpdates(String tripId) =>
+      const Stream.empty();
+
+  @override
+  Stream<void> subscribeToPassengerBookingUpdates() => const Stream.empty();
 
   @override
   ResultFuture<PassengerTripPreference> setMyTripPreferences({
     required String originStopId,
     required String destinationStopId,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   ResultFuture<void> cancelBooking(String bookingId) async =>
@@ -93,8 +95,7 @@ class MockBookingRepository implements BookingRepository {
   ResultFuture<void> changeBookingSeat({
     required String bookingId,
     required String newSeatId,
-  }) async =>
-      const Success(null);
+  }) async => const Success(null);
 }
 
 void main() {
@@ -191,125 +192,149 @@ void main() {
   });
 
   group('Booking Flow Stability & Timer Lifecycle', () {
-    test('1 & 6. Error listener filter fires once and ignores countdown ticks', () {
-      bool shouldListen(BookingState prev, BookingState curr) {
-        final hasNewError = curr.errorMessage != null &&
-            curr.errorMessage!.isNotEmpty &&
-            (curr.errorMessage != prev.errorMessage || curr.status != prev.status);
-        final hasNewAlert = curr.autoTripAlert != null &&
-            curr.autoTripAlert!.isNotEmpty &&
-            curr.autoTripAlert != prev.autoTripAlert;
-        return hasNewError || hasNewAlert;
-      }
+    test(
+      '1 & 6. Error listener filter fires once and ignores countdown ticks',
+      () {
+        bool shouldListen(BookingState prev, BookingState curr) {
+          final hasNewError =
+              curr.errorMessage != null &&
+              curr.errorMessage!.isNotEmpty &&
+              (curr.errorMessage != prev.errorMessage ||
+                  curr.status != prev.status);
+          final hasNewAlert =
+              curr.autoTripAlert != null &&
+              curr.autoTripAlert!.isNotEmpty &&
+              curr.autoTripAlert != prev.autoTripAlert;
+          return hasNewError || hasNewAlert;
+        }
 
-      final stateReady = BookingState(
-        status: BookingStatus.seatHeld,
-        holdSecondsRemaining: 46,
-        activeHold: sampleHold1,
-      );
+        final stateReady = BookingState(
+          status: BookingStatus.seatHeld,
+          holdSecondsRemaining: 46,
+          activeHold: sampleHold1,
+        );
 
-      final stateError = stateReady.copyWith(
-        status: BookingStatus.error,
-        errorMessage: 'Something went wrong',
-      );
+        final stateError = stateReady.copyWith(
+          status: BookingStatus.error,
+          errorMessage: 'Something went wrong',
+        );
 
-      // First transition into error -> listenWhen MUST return true
-      expect(shouldListen(stateReady, stateError), isTrue);
+        // First transition into error -> listenWhen MUST return true
+        expect(shouldListen(stateReady, stateError), isTrue);
 
-      // Countdown tick: holdSecondsRemaining decreases 46 -> 45
-      // With our fix, countdown clears error and restores stable status
-      final stateTickFixed = stateError.copyWith(
-        holdSecondsRemaining: 45,
-        status: BookingStatus.seatHeld,
-        clearError: true,
-      );
-      expect(shouldListen(stateError, stateTickFixed), isFalse);
+        // Countdown tick: holdSecondsRemaining decreases 46 -> 45
+        // With our fix, countdown clears error and restores stable status
+        final stateTickFixed = stateError.copyWith(
+          holdSecondsRemaining: 45,
+          status: BookingStatus.seatHeld,
+          clearError: true,
+        );
+        expect(shouldListen(stateError, stateTickFixed), isFalse);
 
-      // Even if previous tick was countdown only without clearing, same errorMessage is filtered
-      final stateTickSameError = stateError.copyWith(holdSecondsRemaining: 45);
-      expect(shouldListen(stateError, stateTickSameError), isFalse);
-    });
+        // Even if previous tick was countdown only without clearing, same errorMessage is filtered
+        final stateTickSameError = stateError.copyWith(
+          holdSecondsRemaining: 45,
+        );
+        expect(shouldListen(stateError, stateTickSameError), isFalse);
+      },
+    );
 
-    test('2. Error dialog does not re-open every second because clearError consumes it', () async {
-      mockRepo.confirmFailure = const ServerFailure(message: 'PostgrestException: enum error');
-      mockRepo.holdToReturn = sampleHold1;
+    test(
+      '2. Error dialog does not re-open every second because clearError consumes it',
+      () async {
+        mockRepo.confirmFailure = const ServerFailure(
+          message: 'PostgrestException: enum error',
+        );
+        mockRepo.holdToReturn = sampleHold1;
 
-      // Seed state with trip and active hold
-      cubit.selectTrip(sampleTrip);
-      cubit.emit(cubit.state.copyWith(
-        selectedTrip: sampleTrip,
-        selectedSeat: sampleSeat1,
-        activeHold: sampleHold1,
-        status: BookingStatus.seatHeld,
-      ));
+        // Seed state with trip and active hold
+        cubit.selectTrip(sampleTrip);
+        cubit.emit(
+          cubit.state.copyWith(
+            selectedTrip: sampleTrip,
+            selectedSeat: sampleSeat1,
+            activeHold: sampleHold1,
+            status: BookingStatus.seatHeld,
+          ),
+        );
 
-      // Call confirmBooking which fails
-      await cubit.confirmBooking();
+        // Call confirmBooking which fails
+        await cubit.confirmBooking();
 
-      expect(cubit.state.status, BookingStatus.error);
-      expect(cubit.state.errorMessage, contains('PostgrestException'));
+        expect(cubit.state.status, BookingStatus.error);
+        expect(cubit.state.errorMessage, contains('PostgrestException'));
 
-      // Consumer consumes the error
-      cubit.clearError();
+        // Consumer consumes the error
+        cubit.clearError();
 
-      expect(cubit.state.errorMessage, isNull);
-      expect(cubit.state.status, BookingStatus.seatHeld);
-    });
+        expect(cubit.state.errorMessage, isNull);
+        expect(cubit.state.status, BookingStatus.seatHeld);
+      },
+    );
 
-    test('3. Back from Review cancels old countdown and releases hold appropriately', () async {
-      mockRepo.holdToReturn = sampleHold1;
-      cubit.selectTrip(sampleTrip);
-      await cubit.selectSeatAndHold(sampleSeat1);
+    test(
+      '3. Back from Review cancels old countdown and releases hold appropriately',
+      () async {
+        mockRepo.holdToReturn = sampleHold1;
+        cubit.selectTrip(sampleTrip);
+        await cubit.selectSeatAndHold(sampleSeat1);
 
-      expect(cubit.state.activeHold, isNotNull);
-      expect(cubit.state.selectedSeat, sampleSeat1);
+        expect(cubit.state.activeHold, isNotNull);
+        expect(cubit.state.selectedSeat, sampleSeat1);
 
-      cubit.proceedToReview();
-      expect(cubit.state.currentStep, BookingStep.review);
+        cubit.proceedToReview();
+        expect(cubit.state.currentStep, BookingStep.review);
 
-      // User taps Back to choose another seat
-      cubit.backToSeatMap();
+        // User taps Back to choose another seat
+        cubit.backToSeatMap();
 
-      expect(cubit.state.currentStep, BookingStep.seatMap);
-      expect(cubit.state.activeHold, isNull);
-      expect(cubit.state.selectedSeat, isNull);
-      expect(cubit.state.holdSecondsRemaining, 0);
-      expect(mockRepo.releaseBookingHoldCallCount, 1);
-    });
+        expect(cubit.state.currentStep, BookingStep.seatMap);
+        expect(cubit.state.activeHold, isNull);
+        expect(cubit.state.selectedSeat, isNull);
+        expect(cubit.state.holdSecondsRemaining, 0);
+        expect(mockRepo.releaseBookingHoldCallCount, 1);
+      },
+    );
 
-    test('4. Selecting another seat releases old hold and does not stack timers', () async {
-      mockRepo.holdToReturn = sampleHold1;
-      cubit.selectTrip(sampleTrip);
-      await cubit.selectSeatAndHold(sampleSeat1);
+    test(
+      '4. Selecting another seat releases old hold and does not stack timers',
+      () async {
+        mockRepo.holdToReturn = sampleHold1;
+        cubit.selectTrip(sampleTrip);
+        await cubit.selectSeatAndHold(sampleSeat1);
 
-      expect(cubit.state.activeHold?.seatId, 'seat-1');
+        expect(cubit.state.activeHold?.seatId, 'seat-1');
 
-      // Now user chooses Seat 2
-      mockRepo.holdToReturn = sampleHold2;
-      await cubit.selectSeatAndHold(sampleSeat2);
+        // Now user chooses Seat 2
+        mockRepo.holdToReturn = sampleHold2;
+        await cubit.selectSeatAndHold(sampleSeat2);
 
-      expect(mockRepo.releaseBookingHoldCallCount, 1);
-      expect(cubit.state.activeHold?.seatId, 'seat-2');
-      expect(cubit.state.selectedSeat?.seatId, 'seat-2');
-    });
+        expect(mockRepo.releaseBookingHoldCallCount, 1);
+        expect(cubit.state.activeHold?.seatId, 'seat-2');
+        expect(cubit.state.selectedSeat?.seatId, 'seat-2');
+      },
+    );
 
-    test('5. Confirm button double tap produces exactly ONE confirm call', () async {
-      mockRepo.holdToReturn = sampleHold1;
-      mockRepo.bookingToReturn = sampleBooking;
+    test(
+      '5. Confirm button double tap produces exactly ONE confirm call',
+      () async {
+        mockRepo.holdToReturn = sampleHold1;
+        mockRepo.bookingToReturn = sampleBooking;
 
-      cubit.selectTrip(sampleTrip);
-      await cubit.selectSeatAndHold(sampleSeat1);
-      cubit.proceedToReview();
+        cubit.selectTrip(sampleTrip);
+        await cubit.selectSeatAndHold(sampleSeat1);
+        cubit.proceedToReview();
 
-      // Double tap confirmBooking concurrently
-      final future1 = cubit.confirmBooking();
-      final future2 = cubit.confirmBooking();
+        // Double tap confirmBooking concurrently
+        final future1 = cubit.confirmBooking();
+        final future2 = cubit.confirmBooking();
 
-      await Future.wait([future1, future2]);
+        await Future.wait([future1, future2]);
 
-      expect(mockRepo.confirmBookingCallCount, 1);
-      expect(cubit.state.status, BookingStatus.confirmed);
-    });
+        expect(mockRepo.confirmBookingCallCount, 1);
+        expect(cubit.state.status, BookingStatus.confirmed);
+      },
+    );
 
     test('7. Cubit close cleanly cancels active hold timer', () async {
       mockRepo.holdToReturn = sampleHold1;
@@ -323,49 +348,52 @@ void main() {
       expect(cubit.isClosed, isTrue);
     });
 
-    test('8. Compact toString formatting does not dump 34 stops or 28 seats', () {
-      final stateWithFullLists = BookingState(
-        currentStep: BookingStep.review,
-        status: BookingStatus.seatHeld,
-        selectedTrip: sampleTrip,
-        selectedSeat: sampleSeat1,
-        holdSecondsRemaining: 45,
-        routeStops: List.generate(
-          34,
-          (i) => RouteStop(
-            routeStopId: 'rs-$i',
-            stopId: 'stop-$i',
-            stopOrder: i,
-            stopNameAr: 'محطة $i',
-            localityAr: 'منطقة $i',
-            fareZoneId: 'fz-1',
-            farePoints: 25.0,
+    test(
+      '8. Compact toString formatting does not dump 34 stops or 28 seats',
+      () {
+        final stateWithFullLists = BookingState(
+          currentStep: BookingStep.review,
+          status: BookingStatus.seatHeld,
+          selectedTrip: sampleTrip,
+          selectedSeat: sampleSeat1,
+          holdSecondsRemaining: 45,
+          routeStops: List.generate(
+            34,
+            (i) => RouteStop(
+              routeStopId: 'rs-$i',
+              stopId: 'stop-$i',
+              stopOrder: i,
+              stopNameAr: 'محطة $i',
+              localityAr: 'منطقة $i',
+              fareZoneId: 'fz-1',
+              farePoints: 25.0,
+            ),
           ),
-        ),
-        seats: List.generate(
-          28,
-          (i) => TripSeat(
-            seatId: 'seat-$i',
-            seatNumber: '$i',
-            rowIndex: i ~/ 4,
-            columnIndex: i % 4,
-            seatType: 'standard',
-            status: SeatAvailabilityStatus.available,
-            isMine: false,
+          seats: List.generate(
+            28,
+            (i) => TripSeat(
+              seatId: 'seat-$i',
+              seatNumber: '$i',
+              rowIndex: i ~/ 4,
+              columnIndex: i % 4,
+              seatType: 'standard',
+              status: SeatAvailabilityStatus.available,
+              isMine: false,
+            ),
           ),
-        ),
-      );
+        );
 
-      final stateString = stateWithFullLists.toString();
+        final stateString = stateWithFullLists.toString();
 
-      expect(stateString, contains('BookingState('));
-      expect(stateString, contains('step: review'));
-      expect(stateString, contains('status: seatHeld'));
-      expect(stateString, contains('seat: 1'));
-      expect(stateString, contains('holdRemaining: 45s'));
-      // Must NOT contain 34 stops or 28 seats dumped
-      expect(stateString, isNot(contains('محطة 33')));
-      expect(stateString, isNot(contains('seat-27')));
-    });
+        expect(stateString, contains('BookingState('));
+        expect(stateString, contains('step: review'));
+        expect(stateString, contains('status: seatHeld'));
+        expect(stateString, contains('seat: 1'));
+        expect(stateString, contains('holdRemaining: 45s'));
+        // Must NOT contain 34 stops or 28 seats dumped
+        expect(stateString, isNot(contains('محطة 33')));
+        expect(stateString, isNot(contains('seat-27')));
+      },
+    );
   });
 }

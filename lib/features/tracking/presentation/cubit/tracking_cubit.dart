@@ -33,9 +33,9 @@ class TrackingCubit extends Cubit<TrackingState> {
     this.isQaAuthorizedOverride,
     StopProgressionEngine? progressionEngine,
     StopEtaEngine? etaEngine,
-  })  : _progressionEngine = progressionEngine ?? StopProgressionEngine(),
-        _etaEngine = etaEngine ?? StopEtaEngine(),
-        super(const TrackingState());
+  }) : _progressionEngine = progressionEngine ?? StopProgressionEngine(),
+       _etaEngine = etaEngine ?? StopEtaEngine(),
+       super(const TrackingState());
 
   Future<bool> _isUserQaAuthorized() async {
     // Release builds strictly cannot enable QA preview
@@ -43,8 +43,11 @@ class TrackingCubit extends Cubit<TrackingState> {
     if (isQaAuthorizedOverride != null) return isQaAuthorizedOverride!;
 
     try {
-      final authRepo = authRepository ??
-          (getIt.isRegistered<AuthRepository>() ? getIt<AuthRepository>() : null);
+      final authRepo =
+          authRepository ??
+          (getIt.isRegistered<AuthRepository>()
+              ? getIt<AuthRepository>()
+              : null);
       if (authRepo == null) return false;
 
       final userResult = await authRepo.getCurrentUser();
@@ -52,10 +55,12 @@ class TrackingCubit extends Cubit<TrackingState> {
       if (user == null) return false;
 
       return user.hasAdminPrivileges ||
-          user.roles.any((r) =>
-              r.isAdmin ||
-              r.value.toLowerCase() == 'qa' ||
-              r.value.toLowerCase() == 'super_admin');
+          user.roles.any(
+            (r) =>
+                r.isAdmin ||
+                r.value.toLowerCase() == 'qa' ||
+                r.value.toLowerCase() == 'super_admin',
+          );
     } catch (_) {
       return false;
     }
@@ -68,7 +73,9 @@ class TrackingCubit extends Cubit<TrackingState> {
 
     try {
       final isQaAuthorized = await _isUserQaAuthorized();
-      final summary = await repository.getTrackingSummary(includeQa: isQaAuthorized);
+      final summary = await repository.getTrackingSummary(
+        includeQa: isQaAuthorized,
+      );
 
       // Check if we should activate safe QA Preview mode outside operating hours
       final isOutsideHours = summary.status == LiveTrackingStatus.offline;
@@ -84,8 +91,10 @@ class TrackingCubit extends Cubit<TrackingState> {
       final telemetry = effectiveSummary.busLocation;
 
       final hasBackendProgression =
-          effectiveSummary.currentStop != null || effectiveSummary.nextStop != null;
-      final progression = hasBackendProgression &&
+          effectiveSummary.currentStop != null ||
+          effectiveSummary.nextStop != null;
+      final progression =
+          hasBackendProgression &&
               effectiveSummary.currentStop != null &&
               effectiveSummary.nextStop != null
           ? StopProgression(
@@ -94,8 +103,8 @@ class TrackingCubit extends Cubit<TrackingState> {
               status: effectiveSummary.progressState == 'at_stop'
                   ? ApproachStatus.atStop
                   : effectiveSummary.progressState == 'approaching'
-                      ? ApproachStatus.approaching
-                      : ApproachStatus.departed,
+                  ? ApproachStatus.approaching
+                  : ApproachStatus.departed,
             )
           : _progressionEngine.evaluate(
               orderedStops: effectiveSummary.routeStops,
@@ -107,7 +116,9 @@ class TrackingCubit extends Cubit<TrackingState> {
       // Fetch stored Google road geometry if route is configured
       RouteGeometry? routeGeom;
       if (effectiveSummary.activeRouteId != null) {
-        final dir = effectiveSummary.activeDirection == TrackingDirection.returnDirection
+        final dir =
+            effectiveSummary.activeDirection ==
+                TrackingDirection.returnDirection
             ? 'return'
             : 'outbound';
         routeGeom = await repository.getActiveRouteGeometry(
@@ -117,7 +128,10 @@ class TrackingCubit extends Cubit<TrackingState> {
       }
 
       if (telemetry != null) {
-        _etaEngine.recordTelemetrySpeed(telemetry.speedKmh, telemetry.gpsRecordedAt);
+        _etaEngine.recordTelemetrySpeed(
+          telemetry.speedKmh,
+          telemetry.gpsRecordedAt,
+        );
       }
       final effectiveSpeed = _etaEngine.getEffectiveSpeedKmh(
         instantSpeedKmh: telemetry?.speedKmh,
@@ -130,17 +144,19 @@ class TrackingCubit extends Cubit<TrackingState> {
         routePolylinePoints: routeGeom?.points,
       );
 
-      emit(state.copyWith(
-        uiStatus: TrackingUiStatus.loaded,
-        summary: effectiveSummary,
-        routeGeometry: routeGeom,
-        latestTelemetry: telemetry,
-        progression: progression,
-        approachAlertsEnabled: effectiveSummary.approachAlertsEnabled,
-        stopTimings: timings,
-        effectiveSpeedKmh: effectiveSpeed,
-        errorMessage: null,
-      ));
+      emit(
+        state.copyWith(
+          uiStatus: TrackingUiStatus.loaded,
+          summary: effectiveSummary,
+          routeGeometry: routeGeom,
+          latestTelemetry: telemetry,
+          progression: progression,
+          approachAlertsEnabled: effectiveSummary.approachAlertsEnabled,
+          stopTimings: timings,
+          effectiveSpeedKmh: effectiveSpeed,
+          errorMessage: null,
+        ),
+      );
 
       if (shouldActivateQaPreview) {
         _startQaSimulation(effectiveSummary);
@@ -154,10 +170,12 @@ class TrackingCubit extends Cubit<TrackingState> {
         _startStalenessWatcher();
       }
     } catch (e) {
-      emit(state.copyWith(
-        uiStatus: TrackingUiStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          uiStatus: TrackingUiStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -227,13 +245,15 @@ class TrackingCubit extends Cubit<TrackingState> {
         now: telemetry.gpsRecordedAt,
       );
 
-      emit(state.copyWith(
-        summary: updated,
-        latestTelemetry: telemetry,
-        progression: progression,
-        stopTimings: timings,
-        effectiveSpeedKmh: 34.0,
-      ));
+      emit(
+        state.copyWith(
+          summary: updated,
+          latestTelemetry: telemetry,
+          progression: progression,
+          stopTimings: timings,
+          effectiveSpeedKmh: 34.0,
+        ),
+      );
 
       _qaStopIndex = nextIdx;
     }
@@ -256,7 +276,8 @@ class TrackingCubit extends Cubit<TrackingState> {
     final lat1 = startLat * (math.pi / 180.0);
     final lat2 = endLat * (math.pi / 180.0);
     final y = math.sin(dLon) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
+    final x =
+        math.cos(lat1) * math.sin(lat2) -
         math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
     final brng = math.atan2(y, x) * (180.0 / math.pi);
     return (brng + 360.0) % 360.0;
@@ -264,13 +285,21 @@ class TrackingCubit extends Cubit<TrackingState> {
 
   void _subscribeToTelemetry() {
     _telemetrySubscription?.cancel();
+    debugPrint('[REALTIME_DIAG] bus_live_locations subscribe start');
     _telemetrySubscription = repository.subscribeToBusLiveLocation().listen(
       (newTelemetry) {
+        debugPrint(
+          '[REALTIME_DIAG] bus_live_locations subscribe success (event received)',
+        );
         _onNewTelemetry(newTelemetry);
       },
       onError: (err) {
+        debugPrint(
+          '[REALTIME_DIAG] bus_live_locations subscribe error: ${err.runtimeType}',
+        );
         // Stream errors do not break UI; fallback to polling or stale status
       },
+      cancelOnError: false,
     );
   }
 
@@ -282,15 +311,15 @@ class TrackingCubit extends Cubit<TrackingState> {
     final hasBackendNext = newTelemetry.nextStopId != null;
     final backendNextStop = hasBackendNext
         ? currentSummary.routeStops.cast<BusStopModel?>().firstWhere(
-              (s) => s?.id == newTelemetry.nextStopId,
-              orElse: () => null,
-            )
+            (s) => s?.id == newTelemetry.nextStopId,
+            orElse: () => null,
+          )
         : null;
     final backendCurrentStop = newTelemetry.currentStopId != null
         ? currentSummary.routeStops.cast<BusStopModel?>().firstWhere(
-              (s) => s?.id == newTelemetry.currentStopId,
-              orElse: () => null,
-            )
+            (s) => s?.id == newTelemetry.currentStopId,
+            orElse: () => null,
+          )
         : null;
 
     final progression = (backendCurrentStop != null && backendNextStop != null)
@@ -300,8 +329,8 @@ class TrackingCubit extends Cubit<TrackingState> {
             status: newTelemetry.progressState == 'at_stop'
                 ? ApproachStatus.atStop
                 : newTelemetry.progressState == 'approaching'
-                    ? ApproachStatus.approaching
-                    : ApproachStatus.departed,
+                ? ApproachStatus.approaching
+                : ApproachStatus.departed,
           )
         : _progressionEngine.evaluate(
             orderedStops: currentSummary.routeStops,
@@ -317,12 +346,16 @@ class TrackingCubit extends Cubit<TrackingState> {
       serviceState: newTelemetry.serviceState ?? currentSummary.serviceState,
       progressState: newTelemetry.progressState ?? currentSummary.progressState,
       activeTripId: newTelemetry.activeTripId ?? currentSummary.activeTripId,
-      activeRunTime: newTelemetry.serviceRunTime ?? currentSummary.activeRunTime,
+      activeRunTime:
+          newTelemetry.serviceRunTime ?? currentSummary.activeRunTime,
       currentStop: backendCurrentStop ?? currentSummary.currentStop,
       nextStop: backendNextStop ?? currentSummary.nextStop,
     );
 
-    _etaEngine.recordTelemetrySpeed(newTelemetry.speedKmh, newTelemetry.gpsRecordedAt);
+    _etaEngine.recordTelemetrySpeed(
+      newTelemetry.speedKmh,
+      newTelemetry.gpsRecordedAt,
+    );
     final effectiveSpeed = _etaEngine.getEffectiveSpeedKmh(
       instantSpeedKmh: newTelemetry.speedKmh,
       now: newTelemetry.gpsRecordedAt,
@@ -335,13 +368,15 @@ class TrackingCubit extends Cubit<TrackingState> {
       now: newTelemetry.gpsRecordedAt,
     );
 
-    emit(state.copyWith(
-      summary: updatedSummary,
-      latestTelemetry: newTelemetry,
-      progression: progression,
-      stopTimings: timings,
-      effectiveSpeedKmh: effectiveSpeed,
-    ));
+    emit(
+      state.copyWith(
+        summary: updatedSummary,
+        latestTelemetry: newTelemetry,
+        progression: progression,
+        stopTimings: timings,
+        effectiveSpeedKmh: effectiveSpeed,
+      ),
+    );
 
     // Check approach notification trigger using backend nextStopId authority
     _checkApproachNotification(
@@ -386,19 +421,24 @@ class TrackingCubit extends Cubit<TrackingState> {
       final stopNameAr = targetStop.nameAr;
       final stopNameEn = targetStop.nameEn;
 
-      repository.recordApproachNotification(
-        routeId: routeId,
-        targetStopId: targetStop.id,
-        serviceRunTime: '$runTime:00',
-        titleAr: 'الحافلة تقترب من محطتك! 🚌',
-        titleEn: 'Bus is approaching your stop! 🚌',
-        bodyAr: 'الحافلة تقترب الآن من محطة $stopNameAr. يرجى التواجد في المحطة.',
-        bodyEn: 'The bus is now approaching $stopNameEn. Please be ready at the stop.',
-      ).then((dispatched) {
-        if (dispatched) {
-          emit(state.copyWith(approachAlertDispatched: true));
-        }
-      }).catchError((_) {});
+      repository
+          .recordApproachNotification(
+            routeId: routeId,
+            targetStopId: targetStop.id,
+            serviceRunTime: '$runTime:00',
+            titleAr: 'الحافلة تقترب من محطتك! 🚌',
+            titleEn: 'Bus is approaching your stop! 🚌',
+            bodyAr:
+                'الحافلة تقترب الآن من محطة $stopNameAr. يرجى التواجد في المحطة.',
+            bodyEn:
+                'The bus is now approaching $stopNameEn. Please be ready at the stop.',
+          )
+          .then((dispatched) {
+            if (dispatched) {
+              emit(state.copyWith(approachAlertDispatched: true));
+            }
+          })
+          .catchError((_) {});
     }
   }
 
@@ -406,16 +446,22 @@ class TrackingCubit extends Cubit<TrackingState> {
     _stalenessTimer?.cancel();
     _stalenessTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       final telemetry = state.latestTelemetry;
-      if (telemetry != null && state.trackingStatus != LiveTrackingStatus.qaPreview) {
+      if (telemetry != null &&
+          state.trackingStatus != LiveTrackingStatus.qaPreview) {
         final age = DateTime.now()
             .toUtc()
             .difference(telemetry.gpsRecordedAt)
             .inSeconds;
         final isStale = age > 120;
         if (telemetry.isStale != isStale) {
-          emit(state.copyWith(
-            latestTelemetry: telemetry.copyWith(isStale: isStale, ageSeconds: age),
-          ));
+          emit(
+            state.copyWith(
+              latestTelemetry: telemetry.copyWith(
+                isStale: isStale,
+                ageSeconds: age,
+              ),
+            ),
+          );
         }
       }
     });

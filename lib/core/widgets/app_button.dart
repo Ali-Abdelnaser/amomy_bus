@@ -64,12 +64,8 @@ class AppButton extends StatelessWidget {
         break;
     }
 
-    final childWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isLoading)
-          SizedBox(
+    final childWidget = isLoading
+        ? SizedBox(
             width: 20,
             height: 20,
             child: CircularProgressIndicator(
@@ -77,12 +73,23 @@ class AppButton extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           )
-        else ...[
-          if (iconWidget != null) ...[iconWidget, AppSpacing.gapW8],
-          Text(displayLabel, style: textStyle),
-        ],
-      ],
-    );
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (iconWidget != null) ...[iconWidget, AppSpacing.gapW8],
+              Flexible(
+                child: Text(
+                  displayLabel,
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          );
 
     Widget button;
 

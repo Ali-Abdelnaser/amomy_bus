@@ -30,7 +30,9 @@ class _MockNotificationPreferencesRepo implements NotificationRepository {
   Future<NotificationPreferences> getPreferences() async => preferences;
 
   @override
-  Future<NotificationPreferences> updatePreferences(NotificationPreferences prefs) async {
+  Future<NotificationPreferences> updatePreferences(
+    NotificationPreferences prefs,
+  ) async {
     updateCount++;
     preferences = prefs;
     return preferences;
@@ -52,8 +54,10 @@ class _MockNotificationPreferencesRepo implements NotificationRepository {
     final catalogItem = NotificationEventCatalog.find(eventType);
     final categoryKey = catalogItem.category;
 
-    if (!forceDelivery && !preferences.isCategoryEnabled(
-        NotificationPreferenceCategory.fromEventTypeString(eventType))) {
+    if (!forceDelivery &&
+        !preferences.isCategoryEnabled(
+          NotificationPreferenceCategory.fromEventTypeString(eventType),
+        )) {
       return NotificationTestEventResult(
         success: true,
         eventType: eventType,
@@ -79,10 +83,17 @@ class _MockNotificationPreferencesRepo implements NotificationRepository {
   }
 
   @override
-  Future<List<AppNotification>> getNotifications({int limit = 50, int offset = 0}) async => [];
+  Future<List<AppNotification>> getNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async => [];
 
   @override
   Future<int> getUnreadCount() async => 0;
+
+  @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() =>
+      const Stream.empty();
 
   @override
   Future<bool> markAsRead(String notificationId) async => true;
@@ -117,67 +128,99 @@ void main() {
   group('Event to Category Mapping', () {
     test('maps notification types to correct preference categories', () {
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.system),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.system,
+        ),
         NotificationPreferenceCategory.serviceUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.generalAnnouncement),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.generalAnnouncement,
+        ),
         NotificationPreferenceCategory.serviceUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.serviceUpdate),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.serviceUpdate,
+        ),
         NotificationPreferenceCategory.serviceUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.bookingConfirmed),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.bookingConfirmed,
+        ),
         NotificationPreferenceCategory.bookingUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.bookingCancelled),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.bookingCancelled,
+        ),
         NotificationPreferenceCategory.bookingUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.seatChanged),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.seatChanged,
+        ),
         NotificationPreferenceCategory.bookingUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.topupApproved),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.topupApproved,
+        ),
         NotificationPreferenceCategory.walletUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.topupRejected),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.topupRejected,
+        ),
         NotificationPreferenceCategory.walletUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.walletCredit),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.walletCredit,
+        ),
         NotificationPreferenceCategory.walletUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.walletRefund),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.walletRefund,
+        ),
         NotificationPreferenceCategory.walletUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.busApproaching),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.busApproaching,
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.busArrivedAtBoardingStop),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.busArrivedAtBoardingStop,
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.tripUpdate),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.tripUpdate,
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.tripDelayed),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.tripDelayed,
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.nextStopUpdate),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.nextStopUpdate,
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromNotificationType(NotificationType.unknown),
+        NotificationPreferenceCategory.fromNotificationType(
+          NotificationType.unknown,
+        ),
         NotificationPreferenceCategory.serviceUpdates,
       );
     });
@@ -196,7 +239,9 @@ void main() {
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromEventTypeString('bus_arrived_at_boarding_stop'),
+        NotificationPreferenceCategory.fromEventTypeString(
+          'bus_arrived_at_boarding_stop',
+        ),
         NotificationPreferenceCategory.tripUpdates,
       );
       expect(
@@ -204,32 +249,57 @@ void main() {
         NotificationPreferenceCategory.serviceUpdates,
       );
       expect(
-        NotificationPreferenceCategory.fromEventTypeString('unrecognized_event'),
+        NotificationPreferenceCategory.fromEventTypeString(
+          'unrecognized_event',
+        ),
         NotificationPreferenceCategory.serviceUpdates,
       );
     });
 
-    test('NotificationPreferences.isCategoryEnabled handles master toggle logic', () {
-      const allOn = NotificationPreferences(
-        allEnabled: true,
-        serviceUpdates: true,
-        bookingUpdates: false,
-        walletUpdates: true,
-        tripUpdates: true,
-      );
-      expect(allOn.isCategoryEnabled(NotificationPreferenceCategory.serviceUpdates), isTrue);
-      expect(allOn.isCategoryEnabled(NotificationPreferenceCategory.bookingUpdates), isFalse);
+    test(
+      'NotificationPreferences.isCategoryEnabled handles master toggle logic',
+      () {
+        const allOn = NotificationPreferences(
+          allEnabled: true,
+          serviceUpdates: true,
+          bookingUpdates: false,
+          walletUpdates: true,
+          tripUpdates: true,
+        );
+        expect(
+          allOn.isCategoryEnabled(
+            NotificationPreferenceCategory.serviceUpdates,
+          ),
+          isTrue,
+        );
+        expect(
+          allOn.isCategoryEnabled(
+            NotificationPreferenceCategory.bookingUpdates,
+          ),
+          isFalse,
+        );
 
-      // When master is off, isCategoryEnabled returns false logically
-      final masterOff = allOn.copyWith(allEnabled: false);
-      expect(masterOff.isCategoryEnabled(NotificationPreferenceCategory.serviceUpdates), isFalse);
-      expect(masterOff.isCategoryEnabled(NotificationPreferenceCategory.walletUpdates), isFalse);
+        // When master is off, isCategoryEnabled returns false logically
+        final masterOff = allOn.copyWith(allEnabled: false);
+        expect(
+          masterOff.isCategoryEnabled(
+            NotificationPreferenceCategory.serviceUpdates,
+          ),
+          isFalse,
+        );
+        expect(
+          masterOff.isCategoryEnabled(
+            NotificationPreferenceCategory.walletUpdates,
+          ),
+          isFalse,
+        );
 
-      // But individual stored properties are preserved
-      expect(masterOff.serviceUpdates, isTrue);
-      expect(masterOff.bookingUpdates, isFalse);
-      expect(masterOff.walletUpdates, isTrue);
-    });
+        // But individual stored properties are preserved
+        expect(masterOff.serviceUpdates, isTrue);
+        expect(masterOff.bookingUpdates, isFalse);
+        expect(masterOff.walletUpdates, isTrue);
+      },
+    );
   });
 
   group('NotificationPreferencesCubit', () {
@@ -260,31 +330,69 @@ void main() {
       expect(loaded.isTester, isTrue);
     });
 
-    test('toggleMaster retains child preferences and updates repository', () async {
-      await cubit.loadPreferences();
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.allEnabled, isTrue);
+    test(
+      'toggleMaster retains child preferences and updates repository',
+      () async {
+        await cubit.loadPreferences();
+        expect(
+          (cubit.state as NotificationPreferencesLoaded).preferences.allEnabled,
+          isTrue,
+        );
 
-      // Toggle off
-      await cubit.toggleMaster(false);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.allEnabled, isFalse);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.bookingUpdates, isTrue);
-      expect(mockRepo.preferences.allEnabled, isFalse);
+        // Toggle off
+        await cubit.toggleMaster(false);
+        expect(
+          (cubit.state as NotificationPreferencesLoaded).preferences.allEnabled,
+          isFalse,
+        );
+        expect(
+          (cubit.state as NotificationPreferencesLoaded)
+              .preferences
+              .bookingUpdates,
+          isTrue,
+        );
+        expect(mockRepo.preferences.allEnabled, isFalse);
 
-      // Toggle back on
-      await cubit.toggleMaster(true);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.allEnabled, isTrue);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.bookingUpdates, isTrue);
-    });
+        // Toggle back on
+        await cubit.toggleMaster(true);
+        expect(
+          (cubit.state as NotificationPreferencesLoaded).preferences.allEnabled,
+          isTrue,
+        );
+        expect(
+          (cubit.state as NotificationPreferencesLoaded)
+              .preferences
+              .bookingUpdates,
+          isTrue,
+        );
+      },
+    );
 
     test('toggleCategory updates individual category preference', () async {
       await cubit.loadPreferences();
 
-      await cubit.toggleCategory(NotificationPreferenceCategory.walletUpdates, false);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.walletUpdates, isFalse);
+      await cubit.toggleCategory(
+        NotificationPreferenceCategory.walletUpdates,
+        false,
+      );
+      expect(
+        (cubit.state as NotificationPreferencesLoaded)
+            .preferences
+            .walletUpdates,
+        isFalse,
+      );
       expect(mockRepo.preferences.walletUpdates, isFalse);
 
-      await cubit.toggleCategory(NotificationPreferenceCategory.walletUpdates, true);
-      expect((cubit.state as NotificationPreferencesLoaded).preferences.walletUpdates, isTrue);
+      await cubit.toggleCategory(
+        NotificationPreferenceCategory.walletUpdates,
+        true,
+      );
+      expect(
+        (cubit.state as NotificationPreferencesLoaded)
+            .preferences
+            .walletUpdates,
+        isTrue,
+      );
       expect(mockRepo.preferences.walletUpdates, isTrue);
     });
   });
@@ -313,101 +421,125 @@ void main() {
       );
     }
 
-    testWidgets('normal passenger (isTester=false) does NOT see Test Lab icon', (tester) async {
-      mockRepo.isTesterValue = false;
-      mockRepo.preferences = const NotificationPreferences(allEnabled: true);
+    testWidgets(
+      'normal passenger (isTester=false) does NOT see Test Lab icon',
+      (tester) async {
+        mockRepo.isTesterValue = false;
+        mockRepo.preferences = const NotificationPreferences(allEnabled: true);
 
-      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('notification_test_lab_button')), findsNothing);
-    });
+        expect(
+          find.byKey(const Key('notification_test_lab_button')),
+          findsNothing,
+        );
+      },
+    );
 
-    testWidgets('authorized tester (isTester=true) SEES Test Lab icon in AppBar', (tester) async {
-      mockRepo.isTesterValue = true;
-      mockRepo.preferences = const NotificationPreferences(allEnabled: true);
+    testWidgets(
+      'authorized tester (isTester=true) SEES Test Lab icon in AppBar',
+      (tester) async {
+        mockRepo.isTesterValue = true;
+        mockRepo.preferences = const NotificationPreferences(allEnabled: true);
 
-      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('notification_test_lab_button')), findsOneWidget);
-    });
+        expect(
+          find.byKey(const Key('notification_test_lab_button')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('tapping Test Lab icon opens NotificationTestLabSheet with events', (tester) async {
-      mockRepo.isTesterValue = true;
-      mockRepo.preferences = const NotificationPreferences(allEnabled: true);
+    testWidgets(
+      'tapping Test Lab icon opens NotificationTestLabSheet with events',
+      (tester) async {
+        mockRepo.isTesterValue = true;
+        mockRepo.preferences = const NotificationPreferences(allEnabled: true);
 
-      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+        await tester.pumpAndSettle();
 
-      // Tap Test Lab button
-      await tester.tap(find.byKey(const Key('notification_test_lab_button')));
-      await tester.pumpAndSettle();
+        // Tap Test Lab button
+        await tester.tap(find.byKey(const Key('notification_test_lab_button')));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(NotificationTestLabSheet), findsOneWidget);
-      expect(find.text('Notification Test Lab'), findsOneWidget);
-      expect(find.text('Respect Preferences'), findsOneWidget);
-      expect(find.text('Force Test Delivery'), findsOneWidget);
-      expect(find.text('All (15)'), findsOneWidget);
-    });
+        expect(find.byType(NotificationTestLabSheet), findsOneWidget);
+        expect(find.text('Notification Test Lab'), findsOneWidget);
+        expect(find.text('Respect Preferences'), findsOneWidget);
+        expect(find.text('Force Test Delivery'), findsOneWidget);
+        expect(find.text('All (15)'), findsOneWidget);
+      },
+    );
 
-    testWidgets('sending test event in Respect Preferences mode handles preference suppression', (tester) async {
-      mockRepo.isTesterValue = true;
-      // Disable wallet updates
-      mockRepo.preferences = const NotificationPreferences(
-        allEnabled: true,
-        walletUpdates: false,
-      );
+    testWidgets(
+      'sending test event in Respect Preferences mode handles preference suppression',
+      (tester) async {
+        mockRepo.isTesterValue = true;
+        // Disable wallet updates
+        mockRepo.preferences = const NotificationPreferences(
+          allEnabled: true,
+          walletUpdates: false,
+        );
 
-      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('notification_test_lab_button')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('notification_test_lab_button')));
+        await tester.pumpAndSettle();
 
-      // Filter to wallet
-      await tester.tap(find.text('Wallet (4)'));
-      await tester.pumpAndSettle();
+        // Filter to wallet
+        await tester.tap(find.text('Wallet (4)'));
+        await tester.pumpAndSettle();
 
-      // Find topup_approved Send Test button
-      final sendButtons = find.text('Send Test');
-      expect(sendButtons, findsWidgets);
+        // Find topup_approved Send Test button
+        final sendButtons = find.text('Send Test');
+        expect(sendButtons, findsWidgets);
 
-      await tester.tap(sendButtons.first);
-      await tester.pumpAndSettle();
+        await tester.tap(sendButtons.first);
+        await tester.pumpAndSettle();
 
-      expect(mockRepo.lastTestEventType, 'topup_approved');
-      expect(mockRepo.lastTestForceDelivery, isFalse);
-      expect(find.textContaining('Push suppressed by user preference toggle'), findsOneWidget);
-    });
+        expect(mockRepo.lastTestEventType, 'topup_approved');
+        expect(mockRepo.lastTestForceDelivery, isFalse);
+        expect(
+          find.textContaining('Push suppressed by user preference toggle'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('switching to Force Test Delivery mode sends test with forced=true', (tester) async {
-      mockRepo.isTesterValue = true;
-      mockRepo.preferences = const NotificationPreferences(
-        allEnabled: true,
-        walletUpdates: false,
-      );
+    testWidgets(
+      'switching to Force Test Delivery mode sends test with forced=true',
+      (tester) async {
+        mockRepo.isTesterValue = true;
+        mockRepo.preferences = const NotificationPreferences(
+          allEnabled: true,
+          walletUpdates: false,
+        );
 
-      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('notification_test_lab_button')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('notification_test_lab_button')));
+        await tester.pumpAndSettle();
 
-      // Tap Force Test Delivery mode
-      await tester.tap(find.text('Force Test Delivery'));
-      await tester.pumpAndSettle();
+        // Tap Force Test Delivery mode
+        await tester.tap(find.text('Force Test Delivery'));
+        await tester.pumpAndSettle();
 
-      // Filter to wallet
-      await tester.tap(find.text('Wallet (4)'));
-      await tester.pumpAndSettle();
+        // Filter to wallet
+        await tester.tap(find.text('Wallet (4)'));
+        await tester.pumpAndSettle();
 
-      final sendButtons = find.text('Send Test');
-      await tester.tap(sendButtons.first);
-      await tester.pumpAndSettle();
+        final sendButtons = find.text('Send Test');
+        await tester.tap(sendButtons.first);
+        await tester.pumpAndSettle();
 
-      expect(mockRepo.lastTestForceDelivery, isTrue);
-      expect(find.textContaining('Delivered (1/1 devices)'), findsOneWidget);
-    });
+        expect(mockRepo.lastTestForceDelivery, isTrue);
+        expect(find.textContaining('Delivered (1/1 devices)'), findsOneWidget);
+      },
+    );
   });
 }

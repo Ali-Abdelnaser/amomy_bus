@@ -4,6 +4,7 @@ import '../icons/app_icons.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import 'app_date_picker_modal.dart';
 
 /// Adaptive Date Picker Form Field (used for Date of Birth during registration)
 class AppDatePickerField extends StatelessWidget {
@@ -52,40 +53,29 @@ class AppDatePickerField extends StatelessWidget {
             if (label != null) ...[
               Text(
                 label!,
-                style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary,
+                ),
               ),
               AppSpacing.gapH8,
             ],
             InkWell(
               onTap: enabled
                   ? () async {
-                      final initial = selectedDate ??
+                      final initial =
+                          selectedDate ??
+                          initialDate ??
                           DateTime(
                             DateTime.now().year - 20,
                             DateTime.now().month,
                             DateTime.now().day,
                           );
-                      final picked = await showDatePicker(
+                      final picked = await showAppDatePicker(
                         context: context,
-                        initialDate: initial.isBefore(effectiveFirstDate)
-                            ? effectiveFirstDate
-                            : (initial.isAfter(effectiveLastDate)
-                                ? effectiveLastDate
-                                : initial),
+                        initialDate: initial,
                         firstDate: effectiveFirstDate,
                         lastDate: effectiveLastDate,
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: AppColors.primary,
-                                onPrimary: Colors.white,
-                                onSurface: AppColors.textPrimary,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
+                        title: label,
                       );
 
                       if (picked != null) {
@@ -97,18 +87,30 @@ class AppDatePickerField extends StatelessWidget {
               child: InputDecorator(
                 decoration: InputDecoration(
                   hintText: hint ?? 'Select date',
-                  prefixIcon: prefixIcon ??
-                      const Icon(AppIcons.birthday, color: AppColors.textSecondary, size: 20),
-                  suffixIcon:
-                      const Icon(AppIcons.calendar, color: AppColors.textSecondary, size: 20),
+                  prefixIcon:
+                      prefixIcon ??
+                      const Icon(
+                        AppIcons.birthday,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                  suffixIcon: const Icon(
+                    AppIcons.calendar,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                   enabled: enabled,
                   errorText: formFieldState.errorText,
                 ),
                 child: Text(
                   formattedText ?? (hint ?? 'Select date'),
                   style: formattedText != null
-                      ? AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)
-                      : AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+                      ? AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textPrimary,
+                        )
+                      : AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
                 ),
               ),
             ),

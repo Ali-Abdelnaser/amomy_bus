@@ -15,6 +15,9 @@ analyzer:
     - "**/*.freezed.dart"
     - "**/*.config.dart"
     - "lib/l10n/app_localizations*.dart"
+    - build/**
+    - android/**
+    - ios/**
 
 linter:
   rules:

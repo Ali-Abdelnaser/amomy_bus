@@ -58,7 +58,7 @@ flowchart TD
 | **Routing** | GoRouter | Declarative routing with path parameters and auth guards |
 | **Networking** | Dio + PrettyDioLogger | Resilient HTTP requests with interceptors and structured logging |
 | **Backend & Database** | Supabase (PostgreSQL, Storage, Realtime) | Row-Level Security, migrations, atomic PostgreSQL functions |
-| **Map Rendering** | Google Maps Platform (`google_maps_flutter`) | Official SDK, silver monochrome palette, custom vector markers |
+| **Map Rendering** | Google Maps Platform (`google_maps_flutter`) | Official SDK, default Google Maps palette, custom vector markers |
 | **Route Geometry** | Google Routes API (Edge Function) | Stored road-following polylines replacing straight-line interpolation |
 | **GPS Telemetry** | ETrack VIP IoT Hardware (Edge Function) | Automated backend-authoritative ingestion for Amomy 1 & 2 only |
 | **Local Storage** | SharedPreferences & FlutterSecureStorage | Encrypted credential storage & local preferences |
@@ -67,4 +67,3 @@ flowchart TD
 
 ---
 **Last Updated**: 2026-09-14
-
