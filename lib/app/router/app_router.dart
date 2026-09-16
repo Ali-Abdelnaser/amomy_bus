@@ -39,6 +39,15 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'rootNavigator',
 );
 
+final GlobalKey<NavigatorState> shellHomeNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellHome');
+final GlobalKey<NavigatorState> shellTripsNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellTrips');
+final GlobalKey<NavigatorState> shellWalletNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellWallet');
+final GlobalKey<NavigatorState> shellProfileNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'shellProfile');
+
 /// Converts Stream to Listenable for GoRouter refresh
 class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<dynamic> _subscription;
@@ -69,6 +78,7 @@ class AppRouter {
     routes: [
       // Splash
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.splash,
         name: RouteNames.splash,
         pageBuilder: (context, state) => AppPageTransitions.fadePage(
@@ -80,6 +90,7 @@ class AppRouter {
 
       // Onboarding
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.onboarding,
         name: RouteNames.onboarding,
         pageBuilder: (context, state) => AppPageTransitions.fadePage(
@@ -91,6 +102,7 @@ class AppRouter {
 
       // Auth: Login
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.login,
         name: RouteNames.login,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -102,6 +114,7 @@ class AppRouter {
 
       // Auth: Register
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.register,
         name: RouteNames.register,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -113,6 +126,7 @@ class AppRouter {
 
       // Auth: Email Verification (OTP)
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.emailVerification,
         name: RouteNames.emailVerification,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -124,6 +138,7 @@ class AppRouter {
 
       // Auth: Complete Profile
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.completeProfile,
         name: RouteNames.completeProfile,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -135,6 +150,7 @@ class AppRouter {
 
       // Auth: Forgot Password
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.forgotPassword,
         name: RouteNames.forgotPassword,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -146,6 +162,7 @@ class AppRouter {
 
       // Auth: Reset Password
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.resetPassword,
         name: RouteNames.resetPassword,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -157,12 +174,14 @@ class AppRouter {
 
       // Passenger Navigation Shell (Persistent tabs: Home, Trips, Wallet, Profile)
       StatefulShellRoute.indexedStack(
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state, navigationShell) {
           return PassengerShellPage(navigationShell: navigationShell);
         },
         branches: [
           // Branch 0: Home
           StatefulShellBranch(
+            navigatorKey: shellHomeNavigatorKey,
             routes: [
               GoRoute(
                 path: RoutePaths.home,
@@ -178,6 +197,7 @@ class AppRouter {
 
           // Branch 1: My Trips
           StatefulShellBranch(
+            navigatorKey: shellTripsNavigatorKey,
             routes: [
               GoRoute(
                 path: RoutePaths.trips,
@@ -193,6 +213,7 @@ class AppRouter {
 
           // Branch 2: Wallet
           StatefulShellBranch(
+            navigatorKey: shellWalletNavigatorKey,
             routes: [
               GoRoute(
                 path: RoutePaths.wallet,
@@ -208,6 +229,7 @@ class AppRouter {
 
           // Branch 3: Profile
           StatefulShellBranch(
+            navigatorKey: shellProfileNavigatorKey,
             routes: [
               GoRoute(
                 path: RoutePaths.profile,
@@ -225,6 +247,7 @@ class AppRouter {
 
       // Booking entry route
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.bookTrip,
         name: RouteNames.bookTrip,
         pageBuilder: (context, state) {
@@ -245,6 +268,7 @@ class AppRouter {
 
       // Add Points route
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.addPoints,
         name: RouteNames.addPoints,
         pageBuilder: (context, state) {
@@ -266,6 +290,7 @@ class AppRouter {
 
       // Trip History route
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.myBookings,
         name: RouteNames.myBookings,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -277,6 +302,7 @@ class AppRouter {
 
       // Change Seat route (Full-page seat map)
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.changeSeat,
         name: RouteNames.changeSeat,
         pageBuilder: (context, state) {
@@ -294,6 +320,7 @@ class AppRouter {
 
       // Dedicated Live Bus Map screen (Available to ALL passengers)
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.liveBusMap,
         name: RouteNames.liveBusMap,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -305,6 +332,7 @@ class AppRouter {
 
       // Notifications Inbox
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.notifications,
         name: RouteNames.notifications,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -316,6 +344,7 @@ class AppRouter {
 
       // Notification Settings
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.notificationSettings,
         name: RouteNames.notificationSettings,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -327,6 +356,7 @@ class AppRouter {
 
       // Profile: Personal Information (Edit Mode)
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.personalInformation,
         name: RouteNames.personalInformation,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -338,6 +368,7 @@ class AppRouter {
 
       // Profile: Support Center
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.support,
         name: RouteNames.support,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -349,6 +380,7 @@ class AppRouter {
 
       // Profile: About AMOMY App
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.aboutApp,
         name: RouteNames.aboutApp,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -360,6 +392,7 @@ class AppRouter {
 
       // Profile: Privacy Policy
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.privacyPolicy,
         name: RouteNames.privacyPolicy,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -371,6 +404,7 @@ class AppRouter {
 
       // Profile: Terms & Conditions
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.termsAndConditions,
         name: RouteNames.termsAndConditions,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
@@ -382,6 +416,7 @@ class AppRouter {
 
       // Legacy/deep-link trip-linked live tracking path
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: RoutePaths.liveTracking,
         name: RouteNames.liveTracking,
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
