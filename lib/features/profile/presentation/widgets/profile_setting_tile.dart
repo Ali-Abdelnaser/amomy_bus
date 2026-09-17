@@ -43,25 +43,25 @@ class ProfileSettingTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 52),
+          constraints: const BoxConstraints(minHeight: 58),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             child: Row(
               children: [
                 // Soft icon container
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: iconBackgroundColor ?? AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     icon,
-                    size: 19,
+                    size: 20,
                     color: iconColor ?? AppColors.primary,
                   ),
                 ),
@@ -78,6 +78,7 @@ class ProfileSettingTile extends StatelessWidget {
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
+                          fontSize: 15,
                         ),
                       ),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -86,7 +87,8 @@ class ProfileSettingTile extends StatelessWidget {
                           subtitle!,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
-                            fontSize: 12,
+                            fontSize: 12.5,
+                            height: 1.2,
                           ),
                         ),
                       ],
@@ -100,7 +102,8 @@ class ProfileSettingTile extends StatelessWidget {
                     trailingText!,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
                   AppSpacing.gapW8,

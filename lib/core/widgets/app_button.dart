@@ -21,6 +21,7 @@ class AppButton extends StatelessWidget {
   final double height;
   final bool isFullWidth;
   final TextStyle? textStyle;
+  final EdgeInsetsGeometry? padding;
 
   const AppButton({
     super.key,
@@ -34,6 +35,7 @@ class AppButton extends StatelessWidget {
     this.height = 48.0,
     this.isFullWidth = false,
     this.textStyle,
+    this.padding,
   }) : assert(
          label != null || text != null,
          'Either label or text must be provided',
@@ -103,6 +105,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusLg,
             ),
@@ -120,6 +123,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),
@@ -136,6 +140,7 @@ class AppButton extends StatelessWidget {
             disabledForegroundColor: AppColors.disabled,
             side: const BorderSide(color: AppColors.border, width: 1.5),
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),
@@ -150,6 +155,7 @@ class AppButton extends StatelessWidget {
             foregroundColor: AppColors.primary,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusSm,
             ),
@@ -166,6 +172,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),

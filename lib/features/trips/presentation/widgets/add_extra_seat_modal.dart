@@ -389,41 +389,9 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
 
             AppSpacing.gapH10,
 
-            // Status Legend
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _LegendItem(
-                    color: AppColors.success,
-                    label: isAr ? 'مقعدك الحالي' : 'Your Seat',
-                  ),
-                  const SizedBox(width: 10),
-                  _LegendItem(
-                    color: AppColors.primary,
-                    label: isAr ? 'المحدد' : 'Selected',
-                  ),
-                  const SizedBox(width: 10),
-                  _LegendItem(
-                    color: const Color(0xFFE4E7EC),
-                    label: isAr ? 'متاح' : 'Available',
-                  ),
-                  const SizedBox(width: 10),
-                  _LegendItem(
-                    color: const Color(0xFFD1E9FF),
-                    label: isAr ? 'محجوز رجال' : 'Male',
-                  ),
-                  const SizedBox(width: 10),
-                  _LegendItem(
-                    color: const Color(0xFFFCE7F6),
-                    label: isAr ? 'محجوز نساء' : 'Female',
-                  ),
-                ],
-              ),
-            ),
+            
 
-            const Divider(height: 16, color: Color(0xFFEAECF0)),
+           
 
             // Seat Map Content
             Expanded(
@@ -524,7 +492,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
 
             // Bottom Confirmation Bar
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 12, 0, 16),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(top: BorderSide(color: Color(0xFFEAECF0))),
@@ -616,36 +584,3 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LegendItem({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            fontSize: 9.5,
-            color: const Color(0xFF475467),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}

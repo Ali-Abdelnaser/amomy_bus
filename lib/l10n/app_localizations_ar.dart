@@ -58,6 +58,40 @@ class AppLocalizationsAr extends AppLocalizations {
       'التحكم في وصول الإشعارات لتطبيق عمومي';
 
   @override
+  String get notificationTestLabTitle => 'معمل اختبار الإشعارات';
+
+  @override
+  String get notificationTestLabLocalTitle => 'اختبار محلي';
+
+  @override
+  String get notificationTestLabLocalSubtitle =>
+      'يختبر عرض الإشعار محلياً على هذا الجهاز فقط.';
+
+  @override
+  String get notificationTestLabLocalButton => 'اختبار محلي';
+
+  @override
+  String get notificationTestLabRemoteTitle => 'اختبار FCM عن بُعد';
+
+  @override
+  String get notificationTestLabRemoteSubtitle =>
+      'يطلب إشعاراً حقيقياً عبر FCM وAPNs.';
+
+  @override
+  String get notificationTestLabRemoteButton => 'اختبار الإشعار عن بُعد';
+
+  @override
+  String get notificationTestLabLocalShown =>
+      'تم عرض الإشعار المحلي على هذا الجهاز.';
+
+  @override
+  String get notificationTestLabRemoteRequested =>
+      'تم طلب الإشعار. ضع التطبيق في الخلفية أو اقفل الهاتف.';
+
+  @override
+  String get notificationTestLabRequestFailed => 'تعذر طلب الإشعار عن بُعد.';
+
+  @override
   String get seatStatusCurrent => 'مقعدك الحالي';
 
   @override
@@ -423,6 +457,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noUpcomingTrip => 'مفيش رحلة محجوزة حاليًا';
 
   @override
+  String get noUpcomingTripSubtitle => 'احجز مقعدك عند توفر رحلة مناسبة.';
+
+  @override
+  String get qr => 'QR';
+
+  @override
   String get bookTripCta => 'احجز رحلة';
 
   @override
@@ -577,6 +617,21 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get bookingSuccessSubtitle =>
       'تم حجز مقعدك بنجاح وجاهز لرحلتك القادمة.';
+
+  @override
+  String get bookingTicketTime => 'الوقت';
+
+  @override
+  String get bookingTicketSeat => 'المقعد';
+
+  @override
+  String get bookingTicketFees => 'التكلفة';
+
+  @override
+  String get bookingSuccessMyTrips => 'رحلاتي';
+
+  @override
+  String get bookingSuccessGoHome => 'العودة للرئيسية';
 
   @override
   String get qrTicketInstruction =>
@@ -783,6 +838,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get completedTrips => 'رحلات مكتملة';
+
+  @override
+  String get completionRate => 'معدل الإكمال';
 
   @override
   String get pointsSpentThisMonth => 'نقاط مصروفة هذا الشهر';

@@ -188,6 +188,66 @@ abstract class AppLocalizations {
   /// **'Master toggle for all push notifications'**
   String get allNotificationsDescription;
 
+  /// No description provided for @notificationTestLabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Test Lab'**
+  String get notificationTestLabTitle;
+
+  /// No description provided for @notificationTestLabLocalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Test'**
+  String get notificationTestLabLocalTitle;
+
+  /// No description provided for @notificationTestLabLocalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests local presentation on this device only.'**
+  String get notificationTestLabLocalSubtitle;
+
+  /// No description provided for @notificationTestLabLocalButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Test'**
+  String get notificationTestLabLocalButton;
+
+  /// No description provided for @notificationTestLabRemoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote FCM Test'**
+  String get notificationTestLabRemoteTitle;
+
+  /// No description provided for @notificationTestLabRemoteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests a real push through FCM and APNs.'**
+  String get notificationTestLabRemoteSubtitle;
+
+  /// No description provided for @notificationTestLabRemoteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Push Test'**
+  String get notificationTestLabRemoteButton;
+
+  /// No description provided for @notificationTestLabLocalShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Local notification shown on this device.'**
+  String get notificationTestLabLocalShown;
+
+  /// No description provided for @notificationTestLabRemoteRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Push requested. Put the app in the background or lock the phone.'**
+  String get notificationTestLabRemoteRequested;
+
+  /// No description provided for @notificationTestLabRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to request remote push.'**
+  String get notificationTestLabRequestFailed;
+
   /// No description provided for @seatStatusCurrent.
   ///
   /// In en, this message translates to:
@@ -884,6 +944,18 @@ abstract class AppLocalizations {
   /// **'No upcoming trips'**
   String get noUpcomingTrip;
 
+  /// No description provided for @noUpcomingTripSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a seat whenever a trip is available.'**
+  String get noUpcomingTripSubtitle;
+
+  /// No description provided for @qr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR'**
+  String get qr;
+
   /// No description provided for @bookTripCta.
   ///
   /// In en, this message translates to:
@@ -1171,6 +1243,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your trip seat is successfully reserved.'**
   String get bookingSuccessSubtitle;
+
+  /// No description provided for @bookingTicketTime.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME'**
+  String get bookingTicketTime;
+
+  /// No description provided for @bookingTicketSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'SEAT'**
+  String get bookingTicketSeat;
+
+  /// No description provided for @bookingTicketFees.
+  ///
+  /// In en, this message translates to:
+  /// **'FEES'**
+  String get bookingTicketFees;
+
+  /// No description provided for @bookingSuccessMyTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get bookingSuccessMyTrips;
+
+  /// No description provided for @bookingSuccessGoHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Home'**
+  String get bookingSuccessGoHome;
 
   /// No description provided for @qrTicketInstruction.
   ///
@@ -1561,6 +1663,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completed Trips'**
   String get completedTrips;
+
+  /// No description provided for @completionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion Rate'**
+  String get completionRate;
 
   /// No description provided for @pointsSpentThisMonth.
   ///

@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
@@ -9,586 +10,498 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../tracking/presentation/cubit/tracking_cubit.dart';
-import '../../../trips/presentation/widgets/qr_ticket_modal.dart';
 import '../../domain/entities/booking_entities.dart';
 import 'app_qr_ticket_widget.dart';
 
-/// Clean modern digital boarding pass shown after booking confirmation.
-///
-/// Phase 10 Redesign:
-/// 1. Success header (clean badge + concise localized confirmation)
-/// 2. Trip summary card (direction, date, Cairo 12-hr time, route, seat, fare)
-/// 3. QR boarding card (compact scannable QR, "Scan to Board", helper text)
-/// 4. NFC helper (secondary card explaining physical NFC card tap, no tokens/hashes)
-/// 5. Bottom actions (My Trips, Home, and conditional Live Map when state/route permits)
-class BookingSuccessView extends StatelessWidget {
+/// Boarding ticket shown after a confirmed booking with realistic printer dispensing animation.
+class BookingSuccessView extends StatefulWidget {
   final PassengerBooking booking;
-  final bool? enableLiveMap;
 
-  const BookingSuccessView({
-    super.key,
-    required this.booking,
-    this.enableLiveMap,
-  });
+  const BookingSuccessView({super.key, required this.booking});
 
-  bool _canShowLiveMap(BuildContext context) {
-    if (enableLiveMap != null) return enableLiveMap!;
-    if (booking.tripId.isEmpty) return false;
-    try {
-      final cubit = context.read<TrackingCubit?>();
-      if (cubit != null) {
-        final state = cubit.state;
-        final isTrackedTrip =
-            state.summary?.activeTripId == booking.tripId ||
-            state.trackedTripId == booking.tripId;
-        return isTrackedTrip && (state.isLive || state.isOnline);
+  @override
+  State<BookingSuccessView> createState() => _BookingSuccessViewState();
+}
+
+class _BookingSuccessViewState extends State<BookingSuccessView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+  late final Animation<double> _fadeAnimation;
+  AudioPlayer? _audioPlayer;
+  bool _soundPlayed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 750),
+    );
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+      ),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (disableAnimations) {
+        _controller.value = 1.0;
+      } else {
+        _playPrinterSound();
+        _controller.forward();
       }
-    } catch (_) {}
-    return false;
+    });
+  }
+
+  void _playPrinterSound() {
+    if (_soundPlayed) return;
+    _soundPlayed = true;
+    try {
+      _audioPlayer ??= AudioPlayer();
+      _audioPlayer?.setReleaseMode(ReleaseMode.release);
+      _audioPlayer?.setVolume(0.35);
+      _audioPlayer?.play(AssetSource('audio/printer_dispense.wav'));
+    } catch (_) {
+      // Audio playback failsafe — audio issues should never interrupt UI
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _audioPlayer?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final isArabic = Localizations.localeOf(
+      context,
+    ).languageCode.startsWith('ar');
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final canShowLiveMap = _canShowLiveMap(context);
 
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.s20,
-          AppSpacing.s16,
-          AppSpacing.s20,
-          math.max(AppSpacing.s24, bottomInset + AppSpacing.s16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ConfirmationHeader(isAr: isAr),
-            AppSpacing.gapH20,
-            _TripSummaryCard(booking: booking, isAr: isAr),
-            AppSpacing.gapH16,
-            _QrBoardingCard(booking: booking, isAr: isAr),
-            AppSpacing.gapH12,
-            _NfcHelperCard(isAr: isAr),
-            AppSpacing.gapH20,
-            _SuccessActions(
-              booking: booking,
-              isAr: isAr,
-              canShowLiveMap: canShowLiveMap,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConfirmationHeader extends StatelessWidget {
-  final bool isAr;
-
-  const _ConfirmationHeader({required this.isAr});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.successLight,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
+    return Container(
+      color: const Color(0xFFF8FAFC), // Crisp paper background contrast
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.s20,
+            AppSpacing.s20,
+            AppSpacing.s20,
+            math.max(AppSpacing.s24, bottomInset + AppSpacing.s16),
           ),
-          child: const Icon(AppIcons.check, color: AppColors.success, size: 28),
-        ),
-        AppSpacing.gapH12,
-        Text(
-          isAr ? 'تم تأكيد الحجز' : 'Booking Confirmed',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        AppSpacing.gapH4,
-        Text(
-          isAr
-              ? 'تم حجز مقعدك بنجاح.'
-              : 'Your seat has been successfully reserved.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
-
-class _TripSummaryCard extends StatelessWidget {
-  final PassengerBooking booking;
-  final bool isAr;
-
-  const _TripSummaryCard({required this.booking, required this.isAr});
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
-    final direction = booking.direction == BookingDirection.outbound
-        ? (isAr ? 'رحلة الذهاب' : 'Outbound Trip')
-        : (isAr ? 'رحلة العودة' : 'Return Trip');
-    final origin = booking.stopName ?? booking.originName(locale);
-    final destination = booking.destinationName(locale);
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      AppIcons.bus,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    AppSpacing.gapW8,
-                    Expanded(
-                      child: Text(
-                        direction,
-                        style: AppTextStyles.titleLarge.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: AppRadius.radiusSm,
-                ),
-                child: Text(
-                  AppTimeFormatter.formatPassengerBooking(
-                    booking,
-                    isArabic: isAr,
-                  ),
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          AppSpacing.gapH16,
-          _RouteLine(
-            from: origin,
-            locality: booking.locality,
-            to: destination,
-            isAr: isAr,
-          ),
-          AppSpacing.gapH16,
-          _DetailsGrid(booking: booking, isAr: isAr),
-        ],
-      ),
-    );
-  }
-}
-
-class _RouteLine extends StatelessWidget {
-  final String from;
-  final String? locality;
-  final String to;
-  final bool isAr;
-
-  const _RouteLine({
-    required this.from,
-    required this.locality,
-    required this.to,
-    required this.isAr,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            _RouteDot(
-              icon: AppIcons.location,
-              color: AppColors.primary,
-              backgroundColor: AppColors.primaryLight,
-            ),
-            Container(
-              width: 2,
-              height: 28,
-              margin: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-            _RouteDot(
-              icon: AppIcons.location,
-              color: const Color(0xFFD49B00),
-              backgroundColor: AppColors.warningLight,
-            ),
-          ],
-        ),
-        AppSpacing.gapW12,
-        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _RouteStop(
-                label: isAr ? 'من' : 'From',
-                name: from,
-                supportingText: locality,
+              // 1. Animated success check & 2. Localized title & 3. Subtitle
+              const _ConfirmationHeader(),
+              AppSpacing.gapH20,
+
+              // 4. Stylized printer slot & 5. Animated emerging ticket
+              _TicketPrinterSection(
+                booking: widget.booking,
+                isArabic: isArabic,
+                animation: _animation,
+                fadeAnimation: _fadeAnimation,
               ),
-              AppSpacing.gapH16,
-              _RouteStop(label: isAr ? 'إلى' : 'To', name: to),
+              AppSpacing.gapH24,
+
+              // 6. My Trips & 7. Go to Home
+              const _SuccessActions(),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
-class _RouteDot extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final Color backgroundColor;
-
-  const _RouteDot({
-    required this.icon,
-    required this.color,
-    required this.backgroundColor,
-  });
+/// Redesigned bold confirmation badge with multi-layer pulsing rings and spring animation.
+class _ConfirmationHeader extends StatefulWidget {
+  const _ConfirmationHeader();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
-      child: Icon(icon, size: 16, color: color),
-    );
-  }
+  State<_ConfirmationHeader> createState() => _ConfirmationHeaderState();
 }
 
-class _RouteStop extends StatelessWidget {
-  final String label;
-  final String name;
-  final String? supportingText;
-
-  const _RouteStop({
-    required this.label,
-    required this.name,
-    this.supportingText,
-  });
+class _ConfirmationHeaderState extends State<_ConfirmationHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _checkAnimController;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _pulseRingAnimation;
+  late final Animation<double> _ringOpacityAnimation;
+  late final Animation<double> _textFadeAnimation;
+  late final Animation<Offset> _textSlideAnimation;
 
   @override
-  Widget build(BuildContext context) {
-    final hasSupportingText =
-        supportingText != null && supportingText!.trim().isNotEmpty;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        AppSpacing.gapH2,
-        Text(
-          name,
-          style: AppTextStyles.titleMedium.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        if (hasSupportingText) ...[
-          AppSpacing.gapH2,
-          Text(
-            supportingText!,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ],
+  void initState() {
+    super.initState();
+    _checkAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _checkAnimController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+    );
+
+    _pulseRingAnimation = Tween<double>(begin: 0.8, end: 1.35).animate(
+      CurvedAnimation(
+        parent: _checkAnimController,
+        curve: const Interval(0.15, 0.75, curve: Curves.easeOutQuad),
+      ),
+    );
+
+    _ringOpacityAnimation = Tween<double>(begin: 0.6, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _checkAnimController,
+        curve: const Interval(0.2, 0.75, curve: Curves.easeOut),
+      ),
+    );
+
+    _textFadeAnimation = CurvedAnimation(
+      parent: _checkAnimController,
+      curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+    );
+
+    _textSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _checkAnimController,
+            curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (disableAnimations) {
+        _checkAnimController.value = 1.0;
+      } else {
+        _checkAnimController.forward();
+      }
+    });
   }
-}
 
-class _DetailsGrid extends StatelessWidget {
-  final PassengerBooking booking;
-  final bool isAr;
-
-  const _DetailsGrid({required this.booking, required this.isAr});
+  @override
+  void dispose() {
+    _checkAnimController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final details = [
-      _DetailItemData(
-        icon: AppIcons.calendar,
-        label: isAr ? 'التاريخ' : 'Date',
-        value: _formatDate(booking.serviceDate, isAr),
-      ),
-      _DetailItemData(
-        icon: AppIcons.seat,
-        label: isAr ? 'المقعد' : 'Seat',
-        value: booking.seatNumber,
-        highlight: true,
-      ),
-      _DetailItemData(
-        icon: AppIcons.ticket,
-        label: isAr ? 'الأجرة' : 'Fare',
-        value: '${booking.farePoints.toInt()} ${l10n.pointsUnit}',
-      ),
-    ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final useTwoColumns = constraints.maxWidth >= 320;
-        return Wrap(
-          spacing: AppSpacing.s8,
-          runSpacing: AppSpacing.s8,
-          children: [
-            for (final detail in details)
-              SizedBox(
-                width: useTwoColumns
-                    ? (constraints.maxWidth - AppSpacing.s8) / 2
-                    : constraints.maxWidth,
-                child: _DetailItem(data: detail),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  String _formatDate(DateTime date, bool isAr) {
-    const enMonths = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const arMonths = [
-      'يناير',
-      'فبراير',
-      'مارس',
-      'أبريل',
-      'مايو',
-      'يونيو',
-      'يوليو',
-      'أغسطس',
-      'سبتمبر',
-      'أكتوبر',
-      'نوفمبر',
-      'ديسمبر',
-    ];
-    final mIdx = (date.month - 1).clamp(0, 11);
-    if (isAr) {
-      return '${date.day} ${arMonths[mIdx]}';
-    }
-    return '${date.day} ${enMonths[mIdx]}';
-  }
-}
-
-class _DetailItemData {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool highlight;
-
-  const _DetailItemData({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.highlight = false,
-  });
-}
-
-class _DetailItem extends StatelessWidget {
-  final _DetailItemData data;
-
-  const _DetailItem({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = data.highlight ? AppColors.primary : AppColors.textPrimary;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s12),
-      decoration: BoxDecoration(
-        color: data.highlight ? AppColors.primaryLight : AppColors.surfaceSoft,
-        borderRadius: AppRadius.radiusMd,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            data.icon,
-            size: 18,
-            color: data.highlight ? AppColors.primary : AppColors.textSecondary,
-          ),
-          AppSpacing.gapW8,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                AppSpacing.gapH2,
-                Text(
-                  data.value,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QrBoardingCard extends StatelessWidget {
-  final PassengerBooking booking;
-  final bool isAr;
-
-  const _QrBoardingCard({required this.booking, required this.isAr});
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
-    final origin = booking.stopName ?? booking.originName(locale);
-    final destination = booking.destinationName(locale);
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      child: Column(
-        children: [
-          Row(
+    return Column(
+      children: [
+        // Redesigned Animated Green Success Badge
+        SizedBox(
+          width: 88,
+          height: 88,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              const Icon(AppIcons.qrCode, size: 20, color: AppColors.primary),
-              AppSpacing.gapW8,
-              Expanded(
-                child: Text(
-                  isAr ? 'امسح للصعود' : 'Scan to Board',
-                  style: AppTextStyles.titleLarge.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+              // Outer pulsing shockwave ripple ring
+              AnimatedBuilder(
+                animation: _checkAnimController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _pulseRingAnimation.value,
+                    child: Opacity(
+                      opacity: _ringOpacityAnimation.value,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF10B981),
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // Soft static ambient glow ring
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                ),
+              ),
+
+              // Spring-scaled vibrant emerald badge
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF34D399), // Emerald 400
+                        Color(0xFF059669), // Emerald 600
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.38),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 34,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          AppSpacing.gapH14,
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final qrSize = constraints.maxWidth.clamp(132.0, 168.0);
-              return InkWell(
-                borderRadius: AppRadius.radiusLg,
-                onTap: () {
-                  QrTicketModal.show(
-                    context,
-                    departureTime: AppTimeFormatter.formatPassengerBooking(
-                      booking,
-                      isArabic: isAr,
-                    ),
-                    originName: origin,
-                    destinationName: destination,
-                    seatNumber: booking.seatNumber,
-                    farePoints: booking.farePoints,
-                    qrToken: booking.qrToken,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.s12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: AppRadius.radiusLg,
-                    border: Border.all(color: AppColors.border),
+        ),
+        AppSpacing.gapH12,
+
+        // Animated Headline & Subtitle
+        SlideTransition(
+          position: _textSlideAnimation,
+          child: FadeTransition(
+            opacity: _textFadeAnimation,
+            child: Column(
+              children: [
+                Text(
+                  l10n.bookingSuccessTitle,
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
-                  child: AppQrTicketWidget(data: booking.qrToken, size: qrSize),
+                  textAlign: TextAlign.center,
                 ),
-              );
-            },
-          ),
-          AppSpacing.gapH12,
-          Text(
-            isAr ? 'مقعد ${booking.seatNumber}' : 'Seat ${booking.seatNumber}',
-            style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w800,
+                AppSpacing.gapH4,
+                Text(
+                  l10n.bookingSuccessSubtitle,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
-          AppSpacing.gapH6,
-          Text(
-            isAr
-                ? 'أظهر رمز QR لجهاز القراءة عند الصعود إلى الحافلة.'
-                : 'Present this QR code to the scanner upon boarding.',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+        ),
+      ],
+    );
+  }
+}
+
+/// Printer output area + ticket emerging downwards with realistic receipt animation.
+class _TicketPrinterSection extends StatelessWidget {
+  final PassengerBooking booking;
+  final bool isArabic;
+  final Animation<double> animation;
+  final Animation<double> fadeAnimation;
+
+  const _TicketPrinterSection({
+    required this.booking,
+    required this.isArabic,
+    required this.animation,
+    required this.fadeAnimation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxAvailableWidth = constraints.maxWidth;
+        final ticketWidth = math.min(maxAvailableWidth, 340.0);
+        final ticketHeight = ticketWidth * 633 / 444;
+        final printerWidth = math.min(maxAvailableWidth, ticketWidth + 24.0);
+        const slotY = 34.0; // Emergence point right below printer body aperture
+
+        return Center(
+          child: SizedBox(
+            width: printerWidth,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+                // Emerging ticket container (clipped at top so it emerges from slot)
+                Padding(
+                  padding: const EdgeInsets.only(top: slotY),
+                  child: ClipRect(
+                    child: AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        final translateY = (1.0 - animation.value) * -80.0;
+                        final opacity = fadeAnimation.value;
+                        return Transform.translate(
+                          offset: Offset(0, translateY),
+                          child: Opacity(opacity: opacity, child: child),
+                        );
+                      },
+                      child: SizedBox(
+                        width: ticketWidth,
+                        height: ticketHeight,
+                        child: _BookingTicket(
+                          booking: booking,
+                          isArabic: isArabic,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Enhanced printer head housing with "Amomy Bus"
+                Positioned(
+                  top: 0,
+                  child: _PrinterSlot(
+                    width: printerWidth,
+                    slotWidth: ticketWidth,
+                  ),
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Stylized digital printer head housing (taller profile, LED, Amomy Bus branding, and paper slot).
+class _PrinterSlot extends StatelessWidget {
+  final double width;
+  final double slotWidth;
+
+  const _PrinterSlot({required this.width, required this.slotWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: 42.0,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(12),
+          bottom: Radius.circular(6),
+        ),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF1E293B), // Slate 800
+            Color(0xFF0F172A), // Slate 900
+          ],
+        ),
+        border: Border.all(color: const Color(0xFF334155), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Top subtle specular highlight edge
+          Positioned(
+            top: 0,
+            left: 14,
+            right: 14,
+            height: 1.0,
+            child: Container(
+              color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+            ),
+          ),
+
+          // Center Branding: LED indicator + "Amomy Bus"
+          Positioned(
+            top: 9,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Glowing Emerald Status LED
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF22C55E),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF22C55E).withValues(alpha: 0.8),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Amomy Bus',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                    color: Color(0xFFE2E8F0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Output slot aperture at bottom
+          Positioned(
+            bottom: 3,
+            child: Container(
+              width: slotWidth * 0.95,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFF020617),
+                borderRadius: BorderRadius.circular(2.5),
+                border: Border.all(color: const Color(0xFF1E293B), width: 0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -596,132 +509,174 @@ class _QrBoardingCard extends StatelessWidget {
   }
 }
 
-class _NfcHelperCard extends StatelessWidget {
-  final bool isAr;
+/// Official SVG Ticket Card displaying QR code on top and 3 meta columns at bottom with paper depth.
+class _BookingTicket extends StatelessWidget {
+  final PassengerBooking booking;
+  final bool isArabic;
 
-  const _NfcHelperCard({required this.isAr});
+  const _BookingTicket({required this.booking, required this.isArabic});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: AppRadius.radiusMd,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
+    final l10n = context.l10n;
+    final departureTime = AppTimeFormatter.formatPassengerBooking(
+      booking,
+      isArabic: isArabic,
+    );
+    final fare = '${booking.farePoints.toInt()} ${l10n.pointsUnit}';
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: LayoutBuilder(
+        builder: (context, ticketConstraints) {
+          final width = ticketConstraints.maxWidth;
+          final height = ticketConstraints.maxHeight;
+          final qrSize = (width * 0.72).clamp(200.0, 260.0);
+
+          return Container(
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: AppRadius.radiusSm,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+                bottom: Radius.circular(8),
+              ),
+              boxShadow: [
+                // Soft ambient paper drop shadow for tactile depth
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                  spreadRadius: -2,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.contactless_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          AppSpacing.gapW12,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Text(
-                  isAr ? 'بطاقة عمومي الذكية (NFC)' : 'AMOMY Smart Card (NFC)',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
+                // 1. Ticket SVG Background (renders vector outline + white fill)
+                SvgPicture.asset(
+                  'assets/images/booking_ticket.svg',
+                  fit: BoxFit.fill,
+                  matchTextDirection: false,
+                ),
+
+                // 2. Upper area: ONLY the QR code (large, centered)
+                Positioned(
+                  top: height * (32 / 633),
+                  left: 0,
+                  right: 0,
+                  bottom: height * (175 / 633),
+                  child: Center(
+                    child: AppQrTicketWidget(
+                      data: booking.qrToken,
+                      size: qrSize,
+                    ),
                   ),
                 ),
-                AppSpacing.gapH2,
-                Text(
-                  isAr
-                      ? 'يمكنك أيضاً تمرير بطاقتك الذكية على قارئ الحافلة للصعود مباشرة دون الحاجة لفتح التطبيق.'
-                      : 'You can also tap your physical AMOMY card at the reader to board instantly.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
+
+                // 3. Lower area: exactly 3 columns (TIME, SEAT, FEES)
+                Positioned(
+                  left: width * (20 / 444),
+                  right: width * (20 / 444),
+                  top: height * (490 / 633),
+                  bottom: height * (22 / 633),
+                  child: Row(
+                    children: [
+                      _TicketValue(
+                        label: l10n.bookingTicketTime,
+                        value: departureTime,
+                      ),
+                      _TicketValue(
+                        label: l10n.bookingTicketSeat,
+                        value: booking.seatNumber,
+                      ),
+                      _TicketValue(label: l10n.bookingTicketFees, value: fare),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TicketValue extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TicketValue({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            AppSpacing.gapH4,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+                maxLines: 1,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _SuccessActions extends StatelessWidget {
-  final PassengerBooking booking;
-  final bool isAr;
-  final bool canShowLiveMap;
-
-  const _SuccessActions({
-    required this.booking,
-    required this.isAr,
-    required this.canShowLiveMap,
-  });
+  const _SuccessActions();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (canShowLiveMap) ...[
-          ElevatedButton.icon(
-            onPressed: () {
-              context.push(
-                RoutePaths.liveTracking.replaceFirst(':tripId', booking.tripId),
-              );
-            },
-            icon: const Icon(AppIcons.map, size: 18, color: Colors.white),
-            label: Text(
-              isAr ? 'عرض الخريطة الحية' : 'View Live Map',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),
-            ),
-          ),
-          AppSpacing.gapH10,
-        ],
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                label: context.l10n.viewMyTrips,
-                icon: const Icon(AppIcons.bus, size: 18, color: Colors.white),
-                height: 48,
-                isFullWidth: true,
-                onPressed: () => context.go('/trips'),
-              ),
-            ),
-            AppSpacing.gapW10,
-            Expanded(
-              child: AppButton(
-                label: isAr ? 'العودة للرئيسية' : 'Back to Home',
-                icon: const Icon(AppIcons.home, size: 18),
-                variant: ButtonVariant.outline,
-                height: 48,
-                isFullWidth: true,
-                onPressed: () => context.go('/home'),
-              ),
-            ),
-          ],
+        AppButton(
+          label: l10n.bookingSuccessMyTrips,
+          icon: const Icon(AppIcons.bus, size: 18, color: Colors.white),
+          height: 48,
+          isFullWidth: true,
+          onPressed: () => context.go(RoutePaths.trips),
+        ),
+        AppSpacing.gapH10,
+        AppButton(
+          label: l10n.bookingSuccessGoHome,
+          icon: const Icon(AppIcons.home, size: 18),
+          variant: ButtonVariant.outline,
+          height: 48,
+          isFullWidth: true,
+          onPressed: () => context.go(RoutePaths.home),
         ),
       ],
     );

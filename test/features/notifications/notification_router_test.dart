@@ -574,10 +574,11 @@ void main() {
 
         // BookingSuccessView is displayed and preserved intact
         expect(find.byType(BookingSuccessView), findsOneWidget);
-        expect(find.text('Booking Confirmed'), findsOneWidget);
-        expect(find.text('Seat 04'), findsOneWidget);
-        expect(find.text('View My Trips'), findsOneWidget);
-        expect(find.text('Back to Home'), findsOneWidget);
+        expect(find.text('Booking Confirmed!'), findsOneWidget);
+        expect(find.text('SEAT'), findsOneWidget);
+        expect(find.text('04'), findsOneWidget);
+        expect(find.text('My Trips'), findsOneWidget);
+        expect(find.text('Go to Home'), findsOneWidget);
       },
     );
   });

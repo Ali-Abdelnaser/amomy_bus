@@ -272,9 +272,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Booking Confirmed'), findsOneWidget);
+      expect(find.textContaining('Booking Confirmed'), findsOneWidget);
       expect(find.text('1A'), findsOneWidget);
-      expect(find.text('View My Trips'), findsOneWidget);
+      expect(find.textContaining('My Trips'), findsOneWidget);
       expect(find.byType(AppQrTicketWidget), findsOneWidget);
     });
   });

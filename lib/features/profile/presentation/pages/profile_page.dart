@@ -350,6 +350,7 @@ class _ProfilePageState extends State<ProfilePage> {
               final user = authState.user;
 
               return AppScaffold(
+                backgroundColor: const Color(0xFFF6F8FB),
                 appBar: AppAppBar(
                   title: l10n.navProfile,
                   showBackButton: false,
@@ -364,7 +365,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Centered Identity Header directly on surface (no heavy card)
+                        // Centered Identity Header directly on surface
                         ProfileIdentityHeader(user: user),
                         AppSpacing.gapH24,
 
@@ -375,12 +376,17 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.userRound,
                               title: l10n.personalInfo,
+                              subtitle: isAr
+                                  ? 'تحديث بياناتك وتفاصيل الاتصال'
+                                  : 'Update your personal details',
+                              iconBackgroundColor: const Color(0xFFE8F1FA),
+                              iconColor: AppColors.primary,
                               onTap: () =>
                                   context.push(RoutePaths.personalInformation),
                             ),
                           ],
                         ),
-                        AppSpacing.gapH16,
+                        AppSpacing.gapH18,
 
                         // SECTION 2: PREFERENCES
                         ProfileSection(
@@ -389,18 +395,28 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.notification,
                               title: l10n.notificationSettings,
+                              subtitle: isAr
+                                  ? 'إدارة التنبيهات وتحديثات الرحلات'
+                                  : 'Manage alerts and trip updates',
+                              iconBackgroundColor: const Color(0xFFFEF3EB),
+                              iconColor: const Color(0xFFE06D14),
                               onTap: () =>
                                   context.push(RoutePaths.notificationSettings),
                             ),
                             ProfileSettingTile(
                               icon: AppIcons.languages,
                               title: l10n.language,
+                              subtitle: isAr
+                                  ? 'اختر لغة التطبيق المفضلة'
+                                  : 'Choose your preferred app language',
                               trailingText: isAr ? 'العربية' : 'English',
+                              iconBackgroundColor: const Color(0xFFEEF4FF),
+                              iconColor: const Color(0xFF3538CD),
                               onTap: () => _showLanguageSelector(context),
                             ),
                           ],
                         ),
-                        AppSpacing.gapH16,
+                        AppSpacing.gapH18,
 
                         // SECTION 3: HELP & SUPPORT
                         ProfileSection(
@@ -409,11 +425,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.headphones,
                               title: l10n.supportCenter,
+                              subtitle: isAr
+                                  ? 'تحتاج مساعدة؟ تواصل معنا'
+                                  : 'Need help? Contact us',
+                              iconBackgroundColor: const Color(0xFFECFDF3),
+                              iconColor: const Color(0xFF027A48),
                               onTap: () => context.push(RoutePaths.support),
                             ),
                           ],
                         ),
-                        AppSpacing.gapH16,
+                        AppSpacing.gapH18,
 
                         // SECTION 4: ABOUT & LEGAL
                         ProfileSection(
@@ -424,17 +445,32 @@ class _ProfilePageState extends State<ProfilePage> {
                             ProfileSettingTile(
                               icon: AppIcons.info,
                               title: l10n.aboutAmomyApp,
+                              subtitle: isAr
+                                  ? 'إصدار التطبيق ومعلومات المطور'
+                                  : 'App version and developer info',
+                              iconBackgroundColor: const Color(0xFFF4F3FF),
+                              iconColor: const Color(0xFF5925DC),
                               onTap: () => context.push(RoutePaths.aboutApp),
                             ),
                             ProfileSettingTile(
                               icon: AppIcons.shield,
                               title: l10n.privacyPolicy,
+                              subtitle: isAr
+                                  ? 'حماية وأمان بياناتك الشخصية'
+                                  : 'Data privacy and security standards',
+                              iconBackgroundColor: const Color(0xFFF8F9FC),
+                              iconColor: const Color(0xFF475467),
                               onTap: () =>
                                   context.push(RoutePaths.privacyPolicy),
                             ),
                             ProfileSettingTile(
                               icon: AppIcons.fileText,
                               title: l10n.termsAndConditions,
+                              subtitle: isAr
+                                  ? 'شروط الاستخدام وقواعد الخدمة'
+                                  : 'Terms of use and service rules',
+                              iconBackgroundColor: const Color(0xFFF8F9FC),
+                              iconColor: const Color(0xFF475467),
                               onTap: () =>
                                   context.push(RoutePaths.termsAndConditions),
                             ),
@@ -442,22 +478,20 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         AppSpacing.gapH24,
 
-                        // ELEGANT AMOMY BLUE SIGN OUT ACTION (Non-destructive design)
+                        // LOGOUT / DESTRUCTIVE ACTION: Distinct full-width soft red outlined style
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () => _confirmSignOut(context),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             child: Container(
-                              height: 50,
+                              height: 52,
                               decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(14),
+                                color: const Color(0xFFFEF3F2),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.18,
-                                  ),
-                                  width: 1,
+                                  color: const Color(0xFFFECDCA),
+                                  width: 1.2,
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -466,15 +500,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                 children: [
                                   const Icon(
                                     AppIcons.logOut,
-                                    size: 18,
-                                    color: AppColors.primary,
+                                    size: 19,
+                                    color: AppColors.error,
                                   ),
                                   AppSpacing.gapW8,
                                   Text(
                                     l10n.signOut,
                                     style: AppTextStyles.labelLarge.copyWith(
-                                      color: AppColors.primary,
+                                      color: AppColors.error,
                                       fontWeight: FontWeight.w700,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ],
@@ -482,6 +517,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 32),
                         AppSpacing.gapBottomNav,
                       ],
                     ),

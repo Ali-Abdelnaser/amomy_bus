@@ -77,6 +77,10 @@ class PassengerHomePage extends StatefulWidget {
   State<PassengerHomePage> createState() => _PassengerHomePageState();
 }
 
+/// Keeps the existing announcement feature available while its Home experience
+/// is prepared for a future product-approved redesign.
+const bool homeAnnouncementsEnabled = false;
+
 class _PassengerHomePageState extends State<PassengerHomePage>
     with WidgetsBindingObserver {
   @override
@@ -282,8 +286,9 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                             avatarUrl: summary.profile.avatarUrl,
                           ),
                         AppSpacing.gapH20,
-                        //    - Quick Navigation: My Trips & Wallet
-
+                        // Final approved Home section order:
+                        // Book Now -> Live Tracking -> Upcoming Trip -> Activity.
+                        // Do not reorder without explicit product decision.
                         Builder(
                           builder: (context) {
                             final parentWalletCubit =
@@ -323,36 +328,16 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                             }
                           },
                         ),
-                        AppSpacing.gapH12,
-                        // 2. Announcements Carousel
-                        if (state.announcements.isNotEmpty) ...[
+                        AppSpacing.gapH20,
+                        if (homeAnnouncementsEnabled &&
+                            state.announcements.isNotEmpty) ...[
                           HomeAnnouncementsSection(
                             announcements: state.announcements,
                           ),
                           AppSpacing.gapH20,
                         ],
-
-                        // 3. Book Your Ride (Integrated with Authoritative Points Balance)
-                        // 4. Live Bus Tracking Card (Only when relevant with upcoming trip)
-                        if (summary.upcomingTrip != null) ...[
-                          HomeLiveTrackingCard(
-                            onViewMapTap:
-                                summary.upcomingTrip?.tripId.isNotEmpty == true
-                                ? () => context.push(
-                                    RoutePaths.liveTracking.replaceFirst(
-                                      ':tripId',
-                                      summary.upcomingTrip!.tripId,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          AppSpacing.gapH24,
-                        ],
-                        HomeUpcomingTripCard(
-                          upcomingTrip: summary.upcomingTrip,
-                          isBookingAvailable: state.isBookingAvailable,
-                          hasLoadedAvailability: state.hasLoadedAvailability,
-                          onViewLiveMap:
+                        HomeLiveTrackingCard(
+                          onViewMapTap:
                               summary.upcomingTrip?.tripId.isNotEmpty == true
                               ? () => context.push(
                                   RoutePaths.liveTracking.replaceFirst(
@@ -361,15 +346,15 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                                   ),
                                 )
                               : null,
-                          onViewTrip: () => context.push(RoutePaths.trips),
-                          onChangeSeat: () => context.push(RoutePaths.trips),
+                        ),
+                        AppSpacing.gapH24,
+                        HomeUpcomingTripCard(
+                          upcomingTrip: summary.upcomingTrip,
+                          isBookingAvailable: state.isBookingAvailable,
+                          hasLoadedAvailability: state.hasLoadedAvailability,
                           onCancelBooking: () => context.push(RoutePaths.trips),
                         ),
                         AppSpacing.gapH24,
-                        // 5. Quick Actions:
-                        //    - Book Your Ride (Integrated with Authoritative Points Balance & Server Availability)
-
-                        // 6. Your Activity
                         HomeActivitySection(activity: summary.activity),
                         // Generous clearance ensuring full visibility above floating nav
                         const SizedBox(height: 110),

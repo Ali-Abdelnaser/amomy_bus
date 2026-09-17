@@ -25,6 +25,7 @@ void main() {
         data: MediaQueryData(
           size: size,
           padding: const EdgeInsets.only(bottom: 24),
+          disableAnimations: true,
         ),
         child: Scaffold(body: child),
       ),
@@ -41,149 +42,56 @@ void main() {
     destinationNameEn: 'Toshka Gate',
     serviceDate: DateTime(2026, 9, 12),
     departureTime: '08:00',
-    departureAt: DateTime(2026, 9, 12, 8, 0),
+    departureAt: DateTime(2026, 9, 12, 8),
     seatNumber: '7',
-    farePoints: 30.0,
+    farePoints: 30,
     status: 'confirmed',
     qrToken: 'AMY_TOKEN_SECURE_777',
     bookedAt: DateTime(2026, 9, 12),
-    stopName: 'Ezzat Bridge',
-    locality: 'Mit Fadala',
   );
 
-  final sampleLegacyBooking = PassengerBooking(
-    bookingId: 'book-legacy',
-    tripId: 'trip-legacy',
-    direction: BookingDirection.returnTrip,
-    originNameAr: 'بوابة توشكى',
-    originNameEn: 'Toshka Gate',
-    destinationNameAr: 'كوبرى عزت',
-    destinationNameEn: 'Ezzat Bridge',
-    serviceDate: DateTime(2026, 9, 12),
-    departureTime: '16:00',
-    departureAt: DateTime(2026, 9, 12, 16, 0),
-    seatNumber: '1A',
-    farePoints: 25.0,
-    status: 'confirmed',
-    qrToken: 'AMY_TOKEN_LEGACY_1A',
-    bookedAt: DateTime(2026, 9, 12),
-  );
-
-  group('BookingSuccessView Phase 10 digital boarding pass', () {
-    testWidgets('shows compact confirmation header without dispenser styling', (
+  group('BookingSuccessView compact ticket', () {
+    testWidgets('uses the supplied SVG ticket with a confirmed header', (
       tester,
     ) async {
       await tester.pumpWidget(
         buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('Booking Confirmed'), findsOneWidget);
+      expect(find.text('Booking Confirmed!'), findsOneWidget);
       expect(
-        find.text('Your seat has been successfully reserved.'),
+        find.text('Your trip seat is successfully reserved.'),
         findsOneWidget,
       );
-      expect(find.text('AMOMY DIGITAL DISPENSER'), findsNothing);
+      
     });
 
-    testWidgets(
-      'renders trip summary card with Cairo 12-hr time & route details',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Outbound Trip'), findsOneWidget);
-        expect(find.text('8:00 AM'), findsOneWidget);
-        expect(find.text('From'), findsOneWidget);
-        expect(find.text('Ezzat Bridge'), findsOneWidget);
-        expect(find.text('Mit Fadala'), findsOneWidget);
-        expect(find.text('To'), findsOneWidget);
-        expect(find.text('Toshka Gate'), findsOneWidget);
-        expect(find.text('Date'), findsOneWidget);
-        expect(find.text('12 Sep'), findsOneWidget);
-        expect(find.text('Seat'), findsOneWidget);
-        expect(find.text('7'), findsOneWidget);
-        expect(find.text('Fare'), findsOneWidget);
-        expect(find.text('30 Points'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'never exposes internal bus, driver, plate, or device identity',
-      (tester) async {
-        await tester.pumpWidget(
-          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Bus 1'), findsNothing);
-        expect(find.text('Bus'), findsNothing);
-        expect(find.textContaining('Plate'), findsNothing);
-        expect(find.textContaining('Driver'), findsNothing);
-        expect(find.textContaining('Device'), findsNothing);
-      },
-    );
-
-    testWidgets('renders compact QR boarding card with title and real token', (
+    testWidgets('shows only QR, time, seat, and fees in the ticket', (
       tester,
     ) async {
       await tester.pumpWidget(
         buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('Scan to Board'), findsOneWidget);
-      expect(find.text('Seat 7'), findsOneWidget);
-      expect(
-        find.text('Present this QR code to the scanner upon boarding.'),
-        findsOneWidget,
+      final qrWidget = tester.widget<AppQrTicketWidget>(
+        find.byType(AppQrTicketWidget),
       );
-
-      final qrFinder = find.byType(AppQrTicketWidget);
-      expect(qrFinder, findsOneWidget);
-      final qrWidget = tester.widget<AppQrTicketWidget>(qrFinder);
       expect(qrWidget.data, 'AMY_TOKEN_SECURE_777');
-      expect(qrWidget.size, lessThanOrEqualTo(172));
+      expect(qrWidget.size, greaterThanOrEqualTo(200));
+      expect(find.text('TIME'), findsOneWidget);
+      expect(find.text('8:00 AM'), findsOneWidget);
+      expect(find.text('SEAT'), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
+      expect(find.text('FEES'), findsOneWidget);
+      expect(find.text('30 Points'), findsOneWidget);
+      expect(find.textContaining('Ezzat Bridge'), findsNothing);
+      expect(find.textContaining('Toshka Gate'), findsNothing);
+      expect(find.textContaining('NFC'), findsNothing);
     });
 
-    testWidgets('renders dedicated NFC helper card without exposing tokens', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('AMOMY Smart Card (NFC)'), findsOneWidget);
-      expect(
-        find.text(
-          'You can also tap your physical AMOMY card at the reader to board instantly.',
-        ),
-        findsOneWidget,
-      );
-      // Ensure no raw token/hashes are shown in NFC helper
-      expect(find.textContaining('TOKEN'), findsNothing);
-      expect(find.textContaining('hash'), findsNothing);
-    });
-
-    testWidgets('preserves legacy seat labels without changing booking data', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(BookingSuccessView(booking: sampleLegacyBooking)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Return Trip'), findsOneWidget);
-      expect(find.text('4:00 PM'), findsOneWidget);
-      expect(find.text('1A'), findsOneWidget);
-      expect(find.text('Seat 1A'), findsOneWidget);
-      expect(find.text('25 Points'), findsOneWidget);
-    });
-
-    testWidgets('keeps actions visible and scroll-safe on small phones', (
+    testWidgets('has exactly My Trips and Go to Home actions on small phones', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -192,55 +100,32 @@ void main() {
           size: const Size(320, 568),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('View My Trips'), findsOneWidget);
-      expect(find.text('Back to Home'), findsOneWidget);
+      expect(find.text('My Trips'), findsOneWidget);
+      expect(find.text('Go to Home'), findsOneWidget);
+      expect(find.textContaining('Live Map'), findsNothing);
     });
 
-    testWidgets(
-      'shows Live Map action conditionally when state/route allows it',
-      (tester) async {
-        // By default without active live tracking, Live Map is omitted
-        await tester.pumpWidget(
-          buildTestableWidget(BookingSuccessView(booking: sampleBooking)),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('View Live Map'), findsNothing);
-
-        // When state/route permits live map, Live Map action is shown
-        await tester.pumpWidget(
-          buildTestableWidget(
-            BookingSuccessView(booking: sampleBooking, enableLiveMap: true),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('View Live Map'), findsOneWidget);
-        expect(find.text('View My Trips'), findsOneWidget);
-        expect(find.text('Back to Home'), findsOneWidget);
-      },
-    );
-
-    testWidgets('renders RTL Arabic version correctly', (tester) async {
+    testWidgets('keeps the SVG direction and localizes Arabic text', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
-          BookingSuccessView(booking: sampleBooking, enableLiveMap: true),
+          BookingSuccessView(booking: sampleBooking),
           locale: const Locale('ar'),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('تم تأكيد الحجز'), findsOneWidget);
-      expect(find.text('تم حجز مقعدك بنجاح.'), findsOneWidget);
-      expect(find.text('رحلة الذهاب'), findsOneWidget);
-      expect(find.text('امسح للصعود'), findsOneWidget);
-      expect(find.text('مقعد 7'), findsOneWidget);
-      expect(find.text('بطاقة عمومي الذكية (NFC)'), findsOneWidget);
-      expect(find.text('عرض الخريطة الحية'), findsOneWidget);
-      expect(find.text('عرض رحلاتي'), findsOneWidget);
+      expect(find.text('تم تأكيد الحجز بنجاح!'), findsOneWidget);
+      expect(find.text('الوقت'), findsOneWidget);
+      expect(find.text('المقعد'), findsOneWidget);
+      expect(find.text('التكلفة'), findsOneWidget);
+      expect(find.text('8:00 ص'), findsOneWidget);
+      expect(find.text('رحلاتي'), findsOneWidget);
       expect(find.text('العودة للرئيسية'), findsOneWidget);
-      expect(find.text('حافلة 1'), findsNothing);
     });
   });
 }

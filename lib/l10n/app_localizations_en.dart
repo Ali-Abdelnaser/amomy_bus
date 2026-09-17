@@ -59,6 +59,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Master toggle for all push notifications';
 
   @override
+  String get notificationTestLabTitle => 'Notification Test Lab';
+
+  @override
+  String get notificationTestLabLocalTitle => 'Local Test';
+
+  @override
+  String get notificationTestLabLocalSubtitle =>
+      'Tests local presentation on this device only.';
+
+  @override
+  String get notificationTestLabLocalButton => 'Local Test';
+
+  @override
+  String get notificationTestLabRemoteTitle => 'Remote FCM Test';
+
+  @override
+  String get notificationTestLabRemoteSubtitle =>
+      'Requests a real push through FCM and APNs.';
+
+  @override
+  String get notificationTestLabRemoteButton => 'Remote Push Test';
+
+  @override
+  String get notificationTestLabLocalShown =>
+      'Local notification shown on this device.';
+
+  @override
+  String get notificationTestLabRemoteRequested =>
+      'Push requested. Put the app in the background or lock the phone.';
+
+  @override
+  String get notificationTestLabRequestFailed =>
+      'Unable to request remote push.';
+
+  @override
   String get seatStatusCurrent => 'Current Seat';
 
   @override
@@ -427,6 +462,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noUpcomingTrip => 'No upcoming trips';
 
   @override
+  String get noUpcomingTripSubtitle =>
+      'Book a seat whenever a trip is available.';
+
+  @override
+  String get qr => 'QR';
+
+  @override
   String get bookTripCta => 'Book a Ride';
 
   @override
@@ -582,6 +624,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bookingSuccessSubtitle =>
       'Your trip seat is successfully reserved.';
+
+  @override
+  String get bookingTicketTime => 'TIME';
+
+  @override
+  String get bookingTicketSeat => 'SEAT';
+
+  @override
+  String get bookingTicketFees => 'FEES';
+
+  @override
+  String get bookingSuccessMyTrips => 'My Trips';
+
+  @override
+  String get bookingSuccessGoHome => 'Go to Home';
 
   @override
   String get qrTicketInstruction =>
@@ -791,6 +848,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get completedTrips => 'Completed Trips';
+
+  @override
+  String get completionRate => 'Completion Rate';
 
   @override
   String get pointsSpentThisMonth => 'Points Spent This Month';

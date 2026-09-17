@@ -35,13 +35,17 @@ class AppUser extends Equatable {
     return parts.first;
   }
 
-  /// Initials derived from the user's full name
+  /// Initials derived from the user's full name (first name + second name)
   String get initials {
     final trimmed = fullName.trim();
     if (trimmed.isEmpty) return 'A';
-    final parts = trimmed.split(RegExp(r'\s+'));
+    final parts = trimmed
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'A';
     if (parts.length == 1) return parts.first[0].toUpperCase();
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
   /// Required fields for passenger profile completion
@@ -71,12 +75,14 @@ class AppUser extends Equatable {
 
   /// Profile completion percentage as a double from 0.0 to 1.0
   double get profileCompletionPercentage {
-    final completed = requiredProfileFields.length - missingProfileFields.length;
+    final completed =
+        requiredProfileFields.length - missingProfileFields.length;
     return completed / requiredProfileFields.length;
   }
 
   /// Profile completion percentage as an integer from 0 to 100
-  int get profileCompletionPercent => (profileCompletionPercentage * 100).round();
+  int get profileCompletionPercent =>
+      (profileCompletionPercentage * 100).round();
 
   bool get hasAdminPrivileges => roles.any((r) => r.isAdmin);
   bool get isPassenger => roles.contains(AppRole.passenger);
@@ -107,14 +113,14 @@ class AppUser extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        email,
-        fullName,
-        phone,
-        gender,
-        dateOfBirth,
-        avatarUrl,
-        roles,
-        isEmailVerified,
-      ];
+    id,
+    email,
+    fullName,
+    phone,
+    gender,
+    dateOfBirth,
+    avatarUrl,
+    roles,
+    isEmailVerified,
+  ];
 }

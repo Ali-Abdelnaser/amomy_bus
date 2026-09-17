@@ -414,75 +414,7 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                     child: Column(
                       children: [
                         // Hint banner
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF4FDF7),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.success.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                color: AppColors.success,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  isAr
-                                      ? 'مقعدك الحالي ($currentSeatNumber) يظل محميًا حتى تأكيد المقعد الجديد.'
-                                      : 'Your current seat ($currentSeatNumber) remains protected until new seat is confirmed.',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: const Color(0xFF027A48),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        AppSpacing.gapH16,
-
-                        // Comprehensive Interactive Bus Legend
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            _LegendItem(
-                              color: AppColors.success,
-                              label: l10n.seatStatusCurrent,
-                            ),
-                            _LegendItem(
-                              color: AppColors.primary,
-                              label: l10n.seatStatusSelected,
-                            ),
-                            _LegendItem(
-                              color: Color(0xFFE2E8F0),
-                              labelBorder: Color(0xFF94A3B8),
-                              label: l10n.seatStatusAvailable,
-                            ),
-                            _LegendItem(
-                              color: const Color(0xFF0F172A),
-                              label: l10n.seatStatusBookedMale,
-                            ),
-                            _LegendItem(
-                              color: const Color(0xFFE11D48),
-                              label: l10n.seatStatusBookedFemale,
-                            ),
-                          ],
-                        ),
-
-                        AppSpacing.gapH16,
+                        
 
                         // Physical 28-Seat Bus Interior Map
                         BusSeatMapWidget(
@@ -588,43 +520,5 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final Color? labelBorder;
-  final String label;
 
-  const _LegendItem({
-    required this.color,
-    this.labelBorder,
-    required this.label,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 13,
-          height: 13,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3.5),
-            border: labelBorder != null
-                ? Border.all(color: labelBorder!, width: 1)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            fontSize: 11.5,
-            color: const Color(0xFF475467),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}

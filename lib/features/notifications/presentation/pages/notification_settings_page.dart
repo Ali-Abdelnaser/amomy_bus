@@ -222,6 +222,15 @@ class _NotificationSettingsView extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (state.isTester) ...[
+                      const SizedBox(height: 24),
+                      _NotificationTestLab(
+                        notificationService:
+                            getIt.isRegistered<NotificationService>()
+                            ? getIt<NotificationService>()
+                            : null,
+                      ),
+                    ],
                   ],
                 );
               }
@@ -419,5 +428,216 @@ class _NotificationSettingsView extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _NotificationTestLab extends StatefulWidget {
+  final NotificationService? notificationService;
+
+  const _NotificationTestLab({required this.notificationService});
+
+  @override
+  State<_NotificationTestLab> createState() => _NotificationTestLabState();
+}
+
+class _NotificationTestLabState extends State<_NotificationTestLab> {
+  bool _isSendingLocal = false;
+  bool _isRequestingRemote = false;
+
+  Future<void> _sendLocalTest() async {
+    final service = widget.notificationService;
+    if (service == null) return;
+
+    setState(() => _isSendingLocal = true);
+    final shown = await service.localNotifications.showForegroundNotification(
+      id: DateTime.now().millisecondsSinceEpoch,
+      title: context.l10n.notificationTestLabLocalTitle,
+      body: context.l10n.notificationTestLabLocalSubtitle,
+      payload: const {'screen': 'notifications', 'type': 'system'},
+    );
+    if (!mounted) return;
+    setState(() => _isSendingLocal = false);
+    _showMessage(
+      shown
+          ? context.l10n.notificationTestLabLocalShown
+          : context.l10n.notificationTestLabRequestFailed,
+    );
+  }
+
+  Future<void> _requestRemotePush() async {
+    final service = widget.notificationService;
+    if (service == null) return;
+
+    setState(() => _isRequestingRemote = true);
+    final result = await service.executeSelfTest(delaySeconds: 10);
+    if (!mounted) return;
+    setState(() => _isRequestingRemote = false);
+    _showMessage(
+      result.requestAccepted
+          ? context.l10n.notificationTestLabRemoteRequested
+          : context.l10n.notificationTestLabRequestFailed,
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final canTest = widget.notificationService != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.notificationTestLabTitle,
+            style: AppTextStyles.titleSmall.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _TestLabAction(
+            icon: AppIcons.notification,
+            title: l10n.notificationTestLabLocalTitle,
+            subtitle: l10n.notificationTestLabLocalSubtitle,
+            label: l10n.notificationTestLabLocalButton,
+            isLoading: _isSendingLocal,
+            onPressed: canTest && !_isRequestingRemote ? _sendLocalTest : null,
+          ),
+          const SizedBox(height: 12),
+          _TestLabAction(
+            icon: AppIcons.phone,
+            title: l10n.notificationTestLabRemoteTitle,
+            subtitle: l10n.notificationTestLabRemoteSubtitle,
+            label: l10n.notificationTestLabRemoteButton,
+            isLoading: _isRequestingRemote,
+            onPressed: canTest && !_isSendingLocal ? _requestRemotePush : null,
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TestLabAction extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+  final bool isPrimary;
+
+  const _TestLabAction({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.label,
+    required this.isLoading,
+    required this.onPressed,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: AppColors.primaryLight,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 40,
+                child: isPrimary
+                    ? ElevatedButton(
+                        onPressed: onPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                        child: _TestLabButtonLabel(
+                          label: label,
+                          isLoading: isLoading,
+                          color: Colors.white,
+                        ),
+                      )
+                    : OutlinedButton(
+                        onPressed: onPressed,
+                        child: _TestLabButtonLabel(
+                          label: label,
+                          isLoading: isLoading,
+                          color: AppColors.primary,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TestLabButtonLabel extends StatelessWidget {
+  final String label;
+  final bool isLoading;
+  final Color color;
+
+  const _TestLabButtonLabel({
+    required this.label,
+    required this.isLoading,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2, color: color),
+      );
+    }
+    return Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
   }
 }

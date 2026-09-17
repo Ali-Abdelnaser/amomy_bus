@@ -214,29 +214,53 @@ class ProfileIdentityHeader extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Circular Avatar + Camera Badge
+            // Circular Avatar (116px diameter) + Camera Badge
             Center(
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  CircleAvatar(
-                    radius: 80,
-                    backgroundColor: AppColors.primaryLight,
-                    backgroundImage: hasAvatar
-                        ? NetworkImage(user.avatarUrl!)
-                        : null,
-                    onBackgroundImageError: hasAvatar
-                        ? (exception, stackTrace) {}
-                        : null,
-                    child: (!hasAvatar)
-                        ? Text(
-                            user.initials,
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          )
-                        : null,
+                  Container(
+                    width: 116,
+                    height: 116,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x140F172A),
+                          blurRadius: 16,
+                          offset: Offset(0, 6),
+                        ),
+                        BoxShadow(
+                          color: Color(0x0A0F172A),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: CircleAvatar(
+                        radius: 54,
+                        backgroundColor: AppColors.primaryLight,
+                        backgroundImage: hasAvatar
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                        onBackgroundImageError: hasAvatar
+                            ? (exception, stackTrace) {}
+                            : null,
+                        child: (!hasAvatar)
+                            ? Text(
+                                user.initials,
+                                style: AppTextStyles.headlineMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 34,
+                                  letterSpacing: 1.5,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
                   ),
                   if (isLoading)
                     Positioned.fill(
@@ -257,10 +281,10 @@ class ProfileIdentityHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                  // Camera edit badge overlapping edge
+                  // Camera edit badge sitting cleanly at lower trailing edge
                   PositionedDirectional(
-                    end: 0,
-                    bottom: 0,
+                    end: -2,
+                    bottom: -2,
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
@@ -268,26 +292,26 @@ class ProfileIdentityHeader extends StatelessWidget {
                         onTap: isLoading
                             ? null
                             : () => _showAvatarOptionsSheet(context),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(22),
                         child: Container(
-                          width: 34,
-                          height: 34,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: [
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: const [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                                color: Color(0x24000000),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
                           alignment: Alignment.center,
                           child: const Icon(
                             AppIcons.camera,
-                            size: 16,
+                            size: 18,
                             color: Colors.white,
                           ),
                         ),
@@ -297,7 +321,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                 ],
               ),
             ),
-            AppSpacing.gapH12,
+            AppSpacing.gapH16,
 
             // Full Name
             Text(
@@ -305,8 +329,9 @@ class ProfileIdentityHeader extends StatelessWidget {
                   ? user.fullName
                   : context.l10n.navProfile,
               style: AppTextStyles.titleLarge.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                fontSize: 20,
               ),
               textAlign: TextAlign.center,
             ),
@@ -315,11 +340,88 @@ class ProfileIdentityHeader extends StatelessWidget {
             // Email (muted)
             Text(
               user.email,
-              style: AppTextStyles.bodySmall.copyWith(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
+            ),
+            AppSpacing.gapH10,
+
+            // Visual Status Chips (Passenger + Verified)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.bus,
+                        size: 12,
+                        color: AppColors.primary,
+                      ),
+                      AppSpacing.gapW4,
+                      Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'راكب'
+                            : 'Passenger',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primaryDarker,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                AppSpacing.gapW8,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.successLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.check,
+                        size: 12,
+                        color: AppColors.success,
+                      ),
+                      AppSpacing.gapW4,
+                      Text(
+                        Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'موثق'
+                            : 'Verified',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: const Color(0xFF027A48),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         );

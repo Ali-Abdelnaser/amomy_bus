@@ -1,44 +1,36 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:amomy_bus/app/di/injection.dart';
 import 'package:amomy_bus/core/theme/app_theme.dart';
-import 'package:amomy_bus/features/booking/presentation/widgets/app_qr_ticket_widget.dart';
 import 'package:amomy_bus/features/home/domain/entities/announcement.dart';
 import 'package:amomy_bus/features/home/domain/entities/home_summary.dart';
 import 'package:amomy_bus/features/home/presentation/cubit/home_cubit.dart';
 import 'package:amomy_bus/features/home/presentation/cubit/home_state.dart';
 import 'package:amomy_bus/features/home/presentation/pages/passenger_home_page.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_activity_section.dart';
-import 'package:amomy_bus/features/home/presentation/widgets/home_app_bar.dart';
+import 'package:amomy_bus/features/home/presentation/widgets/home_announcements_section.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_book_ride_card.dart';
 import 'package:amomy_bus/features/home/presentation/widgets/home_upcoming_trip_card.dart';
-import 'package:amomy_bus/features/tracking/domain/models/bus_stop_model.dart';
 import 'package:amomy_bus/features/tracking/domain/models/live_tracking_status.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
-import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_cubit.dart';
-import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_state.dart';
-import 'package:amomy_bus/features/wallet/domain/entities/wallet_summary.dart';
-import 'package:amomy_bus/features/wallet/presentation/cubit/wallet_cubit.dart';
-import 'package:amomy_bus/features/wallet/presentation/cubit/wallet_state.dart';
+import 'package:amomy_bus/features/tracking/presentation/widgets/home_live_tracking_card.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
 
-class _MockTrackingRepo implements TrackingRepository {
+class _MockTrackingRepository implements TrackingRepository {
   @override
-  Future<TrackingSummary> getTripTracking({required String tripId}) async {
-    return const TrackingSummary(
-      status: LiveTrackingStatus.offline,
-      routeStops: [],
-      isInServiceWindow: false,
-      serviceWindow: 'closed',
-      cairoTime: '12:00:00',
-      cairoDate: '2026-09-16',
-      activeDirection: TrackingDirection.outbound,
-    );
-  }
+  Future<TrackingSummary> getTripTracking({required String tripId}) async =>
+      const TrackingSummary(
+        status: LiveTrackingStatus.offline,
+        routeStops: [],
+        isInServiceWindow: false,
+        serviceWindow: 'closed',
+        cairoTime: '12:00:00',
+        cairoDate: '2026-09-16',
+        activeDirection: TrackingDirection.outbound,
+      );
 
   @override
   Future<RouteGeometry?> getActiveRouteGeometry({
@@ -74,35 +66,14 @@ class _MockTrackingRepo implements TrackingRepository {
   }) async {}
 }
 
-class _FakeTrackingCubit extends Cubit<TrackingState> implements TrackingCubit {
-  _FakeTrackingCubit(super.initialState);
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _MockWalletCubit extends Cubit<WalletState> implements WalletCubit {
-  _MockWalletCubit(super.initialState);
-
-  @override
-  Future<void> loadWalletSummary(String userId) async {}
-
-  @override
-  Future<void> loadMoreHistory() async {}
-}
-
 void main() {
   setUpAll(() {
     if (!getIt.isRegistered<TrackingRepository>()) {
-      getIt.registerSingleton<TrackingRepository>(_MockTrackingRepo());
+      getIt.registerSingleton<TrackingRepository>(_MockTrackingRepository());
     }
   });
 
-  Widget buildApp(
-    Widget child, {
-    Locale locale = const Locale('en'),
-    TrackingCubit? trackingCubit,
-  }) {
+  Widget buildApp(Widget child, {Locale locale = const Locale('en')}) {
     return MaterialApp(
       locale: locale,
       theme: AppTheme.lightTheme,
@@ -113,39 +84,31 @@ void main() {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en'), Locale('ar')],
-      home: trackingCubit != null
-          ? BlocProvider<TrackingCubit>.value(
-              value: trackingCubit,
-              child: child,
-            )
-          : child,
+      home: child,
     );
   }
 
-  final sampleUpcomingTrip = PassengerUpcomingTrip(
-    bookingId: 'bkg-prod-99',
-    tripId: 'trip-prod-101',
+  final trip = PassengerUpcomingTrip(
+    bookingId: 'booking-1',
+    tripId: 'trip-1',
     direction: 'outbound',
     originNameAr: 'ميت فضالة',
     originNameEn: 'Mit Fadala',
     destinationNameAr: 'المنصورة',
     destinationNameEn: 'Mansoura',
     serviceDate: DateTime(2026, 9, 16),
-    departureAt: DateTime.utc(2026, 9, 16, 10, 0), // 13:00 Cairo (UTC+3)
+    departureAt: DateTime.utc(2026, 9, 16, 10),
     departureTime: '13:00',
     seatNumber: 'B4',
     farePoints: 30,
     bookingStatus: 'confirmed',
-    qrToken: 'amomy-qr-test-token-777',
+    qrToken: 'qr-token-1',
   );
 
-  final sampleHomeSummary = HomeSummary(
-    profile: const PassengerProfileSummary(
-      fullName: 'Ahmed Commuter',
-      avatarUrl: null,
-    ),
+  HomeSummary summary({PassengerUpcomingTrip? upcomingTrip}) => HomeSummary(
+    profile: const PassengerProfileSummary(fullName: 'Ahmed', avatarUrl: null),
     availablePoints: 2000,
-    upcomingTrip: sampleUpcomingTrip,
+    upcomingTrip: upcomingTrip,
     activity: const PassengerActivityMetrics(
       tripsThisMonth: 4,
       completedTrips: 12,
@@ -154,507 +117,158 @@ void main() {
     ),
   );
 
-  group('Phase 9 — Home & Upcoming Trip Redesign Complete Specification', () {
-    // 1. Hierarchy Check: Upcoming Trip is PRIMARY and vertically above Book Ride & Activity
+  group('Final approved Home layout', () {
+    testWidgets('keeps Book Now, tracking, trip, then activity in order', (
+      tester,
+    ) async {
+      final cubit = HomeCubit.idle(
+        initialState: HomeState(
+          status: HomeStatus.loaded,
+          summary: summary(upcomingTrip: trip),
+          announcements: const [
+            Announcement(
+              id: 'hidden-announcement',
+              titleAr: 'تنبيه',
+              titleEn: 'Alert',
+              descriptionAr: 'وصف',
+              descriptionEn: 'Description',
+              type: 'announcement',
+              sortOrder: 1,
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp(PassengerHomePage(homeCubit: cubit)));
+      await tester.pumpAndSettle();
+
+      final book = find.byType(HomeBookRideCard);
+      final tracking = find.byType(HomeLiveTrackingCard);
+      final upcoming = find.byType(HomeUpcomingTripCard);
+      final activity = find.byType(HomeActivitySection);
+      expect(book, findsOneWidget);
+      expect(tracking, findsOneWidget);
+      expect(upcoming, findsOneWidget);
+      expect(activity, findsOneWidget);
+      expect(find.byType(HomeAnnouncementsSection), findsNothing);
+      expect(
+        tester.getTopLeft(book).dy,
+        lessThan(tester.getTopLeft(tracking).dy),
+      );
+      expect(
+        tester.getTopLeft(tracking).dy,
+        lessThan(tester.getTopLeft(upcoming).dy),
+      );
+      expect(
+        tester.getTopLeft(upcoming).dy,
+        lessThan(tester.getTopLeft(activity).dy),
+      );
+    });
+
+    testWidgets('uses Cairo time and only QR and cancel for a booking', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildApp(Scaffold(body: HomeUpcomingTripCard(upcomingTrip: trip))),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1:00 PM'), findsOneWidget);
+      expect(find.text('QR'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.textContaining('Mit Fadala'), findsNothing);
+      expect(find.textContaining('Mansoura'), findsNothing);
+      expect(find.textContaining('Change Seat'), findsNothing);
+      expect(find.textContaining('Live Map'), findsNothing);
+    });
+
     testWidgets(
-      'A. Upcoming trip is primary Home content placed vertically above Book Ride and Activity',
+      'shows a compact empty state and only offers Book Now when allowed',
       (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-            announcements: const [
-              Announcement(
-                id: 'ann-1',
-                titleAr: 'تنبيه',
-                titleEn: 'Alert',
-                descriptionAr: 'الوصف',
-                descriptionEn: 'Description',
-                type: 'announcement',
-                sortOrder: 1,
-              ),
-            ],
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
-        );
-        await tester.pumpAndSettle();
-
-        final upcomingCardFinder = find.byType(HomeUpcomingTripCard);
-        final bookCardFinder = find.byType(HomeBookRideCard);
-        final activityFinder = find.byType(HomeActivitySection);
-
-        expect(upcomingCardFinder, findsOneWidget);
-        expect(bookCardFinder, findsOneWidget);
-        expect(activityFinder, findsOneWidget);
-
-        final upcomingTop = tester.getTopLeft(upcomingCardFinder).dy;
-        final bookTop = tester.getTopLeft(bookCardFinder).dy;
-        final activityTop = tester.getTopLeft(activityFinder).dy;
-
-        // Book Ride sit ABOVE Upcoming Trip, which in turn sits ABOVE Activity
-        expect(bookTop, lessThan(upcomingTop));
-        expect(upcomingTop, lessThan(activityTop));
-      },
-    );
-
-    // 2. Authoritative Source: Uses backend summary.upcomingTrip
-    testWidgets(
-      'B. Renders exactly the backend-selected upcoming trip data without local override',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Mit Fadala'), findsOneWidget);
-        expect(find.text('Mansoura'), findsOneWidget);
-        expect(find.textContaining('B4'), findsOneWidget);
-      },
-    );
-
-    // 3. Complete route, time, boarding, destination, and seat display
-    testWidgets(
-      'C. Renders direction, boarding stop, destination stop, seat number, and view ticket action',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Outbound'), findsOneWidget);
-        expect(find.text('Mit Fadala'), findsOneWidget);
-        expect(find.text('Mansoura'), findsOneWidget);
-        expect(find.textContaining('B4'), findsOneWidget);
-        expect(find.text('View Ticket'), findsOneWidget);
-      },
-    );
-
-    // 4. Cairo 12-hour Time Formatting: 13:00 -> 1:00 PM
-    testWidgets(
-      'D. 13:00 Cairo departure time renders as 1:00 PM in English and 1:00 م in Arabic',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-          ),
-        );
-
-        // English test
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('1:00 PM'), findsOneWidget);
-
-        // Arabic test
-        final homeCubitAr = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-          ),
-        );
         await tester.pumpWidget(
           buildApp(
-            PassengerHomePage(homeCubit: homeCubitAr),
-            locale: const Locale('ar'),
+            const Scaffold(
+              body: HomeUpcomingTripCard(
+                isBookingAvailable: false,
+                hasLoadedAvailability: true,
+              ),
+            ),
           ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.text('1:00 م'), findsOneWidget);
-      },
-    );
-
-    // 5. No upcoming trip: compact empty state
-    testWidgets(
-      'E. Clean, compact empty state rendered when there is no upcoming trip',
-      (tester) async {
-        final summaryNoTrip = HomeSummary(
-          profile: sampleHomeSummary.profile,
-          availablePoints: 800,
-          upcomingTrip: null,
-          activity: sampleHomeSummary.activity,
-        );
-
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: summaryNoTrip,
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
         );
         await tester.pumpAndSettle();
 
         expect(find.text('No upcoming trips'), findsOneWidget);
-        expect(find.text('Book a Ride'), findsOneWidget);
-        expect(find.text('View Ticket'), findsNothing);
-      },
-    );
-
-    // 6. Live Tracking Action routes with exact tripId
-    testWidgets(
-      'F. Live Map button invokes navigation with exact tripId when live',
-      (tester) async {
-        String? navigatedTripId;
-
-        final card = HomeUpcomingTripCard(
-          upcomingTrip: sampleUpcomingTrip,
-          onViewLiveMap: () {
-            navigatedTripId = sampleUpcomingTrip.tripId;
-          },
-        );
-
-        final trackingCubit = _FakeTrackingCubit(
-          const TrackingState(
-            uiStatus: TrackingUiStatus.loaded,
-            trackedTripId: 'trip-prod-101',
-            summary: TrackingSummary(
-              status: LiveTrackingStatus.live,
-              activeTripId: 'trip-prod-101',
-              isInServiceWindow: true,
-              serviceWindow: 'afternoon',
-              cairoTime: '13:05:00',
-              cairoDate: '2026-09-16',
-              activeDirection: TrackingDirection.outbound,
-              routeStops: [],
-            ),
-          ),
-        );
+        expect(find.text('Book Now'), findsNothing);
 
         await tester.pumpWidget(
-          buildApp(Scaffold(body: card), trackingCubit: trackingCubit),
+          buildApp(const Scaffold(body: HomeUpcomingTripCard())),
         );
         await tester.pumpAndSettle();
-
-        expect(find.text('LIVE'), findsOneWidget);
-        expect(find.text('View Live Map'), findsOneWidget);
-
-        await tester.tap(find.text('View Live Map'));
-        await tester.pumpAndSettle();
-
-        expect(navigatedTripId, equals('trip-prod-101'));
+        expect(find.text('Book Now'), findsOneWidget);
       },
     );
 
-    // 7. Assignment Pending does not show fake LIVE
-    testWidgets(
-      'G. Assignment pending status renders Assignment Pending badge, not LIVE',
-      (tester) async {
-        final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
-
-        final trackingCubit = _FakeTrackingCubit(
-          const TrackingState(
-            uiStatus: TrackingUiStatus.loaded,
-            trackedTripId: 'trip-prod-101',
-            summary: TrackingSummary(
-              status: LiveTrackingStatus.assignmentPending,
-              activeTripId: 'trip-prod-101',
-              isInServiceWindow: true,
-              serviceWindow: 'afternoon',
-              cairoTime: '13:00:00',
-              cairoDate: '2026-09-16',
-              activeDirection: TrackingDirection.outbound,
-              routeStops: [],
-            ),
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(Scaffold(body: card), trackingCubit: trackingCubit),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('Bus assignment pending'), findsOneWidget);
-        expect(find.text('LIVE'), findsNothing);
-      },
-    );
-
-    // 8. Stale status does not show LIVE
-    testWidgets('H. Stale status renders Signal Stale badge, not LIVE', (
+    testWidgets('keeps the primary empty CTA and donut safe at 320px', (
       tester,
     ) async {
-      final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-      final trackingCubit = _FakeTrackingCubit(
-        const TrackingState(
-          uiStatus: TrackingUiStatus.loaded,
-          trackedTripId: 'trip-prod-101',
-          summary: TrackingSummary(
-            status: LiveTrackingStatus.stale,
-            activeTripId: 'trip-prod-101',
-            isInServiceWindow: true,
-            serviceWindow: 'afternoon',
-            cairoTime: '13:00:00',
-            cairoDate: '2026-09-16',
-            activeDirection: TrackingDirection.outbound,
-            routeStops: [],
-          ),
-        ),
-      );
-
-      await tester.pumpWidget(
-        buildApp(Scaffold(body: card), trackingCubit: trackingCubit),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Location temporarily unavailable'), findsOneWidget);
-      expect(find.text('LIVE'), findsNothing);
-    });
-
-    // 9. Progression Unavailable does not fabricate stops
-    testWidgets(
-      'I. Progression unavailable status renders safe state without fake ETAs',
-      (tester) async {
-        final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
-
-        final trackingCubit = _FakeTrackingCubit(
-          const TrackingState(
-            uiStatus: TrackingUiStatus.loaded,
-            trackedTripId: 'trip-prod-101',
-            summary: TrackingSummary(
-              status: LiveTrackingStatus.progressionUnavailable,
-              activeTripId: 'trip-prod-101',
-              isInServiceWindow: true,
-              serviceWindow: 'afternoon',
-              cairoTime: '13:00:00',
-              cairoDate: '2026-09-16',
-              activeDirection: TrackingDirection.outbound,
-              routeStops: [],
-            ),
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(Scaffold(body: card), trackingCubit: trackingCubit),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Stop progress temporarily unavailable'),
-          findsOneWidget,
-        );
-        expect(find.text('LIVE'), findsNothing);
-      },
-    );
-
-    // 10. Secondary actions provide access to My Trips for managing bookings
-    testWidgets('J. Secondary action triggers trip management navigation', (
-      tester,
-    ) async {
-      bool tripNavigated = false;
-
-      final card = HomeUpcomingTripCard(
-        upcomingTrip: sampleUpcomingTrip,
-        onViewTrip: () {
-          tripNavigated = true;
-        },
-      );
-
-      await tester.pumpWidget(buildApp(Scaffold(body: card)));
-      await tester.pumpAndSettle();
-
-      expect(find.text('View Trip'), findsOneWidget);
-      await tester.tap(find.text('View Trip'));
-      await tester.pumpAndSettle();
-
-      expect(tripNavigated, isTrue);
-    });
-
-    // 11. Notification badge preserved (0, 1, 9, 10+)
-    testWidgets('K. Preserves notification badge behavior', (tester) async {
       await tester.pumpWidget(
         buildApp(
-          const Scaffold(
-            body: HomeAppBar(
-              fullName: 'User Commuter',
-              unreadNotificationsCount: 7,
+          Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const HomeUpcomingTripCard(),
+                  const SizedBox(height: 24),
+                  HomeActivitySection(activity: summary().activity),
+                ],
+              ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('7'), findsOneWidget);
+      final bookButton = find.byKey(const Key('home-upcoming-book-now'));
+      expect(bookButton, findsOneWidget);
+      expect(tester.getSize(bookButton).width, greaterThanOrEqualTo(148));
+      expect(find.text('Book Now'), findsOneWidget);
+      expect(
+        find.byKey(const Key('home-activity-completion-ring')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     });
 
-    // 12. Points preserved from shared WalletCubit
-    testWidgets(
-      'L. Preserves shared WalletCubit points update dynamically on Home',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary, // availablePoints: 2000
-          ),
-        );
-
-        final walletCubit = _MockWalletCubit(
-          const WalletState(
-            status: WalletStatus.loaded,
-            summary: WalletSummary(
-              totalAvailablePoints: 3450,
-              cashPoints: 3450,
-              subscriptionPoints: 0,
-            ),
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(
-            PassengerHomePage(homeCubit: homeCubit, walletCubit: walletCubit),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.textContaining('3,450'), findsOneWidget);
-        expect(find.textContaining('2,000'), findsNothing);
-      },
-    );
-
-    // 13. Book availability disabled state when isBookingAvailable is false
-    testWidgets(
-      'M. Respects isBookingAvailable and shows disabled helper message when unavailable',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-            hasLoadedAvailability: true,
-            isBookingAvailable: false,
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(PassengerHomePage(homeCubit: homeCubit)),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('No more trips available today'), findsOneWidget);
-      },
-    );
-
-    // 14. Zero Bus identity / plate / driver exposure (Strict Privacy)
-    testWidgets(
-      'N. Strictly never displays bus ID, license plate, driver name, or device ID',
-      (tester) async {
-        final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
-
-        await tester.pumpWidget(buildApp(Scaffold(body: card)));
-        await tester.pumpAndSettle();
-
-        expect(find.textContaining('Bus 1'), findsNothing);
-        expect(find.textContaining('Plate'), findsNothing);
-        expect(find.textContaining('Driver'), findsNothing);
-        expect(find.textContaining('Device'), findsNothing);
-        expect(find.textContaining('bus_id'), findsNothing);
-      },
-    );
-
-    // 15. Graceful handling of null stop coordinates
-    testWidgets(
-      'O. Gracefully renders stops with null coordinates without error',
-      (tester) async {
-        final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
-
-        final trackingCubit = _FakeTrackingCubit(
-          const TrackingState(
-            uiStatus: TrackingUiStatus.loaded,
-            trackedTripId: 'trip-prod-101',
-            summary: TrackingSummary(
-              status: LiveTrackingStatus.live,
-              activeTripId: 'trip-prod-101',
-              isInServiceWindow: true,
-              serviceWindow: 'afternoon',
-              cairoTime: '13:00:00',
-              cairoDate: '2026-09-16',
-              activeDirection: TrackingDirection.outbound,
-              routeStops: [
-                BusStopModel(
-                  id: 'stop-1',
-                  routeStopId: 'rs-1',
-                  stopOrder: 1,
-                  nameAr: 'ميت فضالة',
-                  nameEn: 'Mit Fadala',
-                  localityAr: 'الدقهلية',
-                  localityEn: 'Dakahlia',
-                  latitude: null,
-                  longitude: null,
-                ),
-              ],
-            ),
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(Scaffold(body: card), trackingCubit: trackingCubit),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.byType(HomeUpcomingTripCard), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
-    );
-
-    // 16. Arabic RTL layout without overflow
-    testWidgets(
-      'P. Arabic RTL renders cleanly with appropriate Arabic text and no overflow',
-      (tester) async {
-        final homeCubit = HomeCubit.idle(
-          initialState: HomeState(
-            status: HomeStatus.loaded,
-            summary: sampleHomeSummary,
-          ),
-        );
-
-        await tester.pumpWidget(
-          buildApp(
-            PassengerHomePage(homeCubit: homeCubit),
-            locale: const Locale('ar'),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('رحلتك القادمة'), findsOneWidget);
-        expect(find.text('عرض التذكرة'), findsOneWidget);
-        expect(find.text('ميت فضالة'), findsOneWidget);
-        expect(find.text('المنصورة'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
-    );
-
-    // 17. Safe ticket modal presentation
-    testWidgets('Q. View Ticket opens QR code bottom sheet safely', (
+    testWidgets('localizes compact trip and activity content in Arabic', (
       tester,
     ) async {
-      final card = HomeUpcomingTripCard(upcomingTrip: sampleUpcomingTrip);
-
-      await tester.pumpWidget(buildApp(Scaffold(body: card)));
+      await tester.pumpWidget(
+        buildApp(
+          Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  HomeUpcomingTripCard(upcomingTrip: trip),
+                  HomeActivitySection(activity: summary().activity),
+                ],
+              ),
+            ),
+          ),
+          locale: const Locale('ar'),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('View Ticket'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AppQrTicketWidget), findsOneWidget);
+      expect(find.text('1:00 م'), findsOneWidget);
+      expect(find.text('إلغاء'), findsOneWidget);
+      expect(find.text('نشاطك'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }
