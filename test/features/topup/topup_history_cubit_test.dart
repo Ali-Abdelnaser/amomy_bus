@@ -32,7 +32,7 @@ class FakeHistoryRepository implements TopUpRepository {
       publicId: 'AMY-123456',
       requestedPoints: 300,
       expectedAmountEgp: 300,
-      receivingPhone: '01000000000',
+      receivingPhone: '01014045363',
       conversionRate: 1.0,
       status: TopUpStatus.awaitingPayment,
     ),

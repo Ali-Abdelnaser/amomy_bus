@@ -21,7 +21,7 @@ VALUES (
   'payment_config',
   jsonb_build_object(
     'mobile_cash_enabled', true,
-    'mobile_cash_receiver_number', '01000000000',
+    'mobile_cash_receiver_number', '01014045363',
     'egp_per_point', 1.0,
     'minimum_topup_points', 200
   ),
@@ -96,7 +96,7 @@ BEGIN
   IF v_val IS NULL THEN
     RETURN jsonb_build_object(
       'mobile_cash_enabled', true,
-      'mobile_cash_receiver_number', '01000000000',
+      'mobile_cash_receiver_number', '01014045363',
       'egp_per_point', 1.0,
       'minimum_topup_points', 200
     );
@@ -140,7 +140,7 @@ BEGIN
   SELECT public.get_payment_config() INTO v_config;
   v_min_points := COALESCE((v_config->>'minimum_topup_points')::numeric, 200);
   v_rate := COALESCE((v_config->>'egp_per_point')::numeric, 1.0);
-  v_receiver := COALESCE(v_config->>'mobile_cash_receiver_number', '01000000000');
+  v_receiver := COALESCE(v_config->>'mobile_cash_receiver_number', '01014045363');
 
   -- Enforce minimum points (hard rule >= 200)
   IF p_requested_amount < v_min_points THEN
@@ -156,7 +156,7 @@ BEGIN
   FROM public.payment_methods
   WHERE code = p_payment_method AND is_active = true;
   IF v_receiver IS NULL THEN
-    v_receiver := COALESCE(v_config->>'mobile_cash_receiver_number', '01000000000');
+    v_receiver := COALESCE(v_config->>'mobile_cash_receiver_number', '01014045363');
   END IF;
 
   v_expected_egp := round(p_requested_amount * v_rate, 2);
@@ -386,7 +386,7 @@ AS $$
 BEGIN
   RETURN public.submit_topup_payment_proof(
     p_request_id,
-    '01000000000',
+    '01014045363',
     NULL,
     now(),
     p_screenshot_path

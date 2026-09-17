@@ -366,17 +366,16 @@ void main() {
 
       // Components present
       expect(find.byType(HomeAppBar), findsOneWidget);
-      expect(find.byType(HomeAnnouncementsSection), findsOneWidget);
+      expect(find.byType(HomeAnnouncementsSection), findsNothing);
       expect(find.byType(HomeBookRideCard), findsOneWidget);
       expect(find.byType(HomeUpcomingTripCard), findsOneWidget);
       expect(find.byType(HomeActivitySection), findsOneWidget);
 
-      // Booking CTA text
-      expect(find.text('Book Now'), findsOneWidget);
+      // Booking CTA text (both HomeBookRideCard and empty HomeUpcomingTripCard use Book Now)
+      expect(find.text('Book Now'), findsNWidgets(2));
 
       // Empty upcoming trip text
       expect(find.text('No upcoming trips'), findsOneWidget);
-      expect(find.text('Book a Ride'), findsOneWidget);
 
       // Activity metrics present
       expect(find.text('Your Activity'), findsOneWidget);

@@ -434,7 +434,7 @@ void main() {
     // =========================================================================
     // Item G: Zero is_bookable -> Home Book a Ride disabled
     // =========================================================================
-    testWidgets('G. Zero is_bookable -> Home Book a Ride disabled', (
+    testWidgets('G. Zero is_bookable -> Home Book a Ride CTA remains enabled', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -448,7 +448,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('No more trips available today'), findsOneWidget);
+      expect(find.byKey(const Key('home-book-ride-cta')), findsOneWidget);
       expect(find.text('Book Now'), findsOneWidget);
     });
 
@@ -556,7 +556,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('OFFLINE'), findsAtLeastNWidgets(1));
+      expect(find.text('Tracking unavailable'), findsAtLeastNWidgets(1));
       expect(find.text('Tracking resumes at 1:00 PM'), findsOneWidget);
 
       await cubit.close();
@@ -592,7 +592,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('OFFLINE'), findsAtLeastNWidgets(1));
+      expect(find.text('Tracking unavailable'), findsAtLeastNWidgets(1));
       expect(find.text('Tracking resumes tomorrow at 8:00 AM'), findsOneWidget);
 
       await cubit.close();

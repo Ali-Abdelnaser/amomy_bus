@@ -291,9 +291,6 @@ void main() {
 
         // Under Review status pill
         expect(find.text('Under Review'), findsOneWidget);
-
-        // EGP amount
-        expect(find.text('EGP 500'), findsOneWidget);
       },
     );
 

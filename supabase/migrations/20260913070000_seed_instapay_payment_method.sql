@@ -7,7 +7,7 @@ VALUES
     'INSTAPAY',
     'إنستاباي',
     'InstaPay',
-    '01000000000',
+    '01014045363',
     'قم بالتحويل عبر تطبيق إنستاباي إلى رقم الهاتف أو الحساب أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
     'Transfer via the InstaPay app to the phone number or username above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
     'instapay',

@@ -3,7 +3,7 @@ import '../../domain/entities/topup_entities.dart';
 class PaymentConfigModel extends PaymentConfig {
   const PaymentConfigModel({
     super.mobileCashEnabled = true,
-    super.mobileCashReceiverNumber = '01000000000',
+    super.mobileCashReceiverNumber = '01014045363',
     super.egpPerPoint = 1.0,
     super.minimumTopupPoints = 200,
   });
@@ -11,9 +11,11 @@ class PaymentConfigModel extends PaymentConfig {
   factory PaymentConfigModel.fromJson(Map<String, dynamic> json) {
     return PaymentConfigModel(
       mobileCashEnabled: json['mobile_cash_enabled'] as bool? ?? true,
-      mobileCashReceiverNumber: json['mobile_cash_receiver_number'] as String? ?? '01000000000',
+      mobileCashReceiverNumber:
+          json['mobile_cash_receiver_number'] as String? ?? '01014045363',
       egpPerPoint: (json['egp_per_point'] as num?)?.toDouble() ?? 1.0,
-      minimumTopupPoints: (json['minimum_topup_points'] as num?)?.toInt() ?? 200,
+      minimumTopupPoints:
+          (json['minimum_topup_points'] as num?)?.toInt() ?? 200,
     );
   }
 

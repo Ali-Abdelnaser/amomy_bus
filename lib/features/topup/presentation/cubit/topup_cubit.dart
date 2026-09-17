@@ -23,52 +23,62 @@ class TopUpCubit extends Cubit<TopUpState> {
     GetActivePaymentMethodsUseCase getActivePaymentMethodsUseCase,
     CreateTopUpRequestUseCase createTopUpRequestUseCase,
     SubmitTopUpProofUseCase submitTopUpProofUseCase,
-  )   : _getPaymentConfigUseCase = getPaymentConfigUseCase,
-        _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
-        _createTopUpRequestUseCase = createTopUpRequestUseCase,
-        _submitTopUpProofUseCase = submitTopUpProofUseCase,
-        super(const TopUpState());
+  ) : _getPaymentConfigUseCase = getPaymentConfigUseCase,
+      _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
+      _createTopUpRequestUseCase = createTopUpRequestUseCase,
+      _submitTopUpProofUseCase = submitTopUpProofUseCase,
+      super(const TopUpState());
 
   TopUpCubit.idle()
-      : _getPaymentConfigUseCase = null,
-        _getActivePaymentMethodsUseCase = null,
-        _createTopUpRequestUseCase = null,
-        _submitTopUpProofUseCase = null,
-        super(const TopUpState());
+    : _getPaymentConfigUseCase = null,
+      _getActivePaymentMethodsUseCase = null,
+      _createTopUpRequestUseCase = null,
+      _submitTopUpProofUseCase = null,
+      super(const TopUpState());
 
   void initWithResubmit(TopUpRequest request) {
-    emit(state.copyWith(
-      isResubmit: true,
-      currentStep: TopUpStep.details,
-      createdRequestId: () => request.id,
-      createdPublicId: () => request.publicId,
-      amount: request.requestedAmount,
-      expectedAmountEgp: request.expectedAmountEgp,
-      receivingPhone: () => request.receivingPhone,
-      senderPhone: request.senderPhone ?? '',
-      paymentReference: request.paymentReference ?? '',
-      transferredAt: () => request.transferredAt ?? DateTime.now(),
-      rejectionReason: () => request.rejectionReason,
-      isLoadingConfig: false,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(
+        isResubmit: true,
+        currentStep: TopUpStep.details,
+        createdRequestId: () => request.id,
+        createdPublicId: () => request.publicId,
+        amount: request.requestedAmount,
+        expectedAmountEgp: request.expectedAmountEgp,
+        receivingPhone: () => request.receivingPhone,
+        senderPhone: request.senderPhone ?? '',
+        paymentReference: request.paymentReference ?? '',
+        transferredAt: () => request.transferredAt ?? DateTime.now(),
+        rejectionReason: () => request.rejectionReason,
+        isLoadingConfig: false,
+        errorMessage: () => null,
+      ),
+    );
   }
 
   Future<void> init({int availableBalance = 0}) async {
-    emit(state.copyWith(
-      isLoadingConfig: true,
-      availableBalance: availableBalance,
-      errorMessage: () => null,
-      transferredAt: () => DateTime.now(),
-    ));
+    emit(
+      state.copyWith(
+        isLoadingConfig: true,
+        availableBalance: availableBalance,
+        errorMessage: () => null,
+        transferredAt: () => DateTime.now(),
+      ),
+    );
 
     int balance = availableBalance;
     if (balance <= 0 && getIt.isRegistered<GetWalletSummaryUseCase>()) {
       try {
-        final authBloc = getIt.isRegistered<AuthBloc>() ? getIt<AuthBloc>() : null;
-        final currentUserId = authBloc?.state is Authenticated ? (authBloc!.state as Authenticated).user.id : null;
+        final authBloc = getIt.isRegistered<AuthBloc>()
+            ? getIt<AuthBloc>()
+            : null;
+        final currentUserId = authBloc?.state is Authenticated
+            ? (authBloc!.state as Authenticated).user.id
+            : null;
         if (currentUserId != null && currentUserId.isNotEmpty) {
-          final summaryResult = await getIt<GetWalletSummaryUseCase>()(currentUserId);
+          final summaryResult = await getIt<GetWalletSummaryUseCase>()(
+            currentUserId,
+          );
           summaryResult.fold(
             onSuccess: (summary) {
               balance = summary.totalAvailablePoints;
@@ -79,7 +89,8 @@ class TopUpCubit extends Cubit<TopUpState> {
       } catch (_) {}
     }
 
-    if (_getPaymentConfigUseCase == null || _getActivePaymentMethodsUseCase == null) {
+    if (_getPaymentConfigUseCase == null ||
+        _getActivePaymentMethodsUseCase == null) {
       emit(state.copyWith(isLoadingConfig: false, availableBalance: balance));
       return;
     }
@@ -92,16 +103,10 @@ class TopUpCubit extends Cubit<TopUpState> {
     final methodsResult = await methodsFuture;
 
     var config = const PaymentConfig();
-    configResult.fold(
-      onSuccess: (c) => config = c,
-      onError: (_) {},
-    );
+    configResult.fold(onSuccess: (c) => config = c, onError: (_) {});
 
     List<PaymentMethod> methods = const [];
-    methodsResult.fold(
-      onSuccess: (m) => methods = m,
-      onError: (_) {},
-    );
+    methodsResult.fold(onSuccess: (m) => methods = m, onError: (_) {});
 
     if (methods.isEmpty) {
       methods = const [
@@ -110,9 +115,11 @@ class TopUpCubit extends Cubit<TopUpState> {
           code: 'VODAFONE_CASH',
           nameAr: 'فودافون كاش',
           nameEn: 'Vodafone Cash',
-          accountIdentifier: '01000000000',
-          instructionsAr: 'قم بتحويل المبلغ المطلوب إلى رقم فودافون كاش أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
-          instructionsEn: 'Transfer the required amount to the Vodafone Cash number above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
+          accountIdentifier: '01014045363',
+          instructionsAr:
+              'قم بتحويل المبلغ المطلوب إلى رقم فودافون كاش أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
+          instructionsEn:
+              'Transfer the required amount to the Vodafone Cash number above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
           iconKey: 'vodafone_cash',
           isActive: true,
           sortOrder: 1,
@@ -122,9 +129,11 @@ class TopUpCubit extends Cubit<TopUpState> {
           code: 'INSTAPAY',
           nameAr: 'إنستاباي',
           nameEn: 'InstaPay',
-          accountIdentifier: '01000000000',
-          instructionsAr: 'قم بالتحويل عبر تطبيق إنستاباي إلى رقم الهاتف أو الحساب أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
-          instructionsEn: 'Transfer via the InstaPay app to the phone number or username above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
+          accountIdentifier: '01014045363',
+          instructionsAr:
+              'قم بالتحويل عبر تطبيق إنستاباي إلى رقم الهاتف أو الحساب أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
+          instructionsEn:
+              'Transfer via the InstaPay app to the phone number or username above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
           iconKey: 'instapay',
           isActive: true,
           sortOrder: 2,
@@ -133,46 +142,60 @@ class TopUpCubit extends Cubit<TopUpState> {
     }
 
     final initialSelected = methods.isNotEmpty ? methods.first : null;
-    final defaultAmount = config.minimumTopupPoints > 0 ? config.minimumTopupPoints : 200;
+    final defaultAmount = config.minimumTopupPoints > 0
+        ? config.minimumTopupPoints
+        : 200;
 
-    emit(state.copyWith(
-      isLoadingConfig: false,
-      availableBalance: balance,
-      paymentConfig: config,
-      paymentMethods: methods,
-      selectedMethod: () => initialSelected,
-      amount: defaultAmount,
-      expectedAmountEgp: config.calculateExpectedEgp(defaultAmount).toDouble(),
-    ));
+    emit(
+      state.copyWith(
+        isLoadingConfig: false,
+        availableBalance: balance,
+        paymentConfig: config,
+        paymentMethods: methods,
+        selectedMethod: () => initialSelected,
+        amount: defaultAmount,
+        expectedAmountEgp: config
+            .calculateExpectedEgp(defaultAmount)
+            .toDouble(),
+      ),
+    );
   }
 
   void setAmount(int amount) {
-    final expectedEgp = state.paymentConfig.calculateExpectedEgp(amount).toDouble();
-    emit(state.copyWith(
-      amount: amount,
-      expectedAmountEgp: expectedEgp,
-      errorMessage: () => null,
-    ));
+    final expectedEgp = state.paymentConfig
+        .calculateExpectedEgp(amount)
+        .toDouble();
+    emit(
+      state.copyWith(
+        amount: amount,
+        expectedAmountEgp: expectedEgp,
+        errorMessage: () => null,
+      ),
+    );
   }
 
   void selectPaymentMethod(PaymentMethod method) {
-    emit(state.copyWith(
-      selectedMethod: () => method,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(selectedMethod: () => method, errorMessage: () => null),
+    );
   }
 
   void proceedToInstructions() {
     if (!state.isAmountValid) {
-      emit(state.copyWith(
-        errorMessage: () => 'Minimum top-up is ${state.paymentConfig.minimumTopupPoints} Points.',
-      ));
+      emit(
+        state.copyWith(
+          errorMessage: () =>
+              'Minimum top-up is ${state.paymentConfig.minimumTopupPoints} Points.',
+        ),
+      );
       return;
     }
-    emit(state.copyWith(
-      currentStep: TopUpStep.instructions,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(
+        currentStep: TopUpStep.instructions,
+        errorMessage: () => null,
+      ),
+    );
   }
 
   Future<void> confirmTransferAndCreateRequest() async {
@@ -183,10 +206,12 @@ class TopUpCubit extends Cubit<TopUpState> {
 
     // If request already created for this exact amount, advance directly
     if (state.createdRequestId != null && state.amount == state.amount) {
-      emit(state.copyWith(
-        currentStep: TopUpStep.details,
-        errorMessage: () => null,
-      ));
+      emit(
+        state.copyWith(
+          currentStep: TopUpStep.details,
+          errorMessage: () => null,
+        ),
+      );
       return;
     }
 
@@ -200,44 +225,46 @@ class TopUpCubit extends Cubit<TopUpState> {
 
     result.fold(
       onError: (failure) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          errorMessage: () => failure.message,
-        ));
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            errorMessage: () => failure.message,
+          ),
+        );
       },
       onSuccess: (created) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          createdRequestId: () => created.requestId,
-          createdPublicId: () => created.publicId,
-          expectedAmountEgp: created.expectedAmountEgp,
-          receivingPhone: () => created.receivingPhone,
-          currentStep: TopUpStep.details,
-          errorMessage: () => null,
-        ));
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            createdRequestId: () => created.requestId,
+            createdPublicId: () => created.publicId,
+            expectedAmountEgp: created.expectedAmountEgp,
+            receivingPhone: () => created.receivingPhone,
+            currentStep: TopUpStep.details,
+            errorMessage: () => null,
+          ),
+        );
       },
     );
   }
 
   void setSenderPhone(String phone) {
-    emit(state.copyWith(
-      senderPhone: phone.trim(),
-      errorMessage: () => null,
-    ));
+    emit(state.copyWith(senderPhone: phone.trim(), errorMessage: () => null));
   }
 
   void setPaymentReference(String reference) {
-    emit(state.copyWith(
-      paymentReference: reference.trim(),
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(
+        paymentReference: reference.trim(),
+        errorMessage: () => null,
+      ),
+    );
   }
 
   void setTransferredAt(DateTime dateTime) {
-    emit(state.copyWith(
-      transferredAt: () => dateTime,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(transferredAt: () => dateTime, errorMessage: () => null),
+    );
   }
 
   void setProofImage({
@@ -245,22 +272,26 @@ class TopUpCubit extends Cubit<TopUpState> {
     required String extension,
     required String fileName,
   }) {
-    emit(state.copyWith(
-      proofBytes: () => bytes,
-      proofExtension: () => extension,
-      proofFileName: () => fileName,
-      proofStatus: ProofUploadStatus.selected,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(
+        proofBytes: () => bytes,
+        proofExtension: () => extension,
+        proofFileName: () => fileName,
+        proofStatus: ProofUploadStatus.selected,
+        errorMessage: () => null,
+      ),
+    );
   }
 
   void clearProofImage() {
-    emit(state.copyWith(
-      proofBytes: () => null,
-      proofExtension: () => null,
-      proofFileName: () => null,
-      proofStatus: ProofUploadStatus.idle,
-    ));
+    emit(
+      state.copyWith(
+        proofBytes: () => null,
+        proofExtension: () => null,
+        proofFileName: () => null,
+        proofStatus: ProofUploadStatus.idle,
+      ),
+    );
   }
 
   void previousStep() {
@@ -268,10 +299,20 @@ class TopUpCubit extends Cubit<TopUpState> {
       case TopUpStep.amount:
         break;
       case TopUpStep.instructions:
-        emit(state.copyWith(currentStep: TopUpStep.amount, errorMessage: () => null));
+        emit(
+          state.copyWith(
+            currentStep: TopUpStep.amount,
+            errorMessage: () => null,
+          ),
+        );
         break;
       case TopUpStep.details:
-        emit(state.copyWith(currentStep: TopUpStep.instructions, errorMessage: () => null));
+        emit(
+          state.copyWith(
+            currentStep: TopUpStep.instructions,
+            errorMessage: () => null,
+          ),
+        );
         break;
       case TopUpStep.pendingReview:
         break;
@@ -281,15 +322,18 @@ class TopUpCubit extends Cubit<TopUpState> {
   Future<void> submitPaymentProof() async {
     if (!state.canSubmitDetails) {
       if (!state.isSenderPhoneValid) {
-        emit(state.copyWith(
-          errorMessage: () => 'Please enter a valid Egyptian mobile number (01XXXXXXXXX).',
-        ));
+        emit(
+          state.copyWith(
+            errorMessage: () =>
+                'Please enter a valid Egyptian mobile number (01XXXXXXXXX).',
+          ),
+        );
         return;
       }
       if (!state.isProofValid) {
-        emit(state.copyWith(
-          errorMessage: () => 'Payment screenshot is required.',
-        ));
+        emit(
+          state.copyWith(errorMessage: () => 'Payment screenshot is required.'),
+        );
         return;
       }
       return;
@@ -297,16 +341,20 @@ class TopUpCubit extends Cubit<TopUpState> {
 
     if (_submitTopUpProofUseCase == null) return;
 
-    emit(state.copyWith(
-      isSubmitting: true,
-      proofStatus: ProofUploadStatus.uploading,
-      errorMessage: () => null,
-    ));
+    emit(
+      state.copyWith(
+        isSubmitting: true,
+        proofStatus: ProofUploadStatus.uploading,
+        errorMessage: () => null,
+      ),
+    );
 
     final result = await _submitTopUpProofUseCase(
       requestId: state.createdRequestId!,
       senderPhone: state.senderPhone,
-      transferReference: state.paymentReference.isNotEmpty ? state.paymentReference : null,
+      transferReference: state.paymentReference.isNotEmpty
+          ? state.paymentReference
+          : null,
       transferredAt: state.transferredAt ?? DateTime.now(),
       fileBytes: state.proofBytes!,
       fileExtension: state.proofExtension ?? 'jpg',
@@ -314,21 +362,25 @@ class TopUpCubit extends Cubit<TopUpState> {
 
     result.fold(
       onError: (failure) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          proofStatus: ProofUploadStatus.failed,
-          errorMessage: () => failure.message,
-        ));
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            proofStatus: ProofUploadStatus.failed,
+            errorMessage: () => failure.message,
+          ),
+        );
       },
       onSuccess: (path) {
-        emit(state.copyWith(
-          isSubmitting: false,
-          isSuccess: true,
-          proofStatus: ProofUploadStatus.uploaded,
-          currentStep: TopUpStep.pendingReview,
-          submittedPublicId: () => state.createdPublicId,
-          errorMessage: () => null,
-        ));
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            isSuccess: true,
+            proofStatus: ProofUploadStatus.uploaded,
+            currentStep: TopUpStep.pendingReview,
+            submittedPublicId: () => state.createdPublicId,
+            errorMessage: () => null,
+          ),
+        );
       },
     );
   }
