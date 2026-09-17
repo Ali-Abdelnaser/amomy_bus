@@ -119,6 +119,13 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  ResultFuture<bool> claimActiveWelcomeGift({
+    required String deviceIdentifier,
+  }) async {
+    return const Success(true);
+  }
+
+  @override
   ResultFuture<void> signOut() async {
     signOutCalled = true;
     return const Success(null);

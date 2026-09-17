@@ -357,6 +357,8 @@
   "txTypePointsExpired": "Points Expired",
   "txTypeBonus": "Bonus",
   "txTypeGift": "Gift",
+  "txTypeWelcomeGift": "Welcome Gift",
+  "txTypeCampaignGift": "Gift",
   "txTypeAdjustment": "Balance Adjustment",
   "txTypeBalanceAdjustment": "Balance Adjustment",
   "txTypePointsAdjustment": "Points Adjustment",

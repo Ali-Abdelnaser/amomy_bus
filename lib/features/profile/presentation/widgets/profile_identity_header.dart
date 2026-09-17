@@ -220,8 +220,8 @@ class ProfileIdentityHeader extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 116,
-                    height: 116,
+                    width: 156,
+                    height: 156,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
@@ -240,7 +240,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                     ),
                     child: ClipOval(
                       child: CircleAvatar(
-                        radius: 54,
+                        radius: 64,
                         backgroundColor: AppColors.primaryLight,
                         backgroundImage: hasAvatar
                             ? NetworkImage(user.avatarUrl!)

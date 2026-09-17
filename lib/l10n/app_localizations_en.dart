@@ -997,6 +997,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get txTypeGift => 'Gift';
 
   @override
+  String get txTypeWelcomeGift => 'Welcome Gift';
+
+  @override
+  String get txTypeCampaignGift => 'Gift';
+
+  @override
   String get txTypeAdjustment => 'Balance Adjustment';
 
   @override

@@ -57,6 +57,10 @@ abstract class AuthRemoteDataSource {
 
   Future<WalletPreviewModel?> getWalletPreview(String userId);
 
+  Future<Map<String, dynamic>?> claimActiveWelcomeGift({
+    required String deviceIdentifier,
+  });
+
   Future<void> signOut();
 
   Stream<User?> get authStateChanges;
@@ -359,6 +363,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> claimActiveWelcomeGift({
+    required String deviceIdentifier,
+  }) async {
+    final response = await _supabase.rpc(
+      'claim_active_welcome_gift',
+      params: {
+        'p_device_identifier': deviceIdentifier.trim(),
+      },
+    );
+
+    if (response is Map) {
+      return Map<String, dynamic>.from(response);
+    }
+    return null;
   }
 
   @override

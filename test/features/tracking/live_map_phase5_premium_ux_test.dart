@@ -558,7 +558,7 @@ void main() {
         );
         await pumpAndAdvance(tester);
 
-        expect(find.text('OFFLINE'), findsAtLeastNWidgets(1));
+        expect(find.text('Tracking unavailable'), findsAtLeastNWidgets(1));
         expect(find.text('Next Stop'), findsOneWidget);
         expect(find.textContaining('8:00'), findsAtLeastNWidgets(1));
         // No active ETA strings

@@ -96,6 +96,7 @@ void main() {
           status: HomeStatus.loaded,
           summary: sampleSummary,
           announcements: sampleAnnouncements,
+          trackableTripId: sampleSummary.upcomingTrip?.tripId,
         ),
       ];
 
@@ -135,6 +136,7 @@ void main() {
           status: HomeStatus.loaded,
           summary: sampleSummary,
           announcements: const [],
+          trackableTripId: sampleSummary.upcomingTrip?.tripId,
         ),
       ];
 

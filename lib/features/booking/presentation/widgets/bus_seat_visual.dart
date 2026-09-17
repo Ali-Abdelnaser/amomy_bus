@@ -82,11 +82,12 @@ class _BusSeatVisualState extends State<BusSeatVisual>
     );
 
     // 3. Occupant Avatar / Status Icon Smooth Fade-in
-    // If the seat starts in an occupied/held state, avatar is visible immediately (value: 1.0)
+    // If the seat starts in an occupied/held/supervisor state, avatar/icon is visible immediately (value: 1.0)
     final initialHasAvatar =
         widget.state == SeatVisualState.bookedMale ||
         widget.state == SeatVisualState.bookedFemale ||
-        widget.state == SeatVisualState.held;
+        widget.state == SeatVisualState.held ||
+        widget.state == SeatVisualState.supervisorReserved;
 
     _avatarFadeController = AnimationController(
       vsync: this,
@@ -117,11 +118,13 @@ class _BusSeatVisualState extends State<BusSeatVisual>
       final hadAvatar =
           oldWidget.state == SeatVisualState.bookedMale ||
           oldWidget.state == SeatVisualState.bookedFemale ||
-          oldWidget.state == SeatVisualState.held;
+          oldWidget.state == SeatVisualState.held ||
+          oldWidget.state == SeatVisualState.supervisorReserved;
       final hasAvatar =
           widget.state == SeatVisualState.bookedMale ||
           widget.state == SeatVisualState.bookedFemale ||
-          widget.state == SeatVisualState.held;
+          widget.state == SeatVisualState.held ||
+          widget.state == SeatVisualState.supervisorReserved;
 
       final disable = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
@@ -431,7 +434,8 @@ class _RealisticCoachSeatPainter extends CustomPainter {
     final isOccupied =
         state == SeatVisualState.bookedMale ||
         state == SeatVisualState.bookedFemale ||
-        state == SeatVisualState.held;
+        state == SeatVisualState.held ||
+        state == SeatVisualState.supervisorReserved;
 
     // 9. Occupant Avatar / Status Cue in the UPPER part of the seat
     if (isOccupied && avatarOpacity > 0.0) {
@@ -452,12 +456,17 @@ class _RealisticCoachSeatPainter extends CustomPainter {
           alpha: avatarOpacity.clamp(0.0, 1.0),
         );
         _drawClockCue(canvas, w * 0.5, avatarCY, heldColor);
+      } else if (state == SeatVisualState.supervisorReserved) {
+        final lockColor = const Color(
+          0xFF94A3B8,
+        ).withValues(alpha: avatarOpacity.clamp(0.0, 1.0));
+        _drawLockCue(canvas, w * 0.5, avatarCY, lockColor);
       }
     }
 
     // 10. Seat Number Placement
     // - AVAILABLE / SELECTED: Centered nicely on the cushion surface (y: ~10 to 24).
-    // - OCCUPIED / HELD: Positioned in the lower part (y: ~27.5), cleanly below the avatar.
+    // - OCCUPIED / HELD / SUPERVISOR: Positioned in the lower part (y: ~27.5), cleanly below the icon/avatar.
     if (label.isNotEmpty && state != SeatVisualState.unconfigured) {
       final textSpan = TextSpan(
         text: label,
@@ -484,6 +493,46 @@ class _RealisticCoachSeatPainter extends CustomPainter {
       final textOffset = Offset((w - textPainter.width) / 2, targetY);
       textPainter.paint(canvas, textOffset);
     }
+  }
+
+  // ===========================================================================
+  // SUPERVISOR LOCK CUE (Vector-drawn compact padlock)
+  // ===========================================================================
+  void _drawLockCue(Canvas canvas, double cx, double cy, Color color) {
+    final shacklePaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round;
+
+    final bodyPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    // Shackle arc: arching over body
+    final shacklePath = Path()
+      ..moveTo(cx - 2.6, cy - 1.2)
+      ..lineTo(cx - 2.6, cy - 3.4)
+      ..arcToPoint(
+        Offset(cx + 2.6, cy - 3.4),
+        radius: const Radius.circular(2.6),
+        clockwise: true,
+      )
+      ..lineTo(cx + 2.6, cy - 1.2);
+    canvas.drawPath(shacklePath, shacklePaint);
+
+    // Padlock body (rounded rectangle)
+    final lockBody = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(cx, cy + 1.2), width: 7.2, height: 5.6),
+      const Radius.circular(1.6),
+    );
+    canvas.drawRRect(lockBody, bodyPaint);
+
+    // Subtle keyhole dot inside padlock body
+    final keyholePaint = Paint()
+      ..color = const Color(0xFF0F172A)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(cx, cy + 0.9), 0.75, keyholePaint);
   }
 
   // ===========================================================================
@@ -598,17 +647,17 @@ class _RealisticCoachSeatPainter extends CustomPainter {
           headrestBorderColor: const Color(0xFF94A3B8),
           cushionColor: const Color(0xFF334155),
           centerCushionColor: const Color(0xFF2B384A),
-          bolsterColor: const Color(0xFF3E4C60),
-          armrestColor: const Color(0xFF475569),
+          bolsterColor: const Color(0xFF475569),
+          armrestColor: const Color(0xFF1E293B),
           borderColor: const Color(0xFF64748B),
-          borderWidth: 1.3,
-          seamColor: const Color(0xFF64748B).withValues(alpha: 0.40),
+          borderWidth: 1.2,
+          seamColor: const Color(0xFF94A3B8).withValues(alpha: 0.25),
           textColor: Colors.white,
-          shadowColor: Colors.black.withValues(alpha: 0.28),
+          shadowColor: Colors.black.withValues(alpha: 0.25),
         );
 
       // -----------------------------------------------------------------------
-      // BOOKED MALE: Dark charcoal/black base with male avatar
+      // BOOKED MALE: Deep charcoal upholstery with cyan male silhouette
       // -----------------------------------------------------------------------
       case SeatVisualState.bookedMale:
         return _CoachSeatStyle(
@@ -662,6 +711,25 @@ class _RealisticCoachSeatPainter extends CustomPainter {
           seamColor: const Color(0xFFFDE68A).withValues(alpha: 0.35),
           textColor: const Color(0xFFFEF3C7),
           shadowColor: const Color(0xFFD97706).withValues(alpha: 0.35),
+        );
+
+      // -----------------------------------------------------------------------
+      // SUPERVISOR RESERVED: Muted dark slate / indigo reserved upholstery with lock cue
+      // -----------------------------------------------------------------------
+      case SeatVisualState.supervisorReserved:
+        return _CoachSeatStyle(
+          backrestColor: const Color(0xFF1E293B),
+          headrestColor: const Color(0xFF0F172A),
+          headrestBorderColor: const Color(0xFF334155),
+          cushionColor: const Color(0xFF1E293B),
+          centerCushionColor: const Color(0xFF141E30),
+          bolsterColor: const Color(0xFF0F172A),
+          armrestColor: const Color(0xFF0B1120),
+          borderColor: const Color(0xFF475569),
+          borderWidth: 1.2,
+          seamColor: const Color(0xFF334155).withValues(alpha: 0.30),
+          textColor: const Color(0xFF94A3B8),
+          shadowColor: Colors.black.withValues(alpha: 0.30),
         );
 
       // -----------------------------------------------------------------------

@@ -340,7 +340,7 @@ void main() {
 
         // Resume message appears only in the frosted bar on mini-map, not repeated in subtitle
         expect(find.textContaining('resumes at 08:00 AM'), findsOneWidget);
-        expect(find.text('OFFLINE'), findsWidgets);
+        expect(find.text('Tracking unavailable'), findsWidgets);
 
         await cubit.close();
       },

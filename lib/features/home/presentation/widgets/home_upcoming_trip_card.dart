@@ -143,7 +143,6 @@ class _EmptyUpcomingTrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final canBook = !hasLoadedAvailability || isBookingAvailable;
 
     return Container(
       width: double.infinity,
@@ -195,19 +194,17 @@ class _EmptyUpcomingTrip extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          if (canBook) ...[
-            AppSpacing.gapH18,
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 148),
-              child: AppButton(
-                key: const Key('home-upcoming-book-now'),
-                label: l10n.bookNow,
-                height: 46,
-                padding: const EdgeInsets.symmetric(horizontal: 26),
-                onPressed: () => context.push(RoutePaths.bookTrip),
-              ),
+          AppSpacing.gapH18,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 148),
+            child: AppButton(
+              key: const Key('home-upcoming-book-now'),
+              label: l10n.bookNow,
+              height: 46,
+              padding: const EdgeInsets.symmetric(horizontal: 26),
+              onPressed: () => context.push(RoutePaths.bookTrip),
             ),
-          ],
+          ),
         ],
       ),
     );

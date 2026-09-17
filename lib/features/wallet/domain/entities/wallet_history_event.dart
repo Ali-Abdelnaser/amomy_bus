@@ -10,6 +10,8 @@ enum WalletSemanticType {
   subscriptionPoints,
   pointsExpired,
   balanceAdjustment,
+  welcomeGift,
+  campaignGift,
   unknown;
 
   static WalletSemanticType fromString(String? raw) {
@@ -32,6 +34,10 @@ enum WalletSemanticType {
         return WalletSemanticType.pointsExpired;
       case 'balance_adjustment':
         return WalletSemanticType.balanceAdjustment;
+      case 'welcome_gift':
+        return WalletSemanticType.welcomeGift;
+      case 'campaign_gift':
+        return WalletSemanticType.campaignGift;
       default:
         return WalletSemanticType.unknown;
     }
@@ -55,6 +61,10 @@ enum WalletSemanticType {
         return 'points_expired';
       case WalletSemanticType.balanceAdjustment:
         return 'balance_adjustment';
+      case WalletSemanticType.welcomeGift:
+        return 'welcome_gift';
+      case WalletSemanticType.campaignGift:
+        return 'campaign_gift';
       case WalletSemanticType.unknown:
         return 'unknown';
     }

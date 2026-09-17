@@ -17,10 +17,12 @@ class WalletPendingPointsSection extends StatefulWidget {
   });
 
   @override
-  State<WalletPendingPointsSection> createState() => _WalletPendingPointsSectionState();
+  State<WalletPendingPointsSection> createState() =>
+      _WalletPendingPointsSectionState();
 }
 
-class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection> {
+class _WalletPendingPointsSectionState
+    extends State<WalletPendingPointsSection> {
   bool _showAll = false;
 
   @override
@@ -40,7 +42,9 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
       return const SizedBox.shrink();
     }
 
-    final visibleRequests = _showAll ? activeOrRejected : activeOrRejected.take(2).toList();
+    final visibleRequests = _showAll
+        ? activeOrRejected
+        : activeOrRejected.take(2).toList();
     final hasMore = activeOrRejected.length > 2;
 
     return Column(
@@ -112,13 +116,25 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
             statusColor = const Color(0xFF475467);
           }
 
-          final isInsta = req.paymentMethodCode.toUpperCase().contains('INSTAPAY');
-          final logoAsset = isInsta ? AppAssets.instapayLogo : AppAssets.vodafoneCashLogo;
-          final methodName = req.paymentMethodNameAr != null && req.paymentMethodNameAr!.isNotEmpty
-              ? (isAr ? req.paymentMethodNameAr! : (req.paymentMethodNameEn ?? req.paymentMethodCode))
-              : (isInsta ? (isAr ? 'إنستاباي' : 'InstaPay') : (isAr ? 'فودافون كاش' : 'Vodafone Cash'));
+          final isInsta = req.paymentMethodCode.toUpperCase().contains(
+            'INSTAPAY',
+          );
+          final logoAsset = isInsta
+              ? AppAssets.instapayLogo
+              : AppAssets.vodafoneCashLogo;
+          final methodName =
+              req.paymentMethodNameAr != null &&
+                  req.paymentMethodNameAr!.isNotEmpty
+              ? (isAr
+                    ? req.paymentMethodNameAr!
+                    : (req.paymentMethodNameEn ?? req.paymentMethodCode))
+              : (isInsta
+                    ? (isAr ? 'إنستاباي' : 'InstaPay')
+                    : (isAr ? 'فودافون كاش' : 'Vodafone Cash'));
 
-          final dateStr = dateFormat.format((req.submittedAt ?? req.createdAt).toLocal());
+          final dateStr = dateFormat.format(
+            (req.submittedAt ?? req.createdAt).toLocal(),
+          );
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
@@ -142,14 +158,19 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
                 Container(
                   width: isInsta ? 52 : 46,
                   height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isRejected
                           ? const Color(0xFFFDA29B)
-                          : (isPending ? const Color(0xFFFEDF89) : const Color(0xFFE4EBF2)),
+                          : (isPending
+                                ? const Color(0xFFFEDF89)
+                                : const Color(0xFFE4EBF2)),
                       width: 1.0,
                     ),
                     boxShadow: [
@@ -204,30 +225,14 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(width: 5),
-                          const Text(
-                            '•',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'EGP ${formatter.format(req.expectedAmountEgp.round())}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 2),
 
                       if (isRejected) ...[
                         Text(
-                          req.rejectionReason != null && req.rejectionReason!.trim().isNotEmpty
+                          req.rejectionReason != null &&
+                                  req.rejectionReason!.trim().isNotEmpty
                               ? req.rejectionReason!
                               : l10n.paymentCouldNotBeVerified,
                           style: const TextStyle(
@@ -258,7 +263,10 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusBg,
                         borderRadius: BorderRadius.circular(12),
@@ -281,7 +289,10 @@ class _WalletPendingPointsSectionState extends State<WalletPendingPointsSection>
                           onTap: () => widget.onResubmit?.call(req),
                           borderRadius: BorderRadius.circular(14),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [

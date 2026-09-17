@@ -108,8 +108,8 @@ class ProfessionalBusSeatMap extends StatelessWidget {
                       state: visualState,
                       width: seatWidth,
                       height: seatHeight,
-                      // CRITICAL RULE: Unbacked preview seats CANNOT book or hold!
-                      onTap: matchedSeat != null
+                      // CRITICAL RULE: Unbacked preview seats & supervisor reserved seats CANNOT book or hold!
+                      onTap: (matchedSeat != null && !matchedSeat.isSupervisorReserved)
                           ? () => onSeatTap(matchedSeat)
                           : null,
                     ),

@@ -60,6 +60,11 @@ abstract class AuthRepository {
   /// Retrieve user wallet points (read-only verification)
   ResultFuture<WalletPreview?> getWalletPreview(String userId);
 
+  /// Silently attempt to claim active welcome gift campaign
+  ResultFuture<bool> claimActiveWelcomeGift({
+    required String deviceIdentifier,
+  });
+
   /// Sign out current user session
   ResultFuture<void> signOut();
 

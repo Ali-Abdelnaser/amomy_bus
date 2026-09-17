@@ -180,6 +180,24 @@ class WalletHistoryEventTile extends StatelessWidget {
           const Color(0xFF475467),
         );
 
+      case WalletSemanticType.welcomeGift:
+        return (
+          l10n.txTypeWelcomeGift,
+          formattedCreatedAt,
+          Icons.card_giftcard_rounded,
+          const Color(0xFFECFDF3),
+          const Color(0xFF027A48),
+        );
+
+      case WalletSemanticType.campaignGift:
+        return (
+          l10n.txTypeCampaignGift,
+          formattedCreatedAt,
+          Icons.redeem_rounded,
+          const Color(0xFFFEF0C7),
+          const Color(0xFFB54708),
+        );
+
       case WalletSemanticType.unknown:
         return (
           l10n.txTypeTransaction,

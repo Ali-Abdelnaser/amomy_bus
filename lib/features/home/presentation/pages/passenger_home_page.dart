@@ -173,10 +173,13 @@ class _PassengerHomePageState extends State<PassengerHomePage>
           bottom: false,
           child: BlocConsumer<HomeCubit, HomeState>(
             listenWhen: (previous, current) =>
-                previous.summary?.upcomingTrip?.tripId !=
-                current.summary?.upcomingTrip?.tripId,
+                (previous.trackableTripId ??
+                    previous.summary?.upcomingTrip?.tripId) !=
+                (current.trackableTripId ??
+                    current.summary?.upcomingTrip?.tripId),
             listener: (context, state) {
-              final tripId = state.summary?.upcomingTrip?.tripId;
+              final tripId =
+                  state.trackableTripId ?? state.summary?.upcomingTrip?.tripId;
               if (tripId != null && tripId.isNotEmpty) {
                 context.read<TrackingCubit>().loadTrackingData(
                   tripId: tripId,
@@ -235,7 +238,9 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                   final futures = <Future>[
                     context.read<HomeCubit>().loadHomeData(isRefresh: true),
                   ];
-                  final trackingTripId = state.summary?.upcomingTrip?.tripId;
+                  final trackingTripId =
+                      state.trackableTripId ??
+                      state.summary?.upcomingTrip?.tripId;
                   if (trackingTripId != null && trackingTripId.isNotEmpty) {
                     futures.add(
                       context.read<TrackingCubit>().loadTrackingData(
@@ -338,14 +343,21 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                         ],
                         HomeLiveTrackingCard(
                           onViewMapTap:
-                              summary.upcomingTrip?.tripId.isNotEmpty == true
-                              ? () => context.push(
-                                  RoutePaths.liveTracking.replaceFirst(
-                                    ':tripId',
-                                    summary.upcomingTrip!.tripId,
-                                  ),
-                                )
-                              : null,
+                              (state.trackableTripId?.isNotEmpty == true ||
+                                      summary.upcomingTrip?.tripId.isNotEmpty ==
+                                          true)
+                                  ? () {
+                                      final id =
+                                          state.trackableTripId ??
+                                          summary.upcomingTrip!.tripId;
+                                      context.push(
+                                        RoutePaths.liveTracking.replaceFirst(
+                                          ':tripId',
+                                          id,
+                                        ),
+                                      );
+                                    }
+                                  : null,
                         ),
                         AppSpacing.gapH24,
                         HomeUpcomingTripCard(

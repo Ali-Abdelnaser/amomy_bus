@@ -175,6 +175,21 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  ResultFuture<bool> claimActiveWelcomeGift({
+    required String deviceIdentifier,
+  }) async {
+    try {
+      final result = await _remoteDataSource.claimActiveWelcomeGift(
+        deviceIdentifier: deviceIdentifier,
+      );
+      final granted = result?['granted'] == true;
+      return Success(granted);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
   ResultFuture<void> signOut() async {
     try {
       await _remoteDataSource.signOut();

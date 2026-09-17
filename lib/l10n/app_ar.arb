@@ -354,6 +354,8 @@
   "txTypePointsExpired": "نقاط منتهية",
   "txTypeBonus": "مكافأة",
   "txTypeGift": "هدية",
+  "txTypeWelcomeGift": "هدية الترحيب",
+  "txTypeCampaignGift": "هدية",
   "txTypeAdjustment": "تعديل رصيد",
   "txTypeBalanceAdjustment": "تعديل رصيد",
   "txTypePointsAdjustment": "تعديل نقاط",

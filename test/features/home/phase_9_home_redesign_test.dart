@@ -183,7 +183,7 @@ void main() {
     });
 
     testWidgets(
-      'shows a compact empty state and only offers Book Now when allowed',
+      'shows a compact empty state and always offers Book Now entry point',
       (tester) async {
         await tester.pumpWidget(
           buildApp(
@@ -198,7 +198,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('No upcoming trips'), findsOneWidget);
-        expect(find.text('Book Now'), findsNothing);
+        expect(find.text('Book Now'), findsOneWidget);
 
         await tester.pumpWidget(
           buildApp(const Scaffold(body: HomeUpcomingTripCard())),

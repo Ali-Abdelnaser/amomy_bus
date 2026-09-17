@@ -12,6 +12,7 @@ class HomeState extends Equatable {
   final bool isRefreshing;
   final bool isBookingAvailable;
   final bool hasLoadedAvailability;
+  final String? trackableTripId;
 
   const HomeState({
     this.status = HomeStatus.initial,
@@ -21,6 +22,7 @@ class HomeState extends Equatable {
     this.isRefreshing = false,
     this.isBookingAvailable = true,
     this.hasLoadedAvailability = false,
+    this.trackableTripId,
   });
 
   bool get isInitial => status == HomeStatus.initial;
@@ -36,6 +38,8 @@ class HomeState extends Equatable {
     bool? isRefreshing,
     bool? isBookingAvailable,
     bool? hasLoadedAvailability,
+    String? trackableTripId,
+    bool clearTrackableTripId = false,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -46,6 +50,9 @@ class HomeState extends Equatable {
       isBookingAvailable: isBookingAvailable ?? this.isBookingAvailable,
       hasLoadedAvailability:
           hasLoadedAvailability ?? this.hasLoadedAvailability,
+      trackableTripId: clearTrackableTripId
+          ? null
+          : (trackableTripId ?? this.trackableTripId),
     );
   }
 
@@ -58,5 +65,6 @@ class HomeState extends Equatable {
     isRefreshing,
     isBookingAvailable,
     hasLoadedAvailability,
+    trackableTripId,
   ];
 }

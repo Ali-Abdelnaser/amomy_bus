@@ -133,10 +133,8 @@ class _MyTripsView extends StatelessWidget {
                             _HeaderBookButton(
                               isAr: isAr,
                               disableAnimations: disableAnimations,
-                              isEnabled: !state.shouldDisableBookingEntry,
-                              disabledMessage: isAr
-                                  ? 'لا توجد رحلات متاحة للحجز اليوم'
-                                  : 'No trips available today',
+                              isEnabled: true,
+                              disabledMessage: '',
                               onTap: () => context.push(RoutePaths.bookTrip),
                             ),
                           ],

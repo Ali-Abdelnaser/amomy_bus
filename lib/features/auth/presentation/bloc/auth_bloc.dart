@@ -7,6 +7,8 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/wallet_preview.dart';
+import '../../../../core/services/device_identity_service.dart';
+import '../../domain/usecases/claim_welcome_gift_usecase.dart';
 import '../../domain/usecases/complete_profile_usecase.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../domain/usecases/get_wallet_preview_usecase.dart';
@@ -22,6 +24,7 @@ import 'auth_event.dart';
 import 'auth_state.dart';
 import '../../../../app/di/injection.dart';
 import '../../../notifications/presentation/services/notification_service.dart';
+import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 
 @lazySingleton
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -35,9 +38,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendPasswordResetUseCase _sendPasswordResetUseCase;
   final UpdatePasswordUseCase _updatePasswordUseCase;
   final GetWalletPreviewUseCase _getWalletPreviewUseCase;
+  final ClaimWelcomeGiftUseCase? _claimWelcomeGiftUseCase;
+  final DeviceIdentityService? _deviceIdentityService;
   final SignOutUseCase _signOutUseCase;
 
   StreamSubscription<AppUser?>? _userSubscription;
+  bool _hasAttemptedSessionWelcomeGift = false;
 
   AuthBloc({
     required GetCurrentUserUseCase getCurrentUserUseCase,
@@ -50,6 +56,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required SendPasswordResetUseCase sendPasswordResetUseCase,
     required UpdatePasswordUseCase updatePasswordUseCase,
     required GetWalletPreviewUseCase getWalletPreviewUseCase,
+    ClaimWelcomeGiftUseCase? claimWelcomeGiftUseCase,
+    DeviceIdentityService? deviceIdentityService,
     required SignOutUseCase signOutUseCase,
   }) : _getCurrentUserUseCase = getCurrentUserUseCase,
        _signInWithEmailUseCase = signInWithEmailUseCase,
@@ -61,6 +69,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _sendPasswordResetUseCase = sendPasswordResetUseCase,
        _updatePasswordUseCase = updatePasswordUseCase,
        _getWalletPreviewUseCase = getWalletPreviewUseCase,
+       _claimWelcomeGiftUseCase = claimWelcomeGiftUseCase,
+       _deviceIdentityService = deviceIdentityService,
        _signOutUseCase = signOutUseCase,
        super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
@@ -252,7 +262,55 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ),
       );
     } else {
-      await _routeUser(result.dataOrNull!, emit);
+      final updatedUser = result.dataOrNull!;
+      // Silently attempt Welcome Gift claim immediately upon successful profile completion
+      await _triggerSilentWelcomeGiftClaim(updatedUser);
+      await _routeUser(updatedUser, emit);
+    }
+  }
+
+  Future<void> _triggerSilentWelcomeGiftClaim(AppUser user) async {
+    // Only claim if user is authenticated, has complete profile, and phone is present
+    if (user.phone == null || user.phone!.trim().isEmpty) return;
+
+    try {
+      final identityService =
+          _deviceIdentityService ??
+          (getIt.isRegistered<DeviceIdentityService>()
+              ? getIt<DeviceIdentityService>()
+              : null);
+      final claimUseCase =
+          _claimWelcomeGiftUseCase ??
+          (getIt.isRegistered<ClaimWelcomeGiftUseCase>()
+              ? getIt<ClaimWelcomeGiftUseCase>()
+              : null);
+
+      if (identityService == null || claimUseCase == null) return;
+
+      final deviceIdentifier = await identityService.getDeviceIdentifier();
+      if (deviceIdentifier.isEmpty) return;
+
+      final claimResult = await claimUseCase(
+        deviceIdentifier: deviceIdentifier,
+      );
+
+      final granted = claimResult.dataOrNull ?? false;
+      if (granted) {
+        developer.log(
+          'AuthBloc: Welcome gift successfully claimed for user ${user.id}',
+          name: 'AUTH',
+        );
+        // Refresh active WalletCubit if loaded in the widget tree or registry
+        if (getIt.isRegistered<WalletCubit>()) {
+          unawaited(getIt<WalletCubit>().loadWalletSummary(user.id));
+        }
+      }
+    } catch (e) {
+      // Must remain completely silent - never throw or block user flow
+      developer.log(
+        'AuthBloc: Silent welcome gift claim error: $e',
+        name: 'AUTH',
+      );
     }
   }
 
@@ -285,6 +343,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
+    _hasAttemptedSessionWelcomeGift = false;
     if (getIt.isRegistered<NotificationService>()) {
       try {
         await getIt<NotificationService>().deactivateCurrentToken();
@@ -320,6 +379,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (!user.isEmailVerified) {
       emit(EmailVerificationRequired(email: user.email));
       return;
+    }
+
+    // Optional safety retry: once after authenticated app bootstrap / session restore
+    // if the profile is already complete and phone is present.
+    if (!_hasAttemptedSessionWelcomeGift &&
+        user.isProfileComplete &&
+        user.phone != null &&
+        user.phone!.trim().isNotEmpty) {
+      _hasAttemptedSessionWelcomeGift = true;
+      unawaited(_triggerSilentWelcomeGiftClaim(user));
     }
 
     // Profile completion is no longer a blocking startup state.

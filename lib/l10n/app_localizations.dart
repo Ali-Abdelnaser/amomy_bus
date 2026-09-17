@@ -1940,6 +1940,18 @@ abstract class AppLocalizations {
   /// **'Gift'**
   String get txTypeGift;
 
+  /// No description provided for @txTypeWelcomeGift.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Gift'**
+  String get txTypeWelcomeGift;
+
+  /// No description provided for @txTypeCampaignGift.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift'**
+  String get txTypeCampaignGift;
+
   /// No description provided for @txTypeAdjustment.
   ///
   /// In en, this message translates to:

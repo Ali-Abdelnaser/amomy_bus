@@ -111,7 +111,10 @@ class TripSeat extends Equatable {
     this.heldExpiresAt,
   });
 
-  bool get isAvailable => status == SeatAvailabilityStatus.available;
+  bool get isSupervisorReserved =>
+      seatType.trim().toLowerCase() == 'supervisor_reserved';
+  bool get isAvailable =>
+      !isSupervisorReserved && status == SeatAvailabilityStatus.available;
   bool get isHeld => status == SeatAvailabilityStatus.held;
   bool get isBooked => status == SeatAvailabilityStatus.booked;
 

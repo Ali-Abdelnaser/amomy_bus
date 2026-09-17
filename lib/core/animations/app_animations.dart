@@ -16,7 +16,7 @@ abstract final class AppAnimations {
   static const Curve routeCurve = Curves.easeOutCubic;
   static const Curve screenEntryCurve = Curves.easeOutCubic;
 
-  static const Offset screenEntryOffset = Offset(0, 32);
+  static const Offset screenEntryOffset = Offset(0, 0.04);
 
   static bool reduceMotion(BuildContext context) =>
       MediaQuery.maybeOf(context)?.disableAnimations ?? false;

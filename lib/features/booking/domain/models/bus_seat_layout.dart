@@ -11,6 +11,7 @@ enum SeatVisualState {
   bookedMale,
   bookedFemale,
   held,
+  supervisorReserved,
   unavailable,
   unconfigured,
 }
@@ -563,6 +564,7 @@ class BusSeatLayoutConfig {
   /// Resolves visual rendering state from the authoritative backend seat.
   ///
   /// Contract:
+  /// 0) Supervisor Reserved -> [SeatVisualState.supervisorReserved] (strictly non-selectable)
   /// A) Selected by current user -> [SeatVisualState.selected]
   /// B) is_mine == true AND status == held -> [SeatVisualState.selected]
   /// C) status == booked AND passenger_gender == 'male' -> [SeatVisualState.bookedMale]
@@ -578,6 +580,11 @@ class BusSeatLayoutConfig {
   }) {
     if (seat == null) {
       return SeatVisualState.unconfigured;
+    }
+
+    // 0) Supervisor permanent reserved seat (Seat 1)
+    if (seat.isSupervisorReserved) {
+      return SeatVisualState.supervisorReserved;
     }
 
     // A) Selected by current user

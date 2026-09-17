@@ -71,6 +71,11 @@ class HomeLiveTrackingCard extends StatelessWidget {
             nextStop?.localizedName(locale) ?? l10n.trackingUnavailable;
         final nextStopTimingText = l10n.trackingEtaUnavailable;
 
+        final currentStopStatusText = actualArrival != null
+            ? currentStopTimingText
+            : l10n.trackingUnavailable;
+        final nextStopStatusText = nextStopTimingText;
+
         // Last updated subtitle
         final String lastUpdatedText = switch (trackingStatus) {
           LiveTrackingStatus.live || LiveTrackingStatus.online =>
@@ -100,7 +105,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
             l10n.trackingProgressUnavailable,
           LiveTrackingStatus.tripNotActive => l10n.trackingTripNotActive,
           LiveTrackingStatus.outsideTrackingWindow ||
-          LiveTrackingStatus.offline => l10n.trackingOffline,
+          LiveTrackingStatus.offline => l10n.trackingUnavailable,
           LiveTrackingStatus.betweenRuns => l10n.trackingUnavailable,
           LiveTrackingStatus.qaPreview => l10n.trackingUnavailable,
         };
@@ -109,7 +114,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
         if (summary?.nextWindowIsTomorrow == true) {
           offlineResumeText = l10n.trackingResumesTomorrow;
         } else if (summary?.nextWindowStartTime == '13:00' ||
-            summary?.serviceWindow == 'afternoon') {
+            summary?.serviceWindow == 'afternoon' ||
+            summary?.activeDirection == TrackingDirection.returnDirection) {
           offlineResumeText = l10n.trackingResumesMidday;
         } else if (summary?.localizedNextWindowMessage(locale) != null &&
             summary!.localizedNextWindowMessage(locale).isNotEmpty) {
@@ -199,13 +205,13 @@ class HomeLiveTrackingCard extends StatelessWidget {
                             trackingStatus,
                             locale,
                             isAtStop: state.isAtStop,
-                            offlineLabel: l10n.trackingOffline,
+                            offlineLabel: l10n.trackingUnavailable,
                           ),
                         ],
                       ),
                     ),
 
-                    // 2. Large Interactive Mini Map Preview (Height: 225px, Rounded: 18px)
+                    // 2. Large Interactive Mini Map Preview with Soft Map Overlay for Unavailable state
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Container(
@@ -217,60 +223,96 @@ class HomeLiveTrackingCard extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: AppRadius.radiusLg,
                           child: Stack(
+                            fit: StackFit.expand,
                             children: [
                               if (!isLiveMapAvailable) ...[
-                                Container(
-                                  color: const Color(0xFFF1F5F9),
-                                  alignment: Alignment.center,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
+                                // Neutral Map Viewport Background
+                                IgnorePointer(
+                                  child: LiveBusMapWidget(
+                                    telemetry: null,
+                                    routeStops: summary?.routeStops ?? const [],
+                                    status: LiveTrackingStatus.offline,
+                                    isCompactPreview: true,
+                                    followBus: false,
+                                    routeGeometry: state.routeGeometry,
                                   ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFE2E8F0),
-                                          shape: BoxShape.circle,
+                                ),
+                                // Translucent blur / softening overlay wash
+                                Container(
+                                  color: Colors.white.withValues(alpha: 0.82),
+                                ),
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.94),
+                                        borderRadius: AppRadius.radiusLg,
+                                        border: Border.all(
+                                          color: const Color(0xFFE2E8F0),
                                         ),
-                                        child: const Icon(
-                                          Icons.location_off_rounded,
-                                          size: 22,
-                                          color: Color(0xFF64748B),
-                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        lastUpdatedText,
-                                        style: AppTextStyles.titleMedium
-                                            .copyWith(
-                                              color: const Color(0xFF334155),
-                                              fontWeight: FontWeight.w800,
-                                              letterSpacing: 1.0,
-                                              fontSize: 14,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFF1F5F9),
+                                              shape: BoxShape.circle,
                                             ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        trackingStatus ==
-                                                    LiveTrackingStatus
-                                                        .outsideTrackingWindow ||
-                                                trackingStatus ==
-                                                    LiveTrackingStatus.offline
-                                            ? offlineResumeText
-                                            : l10n.trackingUnavailable,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.labelSmall
-                                            .copyWith(
-                                              color: const Color(0xFF64748B),
-                                              fontWeight: FontWeight.w600,
+                                            child: const Icon(
+                                              Icons.location_off_rounded,
+                                              size: 20,
+                                              color: Color(0xFF64748B),
                                             ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            l10n.trackingUnavailable,
+                                            style: AppTextStyles.titleMedium
+                                                .copyWith(
+                                                  color: const Color(0xFF1E293B),
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 14,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            trackingStatus ==
+                                                        LiveTrackingStatus
+                                                            .outsideTrackingWindow ||
+                                                    trackingStatus ==
+                                                        LiveTrackingStatus.offline
+                                                ? offlineResumeText
+                                                : lastUpdatedText,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTextStyles.labelSmall
+                                                .copyWith(
+                                                  color: const Color(0xFF64748B),
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 12,
+                                                ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ] else if (kDebugMode &&
@@ -318,144 +360,163 @@ class HomeLiveTrackingCard extends StatelessWidget {
 
                     AppSpacing.gapH12,
 
-                    // 3. Last Stop & Next Stop Information Cells
+                    // 3. Last Stop & Next Stop Information Cells (Equalized 3-row layout)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Row(
-                        children: [
-                          // Last Stop Cell
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: AppRadius.radiusMd,
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Last Stop Cell
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
                                 ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        decoration: BoxDecoration(
-                                          color: isLastStopVerified
-                                              ? AppColors.accentYellow
-                                              : const Color(0xFFCBD5E1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        currentStopLabel,
-                                        style: AppTextStyles.caption.copyWith(
-                                          fontSize: 11,
-                                          color: isLastStopVerified
-                                              ? AppColors.textSecondary
-                                              : const Color(0xFF64748B),
-                                          fontWeight: FontWeight.w600,
-                                          height: 1.3,
-                                        ),
-                                      ),
-                                    ],
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: AppRadius.radiusMd,
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
                                   ),
-                                  AppSpacing.gapH4,
-                                  Text(
-                                    currentStopName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
-                                      color: const Color(0xFF0F172A),
-                                      height: 1.3,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Row 1: Indicator + Label
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            color: isLastStopVerified
+                                                ? AppColors.accentYellow
+                                                : const Color(0xFFCBD5E1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          currentStopLabel,
+                                          style: AppTextStyles.caption.copyWith(
+                                            fontSize: 11,
+                                            color: isLastStopVerified
+                                                ? AppColors.textSecondary
+                                                : const Color(0xFF64748B),
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  if (currentStopTimingText.isNotEmpty) ...[
+                                    AppSpacing.gapH4,
+                                    // Row 2: Stop Name
+                                    SizedBox(
+                                      height: 34,
+                                      child: Align(
+                                        alignment: AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          currentStopName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                            color: const Color(0xFF0F172A),
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                     AppSpacing.gapH2,
+                                    // Row 3: Status / ETA Text (Normalized to consistent 3rd row)
                                     Text(
-                                      currentStopTimingText,
+                                      currentStopStatusText,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppTextStyles.labelSmall.copyWith(
-                                        color: Color(0xFF64748B),
+                                        color: const Color(0xFF64748B),
                                         fontWeight: FontWeight.w600,
                                         height: 1.3,
                                       ),
                                     ),
                                   ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // Next Stop Cell
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: AppRadius.radiusMd,
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
                                 ),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        decoration: BoxDecoration(
-                                          color: isNextStopVerified
-                                              ? AppColors.primary
-                                              : const Color(0xFFCBD5E1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        nextStopLabel,
-                                        style: AppTextStyles.caption.copyWith(
-                                          fontSize: 11,
-                                          color: isNextStopVerified
-                                              ? AppColors.primaryDark
-                                              : const Color(0xFF64748B),
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.3,
-                                        ),
-                                      ),
-                                    ],
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Next Stop Cell
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: AppRadius.radiusMd,
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
                                   ),
-                                  AppSpacing.gapH4,
-                                  Text(
-                                    nextStopName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
-                                      color: const Color(0xFF0F172A),
-                                      height: 1.3,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Row 1: Indicator + Label
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            color: isNextStopVerified
+                                                ? AppColors.primary
+                                                : const Color(0xFFCBD5E1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          nextStopLabel,
+                                          style: AppTextStyles.caption.copyWith(
+                                            fontSize: 11,
+                                            color: isNextStopVerified
+                                                ? AppColors.primaryDark
+                                                : const Color(0xFF64748B),
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  if (nextStopTimingText.isNotEmpty) ...[
+                                    AppSpacing.gapH4,
+                                    // Row 2: Stop Name
+                                    SizedBox(
+                                      height: 34,
+                                      child: Align(
+                                        alignment: AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          nextStopName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                            color: const Color(0xFF0F172A),
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                     AppSpacing.gapH2,
+                                    // Row 3: Status / ETA Text (Normalized to consistent 3rd row)
                                     Text(
-                                      nextStopTimingText,
+                                      nextStopStatusText,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppTextStyles.labelSmall.copyWith(
@@ -467,11 +528,11 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       ),
                                     ),
                                   ],
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 

@@ -985,6 +985,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get txTypeGift => 'هدية';
 
   @override
+  String get txTypeWelcomeGift => 'هدية الترحيب';
+
+  @override
+  String get txTypeCampaignGift => 'هدية';
+
+  @override
   String get txTypeAdjustment => 'تعديل رصيد';
 
   @override

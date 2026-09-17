@@ -22,6 +22,7 @@ import '../../core/network/dio_client.dart' as _i572;
 import '../../core/network/interceptors/auth_interceptor.dart' as _i267;
 import '../../core/network/network_info.dart' as _i892;
 import '../../core/services/connectivity_service.dart' as _i820;
+import '../../core/services/device_identity_service.dart' as _i925;
 import '../../core/services/secure_storage_service.dart' as _i814;
 import '../../core/services/storage_service.dart' as _i54;
 import '../../features/auth/data/datasources/auth_remote_data_source.dart'
@@ -29,6 +30,8 @@ import '../../features/auth/data/datasources/auth_remote_data_source.dart'
 import '../../features/auth/data/repositories/auth_repository_impl.dart'
     as _i153;
 import '../../features/auth/domain/repositories/auth_repository.dart' as _i787;
+import '../../features/auth/domain/usecases/claim_welcome_gift_usecase.dart'
+    as _i178;
 import '../../features/auth/domain/usecases/complete_profile_usecase.dart'
     as _i1010;
 import '../../features/auth/domain/usecases/get_current_user_usecase.dart'
@@ -173,19 +176,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i831.GetWalletTransactionsUseCase>(
       () => _i831.GetWalletTransactionsUseCase(gh<_i571.WalletRepository>()),
     );
-    gh.factory<_i101.WalletCubit>(
-      () => _i101.WalletCubit(
-        gh<_i280.GetWalletSummaryUseCase>(),
-        gh<_i831.GetWalletTransactionsUseCase>(),
-        gh<_i571.WalletRepository>(),
-        gh<_i317.GetMyTopUpRequestsUseCase>(),
-        gh<_i821.GetWalletHistoryUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i820.ConnectivityService>(
       () => _i820.ConnectivityServiceImpl(gh<_i895.Connectivity>()),
     );
-    gh.factory<_i9.HomeCubit>(() => _i9.HomeCubit(gh<_i0.HomeRepository>()));
     gh.lazySingleton<_i787.AuthRepository>(
       () => _i153.AuthRepositoryImpl(gh<_i107.AuthRemoteDataSource>()),
     );
@@ -198,6 +191,21 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i0.HomeRepository>(
       () => _i76.HomeRepositoryImpl(gh<_i362.HomeRemoteDataSource>()),
     );
+    gh.factory<_i9.HomeCubit>(
+      () => _i9.HomeCubit(
+        gh<_i0.HomeRepository>(),
+        gh<_i912.BookingRepository>(),
+      ),
+    );
+    gh.factory<_i101.WalletCubit>(
+      () => _i101.WalletCubit(
+        gh<_i280.GetWalletSummaryUseCase>(),
+        gh<_i831.GetWalletTransactionsUseCase>(),
+        gh<_i571.WalletRepository>(),
+        gh<_i317.GetMyTopUpRequestsUseCase>(),
+        gh<_i821.GetWalletHistoryUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i240.SplashLocalDataSource>(
       () => _i240.SplashLocalDataSourceImpl(
         gh<_i54.StorageService>(),
@@ -206,6 +214,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i267.AuthInterceptor>(
       () => _i267.AuthInterceptor(gh<_i814.SecureStorageService>()),
+    );
+    gh.lazySingleton<_i925.DeviceIdentityService>(
+      () => _i925.DeviceIdentityServiceImpl(gh<_i814.SecureStorageService>()),
     );
     gh.lazySingleton<_i688.CreateTopUpRequestUseCase>(
       () => _i688.CreateTopUpRequestUseCase(gh<_i806.TopUpRepository>()),
@@ -224,6 +235,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i542.UploadTopUpProofUseCase>(
       () => _i542.UploadTopUpProofUseCase(gh<_i806.TopUpRepository>()),
+    );
+    gh.lazySingleton<_i178.ClaimWelcomeGiftUseCase>(
+      () => _i178.ClaimWelcomeGiftUseCase(gh<_i787.AuthRepository>()),
     );
     gh.lazySingleton<_i1010.CompleteProfileUseCase>(
       () => _i1010.CompleteProfileUseCase(gh<_i787.AuthRepository>()),
@@ -269,21 +283,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i27.SubmitTopUpProofUseCase>(),
       ),
     );
-    gh.lazySingleton<_i797.AuthBloc>(
-      () => _i797.AuthBloc(
-        getCurrentUserUseCase: gh<_i17.GetCurrentUserUseCase>(),
-        signInWithEmailUseCase: gh<_i744.SignInWithEmailUseCase>(),
-        signUpWithEmailUseCase: gh<_i254.SignUpWithEmailUseCase>(),
-        verifyOtpUseCase: gh<_i503.VerifyOtpUseCase>(),
-        resendOtpUseCase: gh<_i613.ResendOtpUseCase>(),
-        signInWithGoogleUseCase: gh<_i673.SignInWithGoogleUseCase>(),
-        completeProfileUseCase: gh<_i1010.CompleteProfileUseCase>(),
-        sendPasswordResetUseCase: gh<_i71.SendPasswordResetUseCase>(),
-        updatePasswordUseCase: gh<_i387.UpdatePasswordUseCase>(),
-        getWalletPreviewUseCase: gh<_i442.GetWalletPreviewUseCase>(),
-        signOutUseCase: gh<_i915.SignOutUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i572.DioClient>(
       () => _i572.DioClient(gh<_i267.AuthInterceptor>()),
     );
@@ -298,6 +297,23 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i1020.TopUpHistoryCubit>(
       () => _i1020.TopUpHistoryCubit(gh<_i317.GetMyTopUpRequestsUseCase>()),
+    );
+    gh.lazySingleton<_i797.AuthBloc>(
+      () => _i797.AuthBloc(
+        getCurrentUserUseCase: gh<_i17.GetCurrentUserUseCase>(),
+        signInWithEmailUseCase: gh<_i744.SignInWithEmailUseCase>(),
+        signUpWithEmailUseCase: gh<_i254.SignUpWithEmailUseCase>(),
+        verifyOtpUseCase: gh<_i503.VerifyOtpUseCase>(),
+        resendOtpUseCase: gh<_i613.ResendOtpUseCase>(),
+        signInWithGoogleUseCase: gh<_i673.SignInWithGoogleUseCase>(),
+        completeProfileUseCase: gh<_i1010.CompleteProfileUseCase>(),
+        sendPasswordResetUseCase: gh<_i71.SendPasswordResetUseCase>(),
+        updatePasswordUseCase: gh<_i387.UpdatePasswordUseCase>(),
+        getWalletPreviewUseCase: gh<_i442.GetWalletPreviewUseCase>(),
+        claimWelcomeGiftUseCase: gh<_i178.ClaimWelcomeGiftUseCase>(),
+        deviceIdentityService: gh<_i925.DeviceIdentityService>(),
+        signOutUseCase: gh<_i915.SignOutUseCase>(),
+      ),
     );
     gh.factory<_i69.CheckAppStatusUseCase>(
       () => _i69.CheckAppStatusUseCase(gh<_i210.SplashRepository>()),
