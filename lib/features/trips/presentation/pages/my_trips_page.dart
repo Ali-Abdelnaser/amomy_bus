@@ -205,15 +205,13 @@ class _MyTripsView extends StatelessWidget {
                               vertical: 36,
                             ),
                             children: [
-                              AppSpacing.gapH16,
                               Center(
                                 child: Image.asset(
                                   AppAssets.busServiceIllustration,
-                                  height: 220,
+                                  height: 350,
                                   fit: BoxFit.contain,
                                 ),
                               ),
-                              AppSpacing.gapH16,
                               Text(
                                 isAr
                                     ? 'لا توجد رحلات مجدولة لليوم'

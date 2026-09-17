@@ -103,11 +103,10 @@ class _TripHistoryView extends StatelessWidget {
                   Center(
                     child: Image.asset(
                       AppAssets.tripHistoryEmpty,
-                      height: 200,
+                      height: 320,
                       fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(height: 28),
                   Text(
                     isAr ? 'لا يوجد سجل رحلات بعد' : 'No trip history yet',
                     style: const TextStyle(
