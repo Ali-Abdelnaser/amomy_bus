@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
@@ -10,6 +12,7 @@ import 'passenger_trips_state.dart';
 class PassengerTripsCubit extends Cubit<PassengerTripsState> {
   final GetPassengerBookingsUseCase? _getPassengerBookingsUseCase;
   final BookingRepository? _bookingRepository;
+  StreamSubscription<void>? _bookingUpdatesSubscription;
 
   PassengerTripsCubit(
     this._getPassengerBookingsUseCase, [
@@ -17,9 +20,9 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
   ]) : super(const PassengerTripsState());
 
   PassengerTripsCubit.idle()
-      : _getPassengerBookingsUseCase = null,
-        _bookingRepository = null,
-        super(const PassengerTripsState());
+    : _getPassengerBookingsUseCase = null,
+      _bookingRepository = null,
+      super(const PassengerTripsState());
 
   BookingRepository? get _repo =>
       _bookingRepository ??
@@ -33,13 +36,13 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
   /// - Booking history
   /// - Route stops for editing preferred journey
   Future<void> loadTripsHub() async {
-    emit(state.copyWith(
-      status: PassengerTripsStatus.loading,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(status: PassengerTripsStatus.loading, clearError: true),
+    );
 
     final repo = _repo;
-    final bookingsUseCase = _getPassengerBookingsUseCase ??
+    final bookingsUseCase =
+        _getPassengerBookingsUseCase ??
         (getIt.isRegistered<GetPassengerBookingsUseCase>()
             ? getIt<GetPassengerBookingsUseCase>()
             : null);
@@ -76,17 +79,25 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
           res.fold(
             onSuccess: (bookings) {
               final now = DateTime.now();
-              upcomingTrips = bookings
-                  .where((b) =>
-                      b.status == 'confirmed' && b.departureAt.isAfter(now))
-                  .toList()
-                ..sort((a, b) => a.departureAt.compareTo(b.departureAt));
+              upcomingTrips =
+                  bookings
+                      .where(
+                        (b) =>
+                            b.status == 'confirmed' &&
+                            b.departureAt.isAfter(now),
+                      )
+                      .toList()
+                    ..sort((a, b) => a.departureAt.compareTo(b.departureAt));
 
-              historyTrips = bookings
-                  .where((b) =>
-                      b.status != 'confirmed' || !b.departureAt.isAfter(now))
-                  .toList()
-                ..sort((a, b) => b.departureAt.compareTo(a.departureAt));
+              historyTrips =
+                  bookings
+                      .where(
+                        (b) =>
+                            b.status != 'confirmed' ||
+                            !b.departureAt.isAfter(now),
+                      )
+                      .toList()
+                    ..sort((a, b) => b.departureAt.compareTo(a.departureAt));
             },
             onError: (err) => errorMsg ??= err.message,
           );
@@ -102,17 +113,34 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         }),
     ]);
 
-    emit(state.copyWith(
-      status: errorMsg != null && todayTrips.isEmpty && historyTrips.isEmpty
-          ? PassengerTripsStatus.error
-          : PassengerTripsStatus.loaded,
-      todayTrips: todayTrips,
-      preferredJourney: preferredJourney,
-      historyTrips: historyTrips,
-      upcomingTrips: upcomingTrips,
-      availableStops: availableStops,
-      errorMessage: errorMsg,
-    ));
+    emit(
+      state.copyWith(
+        status: errorMsg != null && todayTrips.isEmpty && historyTrips.isEmpty
+            ? PassengerTripsStatus.error
+            : PassengerTripsStatus.loaded,
+        todayTrips: todayTrips,
+        preferredJourney: preferredJourney,
+        historyTrips: historyTrips,
+        upcomingTrips: upcomingTrips,
+        availableStops: availableStops,
+        errorMessage: errorMsg,
+      ),
+    );
+
+    _startBookingUpdatesSubscription();
+  }
+
+  void _startBookingUpdatesSubscription() {
+    final repo = _repo;
+    if (repo == null || _bookingUpdatesSubscription != null) return;
+
+    _bookingUpdatesSubscription = repo
+        .subscribeToPassengerBookingUpdates()
+        .listen(
+          (_) => loadTripsHub(),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
   }
 
   /// Backward-compatible method calling loadTripsHub
@@ -186,5 +214,10 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
       },
     );
   }
-}
 
+  @override
+  Future<void> close() {
+    _bookingUpdatesSubscription?.cancel();
+    return super.close();
+  }
+}

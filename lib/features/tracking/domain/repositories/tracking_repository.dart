@@ -1,21 +1,20 @@
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
-import '../models/bus_telemetry.dart';
 import '../models/tracking_summary.dart';
 
 /// Contract for authoritative Live Bus Tracking data and push notification dispatch.
 abstract class TrackingRepository {
-  /// Fetches authoritative live tracking snapshot from Supabase RPC.
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false});
+  /// Fetches the canonical passenger tracking snapshot for an exact booked trip.
+  Future<TrackingSummary> getTripTracking({required String tripId});
+
+  /// Subscribes to trip-scoped tracking-state invalidation.
+  Stream<void> subscribeToTripTrackingState({required String tripId});
 
   /// Fetches active road geometry for the current route and direction from Supabase.
   Future<RouteGeometry?> getActiveRouteGeometry({
     required String routeId,
     required String direction,
   });
-
-  /// Subscribes to Supabase Realtime updates on `public:bus_live_locations`.
-  Stream<BusTelemetry> subscribeToBusLiveLocation();
 
   /// Dispatches or records an approach notification with strict backend idempotency.
   Future<bool> recordApproachNotification({

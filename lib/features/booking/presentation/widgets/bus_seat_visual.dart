@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/models/bus_seat_layout.dart';
 
 /// Authentic vector-rendered top-down coach bus seat widget.
@@ -60,12 +61,16 @@ class _BusSeatVisualState extends State<BusSeatVisual>
       vsync: this,
       duration: const Duration(milliseconds: 180),
     );
-    _bounceAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.06), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.06, end: 1.0), weight: 50),
-    ]).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.easeOutCubic),
-    );
+    _bounceAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.06), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.06, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _bounceController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // 2. Held / Waiting Seat Gentle Breathing Animation (1.0 -> 1.025 -> 1.0)
     _heldPulseController = AnimationController(
@@ -78,7 +83,8 @@ class _BusSeatVisualState extends State<BusSeatVisual>
 
     // 3. Occupant Avatar / Status Icon Smooth Fade-in
     // If the seat starts in an occupied/held state, avatar is visible immediately (value: 1.0)
-    final initialHasAvatar = widget.state == SeatVisualState.bookedMale ||
+    final initialHasAvatar =
+        widget.state == SeatVisualState.bookedMale ||
         widget.state == SeatVisualState.bookedFemale ||
         widget.state == SeatVisualState.held;
 
@@ -108,10 +114,12 @@ class _BusSeatVisualState extends State<BusSeatVisual>
         _triggerBounce();
       }
 
-      final hadAvatar = oldWidget.state == SeatVisualState.bookedMale ||
+      final hadAvatar =
+          oldWidget.state == SeatVisualState.bookedMale ||
           oldWidget.state == SeatVisualState.bookedFemale ||
           oldWidget.state == SeatVisualState.held;
-      final hasAvatar = widget.state == SeatVisualState.bookedMale ||
+      final hasAvatar =
+          widget.state == SeatVisualState.bookedMale ||
           widget.state == SeatVisualState.bookedFemale ||
           widget.state == SeatVisualState.held;
 
@@ -171,11 +179,14 @@ class _BusSeatVisualState extends State<BusSeatVisual>
 
   @override
   Widget build(BuildContext context) {
-    final isTappable = widget.state == SeatVisualState.available ||
+    final isTappable =
+        widget.state == SeatVisualState.available ||
         widget.state == SeatVisualState.selected;
 
     return Semantics(
-      label: 'Seat ${widget.label}',
+      label:
+          AppLocalizations.of(context)?.seatNumberLabel(widget.label) ??
+          'Seat ${widget.label}',
       button: isTappable,
       enabled: isTappable,
       selected: widget.state == SeatVisualState.selected,
@@ -186,9 +197,11 @@ class _BusSeatVisualState extends State<BusSeatVisual>
           _avatarFadeAnimation,
         ]),
         builder: (context, _) {
-          final bounceScale =
-              _bounceController.isAnimating ? _bounceAnimation.value : 1.0;
-          final heldScale = (widget.state == SeatVisualState.held &&
+          final bounceScale = _bounceController.isAnimating
+              ? _bounceAnimation.value
+              : 1.0;
+          final heldScale =
+              (widget.state == SeatVisualState.held &&
                   _heldPulseController.isAnimating)
               ? (1.0 + _heldPulseAnimation.value * 0.025)
               : 1.0;
@@ -415,7 +428,8 @@ class _RealisticCoachSeatPainter extends CustomPainter {
     // RESTORE NORMAL ORIENTATION (Upright text, avatars, and cues)
     // =========================================================================
 
-    final isOccupied = state == SeatVisualState.bookedMale ||
+    final isOccupied =
+        state == SeatVisualState.bookedMale ||
         state == SeatVisualState.bookedFemale ||
         state == SeatVisualState.held;
 
@@ -424,16 +438,19 @@ class _RealisticCoachSeatPainter extends CustomPainter {
       final double avatarCY = 13.5;
 
       if (state == SeatVisualState.bookedMale) {
-        final maleColor = const Color(0xFF38BDF8)
-            .withValues(alpha: avatarOpacity.clamp(0.0, 1.0));
+        final maleColor = const Color(
+          0xFF38BDF8,
+        ).withValues(alpha: avatarOpacity.clamp(0.0, 1.0));
         _drawMaleAvatar(canvas, w * 0.5, avatarCY, maleColor);
       } else if (state == SeatVisualState.bookedFemale) {
-        final femaleColor = Colors.white
-            .withValues(alpha: avatarOpacity.clamp(0.0, 1.0));
+        final femaleColor = Colors.white.withValues(
+          alpha: avatarOpacity.clamp(0.0, 1.0),
+        );
         _drawFemaleAvatar(canvas, w * 0.5, avatarCY, femaleColor);
       } else if (state == SeatVisualState.held) {
-        final heldColor = Colors.white
-            .withValues(alpha: avatarOpacity.clamp(0.0, 1.0));
+        final heldColor = Colors.white.withValues(
+          alpha: avatarOpacity.clamp(0.0, 1.0),
+        );
         _drawClockCue(canvas, w * 0.5, avatarCY, heldColor);
       }
     }
@@ -540,7 +557,11 @@ class _RealisticCoachSeatPainter extends CustomPainter {
 
     // Clock hour and minute hands
     canvas.drawLine(Offset(cx, cy - 0.5), Offset(cx, cy - 3.2), handPaint);
-    canvas.drawLine(Offset(cx, cy - 0.5), Offset(cx + 1.8, cy - 0.5), handPaint);
+    canvas.drawLine(
+      Offset(cx, cy - 0.5),
+      Offset(cx + 1.8, cy - 0.5),
+      handPaint,
+    );
   }
 
   // ===========================================================================

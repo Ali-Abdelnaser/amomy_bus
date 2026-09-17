@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/assets/app_assets.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/localization/localization_helpers.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_error_view.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
@@ -54,100 +49,24 @@ class _SplashView extends StatelessWidget {
             );
           }
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // 1. Subtle background splash composition asset
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.10,
-                  child: Image.asset(
-                    AppAssets.splash,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ).animate().fadeIn(duration: 800.ms),
+          // Matches the native iOS LaunchScreen.storyboard exactly:
+          // centered AMOMY logo at 78% width on white background.
+          // No extra text, version, or spinner — so the transition
+          // from native launch → Flutter first frame is seamless.
+          return Center(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final logoSize = (constraints.maxWidth * 0.78).clamp(
+                  280.0,
+                  420.0,
+                );
 
-              // 2. Centralized Logo & Branding Experience
-              SafeArea(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Transparent logo with smooth scale-in and fade-in
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(AppSpacing.s16),
-                        child: Image.asset(
-                          AppAssets.logoTransparent,
-                          fit: BoxFit.contain,
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(duration: 600.ms)
-                          .scale(
-                            begin: const Offset(0.8, 0.8),
-                            end: const Offset(1.0, 1.0),
-                            duration: 700.ms,
-                            curve: Curves.easeOutBack,
-                          ),
-
-                      AppSpacing.gapH24,
-
-                      // App Name
-                      Text(
-                        context.l10n.appName,
-                        style: AppTextStyles.headlineLarge.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(delay: 250.ms, duration: 500.ms)
-                          .slideY(begin: 0.2, end: 0, duration: 500.ms),
-
-                      AppSpacing.gapH8,
-
-                      // Version Indicator
-                      Text(
-                        'v${AppConstants.appVersion}',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
-
-                      AppSpacing.gapH32,
-
-                      // Subtle Circular Brand Indicator
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator.adaptive(
-                          strokeWidth: 2.5,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                          backgroundColor: AppColors.primaryLight,
-                        ),
-                      ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                return SizedBox.square(
+                  dimension: logoSize,
+                  child: Image.asset(AppAssets.splash, fit: BoxFit.contain),
+                );
+              },
+            ),
           );
         },
       ),

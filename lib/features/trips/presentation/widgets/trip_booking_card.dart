@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/localization/status_localizer.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -14,16 +17,14 @@ import 'qr_ticket_modal.dart';
 class TripBookingCard extends StatelessWidget {
   final PassengerBooking booking;
 
-  const TripBookingCard({
-    super.key,
-    required this.booking,
-  });
+  const TripBookingCard({super.key, required this.booking});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final isUpcoming = booking.status == 'confirmed' || booking.status == 'active';
+    final isUpcoming =
+        booking.status == 'confirmed' || booking.status == 'active';
 
     return AppCard(
       padding: AppSpacing.edgeInsetsA16,
@@ -40,19 +41,23 @@ class TripBookingCard extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: isUpcoming ? AppColors.primaryLight : AppColors.surfaceSoft,
+                      color: isUpcoming
+                          ? AppColors.primaryLight
+                          : AppColors.surfaceSoft,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: AmomyBusIcon(
                         size: 16,
-                        color: isUpcoming ? AppColors.primary : AppColors.textSecondary,
+                        color: isUpcoming
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
                   AppSpacing.gapW8,
                   Text(
-                    '${booking.originName(locale)} → ${booking.destinationName(locale)}',
+                    '${booking.originName(locale)} ${context.isRtl ? '←' : '→'} ${booking.destinationName(locale)}',
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -63,14 +68,21 @@ class TripBookingCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isUpcoming ? AppColors.successLight : AppColors.surfaceSoft,
+                  color: isUpcoming
+                      ? AppColors.successLight
+                      : AppColors.surfaceSoft,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isUpcoming ? l10n.bookingStatusConfirmed : 'منتهية',
+                  StatusLocalizer.localizeBookingStatus(
+                    context,
+                    booking.status,
+                  ),
                   style: AppTextStyles.labelSmall.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isUpcoming ? AppColors.success : AppColors.textSecondary,
+                    color: isUpcoming
+                        ? AppColors.success
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -85,12 +97,15 @@ class TripBookingCard extends StatelessWidget {
               _InfoBlock(
                 icon: AppIcons.calendar,
                 label: l10n.tripDetailsDate,
-                value: "${booking.serviceDate.year}-${booking.serviceDate.month.toString().padLeft(2, '0')}-${booking.serviceDate.day.toString().padLeft(2, '0')}",
+                value: DateFormat.yMMMd(locale).format(booking.serviceDate),
               ),
               _InfoBlock(
                 icon: AppIcons.clock,
                 label: l10n.tripDetailsTime,
-                value: booking.departureTime,
+                value: AppTimeFormatter.formatPassengerBooking(
+                  booking,
+                  locale: locale,
+                ),
               ),
               _InfoBlock(
                 icon: AppIcons.seat,
@@ -109,7 +124,10 @@ class TripBookingCard extends StatelessWidget {
                     onTap: () => _showQrModal(context),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(8),
@@ -140,7 +158,10 @@ class TripBookingCard extends StatelessWidget {
                   onTap: () => _showTrackingModal(context),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceSoft,
                       borderRadius: BorderRadius.circular(8),
@@ -149,10 +170,7 @@ class TripBookingCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const AmomyBusIcon(
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
+                        const AmomyBusIcon(size: 16, color: AppColors.primary),
                         AppSpacing.gapW6,
                         Text(
                           'تتبع الحافلة',
@@ -181,7 +199,10 @@ class TripBookingCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     QrTicketModal.show(
       context,
-      departureTime: booking.departureTime,
+      departureTime: AppTimeFormatter.formatPassengerBooking(
+        booking,
+        locale: locale,
+      ),
       originName: booking.originName(locale),
       destinationName: booking.destinationName(locale),
       seatNumber: booking.seatNumber,

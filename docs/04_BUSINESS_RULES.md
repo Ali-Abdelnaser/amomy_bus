@@ -72,7 +72,7 @@ Fare is determined strictly by the **boarding physical stop**:
 - Outside these service hours, the map displays **OFFLINE / Service Resumes** even if the physical ETrack device continues transmitting telemetry.
 
 ### 3.3. Google Maps Platform & Road Geometry
-- Visual palette uses official **Silver monochrome Google Maps style** (`#EBEBEB` base) with AMOMY Blue `#01589F` and Warm Yellow `#FFC928` hierarchy.
+- The base map uses native Google Maps default styling on Android and iOS, with AMOMY Blue `#01589F` and Warm Yellow `#FFC928` reserved for route overlays and app markers.
 - Route paths follow stored road geometry generated via Google Routes API, ensuring bus markers and polylines follow actual roads.
 - Stops are passenger landmarks near the road and do not need to sit on the centerline.
 
@@ -94,4 +94,3 @@ Fare is determined strictly by the **boarding physical stop**:
 
 ---
 **Last Updated**: 2026-09-14
-

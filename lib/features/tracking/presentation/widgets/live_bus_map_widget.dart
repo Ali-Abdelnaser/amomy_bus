@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -14,7 +12,6 @@ import 'amomy_map_icons.dart';
 /// AMOMY Live Bus Map — Google Maps Native Edition.
 ///
 /// Features:
-/// - Embedded JSON monochrome style (assets/map/amomy_google_map_style.json)
 /// - Native [GoogleMap] widget with camera controls and smooth bus tracking
 /// - Stop markers rendered as distinct pins (Normal, Passed, Current, Next, Selected)
 /// - Bus marker rendered as circular AMOMY blue badge with white bus icon (no heading rotation)
@@ -33,58 +30,6 @@ class LiveBusMapWidget extends StatefulWidget {
   final VoidCallback? onPanStart;
   final RouteGeometry? routeGeometry;
 
-  /// Memory cache for validated Silver Google Map JSON style.
-  static String? _cachedMapStyleJson;
-  static Future<String?>? _loadingFuture;
-
-  /// Loads, validates, and caches the embedded Silver Map style from assets.
-  /// Falls back safely to null on any parsing or I/O error without crashing or alerting passengers.
-  static Future<String?> loadSilverMapStyle() {
-    if (_cachedMapStyleJson != null) return Future.value(_cachedMapStyleJson);
-    return _loadingFuture ??= _loadStyleInternal();
-  }
-
-  static Future<String?> _loadStyleInternal() async {
-    try {
-      final raw = await rootBundle.loadString('assets/map/amomy_google_map_style.json');
-      final dynamic decoded = jsonDecode(raw);
-      if (decoded is! List) {
-        debugPrint('LiveBusMapWidget: Map style JSON root is not a list, falling back to default map.');
-        _cachedMapStyleJson = null;
-        return null;
-      }
-
-      final validRules = <Map<String, dynamic>>[];
-      for (final rule in decoded) {
-        if (rule is Map<String, dynamic> && _isValidStyleRule(rule)) {
-          validRules.add(rule);
-        }
-      }
-
-      _cachedMapStyleJson = jsonEncode(validRules);
-    } catch (e) {
-      debugPrint('LiveBusMapWidget: Failed to load map style ($e). Falling back to default map.');
-      _cachedMapStyleJson = null;
-    }
-
-    return _cachedMapStyleJson;
-  }
-
-  static bool _isValidStyleRule(Map<String, dynamic> rule) {
-    final featureType = rule['featureType'];
-    if (featureType != null && featureType is! String) return false;
-    final elementType = rule['elementType'];
-    if (elementType != null && elementType is! String) return false;
-    final stylers = rule['stylers'];
-    if (stylers != null) {
-      if (stylers is! List) return false;
-      for (final s in stylers) {
-        if (s is! Map) return false;
-      }
-    }
-    return true;
-  }
-
   const LiveBusMapWidget({
     super.key,
     this.telemetry,
@@ -99,6 +44,19 @@ class LiveBusMapWidget extends StatefulWidget {
     this.routeGeometry,
   });
 
+  @visibleForTesting
+  static bool shouldRenderStopMarker(BusStopModel stop) =>
+      stop.hasCanonicalCoordinates;
+
+  @visibleForTesting
+  static List<BusStopModel> markerEligibleStops(
+    List<BusStopModel> stops, {
+    required bool isCompactPreview,
+  }) {
+    final eligible = stops.where(shouldRenderStopMarker);
+    return isCompactPreview ? eligible.take(4).toList() : eligible.toList();
+  }
+
   @override
   State<LiveBusMapWidget> createState() => _LiveBusMapWidgetState();
 }
@@ -107,7 +65,6 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     with SingleTickerProviderStateMixin {
   GoogleMapController? _mapController;
   static const LatLng _defaultCenter = LatLng(31.0379, 31.3815);
-  String? _mapStyleJson;
   bool _isMapReady = false;
   bool _initialCameraFitted = false;
   String? _lastLocale;
@@ -146,23 +103,27 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
   @override
   void initState() {
     super.initState();
-    _mapStyleJson = LiveBusMapWidget._cachedMapStyleJson;
-    if (_mapStyleJson == null) {
-      _loadMapStyle();
-    }
 
     // Initial position seed
     final t = widget.telemetry;
-    if (t != null) {
+    if (t != null && t.hasValidCoordinates) {
       _displayedPosition = LatLng(t.latitude, t.longitude);
       _lastTelemetryRecordedAt = t.gpsRecordedAt;
     }
 
-    final initialCenter = _displayedPosition ??
-        (widget.routeStops.isNotEmpty &&
-                widget.routeStops.first.hasCoordinates
-            ? LatLng(widget.routeStops.first.latitude!,
-                widget.routeStops.first.longitude!)
+    final firstCanonicalStop = widget.routeStops
+        .cast<BusStopModel?>()
+        .firstWhere(
+          (s) => s != null && LiveBusMapWidget.shouldRenderStopMarker(s),
+          orElse: () => null,
+        );
+    final initialCenter =
+        _displayedPosition ??
+        (firstCanonicalStop != null
+            ? LatLng(
+                firstCanonicalStop.latitude!,
+                firstCanonicalStop.longitude!,
+              )
             : _defaultCenter);
 
     _initialCameraPosition = CameraPosition(
@@ -191,21 +152,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     }
   }
 
-  Future<void> _loadMapStyle() async {
-    if (LiveBusMapWidget._cachedMapStyleJson != null) {
-      _mapStyleJson = LiveBusMapWidget._cachedMapStyleJson;
-      return;
-    }
-    final style = await LiveBusMapWidget.loadSilverMapStyle();
-    _mapStyleJson = style;
-  }
-
   Future<void> _initMarkerIcons() async {
-    await Future.wait([
-      AmomyMapIcons.preloadAllIcons(),
-      LiveBusMapWidget.loadSilverMapStyle(),
-    ]);
-    _mapStyleJson = LiveBusMapWidget._cachedMapStyleJson;
+    await AmomyMapIcons.preloadAllIcons();
     _resolveIcons();
     _rebuildStopMarkers();
     _updateBusMarker(_displayedPosition);
@@ -217,27 +165,44 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     _busMarkerIcon = AmomyMapIcons.getCachedBusIcon(busState);
     _pinNormalIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.normal);
     _pinPassedIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.passed);
-    _pinCurrentIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.current);
+    _pinCurrentIcon = AmomyMapIcons.getCachedStopIcon(
+      StopPinVisualState.current,
+    );
     _pinNextIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.next);
-    _pinSelectedIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.selected);
-    _pinSelectedLastIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.selectedLast);
-    _pinSelectedNextIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.selectedNext);
+    _pinSelectedIcon = AmomyMapIcons.getCachedStopIcon(
+      StopPinVisualState.selected,
+    );
+    _pinSelectedLastIcon = AmomyMapIcons.getCachedStopIcon(
+      StopPinVisualState.selectedLast,
+    );
+    _pinSelectedNextIcon = AmomyMapIcons.getCachedStopIcon(
+      StopPinVisualState.selectedNext,
+    );
   }
 
   BusMarkerVisualState _resolveBusVisualState() {
-    final isQa = widget.status == LiveTrackingStatus.qaPreview ||
+    if (widget.status == LiveTrackingStatus.progressionUnavailable) {
+      return BusMarkerVisualState.reconnecting;
+    }
+    final isQa =
+        widget.status == LiveTrackingStatus.qaPreview ||
         widget.telemetry?.source == 'qa';
     if (isQa) return BusMarkerVisualState.qa;
 
-    if (widget.status == LiveTrackingStatus.offline) {
+    if (widget.status == LiveTrackingStatus.offline ||
+        widget.status == LiveTrackingStatus.assignmentPending ||
+        widget.status == LiveTrackingStatus.tripNotActive ||
+        widget.status == LiveTrackingStatus.outsideTrackingWindow) {
       return BusMarkerVisualState.offline;
     }
 
-    final isStale = widget.status == LiveTrackingStatus.stale ||
+    final isStale =
+        widget.status == LiveTrackingStatus.stale ||
         (widget.telemetry?.isStale ?? false);
     if (isStale) return BusMarkerVisualState.reconnecting;
 
-    final isAtStop = widget.telemetry?.progressState == 'at_stop' ||
+    final isAtStop =
+        widget.telemetry?.progressState == 'at_stop' ||
         (widget.telemetry != null &&
             !widget.telemetry!.isMoving &&
             widget.telemetry!.currentStopId != null);
@@ -255,35 +220,17 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       return;
     }
 
-    final isQaPreview = widget.status == LiveTrackingStatus.qaPreview ||
-        widget.telemetry?.source == 'qa';
-    final currentStopOrder = widget.telemetry?.currentStopOrder ??
-        widget.routeStops
-            .cast<BusStopModel?>()
-            .firstWhere(
-              (s) => s?.id == widget.telemetry?.currentStopId,
-              orElse: () => null,
-            )
-            ?.stopOrder;
-
-    final displayStops = widget.isCompactPreview
-        ? widget.routeStops
-            .where((s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview))
-            .take(4)
-            .toList()
-        : widget.routeStops
-            .where((s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview))
-            .toList();
+    final displayStops = LiveBusMapWidget.markerEligibleStops(
+      widget.routeStops,
+      isCompactPreview: widget.isCompactPreview,
+    );
 
     final Set<Marker> newStopMarkers = {};
     for (final stop in displayStops) {
-      final isCurrent = widget.telemetry?.currentStopId == stop.id;
-      final isNext = widget.telemetry?.nextStopId == stop.id;
+      final isCurrent = stop.semanticState == TrackingStopSemanticState.active;
+      final isNext = stop.semanticState == TrackingStopSemanticState.next;
       final isSelected = widget.selectedStop?.id == stop.id;
-      final isPassed = currentStopOrder != null &&
-          stop.stopOrder < currentStopOrder &&
-          !isCurrent &&
-          !isNext;
+      final isPassed = stop.semanticState == TrackingStopSemanticState.passed;
 
       BitmapDescriptor icon = _pinNormalIcon!;
       Offset anchor = AmomyMapIcons.normalPinAnchor;
@@ -341,10 +288,19 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     if (_busMarkerIcon == null) {
       _resolveIcons();
     }
-    final busCoord = pos ??
-        (widget.telemetry != null
-            ? LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude)
-            : null);
+    final canShowVehicle =
+        widget.status == LiveTrackingStatus.live ||
+        widget.status == LiveTrackingStatus.online ||
+        widget.status == LiveTrackingStatus.progressionUnavailable;
+    final busCoord = canShowVehicle
+        ? pos ??
+              (widget.telemetry != null
+                  ? LatLng(
+                      widget.telemetry!.latitude,
+                      widget.telemetry!.longitude,
+                    )
+                  : null)
+        : null;
     if (busCoord != null && _busMarkerIcon != null) {
       _busMarker = Marker(
         markerId: const MarkerId('active_bus'),
@@ -362,25 +318,12 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
   }
 
   void _updateCombinedMarkers() {
-    _combinedMarkers = {
-      ..._stopMarkers,
-      ?_busMarker,
-    };
+    _combinedMarkers = {..._stopMarkers, ?_busMarker};
   }
 
   void _rebuildPolylines() {
-    final isQaPreview = widget.status == LiveTrackingStatus.qaPreview ||
-        widget.telemetry?.source == 'qa';
-    final currentStopOrder = widget.telemetry?.currentStopOrder ??
-        widget.routeStops
-            .cast<BusStopModel?>()
-            .firstWhere(
-              (s) => s?.id == widget.telemetry?.currentStopId,
-              orElse: () => null,
-            )
-            ?.stopOrder;
-
-    final busCoord = _displayedPosition ??
+    final busCoord =
+        _displayedPosition ??
         (widget.telemetry != null
             ? LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude)
             : null);
@@ -398,7 +341,9 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       // Authoritative road-following geometry from Google Routes
       final polyPoints = geom.points;
 
-      if (busCoord != null) {
+      if (busCoord != null &&
+          (widget.status == LiveTrackingStatus.live ||
+              widget.status == LiveTrackingStatus.online)) {
         final split = RouteGeometryEngine.splitPolylineByBus(
           polyline: polyPoints,
           busLocation: busCoord,
@@ -441,7 +386,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
           if (nextStopId != null) {
             BusStopModel? nextStop;
             for (final s in widget.routeStops) {
-              if (s.id == nextStopId && s.hasCoordinates) {
+              if (s.id == nextStopId &&
+                  LiveBusMapWidget.shouldRenderStopMarker(s)) {
                 nextStop = s;
                 break;
               }
@@ -461,10 +407,11 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
                 final l2 = dLat * dLat + dLng * dLng;
                 if (l2 == 0) continue;
 
-                final t = (((nextLoc.latitude - v.latitude) * dLat +
-                            (nextLoc.longitude - v.longitude) * dLng) /
-                        l2)
-                    .clamp(0.0, 1.0);
+                final t =
+                    (((nextLoc.latitude - v.latitude) * dLat +
+                                (nextLoc.longitude - v.longitude) * dLng) /
+                            l2)
+                        .clamp(0.0, 1.0);
 
                 final proj = LatLng(
                   v.latitude + t * dLat,
@@ -572,21 +519,17 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         );
       }
     } else {
-      // Fallback: If no road geometry yet (e.g. QA temp stops preview)
+      // Fallback only uses verified canonical stop coordinates.
       final eligibleStops = widget.routeStops
-          .where((s) => s.hasCoordinates && (!s.isTemporaryQa || isQaPreview))
+          .where(LiveBusMapWidget.shouldRenderStopMarker)
           .toList();
 
       if (eligibleStops.length >= 2) {
-        int splitIdx = -1;
-        if (currentStopOrder != null) {
-          for (int i = 0; i < eligibleStops.length; i++) {
-            if (eligibleStops[i].stopOrder >= currentStopOrder) {
-              splitIdx = i;
-              break;
-            }
-          }
-        }
+        final splitIdx = eligibleStops.indexWhere(
+          (s) =>
+              s.semanticState == TrackingStopSemanticState.active ||
+              s.semanticState == TrackingStopSemanticState.next,
+        );
 
         if (splitIdx > 0) {
           final passedPoints = eligibleStops
@@ -712,14 +655,13 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
           now.difference(_lastCameraMoveTime!).inMilliseconds >= 800) {
         _lastCameraMoveTime = now;
         _isProgrammaticCameraMove = true;
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLng(newPos),
-        );
+        _mapController!.animateCamera(CameraUpdate.newLatLng(newPos));
       }
     }
   }
 
   void _animateToPosition(BusTelemetry newTel) {
+    if (!newTel.hasValidCoordinates) return;
     final newPos = LatLng(newTel.latitude, newTel.longitude);
 
     if (_displayedPosition == null) {
@@ -738,7 +680,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     }
 
     final fromPos = _displayedPosition!;
-    final prevTime = _lastTelemetryRecordedAt ??
+    final prevTime =
+        _lastTelemetryRecordedAt ??
         newTel.gpsRecordedAt.subtract(const Duration(seconds: 10));
     final elapsed = newTel.gpsRecordedAt.difference(prevTime).abs();
     _lastTelemetryRecordedAt = newTel.gpsRecordedAt;
@@ -779,15 +722,21 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     final statusChanged = widget.status != oldWidget.status;
     final stopsChanged = widget.routeStops != oldWidget.routeStops;
     final selectedChanged = widget.selectedStop != oldWidget.selectedStop;
-    final compactChanged = widget.isCompactPreview != oldWidget.isCompactPreview;
-    final stopIdChanged = oldTel?.currentStopId != newTel?.currentStopId ||
+    final compactChanged =
+        widget.isCompactPreview != oldWidget.isCompactPreview;
+    final stopIdChanged =
+        oldTel?.currentStopId != newTel?.currentStopId ||
         oldTel?.nextStopId != newTel?.nextStopId;
 
     if (statusChanged) {
       _resolveIcons();
     }
 
-    if (statusChanged || stopsChanged || selectedChanged || compactChanged || stopIdChanged) {
+    if (statusChanged ||
+        stopsChanged ||
+        selectedChanged ||
+        compactChanged ||
+        stopIdChanged) {
       _rebuildStopMarkers();
       _updateBusMarker(_displayedPosition);
     }
@@ -803,8 +752,9 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         !_initialCameraFitted &&
         _isMapReady &&
         widget.routeStops.isNotEmpty) {
-      final stopsWithCoords =
-          widget.routeStops.where((s) => s.hasCoordinates).toList();
+      final stopsWithCoords = widget.routeStops
+          .where(LiveBusMapWidget.shouldRenderStopMarker)
+          .toList();
       if (stopsWithCoords.length > 5) {
         _initialCameraFitted = true;
         _fitCameraToStops(stopsWithCoords);
@@ -836,6 +786,13 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       if (s.longitude! > maxLng) maxLng = s.longitude!;
     }
 
+    if (minLat == maxLat && minLng == maxLng) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(minLat, minLng), 14.6),
+      );
+      return;
+    }
+
     _mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
@@ -849,7 +806,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isQaPreview = widget.status == LiveTrackingStatus.qaPreview ||
+    final isQaPreview =
+        widget.status == LiveTrackingStatus.qaPreview ||
         widget.telemetry?.source == 'qa';
     final locale = Localizations.localeOf(context).languageCode;
 
@@ -858,9 +816,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       child: Stack(
         children: [
           // Neutral skeleton background behind map during initial load (#F1F3F5)
-          Container(
-            color: const Color(0xFFF1F3F5),
-          ),
+          Container(color: const Color(0xFFF1F3F5)),
 
           // Native GoogleMap Widget wrapped in Listener for touch gesture detection
           Listener(
@@ -868,60 +824,68 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
             onPointerDown: (_) => _isPointerDown = true,
             onPointerUp: (_) => _isPointerDown = false,
             onPointerCancel: (_) => _isPointerDown = false,
-            child: GoogleMap(
-              initialCameraPosition: _initialCameraPosition,
-              style: _mapStyleJson,
-              markers: _combinedMarkers,
-              polylines: _cachedPolylines,
-              myLocationEnabled: false,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              compassEnabled: false,
-              mapToolbarEnabled: false,
-              rotateGesturesEnabled: false, // Upright transit map orientation
-              scrollGesturesEnabled: true,
-              zoomGesturesEnabled: true,
-              tiltGesturesEnabled: false,
-              padding: EdgeInsets.only(
-                bottom: widget.isCompactPreview ? 0 : 36, // Ensure Google attribution visibility
-              ),
-              onMapCreated: (controller) {
-                _mapController = controller;
-                setState(() => _isMapReady = true);
-                if (widget.routeStops.isNotEmpty && !widget.isCompactPreview) {
-                  final stopsWithCoords =
-                      widget.routeStops.where((s) => s.hasCoordinates).toList();
-                  if (stopsWithCoords.length > 5) {
-                    _fitCameraToStops(stopsWithCoords);
-                  }
-                }
-              },
-              onCameraMoveStarted: () {
-                _isCameraMoving = true;
-                if (!_isProgrammaticCameraMove) {
-                  // User-initiated movement: pause follow bus
-                  widget.onPanStart?.call();
-                }
-              },
-              onCameraMove: (position) {
-                // Critical Rule A:
-                // DO NOT call setState continuously
-                // DO NOT rebuild markers
-                // DO NOT rebuild polylines
-                // DO NOT generate icons
-                // DO NOT perform expensive calculations
-              },
-              onCameraIdle: () {
-                _isCameraMoving = false;
-                _isProgrammaticCameraMove = false;
-                // Critical Rule C: Perform non-critical UI updates only after gesture ends
-                if (_pendingPolylineRebuild) {
-                  _pendingPolylineRebuild = false;
-                  _rebuildPolylines();
-                  if (mounted) setState(() {});
-                } else if (mounted) {
-                  setState(() {});
-                }
+            child: Builder(
+              builder: (context) {
+                return GoogleMap(
+                  initialCameraPosition: _initialCameraPosition,
+                  markers: _combinedMarkers,
+                  polylines: _cachedPolylines,
+                  myLocationEnabled: false,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  compassEnabled: false,
+                  mapToolbarEnabled: false,
+                  rotateGesturesEnabled:
+                      false, // Upright transit map orientation
+                  scrollGesturesEnabled: true,
+                  zoomGesturesEnabled: true,
+                  tiltGesturesEnabled: false,
+                  padding: EdgeInsets.only(
+                    bottom: widget.isCompactPreview
+                        ? 0
+                        : 36, // Ensure Google attribution visibility
+                  ),
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                    setState(() => _isMapReady = true);
+                    if (widget.routeStops.isNotEmpty &&
+                        !widget.isCompactPreview) {
+                      final stopsWithCoords = widget.routeStops
+                          .where(LiveBusMapWidget.shouldRenderStopMarker)
+                          .toList();
+                      if (stopsWithCoords.length > 5) {
+                        _fitCameraToStops(stopsWithCoords);
+                      }
+                    }
+                  },
+                  onCameraMoveStarted: () {
+                    _isCameraMoving = true;
+                    if (!_isProgrammaticCameraMove) {
+                      // User-initiated movement: pause follow bus
+                      widget.onPanStart?.call();
+                    }
+                  },
+                  onCameraMove: (position) {
+                    // Critical Rule A:
+                    // DO NOT call setState continuously
+                    // DO NOT rebuild markers
+                    // DO NOT rebuild polylines
+                    // DO NOT generate icons
+                    // DO NOT perform expensive calculations
+                  },
+                  onCameraIdle: () {
+                    _isCameraMoving = false;
+                    _isProgrammaticCameraMove = false;
+                    // Critical Rule C: Perform non-critical UI updates only after gesture ends
+                    if (_pendingPolylineRebuild) {
+                      _pendingPolylineRebuild = false;
+                      _rebuildPolylines();
+                      if (mounted) setState(() {});
+                    } else if (mounted) {
+                      setState(() {});
+                    }
+                  },
+                );
               },
             ),
           ),
@@ -932,7 +896,10 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
               top: 86,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4F46E5).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(12),
@@ -947,10 +914,16 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.science_rounded, color: Colors.white, size: 13),
+                    const Icon(
+                      Icons.science_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    ),
                     const SizedBox(width: 5),
                     Text(
-                      locale == 'ar' ? 'معاينة تجريبية للمسار' : 'QA Route Preview',
+                      locale == 'ar'
+                          ? 'معاينة تجريبية للمسار'
+                          : 'QA Route Preview',
                       style: AppTextStyles.caption.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

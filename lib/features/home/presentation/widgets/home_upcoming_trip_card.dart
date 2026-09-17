@@ -1,707 +1,582 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../app/router/route_paths.dart';
+import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/amomy_bus_icon.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../booking/presentation/widgets/app_qr_ticket_widget.dart';
+import '../../../tracking/presentation/cubit/tracking_cubit.dart';
+import '../../../tracking/presentation/cubit/tracking_state.dart';
 import '../../domain/entities/home_summary.dart';
 
+/// The enriched mini travel ticket view of the upcoming booking on Home.
 class HomeUpcomingTripCard extends StatelessWidget {
   final PassengerUpcomingTrip? upcomingTrip;
+  final bool isBookingAvailable;
+  final bool hasLoadedAvailability;
+  final VoidCallback? onCancelBooking;
 
   const HomeUpcomingTripCard({
     super.key,
     this.upcomingTrip,
+    this.isBookingAvailable = true,
+    this.hasLoadedAvailability = false,
+    this.onCancelBooking,
   });
 
-  void _showTicketModal(BuildContext context, PassengerUpcomingTrip trip) {
+  bool _isCancellationAvailable(
+    PassengerUpcomingTrip trip,
+    TrackingState? trackingState,
+  ) {
+    final isTrackedTrip =
+        trackingState?.summary?.activeTripId == trip.tripId ||
+        trackingState?.trackedTripId == trip.tripId;
+    return !(isTrackedTrip && (trackingState?.isLive ?? false));
+  }
+
+  void _showTicket(BuildContext context, PassengerUpcomingTrip trip) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).languageCode;
+    final isArabic = Localizations.localeOf(
+      context,
+    ).languageCode.startsWith('ar');
 
     showModalBottomSheet<void>(
       context: context,
-      useRootNavigator: false,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      showDragHandle: false,
-      elevation: 0,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (modalContext) {
-        return AmomySheetContainer(
-          hasBottomNav: true,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Title & Subtitle
-                Text(
-                  l10n.qrTicketInstruction,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                AppSpacing.gapH4,
-                Text(
-                  '${trip.originName(locale)} → ${trip.destinationName(locale)}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                AppSpacing.gapH16,
-
-                // QR Code
-                AppQrTicketWidget(
-                  data: trip.qrToken,
-                  size: 180,
-                ),
-                AppSpacing.gapH16,
-
-                // Ticket meta row
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _MetaCell(
-                        icon: AppIcons.calendar,
-                        label: l10n.tripDetailsDate,
-                        value:
-                            "${trip.serviceDate.year}-${trip.serviceDate.month.toString().padLeft(2, '0')}-${trip.serviceDate.day.toString().padLeft(2, '0')}",
-                      ),
-                      _MetaCell(
-                        icon: AppIcons.clock,
-                        label: l10n.tripDetailsTime,
-                        value: trip.departureTime,
-                      ),
-                      _MetaCell(
-                        icon: AppIcons.seat,
-                        label: l10n.tripDetailsSeat,
-                        value: trip.seatNumber,
-                      ),
-                    ],
-                  ),
-                ),
-                AppSpacing.gapH16,
-
-                // Close Button
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    label: l10n.dismiss,
-                    variant: AppButtonVariant.outline,
-                    onPressed: () => Navigator.of(modalContext).pop(),
-                  ),
-                ),
-              ],
+      builder: (sheetContext) => AmomySheetContainer(
+        hasBottomNav: true,
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.qrTicketInstruction,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        );
-      },
+            AppSpacing.gapH16,
+            AppQrTicketWidget(data: trip.qrToken, size: 180),
+            AppSpacing.gapH16,
+            Text(
+              AppTimeFormatter.formatUpcomingTrip(trip, isArabic: isArabic),
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            AppSpacing.gapH16,
+            AppButton(
+              label: l10n.dismiss,
+              variant: AppButtonVariant.outline,
+              isFullWidth: true,
+              onPressed: () => Navigator.of(sheetContext).pop(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).languageCode;
     final trip = upcomingTrip;
+    TrackingState? trackingState;
+    try {
+      trackingState = context.watch<TrackingCubit>().state;
+    } catch (_) {
+      trackingState = null;
+    }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Section Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.upcomingTrip,
-              style: AppTextStyles.titleMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            InkWell(
-              onTap: () => context.go('/trips'),
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                child: Text(
-                  l10n.navMyTrips,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        Text(
+          l10n.upcomingTrip,
+          style: AppTextStyles.titleMedium.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         AppSpacing.gapH12,
-
-        // Content: Digital Ticket Card or Ticket Stub Empty State
-        if (trip != null)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDarker.withValues(alpha: 0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 1. Ticket Header: Status, Direction, and Supporting Bus Detail
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: const BoxDecoration(
-                      color: AppColors.surfaceSoft,
-                      border: Border(
-                        bottom: BorderSide(color: AppColors.borderSubtle),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Status Badge
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.success,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            AppSpacing.gapW6,
-                            Text(
-                              l10n.bookingStatusConfirmed,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Direction Tag + Supporting Bus Icon Detail
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const AmomyBusIcon(
-                              size: 15,
-                              color: AppColors.primary,
-                            ),
-                            AppSpacing.gapW6,
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                trip.direction == 'outbound'
-                                    ? l10n.directionOutbound
-                                    : l10n.directionReturn,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 2. Ticket Body: Departure Time Hero + Route Timeline (Boarding Stop)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Route timeline with boarding stop and destination
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Origin / Boarding Stop
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 3),
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  AppSpacing.gapW8,
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          trip.stopNameAr != null &&
-                                                  trip.stopNameAr!.isNotEmpty
-                                              ? trip.stopNameAr!
-                                              : trip.originName(locale),
-                                          style: const TextStyle(
-                                            fontSize: 14.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (trip.stopNameAr != null &&
-                                            trip.stopNameAr!.isNotEmpty)
-                                          Text(
-                                            trip.originName(locale),
-                                            style: const TextStyle(
-                                              fontSize: 11.5,
-                                              color: AppColors.textSecondary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // Connecting Timeline Line
-                              Padding(
-                                padding:
-                                    const EdgeInsetsDirectional.only(start: 3.5),
-                                child: Container(
-                                  height: 16,
-                                  width: 1.5,
-                                  color: AppColors.border,
-                                ),
-                              ),
-
-                              // Destination Stop
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 3),
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.accentYellow,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  AppSpacing.gapW8,
-                                  Expanded(
-                                    child: Text(
-                                      trip.destinationName(locale),
-                                      style: const TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        AppSpacing.gapW14,
-
-                        // Hero Departure Time Display
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.15),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                trip.departureTime,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.primary,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              Text(
-                                l10n.tripDetailsTime,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // 3. Ticket Perforated Divider with Edge Cut-out Notches
-                  const _TicketPerforatedDivider(),
-
-                  // 4. Ticket Footer: Compact Chips (Date, Seat, Fare) & View Ticket Action
-                  Container(
-                    color: AppColors.surfaceSoft,
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      children: [
-                        // Compact Chips Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _TicketMetaChip(
-                                icon: AppIcons.calendar,
-                                label:
-                                    "${trip.serviceDate.year}-${trip.serviceDate.month.toString().padLeft(2, '0')}-${trip.serviceDate.day.toString().padLeft(2, '0')}",
-                              ),
-                            ),
-                            AppSpacing.gapW8,
-                            Expanded(
-                              child: _TicketMetaChip(
-                                icon: AppIcons.seat,
-                                label: '${l10n.tripDetailsSeat} ${trip.seatNumber}',
-                              ),
-                            ),
-                            AppSpacing.gapW8,
-                            Expanded(
-                              child: _TicketMetaChip(
-                                icon: AppIcons.ticket,
-                                label: '${trip.farePoints} ${l10n.pointsUnit}',
-                              ),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.gapH12,
-
-                        // View Ticket (QR Pass) CTA Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 42,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showTicketModal(context, trip),
-                            icon: const Icon(AppIcons.qrCode,
-                                size: 16, color: AppColors.primary),
-                            label: Text(
-                              l10n.viewTicket,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppColors.primary,
-                              elevation: 0,
-                              side: const BorderSide(
-                                color: AppColors.border,
-                                width: 1,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        if (trip == null)
+          _EmptyUpcomingTrip(
+            isBookingAvailable: isBookingAvailable,
+            hasLoadedAvailability: hasLoadedAvailability,
           )
         else
-          // Ticket-inspired clean empty stub
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.border,
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: AmomyBusIcon(
-                      size: 20,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                AppSpacing.gapW14,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.noUpcomingTrip,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        l10n.bookRideSubtitle,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                AppSpacing.gapW10,
-                ElevatedButton(
-                  onPressed: () => context.push('/book-trip'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    l10n.bookTripCta,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          _BookedUpcomingTrip(
+            trip: trip,
+            canCancel: _isCancellationAvailable(trip, trackingState),
+            onShowQr: () => _showTicket(context, trip),
+            onCancel: onCancelBooking ?? () => context.go(RoutePaths.trips),
           ),
       ],
     );
   }
 }
 
-/// Subtle perforated divider with edge circular cut-out notches for ticket effect.
-class _TicketPerforatedDivider extends StatelessWidget {
-  const _TicketPerforatedDivider();
+/// Centered vertical composition with illustration above text and full CTA button.
+class _EmptyUpcomingTrip extends StatelessWidget {
+  final bool isBookingAvailable;
+  final bool hasLoadedAvailability;
+
+  const _EmptyUpcomingTrip({
+    required this.isBookingAvailable,
+    required this.hasLoadedAvailability,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 16,
-      child: Stack(
-        alignment: Alignment.center,
+    final l10n = context.l10n;
+    final canBook = !hasLoadedAvailability || isBookingAvailable;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Color(0x040F172A),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Dashed perforation line
-          Positioned(
-            left: 14,
-            right: 14,
+          Image.asset(
+            AppAssets.emptyUpcomingTrip,
+            width: 82,
+            height: 82,
+            fit: BoxFit.contain,
+          ),
+          AppSpacing.gapH14,
+          Text(
+            l10n.noUpcomingTrip,
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          AppSpacing.gapH6,
+          Text(
+            l10n.noUpcomingTripSubtitle,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (canBook) ...[
+            AppSpacing.gapH18,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 148),
+              child: AppButton(
+                key: const Key('home-upcoming-book-now'),
+                label: l10n.bookNow,
+                height: 46,
+                padding: const EdgeInsets.symmetric(horizontal: 26),
+                onPressed: () => context.push(RoutePaths.bookTrip),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A mini travel ticket with enriched information hierarchy:
+/// Confirmed status, seat badge, localized day/date, direction, large departure hero,
+/// boarding stop, fare points, ticket perforation, and balanced actions.
+class _BookedUpcomingTrip extends StatelessWidget {
+  final PassengerUpcomingTrip trip;
+  final bool canCancel;
+  final VoidCallback onShowQr;
+  final VoidCallback onCancel;
+
+  const _BookedUpcomingTrip({
+    required this.trip,
+    required this.canCancel,
+    required this.onShowQr,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(
+      context,
+    ).languageCode.startsWith('ar');
+    final l10n = context.l10n;
+    final localeCode = isArabic ? 'ar' : 'en';
+
+    // Localized date (e.g. Thu, 17 Sep / الخميس، 17 سبتمبر)
+    final formattedDate = DateFormat(
+      'EEE, d MMM',
+      localeCode,
+    ).format(trip.departureAt);
+
+    // Direction label
+    final directionLabel = trip.direction.toLowerCase() == 'outbound'
+        ? l10n.directionOutbound
+        : l10n.directionReturn;
+
+    // Boarding stop display name (if available)
+    final boardingStop = trip.boardingStopDisplayName;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Color(0x040F172A),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. TOP ROW: Confirmed Status + Seat Number Badge
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              children: [
+                // Confirmed Status Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.successLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      AppSpacing.gapW6,
+                      Text(
+                        l10n.bookingStatusConfirmed,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: const Color(0xFF027A48),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // Assigned Seat Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.seat,
+                        size: 13,
+                        color: AppColors.primary,
+                      ),
+                      AppSpacing.gapW6,
+                      Text(
+                        l10n.seatNumberLabel(trip.seatNumber),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. SECONDARY META: Localized Day/Date • Direction
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Text(
+              '$formattedDate • $directionLabel',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.start,
+            ),
+          ),
+
+          AppSpacing.gapH8,
+
+          // 3. PRIMARY HERO: Large Departure Time
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Text(
+              AppTimeFormatter.formatUpcomingTrip(trip, isArabic: isArabic),
+              style: AppTextStyles.headlineLarge.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w900,
+                fontSize: 32,
+                letterSpacing: -0.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          AppSpacing.gapH10,
+
+          // 4. SUPPORTING INFO: Boarding Stop (if available) & Fare Points Paid
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                if (boardingStop != null && boardingStop.isNotEmpty) ...[
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          AppIcons.location,
+                          size: 13,
+                          color: AppColors.primary,
+                        ),
+                        AppSpacing.gapW4,
+                        Flexible(
+                          child: Text(
+                            boardingStop,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const Spacer(),
+                ],
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF8E8),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFF9E4B7)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.ticket,
+                        size: 12,
+                        color: Color(0xFFD97706),
+                      ),
+                      AppSpacing.gapW4,
+                      Text(
+                        '${trip.farePoints} ${l10n.pointsUnit}',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: const Color(0xFFB54708),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          AppSpacing.gapH14,
+
+          // 5. Ticket Perforation Line with edge notches
+          const _TicketPerforationLine(),
+
+          // 6. ACTION ROW: [ QR ] & [ Cancel ]
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    label: l10n.qr,
+                    icon: const Icon(
+                      AppIcons.qrCode,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    height: 46,
+                    isFullWidth: true,
+                    onPressed: onShowQr,
+                  ),
+                ),
+                if (canCancel) ...[
+                  AppSpacing.gapW12,
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onCancel,
+                      icon: const Icon(AppIcons.close, size: 16),
+                      label: Text(
+                        l10n.cancel,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        backgroundColor: const Color(0xFFFEF3F2),
+                        side: const BorderSide(
+                          color: Color(0xFFFECDCA),
+                          width: 1.2,
+                        ),
+                        minimumSize: const Size.fromHeight(46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A subtle, authentic transit perforation line dividing the boarding pass header from actions.
+class _TicketPerforationLine extends StatelessWidget {
+  const _TicketPerforationLine();
+
+  @override
+  Widget build(BuildContext context) {
+    final notchColor = Theme.of(context).scaffoldBackgroundColor;
+
+    return Row(
+      children: [
+        // Left notch
+        Container(
+          width: 8,
+          height: 16,
+          decoration: BoxDecoration(
+            color: notchColor,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(8),
+              bottomRight: Radius.circular(8),
+            ),
+            border: const Border(
+              top: BorderSide(color: Color(0xFFE2E8F0)),
+              right: BorderSide(color: Color(0xFFE2E8F0)),
+              bottom: BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+          ),
+        ),
+        // Dashed line
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                const dashWidth = 4.0;
-                const dashSpace = 3.0;
-                final count = (constraints.maxWidth / (dashWidth + dashSpace)).floor();
+                const dashWidth = 5.0;
+                const dashSpace = 4.0;
+                final dashCount =
+                    (constraints.maxWidth / (dashWidth + dashSpace)).floor();
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(count, (_) {
-                    return Container(
+                  children: List.generate(
+                    dashCount,
+                    (_) => const SizedBox(
                       width: dashWidth,
                       height: 1.2,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(0.6),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: Color(0xFFE2E8F0)),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                 );
               },
             ),
           ),
-
-          // Left circular notch cut-out
-          Positioned(
-            left: -8,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-            ),
-          ),
-
-          // Right circular notch cut-out
-          Positioned(
-            right: -8,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Compact digital ticket meta chip
-class _TicketMetaChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _TicketMetaChip({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: AppColors.primary),
-          AppSpacing.gapW4,
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaCell extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _MetaCell({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 12, color: AppColors.textSecondary),
-            AppSpacing.gapW4,
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10.5,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
         ),
-        AppSpacing.gapH2,
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        // Right notch
+        Container(
+          width: 8,
+          height: 16,
+          decoration: BoxDecoration(
+            color: notchColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(8),
+              bottomLeft: Radius.circular(8),
+            ),
+            border: const Border(
+              top: BorderSide(color: Color(0xFFE2E8F0)),
+              left: BorderSide(color: Color(0xFFE2E8F0)),
+              bottom: BorderSide(color: Color(0xFFE2E8F0)),
+            ),
           ),
         ),
       ],

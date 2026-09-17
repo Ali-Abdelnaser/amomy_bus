@@ -14,6 +14,7 @@ class TripOptionModel extends TripOption {
     required super.farePoints,
     required super.availableSeatsCount,
     required super.status,
+    super.isBookable,
   });
 
   factory TripOptionModel.fromJson(Map<String, dynamic> json) {
@@ -23,12 +24,14 @@ class TripOptionModel extends TripOption {
     } else if (json['service_date'] != null && json['departure_time'] != null) {
       final sDate = json['service_date'] as String;
       final dTime = (json['departure_time'] as String).padLeft(5, '0');
-      departureDateTime = DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
+      departureDateTime =
+          DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
     } else {
       departureDateTime = DateTime.now();
     }
 
-    final availableSeats = json['available_seats'] ?? json['available_seats_count'] ?? 0;
+    final availableSeats =
+        json['available_seats'] ?? json['available_seats_count'] ?? 0;
     final farePts = json['fare_points'] ?? 0;
 
     String statusStr = 'scheduled';
@@ -37,11 +40,21 @@ class TripOptionModel extends TripOption {
     } else if (json['is_active'] == false) {
       statusStr = 'cancelled';
     }
+    final isClosed =
+        statusStr == 'closed' ||
+        statusStr == 'departed' ||
+        statusStr == 'cancelled';
+    final inferredBookable = !isClosed && (availableSeats as num).toInt() > 0;
+    final isBookable = json['is_bookable'] is bool
+        ? json['is_bookable'] as bool
+        : inferredBookable;
 
     return TripOptionModel(
       tripId: (json['trip_id'] ?? json['id'] ?? '') as String,
       routeId: (json['route_id'] ?? '') as String,
-      direction: BookingDirection.fromString(json['direction'] as String? ?? 'outbound'),
+      direction: BookingDirection.fromString(
+        json['direction'] as String? ?? 'outbound',
+      ),
       originNameAr: json['origin_name_ar'] as String? ?? '',
       originNameEn: json['origin_name_en'] as String? ?? '',
       destinationNameAr: json['destination_name_ar'] as String? ?? '',
@@ -51,6 +64,7 @@ class TripOptionModel extends TripOption {
       farePoints: (farePts as num).toDouble(),
       availableSeatsCount: (availableSeats as num).toInt(),
       status: statusStr,
+      isBookable: isBookable,
     );
   }
 }
@@ -85,8 +99,9 @@ class TripSeatModel extends TripSeat {
         : null;
 
     final rawExpires = json['held_expires_at'] as String?;
-    final DateTime? heldExpiresAt =
-        rawExpires != null ? DateTime.tryParse(rawExpires) : null;
+    final DateTime? heldExpiresAt = rawExpires != null
+        ? DateTime.tryParse(rawExpires)
+        : null;
 
     return TripSeatModel(
       seatId: json['seat_id'] as String,
@@ -116,7 +131,8 @@ class RouteStopModel extends RouteStop {
   });
 
   factory RouteStopModel.fromJson(Map<String, dynamic> json) {
-    final routeStopId = json['route_stop_id'] ?? json['id'] ?? json['stop_id'] ?? '';
+    final routeStopId =
+        json['route_stop_id'] ?? json['id'] ?? json['stop_id'] ?? '';
     final stopId = json['stop_id'] ?? json['route_stop_id'] ?? json['id'] ?? '';
     final fareZoneId = json['fare_zone_id'] ?? '';
     final farePoints = json['fare_points'] ?? 0;
@@ -160,8 +176,8 @@ class BookingHoldModel extends BookingHold {
     final serverTime = json['server_time'] != null
         ? DateTime.parse(json['server_time'] as String)
         : (json['server_now'] != null
-            ? DateTime.parse(json['server_now'] as String)
-            : DateTime.now());
+              ? DateTime.parse(json['server_now'] as String)
+              : DateTime.now());
     final remainingSecs = json['remaining_seconds'] != null
         ? (json['remaining_seconds'] as num).toInt()
         : null;
@@ -178,7 +194,9 @@ class BookingHoldModel extends BookingHold {
       routeStopId: json['route_stop_id'] as String?,
       destinationRouteStopId: json['destination_route_stop_id'] as String?,
       stopName: (json['stop_name'] ?? json['stop_name_ar']) as String?,
-      destinationStopName: (json['destination_stop_name'] ?? json['destination_stop_name_ar']) as String?,
+      destinationStopName:
+          (json['destination_stop_name'] ?? json['destination_stop_name_ar'])
+              as String?,
       locality: json['locality'] as String?,
       fareZoneId: json['fare_zone_id'] as String?,
     );
@@ -214,7 +232,8 @@ class PassengerBookingModel extends PassengerBooking {
     } else if (json['service_date'] != null && json['departure_time'] != null) {
       final sDate = json['service_date'] as String;
       final dTime = (json['departure_time'] as String).padLeft(5, '0');
-      departureDateTime = DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
+      departureDateTime =
+          DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
     } else {
       departureDateTime = DateTime.now();
     }
@@ -222,7 +241,9 @@ class PassengerBookingModel extends PassengerBooking {
     return PassengerBookingModel(
       bookingId: (json['booking_id'] ?? json['id'] ?? '') as String,
       tripId: (json['trip_id'] ?? '') as String,
-      direction: BookingDirection.fromString(json['direction'] as String? ?? 'outbound'),
+      direction: BookingDirection.fromString(
+        json['direction'] as String? ?? 'outbound',
+      ),
       originNameAr: json['origin_name_ar'] as String? ?? '',
       originNameEn: json['origin_name_en'] as String? ?? '',
       destinationNameAr: json['destination_name_ar'] as String? ?? '',
@@ -275,7 +296,9 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
     return PassengerTodayTripModel(
       tripId: (json['trip_id'] ?? json['id'] ?? '') as String,
       routeId: (json['route_id'] ?? '') as String,
-      direction: BookingDirection.fromString(json['direction'] as String? ?? 'outbound'),
+      direction: BookingDirection.fromString(
+        json['direction'] as String? ?? 'outbound',
+      ),
       serviceDate: json['service_date'] != null
           ? DateTime.parse(json['service_date'] as String)
           : DateTime.now(),
@@ -343,4 +366,3 @@ class PassengerTripPreferenceModel extends PassengerTripPreference {
     );
   }
 }
-

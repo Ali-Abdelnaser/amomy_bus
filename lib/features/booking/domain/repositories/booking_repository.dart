@@ -12,9 +12,7 @@ abstract class BookingRepository {
     String? routeStopId,
   });
 
-  ResultFuture<List<TripSeat>> getTripSeatMap({
-    required String tripId,
-  });
+  ResultFuture<List<TripSeat>> getTripSeatMap({required String tripId});
 
   ResultFuture<BookingHold> createBookingHold({
     required String tripId,
@@ -23,13 +21,9 @@ abstract class BookingRepository {
     String? destinationRouteStopId,
   });
 
-  ResultFuture<void> releaseBookingHold({
-    required String holdId,
-  });
+  ResultFuture<void> releaseBookingHold({required String holdId});
 
-  ResultFuture<PassengerBooking> confirmBooking({
-    required String holdId,
-  });
+  ResultFuture<PassengerBooking> confirmBooking({required String holdId});
 
   ResultFuture<List<PassengerBooking>> getPassengerBookings();
 
@@ -53,4 +47,6 @@ abstract class BookingRepository {
   });
 
   Stream<void> subscribeToTripSeatUpdates(String tripId);
+
+  Stream<void> subscribeToPassengerBookingUpdates();
 }

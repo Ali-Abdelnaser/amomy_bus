@@ -58,15 +58,17 @@ dependencies:
   phosphor_icons: ^3.0.1
   flutter_animate: ^4.5.2
   google_sign_in: ^7.2.0
-  device_preview: ^1.3.1
+  flutter_native_splash: ^2.4.8
   lucide_icons_flutter: ^3.1.19
   image_picker: ^1.1.2
   qr_flutter: ^4.1.0
+  flutter_svg: ^2.2.3
   google_fonts: ^6.2.1
   audioplayers: ^6.8.1
   flutter_map: ^8.1.0
   latlong2: ^0.9.1
   google_maps_flutter: ^2.18.0
+  timezone: ^0.10.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -81,7 +83,6 @@ dev_dependencies:
   freezed: ^4.0.0-dev.3
   json_serializable: ^6.14.1
   injectable_generator: ^3.1.3
-  flutter_native_splash: ^2.4.8
   flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
@@ -103,10 +104,10 @@ flutter:
     - assets/illustrations/states/
     - assets/illustrations/booking/
     - assets/booking/
+    - assets/images/
     - assets/illustrations/trips/
     - assets/audio/
     - assets/illustrations/tracking/
-    - assets/map/
     - assets/logo_transperunt.png
     - assets/logo_WhiteBg.png
     - assets/splash.png
@@ -115,11 +116,13 @@ flutter:
 
 flutter_native_splash:
   color: "#FFFFFF"
+  color_dark: "#FFFFFF"
   image: assets/splash.png
   android: true
   ios: true
   web: false
   fullscreen: true
+  ios_content_mode: scaleAspectFit
   android_12:
     color: "#FFFFFF"
     image: assets/splash.png

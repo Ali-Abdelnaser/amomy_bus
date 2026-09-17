@@ -193,12 +193,9 @@ void main() {
     expect(find.text('Female'), findsOneWidget);
     expect(find.text('Save & Continue'), findsOneWidget);
 
-    // Tapping back button in initial completion mode triggers SignOutRequested
-    final backButton = find.byType(IconButton).first;
-    await tester.tap(backButton);
-    await tester.pumpAndSettle();
-
-    expect(fakeRepo.signOutCalled, isTrue);
+    // In initial completion mode, back button must NOT be rendered (cannot go back)
+    expect(find.byType(IconButton), findsNothing);
+    expect(find.byIcon(Icons.arrow_back_ios_new), findsNothing);
   });
 
   testWidgets('CompleteProfilePage in edit mode renders Personal Information header and does not sign out on back',

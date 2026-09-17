@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -35,6 +36,7 @@ class QrTicketModal extends StatelessWidget {
   }) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: false,
       useRootNavigator: false,
       isScrollControlled: true,
       showDragHandle: false,
@@ -102,10 +104,7 @@ class QrTicketModal extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  AppQrTicketWidget(
-                    data: qrToken,
-                    size: 180,
-                  ),
+                  AppQrTicketWidget(data: qrToken, size: 180),
                   AppSpacing.gapH12,
                   Text(
                     isAr
@@ -130,7 +129,10 @@ class QrTicketModal extends StatelessWidget {
                 _TicketDetailItem(
                   icon: AppIcons.clock,
                   label: isAr ? 'الموعد' : 'Time',
-                  value: departureTime,
+                  value: AppTimeFormatter.formatDepartureTime(
+                    departureTime: departureTime,
+                    isArabic: isAr,
+                  ),
                 ),
                 _TicketDetailItem(
                   icon: AppIcons.seat,
@@ -169,7 +171,9 @@ class QrTicketModal extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(
-                      isAr ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
+                      isAr
+                          ? Icons.arrow_back_rounded
+                          : Icons.arrow_forward_rounded,
                       size: 16,
                       color: AppColors.primary,
                     ),

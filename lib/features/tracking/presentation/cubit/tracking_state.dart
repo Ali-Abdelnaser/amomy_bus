@@ -7,12 +7,7 @@ import '../../domain/models/stop_progression.dart';
 import '../../domain/models/tracking_summary.dart';
 import '../../domain/services/stop_eta_engine.dart';
 
-enum TrackingUiStatus {
-  initial,
-  loading,
-  loaded,
-  error,
-}
+enum TrackingUiStatus { initial, loading, loaded, error }
 
 class TrackingState extends Equatable {
   final TrackingUiStatus uiStatus;
@@ -27,6 +22,8 @@ class TrackingState extends Equatable {
   final String? errorMessage;
   final Map<String, StopTimingInfo> stopTimings;
   final double effectiveSpeedKmh;
+  final String? trackedTripId;
+  final bool isRefreshingSnapshot;
 
   const TrackingState({
     this.uiStatus = TrackingUiStatus.initial,
@@ -41,6 +38,8 @@ class TrackingState extends Equatable {
     this.errorMessage,
     this.stopTimings = const {},
     this.effectiveSpeedKmh = 0.0,
+    this.trackedTripId,
+    this.isRefreshingSnapshot = false,
   });
 
   bool get isLoading => uiStatus == TrackingUiStatus.loading;
@@ -51,6 +50,12 @@ class TrackingState extends Equatable {
     if (summary == null) return LiveTrackingStatus.offline;
     if (summary!.status == LiveTrackingStatus.qaPreview) {
       return LiveTrackingStatus.qaPreview;
+    }
+    if (summary!.status == LiveTrackingStatus.assignmentPending ||
+        summary!.status == LiveTrackingStatus.tripNotActive ||
+        summary!.status == LiveTrackingStatus.outsideTrackingWindow ||
+        summary!.status == LiveTrackingStatus.progressionUnavailable) {
+      return summary!.status;
     }
     if (summary!.serviceState == 'between_runs') {
       return LiveTrackingStatus.betweenRuns;
@@ -65,9 +70,19 @@ class TrackingState extends Equatable {
   }
 
   bool get isOnline => trackingStatus == LiveTrackingStatus.online;
+  bool get isLive =>
+      trackingStatus == LiveTrackingStatus.live ||
+      trackingStatus == LiveTrackingStatus.online;
   bool get isBetweenRuns => trackingStatus == LiveTrackingStatus.betweenRuns;
   bool get isStale => trackingStatus == LiveTrackingStatus.stale;
-  bool get isOffline => trackingStatus == LiveTrackingStatus.offline;
+  bool get isOffline =>
+      trackingStatus == LiveTrackingStatus.offline ||
+      trackingStatus == LiveTrackingStatus.tripNotActive ||
+      trackingStatus == LiveTrackingStatus.outsideTrackingWindow;
+  bool get isAssignmentPending =>
+      trackingStatus == LiveTrackingStatus.assignmentPending;
+  bool get isProgressionUnavailable =>
+      trackingStatus == LiveTrackingStatus.progressionUnavailable;
   bool get isQaPreview => trackingStatus == LiveTrackingStatus.qaPreview;
 
   BusStopModel? get currentStop => summary?.currentStop;
@@ -75,11 +90,15 @@ class TrackingState extends Equatable {
   String get serviceState => summary?.serviceState ?? 'offline';
   String get progressState => summary?.progressState ?? 'idle';
   bool get hasStopCoordinates => summary?.hasStopCoordinates ?? false;
-  bool get isAtStop => progressState == 'at_stop' || latestTelemetry?.progressState == 'at_stop';
+  bool get isAtStop =>
+      progressState == 'at_stop' || latestTelemetry?.progressState == 'at_stop';
 
-  StopTimingInfo? get currentStopTiming => currentStop != null ? stopTimings[currentStop!.id] : null;
-  StopTimingInfo? get nextStopTiming => nextStop != null ? stopTimings[nextStop!.id] : null;
-  StopTimingInfo? get selectedStopTiming => selectedStop != null ? stopTimings[selectedStop!.id] : null;
+  StopTimingInfo? get currentStopTiming =>
+      currentStop != null ? stopTimings[currentStop!.id] : null;
+  StopTimingInfo? get nextStopTiming =>
+      nextStop != null ? stopTimings[nextStop!.id] : null;
+  StopTimingInfo? get selectedStopTiming =>
+      selectedStop != null ? stopTimings[selectedStop!.id] : null;
 
   TrackingState copyWith({
     TrackingUiStatus? uiStatus,
@@ -95,36 +114,58 @@ class TrackingState extends Equatable {
     String? errorMessage,
     Map<String, StopTimingInfo>? stopTimings,
     double? effectiveSpeedKmh,
+    String? trackedTripId,
+    bool? isRefreshingSnapshot,
+    bool? clearTrackingSnapshot,
+    bool? clearLivePosition,
   }) {
     return TrackingState(
       uiStatus: uiStatus ?? this.uiStatus,
-      summary: summary ?? this.summary,
-      routeGeometry: routeGeometry ?? this.routeGeometry,
-      latestTelemetry: latestTelemetry ?? this.latestTelemetry,
-      progression: progression ?? this.progression,
+      summary: clearTrackingSnapshot == true ? null : (summary ?? this.summary),
+      routeGeometry: clearTrackingSnapshot == true
+          ? null
+          : (routeGeometry ?? this.routeGeometry),
+      latestTelemetry: clearTrackingSnapshot == true
+          ? null
+          : clearLivePosition == true
+          ? null
+          : (latestTelemetry ?? this.latestTelemetry),
+      progression: clearTrackingSnapshot == true
+          ? null
+          : (progression ?? this.progression),
       followBus: followBus ?? this.followBus,
-      selectedStop: clearSelectedStop == true ? null : (selectedStop ?? this.selectedStop),
-      approachAlertsEnabled: approachAlertsEnabled ?? this.approachAlertsEnabled,
-      approachAlertDispatched: approachAlertDispatched ?? this.approachAlertDispatched,
+      selectedStop: clearSelectedStop == true
+          ? null
+          : (selectedStop ?? this.selectedStop),
+      approachAlertsEnabled:
+          approachAlertsEnabled ?? this.approachAlertsEnabled,
+      approachAlertDispatched:
+          approachAlertDispatched ?? this.approachAlertDispatched,
       errorMessage: errorMessage ?? this.errorMessage,
-      stopTimings: stopTimings ?? this.stopTimings,
+      stopTimings: clearTrackingSnapshot == true
+          ? const {}
+          : (stopTimings ?? this.stopTimings),
       effectiveSpeedKmh: effectiveSpeedKmh ?? this.effectiveSpeedKmh,
+      trackedTripId: trackedTripId ?? this.trackedTripId,
+      isRefreshingSnapshot: isRefreshingSnapshot ?? this.isRefreshingSnapshot,
     );
   }
 
   @override
   List<Object?> get props => [
-        uiStatus,
-        summary,
-        routeGeometry,
-        latestTelemetry,
-        progression,
-        followBus,
-        selectedStop,
-        approachAlertsEnabled,
-        approachAlertDispatched,
-        errorMessage,
-        stopTimings,
-        effectiveSpeedKmh,
-      ];
+    uiStatus,
+    summary,
+    routeGeometry,
+    latestTelemetry,
+    progression,
+    followBus,
+    selectedStop,
+    approachAlertsEnabled,
+    approachAlertDispatched,
+    errorMessage,
+    stopTimings,
+    effectiveSpeedKmh,
+    trackedTripId,
+    isRefreshingSnapshot,
+  ];
 }

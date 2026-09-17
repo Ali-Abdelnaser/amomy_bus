@@ -5,6 +5,7 @@ import '../../../../app/di/injection.dart';
 import '../../../../core/assets/app_assets.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -23,7 +24,11 @@ class HomeUpcomingTripSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return BlocProvider(
-      create: (_) => (tripsCubit ?? (getIt.isRegistered<PassengerTripsCubit>() ? (getIt<PassengerTripsCubit>()..loadBookings()) : PassengerTripsCubit.idle())),
+      create: (_) =>
+          (tripsCubit ??
+          (getIt.isRegistered<PassengerTripsCubit>()
+              ? (getIt<PassengerTripsCubit>()..loadBookings())
+              : PassengerTripsCubit.idle())),
       child: BlocBuilder<PassengerTripsCubit, PassengerTripsState>(
         builder: (context, state) {
           final upcoming = state.nearestUpcomingTrip;
@@ -47,7 +52,10 @@ class HomeUpcomingTripSection extends StatelessWidget {
                     onTap: () => context.go('/trips'),
                     borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       child: Text(
                         l10n.navMyTrips,
                         style: AppTextStyles.labelSmall.copyWith(
@@ -80,7 +88,10 @@ class HomeUpcomingTripSection extends StatelessWidget {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.successLight,
                               borderRadius: BorderRadius.circular(6),
@@ -101,7 +112,11 @@ class HomeUpcomingTripSection extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(AppIcons.calendar, size: 14, color: AppColors.textSecondary),
+                              const Icon(
+                                AppIcons.calendar,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
                               AppSpacing.gapW4,
                               Text(
                                 "${upcoming.serviceDate.year}-${upcoming.serviceDate.month.toString().padLeft(2, '0')}-${upcoming.serviceDate.day.toString().padLeft(2, '0')}",
@@ -113,10 +128,17 @@ class HomeUpcomingTripSection extends StatelessWidget {
                           ),
                           Row(
                             children: [
-                              const Icon(AppIcons.clock, size: 14, color: AppColors.textSecondary),
+                              const Icon(
+                                AppIcons.clock,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
                               AppSpacing.gapW4,
                               Text(
-                                upcoming.departureTime,
+                                AppTimeFormatter.formatPassengerBooking(
+                                  upcoming,
+                                  locale: locale,
+                                ),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -125,7 +147,11 @@ class HomeUpcomingTripSection extends StatelessWidget {
                           ),
                           Row(
                             children: [
-                              const Icon(AppIcons.seat, size: 14, color: AppColors.textSecondary),
+                              const Icon(
+                                AppIcons.seat,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
                               AppSpacing.gapW4,
                               Text(
                                 upcoming.seatNumber,

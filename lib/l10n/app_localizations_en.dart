@@ -18,6 +18,91 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get homeFastDirect => 'FAST & DIRECT';
+
+  @override
+  String get notificationSettingsTitle => 'Notification Settings';
+
+  @override
+  String get notificationCategories => 'Notification Categories';
+
+  @override
+  String get serviceUpdatesTitle => 'Service & General Updates';
+
+  @override
+  String get serviceUpdatesDescription =>
+      'Important AMOMY service announcements.';
+
+  @override
+  String get bookingUpdatesTitle => 'Booking Updates';
+
+  @override
+  String get bookingUpdatesDescription =>
+      'Confirmation, cancellation and seat changes.';
+
+  @override
+  String get notificationsDisabledInDevice =>
+      'Notifications disabled in device settings';
+
+  @override
+  String get notificationsDisabledInDeviceDescription =>
+      'Please enable notifications in your device settings to receive trip and wallet alerts.';
+
+  @override
+  String get enableInDeviceSettings => 'Enable in Device Settings';
+
+  @override
+  String get allNotifications => 'All Notifications';
+
+  @override
+  String get allNotificationsDescription =>
+      'Master toggle for all push notifications';
+
+  @override
+  String get notificationTestLabTitle => 'Notification Test Lab';
+
+  @override
+  String get notificationTestLabLocalTitle => 'Local Test';
+
+  @override
+  String get notificationTestLabLocalSubtitle =>
+      'Tests local presentation on this device only.';
+
+  @override
+  String get notificationTestLabLocalButton => 'Local Test';
+
+  @override
+  String get notificationTestLabRemoteTitle => 'Remote FCM Test';
+
+  @override
+  String get notificationTestLabRemoteSubtitle =>
+      'Requests a real push through FCM and APNs.';
+
+  @override
+  String get notificationTestLabRemoteButton => 'Remote Push Test';
+
+  @override
+  String get notificationTestLabLocalShown =>
+      'Local notification shown on this device.';
+
+  @override
+  String get notificationTestLabRemoteRequested =>
+      'Push requested. Put the app in the background or lock the phone.';
+
+  @override
+  String get notificationTestLabRequestFailed =>
+      'Unable to request remote push.';
+
+  @override
+  String get seatStatusCurrent => 'Current Seat';
+
+  @override
+  String get seatStatusBookedMale => 'Booked (M)';
+
+  @override
+  String get seatStatusBookedFemale => 'Booked (F)';
+
+  @override
   String get errorOccurred => 'Something went wrong. Please try again.';
 
   @override
@@ -133,6 +218,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get changeEmail => 'Change Email / Back';
+
+  @override
+  String get didntReceiveCode => 'Didn\'t receive the code?';
+
+  @override
+  String get wrongEmailPrompt => 'Wrong email?';
+
+  @override
+  String get changeEmailAction => 'Change email';
+
+  @override
+  String get otpInvalid => 'The verification code is incorrect.';
+
+  @override
+  String get otpExpired => 'This code has expired. Request a new one.';
+
+  @override
+  String get otpRateLimited => 'Please wait before requesting another code.';
+
+  @override
+  String get otpNetworkError =>
+      'Couldn\'t verify the code. Check your connection and try again.';
+
+  @override
+  String get selectDateTitle => 'Select Date';
+
+  @override
+  String get confirmDate => 'Confirm Date';
+
+  @override
+  String get dayColumnLabel => 'Day';
+
+  @override
+  String get monthColumnLabel => 'Month';
+
+  @override
+  String get yearColumnLabel => 'Year';
 
   @override
   String get completeProfileTitle => 'Complete Your Profile';
@@ -340,6 +462,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noUpcomingTrip => 'No upcoming trips';
 
   @override
+  String get noUpcomingTripSubtitle =>
+      'Book a seat whenever a trip is available.';
+
+  @override
+  String get qr => 'QR';
+
+  @override
   String get bookTripCta => 'Book a Ride';
 
   @override
@@ -497,11 +626,37 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your trip seat is successfully reserved.';
 
   @override
+  String get bookingTicketTime => 'TIME';
+
+  @override
+  String get bookingTicketSeat => 'SEAT';
+
+  @override
+  String get bookingTicketFees => 'FEES';
+
+  @override
+  String get bookingSuccessMyTrips => 'My Trips';
+
+  @override
+  String get bookingSuccessGoHome => 'Go to Home';
+
+  @override
   String get qrTicketInstruction =>
       'Present this QR code to the driver or scanner upon boarding.';
 
   @override
   String get viewMyTrips => 'View My Trips';
+
+  @override
+  String get mitFadalaStopName => 'Mit Fadala';
+
+  @override
+  String departureBusAtFirstStop(Object stopName) {
+    return 'Bus at $stopName';
+  }
+
+  @override
+  String get firstStopLabel => 'First stop';
 
   @override
   String get tripDetailsDirection => 'Direction';
@@ -695,6 +850,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completedTrips => 'Completed Trips';
 
   @override
+  String get completionRate => 'Completion Rate';
+
+  @override
   String get pointsSpentThisMonth => 'Points Spent This Month';
 
   @override
@@ -764,6 +922,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get departureSelected => 'Selected';
 
   @override
+  String get departureSelectedTrip => 'Selected Trip';
+
+  @override
+  String get departureAvailable => 'Available';
+
+  @override
+  String get departureFullyBooked => 'Fully booked';
+
+  @override
   String get departureAvailableNow => 'Available now';
 
   @override
@@ -797,13 +964,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get amomyWallet => 'AMOMY Wallet';
 
   @override
-  String get txTypeTrip => 'Trip';
+  String get txTypeTrip => 'Trip Booking';
+
+  @override
+  String get txTypeTripBooking => 'Trip Booking';
+
+  @override
+  String get txTypeExtraSeat => 'Extra Seat';
+
+  @override
+  String get txTypeRefund => 'Refund';
 
   @override
   String get txTypeTopUp => 'Points Top-up';
 
   @override
-  String get txTypeRefund => 'Booking Refund';
+  String get txTypePointsTopup => 'Points Top-up';
+
+  @override
+  String get txTypeExtraPoints => 'Extra Points';
+
+  @override
+  String get txTypeSubscriptionPoints => 'Subscription Points';
+
+  @override
+  String get txTypePointsExpired => 'Points Expired';
 
   @override
   String get txTypeBonus => 'Bonus';
@@ -813,6 +998,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get txTypeAdjustment => 'Balance Adjustment';
+
+  @override
+  String get txTypeBalanceAdjustment => 'Balance Adjustment';
+
+  @override
+  String get txTypePointsAdjustment => 'Points Adjustment';
+
+  @override
+  String get txTypeTransaction => 'Transaction';
+
+  @override
+  String seatNumberLabel(String seat) {
+    return 'Seat $seat';
+  }
+
+  @override
+  String get loadMoreTransactions => 'Load older transactions';
 
   @override
   String get ptsUnit => 'PTS';
@@ -939,9 +1141,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instapayAccount => 'InstaPay Account';
 
   @override
-  String get txTypePointsAdjustment => 'Points Adjustment';
-
-  @override
   String get pendingPoints => 'Pending Points';
 
   @override
@@ -969,16 +1168,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationSettings => 'Notification Settings';
 
   @override
-  String get allNotifications => 'All Notifications';
-
-  @override
-  String get serviceUpdatesTitle => 'Service & General Updates';
-
-  @override
   String get serviceUpdatesDesc => 'Important AMOMY service announcements.';
-
-  @override
-  String get bookingUpdatesTitle => 'Booking Updates';
 
   @override
   String get bookingUpdatesDesc =>
@@ -1150,4 +1340,108 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allRightsReserved => 'All rights reserved.';
+
+  @override
+  String get privacyPolicyUrl => 'https://amomy.com/privacy-policy';
+
+  @override
+  String get termsAndConditionsUrl => 'https://amomy.com/terms-and-conditions';
+
+  @override
+  String get noTripsAvailableToday => 'No trips available today';
+
+  @override
+  String get noMoreTripsAvailableToday => 'No more trips available today';
+
+  @override
+  String get trackingOffline => 'OFFLINE';
+
+  @override
+  String get trackingLive => 'LIVE';
+
+  @override
+  String get trackingAssignmentPending => 'Bus assignment pending';
+
+  @override
+  String get trackingLocationUnavailable => 'Location temporarily unavailable';
+
+  @override
+  String get trackingUnavailable => 'Tracking unavailable';
+
+  @override
+  String get trackingProgressUnavailable =>
+      'Stop progress temporarily unavailable';
+
+  @override
+  String get trackingTripNotActive => 'Trip tracking is not active';
+
+  @override
+  String get trackingLastStop => 'Last Stop';
+
+  @override
+  String trackingReached(String time) {
+    return 'Reached $time';
+  }
+
+  @override
+  String get trackingCurrentStop => 'Current Stop';
+
+  @override
+  String get trackingNextStop => 'Next Stop';
+
+  @override
+  String get trackingEtaUnavailable => 'ETA unavailable';
+
+  @override
+  String get trackingResumesMidday => 'Tracking resumes at 1:00 PM';
+
+  @override
+  String get trackingResumesTomorrow => 'Tracking resumes tomorrow at 8:00 AM';
+
+  @override
+  String get bookingStatusCompleted => 'Completed';
+
+  @override
+  String get bookingStatusNoShow => 'No Show';
+
+  @override
+  String get bookingStatusPending => 'Pending';
+
+  @override
+  String get errorHoldExpired =>
+      'Seat hold expired. Please select a seat again.';
+
+  @override
+  String get errorBookingClosed =>
+      'Booking is no longer available for this trip.';
+
+  @override
+  String get errorCancellationWindowClosed => 'Cancellation period has ended.';
+
+  @override
+  String get errorChangeSeatWindowClosed => 'Seat change period has ended.';
+
+  @override
+  String get errorServiceDayOff => 'No trips available today.';
+
+  @override
+  String get changeSeat => 'Change Seat';
+
+  @override
+  String get cancelBooking => 'Cancel Booking';
+
+  @override
+  String get viewLiveMap => 'View Live Map';
+
+  @override
+  String get viewTrip => 'View Trip';
+
+  @override
+  String get extraSeat => 'Extra Seat';
+
+  @override
+  String get addExtraSeat => 'Add Extra Seat';
+
+  @override
+  String get digitalBoardingPass => 'Digital Boarding Pass';
 }

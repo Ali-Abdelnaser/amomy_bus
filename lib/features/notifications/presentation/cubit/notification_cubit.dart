@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/self_test_result.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../services/notification_service.dart';
@@ -9,13 +10,14 @@ class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepository repository;
   final NotificationService? notificationService;
   StreamSubscription? _foregroundSub;
+  StreamSubscription<AppNotification?>? _realtimeSub;
 
-  NotificationCubit({
-    required this.repository,
-    this.notificationService,
-  }) : super(const NotificationInitial()) {
+  NotificationCubit({required this.repository, this.notificationService})
+    : super(const NotificationInitial()) {
     if (notificationService != null) {
-      _foregroundSub = notificationService!.onForegroundNotification.listen((_) {
+      _foregroundSub = notificationService!.onForegroundNotification.listen((
+        _,
+      ) {
         loadNotifications(isRefresh: true);
       });
     }
@@ -38,14 +40,34 @@ class NotificationCubit extends Cubit<NotificationState> {
         unreadCount: unreadCount,
       );
 
-      emit(NotificationLoaded(
-        notifications: notifications,
-        unreadCount: unreadCount,
-        isRefreshing: false,
-      ));
+      emit(
+        NotificationLoaded(
+          notifications: notifications,
+          unreadCount: unreadCount,
+          isRefreshing: false,
+        ),
+      );
+      _startRealtimeSubscription();
     } catch (e) {
       emit(NotificationError(e.toString()));
     }
+  }
+
+  void _startRealtimeSubscription() {
+    if (_realtimeSub != null) return;
+
+    _realtimeSub = repository.subscribeToNotificationUpdates().listen(
+      (notification) async {
+        if (notification != null) {
+          await notificationService?.presentForegroundNotificationRow(
+            notification,
+          );
+        }
+        await loadNotifications(isRefresh: true);
+      },
+      onError: (error, stackTrace) {},
+      cancelOnError: false,
+    );
   }
 
   Future<void> markAsRead(String notificationId) async {
@@ -62,10 +84,12 @@ class NotificationCubit extends Cubit<NotificationState> {
 
     final newUnreadCount = updatedList.where((n) => !n.isRead).length;
 
-    emit(currentState.copyWith(
-      notifications: updatedList,
-      unreadCount: newUnreadCount,
-    ));
+    emit(
+      currentState.copyWith(
+        notifications: updatedList,
+        unreadCount: newUnreadCount,
+      ),
+    );
 
     try {
       await repository.markAsRead(notificationId);
@@ -83,10 +107,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       return n.isRead ? n : n.copyWith(readAt: now);
     }).toList();
 
-    emit(currentState.copyWith(
-      notifications: updatedList,
-      unreadCount: 0,
-    ));
+    emit(currentState.copyWith(notifications: updatedList, unreadCount: 0));
 
     try {
       await repository.markAllAsRead();
@@ -95,7 +116,9 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   Future<SelfTestResult> sendSelfTestPush({int? delaySeconds}) async {
     try {
-      final result = await repository.sendSelfTestNotification(delaySeconds: delaySeconds);
+      final result = await repository.sendSelfTestNotification(
+        delaySeconds: delaySeconds,
+      );
       if (result.success) {
         await loadNotifications(isRefresh: true);
       }
@@ -108,6 +131,7 @@ class NotificationCubit extends Cubit<NotificationState> {
   @override
   Future<void> close() {
     _foregroundSub?.cancel();
+    _realtimeSub?.cancel();
     return super.close();
   }
 }

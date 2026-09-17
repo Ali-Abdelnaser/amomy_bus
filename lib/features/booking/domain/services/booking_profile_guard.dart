@@ -36,6 +36,7 @@ class BookingProfileGuard {
 
     final result = await showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: false,
       isScrollControlled: true,
       showDragHandle: false,

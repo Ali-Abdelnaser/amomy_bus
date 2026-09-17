@@ -116,6 +116,156 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @homeFastDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'FAST & DIRECT'**
+  String get homeFastDirect;
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Categories'**
+  String get notificationCategories;
+
+  /// No description provided for @serviceUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Service & General Updates'**
+  String get serviceUpdatesTitle;
+
+  /// No description provided for @serviceUpdatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Important AMOMY service announcements.'**
+  String get serviceUpdatesDescription;
+
+  /// No description provided for @bookingUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Updates'**
+  String get bookingUpdatesTitle;
+
+  /// No description provided for @bookingUpdatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation, cancellation and seat changes.'**
+  String get bookingUpdatesDescription;
+
+  /// No description provided for @notificationsDisabledInDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications disabled in device settings'**
+  String get notificationsDisabledInDevice;
+
+  /// No description provided for @notificationsDisabledInDeviceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable notifications in your device settings to receive trip and wallet alerts.'**
+  String get notificationsDisabledInDeviceDescription;
+
+  /// No description provided for @enableInDeviceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable in Device Settings'**
+  String get enableInDeviceSettings;
+
+  /// No description provided for @allNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'All Notifications'**
+  String get allNotifications;
+
+  /// No description provided for @allNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Master toggle for all push notifications'**
+  String get allNotificationsDescription;
+
+  /// No description provided for @notificationTestLabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Test Lab'**
+  String get notificationTestLabTitle;
+
+  /// No description provided for @notificationTestLabLocalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Test'**
+  String get notificationTestLabLocalTitle;
+
+  /// No description provided for @notificationTestLabLocalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests local presentation on this device only.'**
+  String get notificationTestLabLocalSubtitle;
+
+  /// No description provided for @notificationTestLabLocalButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Test'**
+  String get notificationTestLabLocalButton;
+
+  /// No description provided for @notificationTestLabRemoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote FCM Test'**
+  String get notificationTestLabRemoteTitle;
+
+  /// No description provided for @notificationTestLabRemoteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests a real push through FCM and APNs.'**
+  String get notificationTestLabRemoteSubtitle;
+
+  /// No description provided for @notificationTestLabRemoteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Push Test'**
+  String get notificationTestLabRemoteButton;
+
+  /// No description provided for @notificationTestLabLocalShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Local notification shown on this device.'**
+  String get notificationTestLabLocalShown;
+
+  /// No description provided for @notificationTestLabRemoteRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Push requested. Put the app in the background or lock the phone.'**
+  String get notificationTestLabRemoteRequested;
+
+  /// No description provided for @notificationTestLabRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to request remote push.'**
+  String get notificationTestLabRequestFailed;
+
+  /// No description provided for @seatStatusCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Seat'**
+  String get seatStatusCurrent;
+
+  /// No description provided for @seatStatusBookedMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked (M)'**
+  String get seatStatusBookedMale;
+
+  /// No description provided for @seatStatusBookedFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked (F)'**
+  String get seatStatusBookedFemale;
+
   /// No description provided for @errorOccurred.
   ///
   /// In en, this message translates to:
@@ -343,6 +493,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change Email / Back'**
   String get changeEmail;
+
+  /// No description provided for @didntReceiveCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t receive the code?'**
+  String get didntReceiveCode;
+
+  /// No description provided for @wrongEmailPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email?'**
+  String get wrongEmailPrompt;
+
+  /// No description provided for @changeEmailAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get changeEmailAction;
+
+  /// No description provided for @otpInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The verification code is incorrect.'**
+  String get otpInvalid;
+
+  /// No description provided for @otpExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Request a new one.'**
+  String get otpExpired;
+
+  /// No description provided for @otpRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait before requesting another code.'**
+  String get otpRateLimited;
+
+  /// No description provided for @otpNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t verify the code. Check your connection and try again.'**
+  String get otpNetworkError;
+
+  /// No description provided for @selectDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDateTitle;
+
+  /// No description provided for @confirmDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Date'**
+  String get confirmDate;
+
+  /// No description provided for @dayColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get dayColumnLabel;
+
+  /// No description provided for @monthColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get monthColumnLabel;
+
+  /// No description provided for @yearColumnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearColumnLabel;
 
   /// No description provided for @completeProfileTitle.
   ///
@@ -722,6 +944,18 @@ abstract class AppLocalizations {
   /// **'No upcoming trips'**
   String get noUpcomingTrip;
 
+  /// No description provided for @noUpcomingTripSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a seat whenever a trip is available.'**
+  String get noUpcomingTripSubtitle;
+
+  /// No description provided for @qr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR'**
+  String get qr;
+
   /// No description provided for @bookTripCta.
   ///
   /// In en, this message translates to:
@@ -1010,6 +1244,36 @@ abstract class AppLocalizations {
   /// **'Your trip seat is successfully reserved.'**
   String get bookingSuccessSubtitle;
 
+  /// No description provided for @bookingTicketTime.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME'**
+  String get bookingTicketTime;
+
+  /// No description provided for @bookingTicketSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'SEAT'**
+  String get bookingTicketSeat;
+
+  /// No description provided for @bookingTicketFees.
+  ///
+  /// In en, this message translates to:
+  /// **'FEES'**
+  String get bookingTicketFees;
+
+  /// No description provided for @bookingSuccessMyTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get bookingSuccessMyTrips;
+
+  /// No description provided for @bookingSuccessGoHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Home'**
+  String get bookingSuccessGoHome;
+
   /// No description provided for @qrTicketInstruction.
   ///
   /// In en, this message translates to:
@@ -1021,6 +1285,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View My Trips'**
   String get viewMyTrips;
+
+  /// No description provided for @mitFadalaStopName.
+  ///
+  /// In en, this message translates to:
+  /// **'Mit Fadala'**
+  String get mitFadalaStopName;
+
+  /// No description provided for @departureBusAtFirstStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus at {stopName}'**
+  String departureBusAtFirstStop(Object stopName);
+
+  /// No description provided for @firstStopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First stop'**
+  String get firstStopLabel;
 
   /// No description provided for @tripDetailsDirection.
   ///
@@ -1382,6 +1664,12 @@ abstract class AppLocalizations {
   /// **'Completed Trips'**
   String get completedTrips;
 
+  /// No description provided for @completionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion Rate'**
+  String get completionRate;
+
   /// No description provided for @pointsSpentThisMonth.
   ///
   /// In en, this message translates to:
@@ -1508,6 +1796,24 @@ abstract class AppLocalizations {
   /// **'Selected'**
   String get departureSelected;
 
+  /// No description provided for @departureSelectedTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Trip'**
+  String get departureSelectedTrip;
+
+  /// No description provided for @departureAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get departureAvailable;
+
+  /// No description provided for @departureFullyBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully booked'**
+  String get departureFullyBooked;
+
   /// No description provided for @departureAvailableNow.
   ///
   /// In en, this message translates to:
@@ -1571,8 +1877,26 @@ abstract class AppLocalizations {
   /// No description provided for @txTypeTrip.
   ///
   /// In en, this message translates to:
-  /// **'Trip'**
+  /// **'Trip Booking'**
   String get txTypeTrip;
+
+  /// No description provided for @txTypeTripBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Booking'**
+  String get txTypeTripBooking;
+
+  /// No description provided for @txTypeExtraSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Seat'**
+  String get txTypeExtraSeat;
+
+  /// No description provided for @txTypeRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get txTypeRefund;
 
   /// No description provided for @txTypeTopUp.
   ///
@@ -1580,11 +1904,29 @@ abstract class AppLocalizations {
   /// **'Points Top-up'**
   String get txTypeTopUp;
 
-  /// No description provided for @txTypeRefund.
+  /// No description provided for @txTypePointsTopup.
   ///
   /// In en, this message translates to:
-  /// **'Booking Refund'**
-  String get txTypeRefund;
+  /// **'Points Top-up'**
+  String get txTypePointsTopup;
+
+  /// No description provided for @txTypeExtraPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Points'**
+  String get txTypeExtraPoints;
+
+  /// No description provided for @txTypeSubscriptionPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription Points'**
+  String get txTypeSubscriptionPoints;
+
+  /// No description provided for @txTypePointsExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Expired'**
+  String get txTypePointsExpired;
 
   /// No description provided for @txTypeBonus.
   ///
@@ -1603,6 +1945,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Balance Adjustment'**
   String get txTypeAdjustment;
+
+  /// No description provided for @txTypeBalanceAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance Adjustment'**
+  String get txTypeBalanceAdjustment;
+
+  /// No description provided for @txTypePointsAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Adjustment'**
+  String get txTypePointsAdjustment;
+
+  /// No description provided for @txTypeTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get txTypeTransaction;
+
+  /// No description provided for @seatNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat {seat}'**
+  String seatNumberLabel(String seat);
+
+  /// No description provided for @loadMoreTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Load older transactions'**
+  String get loadMoreTransactions;
 
   /// No description provided for @ptsUnit.
   ///
@@ -1844,12 +2216,6 @@ abstract class AppLocalizations {
   /// **'InstaPay Account'**
   String get instapayAccount;
 
-  /// No description provided for @txTypePointsAdjustment.
-  ///
-  /// In en, this message translates to:
-  /// **'Points Adjustment'**
-  String get txTypePointsAdjustment;
-
   /// No description provided for @pendingPoints.
   ///
   /// In en, this message translates to:
@@ -1904,29 +2270,11 @@ abstract class AppLocalizations {
   /// **'Notification Settings'**
   String get notificationSettings;
 
-  /// No description provided for @allNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'All Notifications'**
-  String get allNotifications;
-
-  /// No description provided for @serviceUpdatesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Service & General Updates'**
-  String get serviceUpdatesTitle;
-
   /// No description provided for @serviceUpdatesDesc.
   ///
   /// In en, this message translates to:
   /// **'Important AMOMY service announcements.'**
   String get serviceUpdatesDesc;
-
-  /// No description provided for @bookingUpdatesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Booking Updates'**
-  String get bookingUpdatesTitle;
 
   /// No description provided for @bookingUpdatesDesc.
   ///
@@ -2245,6 +2593,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All rights reserved.'**
   String get allRightsReserved;
+
+  /// No description provided for @privacyPolicyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://amomy.com/privacy-policy'**
+  String get privacyPolicyUrl;
+
+  /// No description provided for @termsAndConditionsUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://amomy.com/terms-and-conditions'**
+  String get termsAndConditionsUrl;
+
+  /// No description provided for @noTripsAvailableToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips available today'**
+  String get noTripsAvailableToday;
+
+  /// No description provided for @noMoreTripsAvailableToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No more trips available today'**
+  String get noMoreTripsAvailableToday;
+
+  /// No description provided for @trackingOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'OFFLINE'**
+  String get trackingOffline;
+
+  /// No description provided for @trackingLive.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE'**
+  String get trackingLive;
+
+  /// No description provided for @trackingAssignmentPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus assignment pending'**
+  String get trackingAssignmentPending;
+
+  /// No description provided for @trackingLocationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Location temporarily unavailable'**
+  String get trackingLocationUnavailable;
+
+  /// No description provided for @trackingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking unavailable'**
+  String get trackingUnavailable;
+
+  /// No description provided for @trackingProgressUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop progress temporarily unavailable'**
+  String get trackingProgressUnavailable;
+
+  /// No description provided for @trackingTripNotActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip tracking is not active'**
+  String get trackingTripNotActive;
+
+  /// No description provided for @trackingLastStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Stop'**
+  String get trackingLastStop;
+
+  /// No description provided for @trackingReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached {time}'**
+  String trackingReached(String time);
+
+  /// No description provided for @trackingCurrentStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Stop'**
+  String get trackingCurrentStop;
+
+  /// No description provided for @trackingNextStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Stop'**
+  String get trackingNextStop;
+
+  /// No description provided for @trackingEtaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA unavailable'**
+  String get trackingEtaUnavailable;
+
+  /// No description provided for @trackingResumesMidday.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking resumes at 1:00 PM'**
+  String get trackingResumesMidday;
+
+  /// No description provided for @trackingResumesTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking resumes tomorrow at 8:00 AM'**
+  String get trackingResumesTomorrow;
+
+  /// No description provided for @bookingStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get bookingStatusCompleted;
+
+  /// No description provided for @bookingStatusNoShow.
+  ///
+  /// In en, this message translates to:
+  /// **'No Show'**
+  String get bookingStatusNoShow;
+
+  /// No description provided for @bookingStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get bookingStatusPending;
+
+  /// No description provided for @errorHoldExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat hold expired. Please select a seat again.'**
+  String get errorHoldExpired;
+
+  /// No description provided for @errorBookingClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking is no longer available for this trip.'**
+  String get errorBookingClosed;
+
+  /// No description provided for @errorCancellationWindowClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation period has ended.'**
+  String get errorCancellationWindowClosed;
+
+  /// No description provided for @errorChangeSeatWindowClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat change period has ended.'**
+  String get errorChangeSeatWindowClosed;
+
+  /// No description provided for @errorServiceDayOff.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips available today.'**
+  String get errorServiceDayOff;
+
+  /// No description provided for @changeSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Seat'**
+  String get changeSeat;
+
+  /// No description provided for @cancelBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Booking'**
+  String get cancelBooking;
+
+  /// No description provided for @viewLiveMap.
+  ///
+  /// In en, this message translates to:
+  /// **'View Live Map'**
+  String get viewLiveMap;
+
+  /// No description provided for @viewTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'View Trip'**
+  String get viewTrip;
+
+  /// No description provided for @extraSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Seat'**
+  String get extraSeat;
+
+  /// No description provided for @addExtraSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Extra Seat'**
+  String get addExtraSeat;
+
+  /// No description provided for @digitalBoardingPass.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital Boarding Pass'**
+  String get digitalBoardingPass;
 }
 
 class _AppLocalizationsDelegate

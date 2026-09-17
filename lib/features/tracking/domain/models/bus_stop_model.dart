@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'live_tracking_status.dart';
 
 /// Clean model representing an authoritative physical route stop from backend.
 class BusStopModel extends Equatable {
@@ -18,6 +19,7 @@ class BusStopModel extends Equatable {
   final int farePoints;
   final DateTime? actualArrivalTime;
   final DateTime? estimatedArrivalTime;
+  final TrackingStopSemanticState semanticState;
 
   const BusStopModel({
     required this.id,
@@ -36,9 +38,27 @@ class BusStopModel extends Equatable {
     this.farePoints = 20,
     this.actualArrivalTime,
     this.estimatedArrivalTime,
+    this.semanticState = TrackingStopSemanticState.unknown,
   });
 
-  bool get hasCoordinates => latitude != null && longitude != null;
+  bool get hasCoordinates =>
+      latitude != null &&
+      longitude != null &&
+      !latitude!.isNaN &&
+      !longitude!.isNaN &&
+      !latitude!.isInfinite &&
+      !longitude!.isInfinite &&
+      latitude! >= -90.0 &&
+      latitude! <= 90.0 &&
+      longitude! >= -180.0 &&
+      longitude! <= 180.0;
+
+  bool get hasCanonicalCoordinates {
+    final source = coordinateSource?.toLowerCase().trim();
+    final isQaSource =
+        source == 'temporary_qa' || source == 'qa_stop_coordinates';
+    return hasCoordinates && !isTemporaryQa && !isQaSource;
+  }
 
   BusStopModel copyWith({
     String? id,
@@ -57,6 +77,7 @@ class BusStopModel extends Equatable {
     int? farePoints,
     DateTime? actualArrivalTime,
     DateTime? estimatedArrivalTime,
+    TrackingStopSemanticState? semanticState,
   }) {
     return BusStopModel(
       id: id ?? this.id,
@@ -75,6 +96,7 @@ class BusStopModel extends Equatable {
       farePoints: farePoints ?? this.farePoints,
       actualArrivalTime: actualArrivalTime ?? this.actualArrivalTime,
       estimatedArrivalTime: estimatedArrivalTime ?? this.estimatedArrivalTime,
+      semanticState: semanticState ?? this.semanticState,
     );
   }
 
@@ -93,12 +115,18 @@ class BusStopModel extends Equatable {
   }
 
   factory BusStopModel.fromJson(Map<String, dynamic> json) {
-    final isQa = (json['is_qa_coord'] as bool?) ??
+    final isQa =
+        (json['is_qa_coord'] as bool?) ??
         (json['source'] == 'temporary_qa' ||
             json['coordinate_source'] == 'temporary_qa');
 
     final actualRaw = json['actual_arrival_time'] ?? json['arrived_at'];
     final estRaw = json['estimated_arrival_time'] ?? json['eta'];
+    final stateRaw =
+        json['semantic_state'] ??
+        json['stop_state'] ??
+        json['state'] ??
+        json['progress_state'];
 
     return BusStopModel(
       id: (json['stop_id'] ?? json['id'] ?? '') as String,
@@ -113,50 +141,60 @@ class BusStopModel extends Equatable {
       isBoarding: (json['is_boarding'] as bool?) ?? true,
       isDropoff: (json['is_dropoff'] as bool?) ?? true,
       isTemporaryQa: isQa,
-      coordinateSource: json['coordinate_source'] as String? ??
-          (isQa ? 'temporary_qa' : (json['latitude'] != null ? 'verified' : null)),
+      coordinateSource:
+          json['coordinate_source'] as String? ??
+          (isQa
+              ? 'temporary_qa'
+              : (json['latitude'] != null ? 'verified' : null)),
       farePoints: (json['fare_points'] as num?)?.toInt() ?? 20,
-      actualArrivalTime: actualRaw != null ? DateTime.tryParse(actualRaw.toString()) : null,
-      estimatedArrivalTime: estRaw != null ? DateTime.tryParse(estRaw.toString()) : null,
+      actualArrivalTime: actualRaw != null
+          ? DateTime.tryParse(actualRaw.toString())
+          : null,
+      estimatedArrivalTime: estRaw != null
+          ? DateTime.tryParse(estRaw.toString())
+          : null,
+      semanticState: TrackingStopSemanticState.fromString(stateRaw?.toString()),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'route_stop_id': routeStopId,
-        'stop_order': stopOrder,
-        'name_ar': nameAr,
-        'name_en': nameEn,
-        'locality_ar': localityAr,
-        'locality_en': localityEn,
-        'latitude': latitude,
-        'longitude': longitude,
-        'is_boarding': isBoarding,
-        'is_dropoff': isDropoff,
-        'is_qa_coord': isTemporaryQa,
-        'coordinate_source': coordinateSource,
-        'fare_points': farePoints,
-        'actual_arrival_time': actualArrivalTime?.toIso8601String(),
-        'estimated_arrival_time': estimatedArrivalTime?.toIso8601String(),
-      };
+    'id': id,
+    'route_stop_id': routeStopId,
+    'stop_order': stopOrder,
+    'name_ar': nameAr,
+    'name_en': nameEn,
+    'locality_ar': localityAr,
+    'locality_en': localityEn,
+    'latitude': latitude,
+    'longitude': longitude,
+    'is_boarding': isBoarding,
+    'is_dropoff': isDropoff,
+    'is_qa_coord': isTemporaryQa,
+    'coordinate_source': coordinateSource,
+    'fare_points': farePoints,
+    'actual_arrival_time': actualArrivalTime?.toIso8601String(),
+    'estimated_arrival_time': estimatedArrivalTime?.toIso8601String(),
+    'semantic_state': semanticState.name,
+  };
 
   @override
   List<Object?> get props => [
-        id,
-        routeStopId,
-        stopOrder,
-        nameAr,
-        nameEn,
-        localityAr,
-        localityEn,
-        latitude,
-        longitude,
-        isBoarding,
-        isDropoff,
-        isTemporaryQa,
-        coordinateSource,
-        farePoints,
-        actualArrivalTime,
-        estimatedArrivalTime,
-      ];
+    id,
+    routeStopId,
+    stopOrder,
+    nameAr,
+    nameEn,
+    localityAr,
+    localityEn,
+    latitude,
+    longitude,
+    isBoarding,
+    isDropoff,
+    isTemporaryQa,
+    coordinateSource,
+    farePoints,
+    actualArrivalTime,
+    estimatedArrivalTime,
+    semanticState,
+  ];
 }

@@ -62,10 +62,14 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
         if (_emailController.text.isEmpty && user.email.isNotEmpty) {
           _emailController.text = user.email;
         }
-        if (_phoneController.text.isEmpty && user.phone != null && user.phone!.isNotEmpty) {
+        if (_phoneController.text.isEmpty &&
+            user.phone != null &&
+            user.phone!.isNotEmpty) {
           _phoneController.text = user.phone!;
         }
-        if (_selectedGender == null && user.gender != null && user.gender!.isNotEmpty) {
+        if (_selectedGender == null &&
+            user.gender != null &&
+            user.gender!.isNotEmpty) {
           _selectedGender = user.gender!.toLowerCase();
         }
         if (_selectedDateOfBirth == null && user.dateOfBirth != null) {
@@ -97,13 +101,13 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
       }
 
       context.read<AuthBloc>().add(
-            CompleteProfileRequested(
-              fullName: _fullNameController.text.trim(),
-              phone: AppValidators.normalizeEgyptianPhone(_phoneController.text),
-              gender: _selectedGender!.toLowerCase(),
-              dateOfBirth: _selectedDateOfBirth!,
-            ),
-          );
+        CompleteProfileRequested(
+          fullName: _fullNameController.text.trim(),
+          phone: AppValidators.normalizeEgyptianPhone(_phoneController.text),
+          gender: _selectedGender!.toLowerCase(),
+          dateOfBirth: _selectedDateOfBirth!,
+        ),
+      );
     }
   }
 
@@ -149,9 +153,15 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is ProfileSaveFailure) {
-          AppSnackBar.showError(context, _mapProfileErrorMessage(context, state.failure));
+          AppSnackBar.showError(
+            context,
+            _mapProfileErrorMessage(context, state.failure),
+          );
         } else if (state is AuthFailureState) {
-          AppSnackBar.showError(context, _mapProfileErrorMessage(context, state.failure));
+          AppSnackBar.showError(
+            context,
+            _mapProfileErrorMessage(context, state.failure),
+          );
         } else if (state is Authenticated &&
             state is! ProfileSaving &&
             state is! ProfileSaveFailure &&
@@ -173,151 +183,179 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
             ? l10n.completeProfileTitle
             : l10n.personalInfo;
 
-        return AppLoadingOverlay(
-          isLoading: isLoading,
-          child: AppScaffold(
-            appBar: AppAppBar(
-              title: pageTitle,
-              showBackButton: true,
-              onBackPressed: () => _onBackOrCancel(context),
-            ),
-            body: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Profile Photo / Avatar
-                          Center(
-                            child: CircleAvatar(
-                              radius: 46,
-                              backgroundColor: AppColors.primaryLight,
-                              backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                                  ? NetworkImage(_avatarUrl!)
-                                  : null,
-                              child: (_avatarUrl == null || _avatarUrl!.isEmpty)
-                                  ? const Icon(
-                                      AppIcons.user,
-                                      size: 46,
-                                      color: AppColors.primary,
-                                    )
-                                  : null,
-                            ),
-                          ).appScaleIn(),
-                          AppSpacing.gapH16,
+        return PopScope(
+          canPop: !_isInitialCompletion,
+          child: AppLoadingOverlay(
+            isLoading: isLoading,
+            child: AppScaffold(
+              appBar: AppAppBar(
+                title: pageTitle,
+                showBackButton: !_isInitialCompletion,
+                onBackPressed: () => _onBackOrCancel(context),
+              ),
+              body: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Profile Photo / Avatar
+                            Center(
+                              child: CircleAvatar(
+                                radius: 46,
+                                backgroundColor: AppColors.primaryLight,
+                                backgroundImage:
+                                    (_avatarUrl != null &&
+                                        _avatarUrl!.isNotEmpty)
+                                    ? NetworkImage(_avatarUrl!)
+                                    : null,
+                                child:
+                                    (_avatarUrl == null || _avatarUrl!.isEmpty)
+                                    ? const Icon(
+                                        AppIcons.user,
+                                        size: 46,
+                                        color: AppColors.primary,
+                                      )
+                                    : null,
+                              ),
+                            ).appScaleIn(),
+                            AppSpacing.gapH16,
 
-                          // Header Title
-                          Text(
-                            pageTitle,
-                            style: AppTextStyles.headlineMedium.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).appFadeIn(delay: const Duration(milliseconds: 100)),
-
-                          if (_isInitialCompletion) ...[
-                            AppSpacing.gapH6,
+                            // Header Title
                             Text(
-                              l10n.completeProfileSubtitle,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
+                              pageTitle,
+                              style: AppTextStyles.headlineMedium.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
-                            ).appFadeIn(delay: const Duration(milliseconds: 150)),
+                            ).appFadeIn(
+                              delay: const Duration(milliseconds: 100),
+                            ),
+
+                            if (_isInitialCompletion) ...[
+                              AppSpacing.gapH6,
+                              Text(
+                                l10n.completeProfileSubtitle,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ).appFadeIn(
+                                delay: const Duration(milliseconds: 150),
+                              ),
+                            ],
+                            AppSpacing.gapH24,
+
+                            // Full Name
+                            AppTextField(
+                              controller: _fullNameController,
+                              label: l10n.fullName,
+                              hint: l10n.fullNameHint,
+                              prefixIcon: AppIcons.user,
+                              validator: (val) =>
+                                  AppValidators.validateFullName(
+                                    val,
+                                    requiredMessage: l10n.validationRequired,
+                                  ),
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 200),
+                            ),
+                            AppSpacing.gapH16,
+
+                            // Email (Read-only account identity)
+                            AppTextField(
+                              controller: _emailController,
+                              label: l10n.email,
+                              hint: l10n.emailHint,
+                              enabled: false,
+                              prefixIcon: AppIcons.email,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 220),
+                            ),
+                            AppSpacing.gapH16,
+
+                            // Phone Number
+                            AppTextField(
+                              controller: _phoneController,
+                              label: l10n.phone,
+                              hint: l10n.phoneHint,
+                              keyboardType: TextInputType.phone,
+                              prefixIcon: AppIcons.phone,
+                              validator: (val) => AppValidators.validatePhone(
+                                val,
+                                requiredMessage: l10n.validationRequired,
+                                invalidMessage: l10n.validationPhoneInvalid,
+                              ),
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 250),
+                            ),
+                            AppSpacing.gapH16,
+
+                            // Gender Selection Cards
+                            AppGenderSelector(
+                              label: l10n.gender,
+                              selectedGender: _selectedGender,
+                              onChanged: (gender) {
+                                setState(() => _selectedGender = gender);
+                              },
+                              validator: (val) => AppValidators.validateGender(
+                                val ?? _selectedGender,
+                                requiredMessage: l10n.validationRequired,
+                              ),
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 280),
+                            ),
+                            AppSpacing.gapH16,
+
+                            // Date of Birth Field
+                            AppDatePickerField(
+                              label: l10n.dateOfBirth,
+                              hint: l10n.selectDateOfBirth,
+                              selectedDate: _selectedDateOfBirth,
+                              initialDate: DateTime(2000, 1, 1),
+                              firstDate: DateTime(1920),
+                              lastDate: DateTime.now(),
+                              prefixIcon: const Icon(
+                                AppIcons.birthday,
+                                color: AppColors.textSecondary,
+                                size: 20,
+                              ),
+                              onDateSelected: (date) {
+                                setState(() => _selectedDateOfBirth = date);
+                              },
+                              validator: (val) =>
+                                  AppValidators.validateDateOfBirth(
+                                    val ?? _selectedDateOfBirth,
+                                    requiredMessage: l10n.validationRequired,
+                                  ),
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 300),
+                            ),
+                            AppSpacing.gapH24,
+
+                            // Primary CTA
+                            AppButton(
+                              label: l10n.saveAndContinue,
+                              icon: AppIcons.check,
+                              isFullWidth: true,
+                              isLoading: isLoading,
+                              onPressed: isLoading ? null : _onSavePressed,
+                            ).appSlideUp(
+                              delay: const Duration(milliseconds: 350),
+                            ),
                           ],
-                          AppSpacing.gapH24,
-
-                          // Full Name
-                          AppTextField(
-                            controller: _fullNameController,
-                            label: l10n.fullName,
-                            hint: l10n.fullNameHint,
-                            prefixIcon: AppIcons.user,
-                            validator: (val) => AppValidators.validateFullName(
-                              val,
-                              requiredMessage: l10n.validationRequired,
-                            ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 200)),
-                          AppSpacing.gapH16,
-
-                          // Email (Read-only account identity)
-                          AppTextField(
-                            controller: _emailController,
-                            label: l10n.email,
-                            hint: l10n.emailHint,
-                            enabled: false,
-                            prefixIcon: AppIcons.email,
-                          ).appSlideUp(delay: const Duration(milliseconds: 220)),
-                          AppSpacing.gapH16,
-
-                          // Phone Number
-                          AppTextField(
-                            controller: _phoneController,
-                            label: l10n.phone,
-                            hint: l10n.phoneHint,
-                            keyboardType: TextInputType.phone,
-                            prefixIcon: AppIcons.phone,
-                            validator: (val) => AppValidators.validatePhone(
-                              val,
-                              requiredMessage: l10n.validationRequired,
-                              invalidMessage: l10n.validationPhoneInvalid,
-                            ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 250)),
-                          AppSpacing.gapH16,
-
-                          // Gender Selection Cards
-                          AppGenderSelector(
-                            label: l10n.gender,
-                            selectedGender: _selectedGender,
-                            onChanged: (gender) {
-                              setState(() => _selectedGender = gender);
-                            },
-                            validator: (val) => AppValidators.validateGender(
-                              val ?? _selectedGender,
-                              requiredMessage: l10n.validationRequired,
-                            ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 280)),
-                          AppSpacing.gapH16,
-
-                          // Date of Birth Field
-                          AppDatePickerField(
-                            label: l10n.dateOfBirth,
-                            hint: l10n.selectDateOfBirth,
-                            selectedDate: _selectedDateOfBirth,
-                            initialDate: DateTime(2000, 1, 1),
-                            firstDate: DateTime(1920),
-                            lastDate: DateTime.now(),
-                            prefixIcon: const Icon(
-                              AppIcons.birthday,
-                              color: AppColors.textSecondary,
-                              size: 20,
-                            ),
-                            onDateSelected: (date) {
-                              setState(() => _selectedDateOfBirth = date);
-                            },
-                            validator: (val) => AppValidators.validateDateOfBirth(
-                              val ?? _selectedDateOfBirth,
-                              requiredMessage: l10n.validationRequired,
-                            ),
-                          ).appSlideUp(delay: const Duration(milliseconds: 300)),
-                          AppSpacing.gapH24,
-
-                          // Primary CTA
-                          AppButton(
-                            label: l10n.saveAndContinue,
-                            icon: AppIcons.check,
-                            isFullWidth: true,
-                            isLoading: isLoading,
-                            onPressed: isLoading ? null : _onSavePressed,
-                          ).appSlideUp(delay: const Duration(milliseconds: 350)),
-                        ],
+                        ),
                       ),
                     ),
                   ),

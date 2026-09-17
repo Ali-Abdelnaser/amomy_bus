@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/status_localizer.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -8,7 +12,7 @@ import '../../../../core/widgets/amomy_floating_alert.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
-import '../../../booking/presentation/widgets/professional_bus_seat_map.dart';
+import '../../../booking/presentation/widgets/bus_seat_map_widget.dart';
 import '../cubit/passenger_trips_cubit.dart';
 
 /// Full-page interactive seat selection screen for changing a passenger's seat.
@@ -36,48 +40,103 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
   List<TripSeat> _seats = [];
   TripSeat? _selectedNewSeat;
   bool _isSubmitting = false;
+  bool _seatFetchInFlight = false;
+  bool _seatFetchQueued = false;
+  StreamSubscription<void>? _seatUpdatesSubscription;
 
   @override
   void initState() {
     super.initState();
     _fetchSeats();
+    _startSeatUpdatesSubscription();
   }
 
-  Future<void> _fetchSeats() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _seatUpdatesSubscription?.cancel();
+    super.dispose();
+  }
 
+  void _startSeatUpdatesSubscription() {
+    final repo = getIt.isRegistered<BookingRepository>()
+        ? getIt<BookingRepository>()
+        : null;
+    if (repo == null) return;
+
+    _seatUpdatesSubscription?.cancel();
+    _seatUpdatesSubscription = repo
+        .subscribeToTripSeatUpdates(widget.trip.tripId)
+        .listen(
+          (_) => _fetchSeats(silent: true),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
+  }
+
+  Future<void> _fetchSeats({bool silent = false}) async {
+    if (_seatFetchInFlight) {
+      if (silent) _seatFetchQueued = true;
+      return;
+    }
+
+    _seatFetchInFlight = true;
+    var showLoading = !silent;
     final repo = getIt.isRegistered<BookingRepository>()
         ? getIt<BookingRepository>()
         : null;
 
     if (repo == null) {
       setState(() {
-        _isLoading = false;
+        if (!silent) _isLoading = false;
         _error = 'Repository not available';
       });
+      _seatFetchInFlight = false;
       return;
     }
 
-    final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
-    if (!mounted) return;
+    try {
+      do {
+        _seatFetchQueued = false;
+        if (showLoading && mounted) {
+          setState(() {
+            _isLoading = true;
+            _error = null;
+          });
+          showLoading = false;
+        }
 
-    result.fold(
-      onSuccess: (seats) {
-        setState(() {
-          _seats = seats;
-          _isLoading = false;
-        });
-      },
-      onError: (failure) {
-        setState(() {
-          _error = failure.message;
-          _isLoading = false;
-        });
-      },
-    );
+        final result = await repo.getTripSeatMap(tripId: widget.trip.tripId);
+        if (!mounted) return;
+
+        result.fold(
+          onSuccess: (seats) {
+            final selectedSeatStillAvailable =
+                _selectedNewSeat != null &&
+                seats.any(
+                  (seat) =>
+                      seat.seatId == _selectedNewSeat!.seatId &&
+                      seat.isAvailable,
+                );
+            setState(() {
+              _seats = seats;
+              _isLoading = false;
+              if (!selectedSeatStillAvailable) {
+                _selectedNewSeat = null;
+              }
+            });
+          },
+          onError: (failure) {
+            if (silent) return;
+            setState(() {
+              _error = failure.message;
+              _isLoading = false;
+            });
+          },
+        );
+      } while (_seatFetchQueued && mounted);
+    } finally {
+      _seatFetchInFlight = false;
+    }
   }
 
   Future<void> _onConfirmChange() async {
@@ -95,7 +154,9 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
 
     if (success) {
       Navigator.of(context).pop();
-      final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+      final isAr = Localizations.localeOf(
+        context,
+      ).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
         title: isAr
@@ -104,11 +165,12 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
         variant: AmomyAlertVariant.success,
       );
     } else {
-      final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
       AmomyFloatingAlert.show(
         context,
-        title: widget.tripsCubit.state.errorMessage ??
-            (isAr ? 'فشل تغيير المقعد' : 'Failed to change seat'),
+        title: StatusLocalizer.localizeError(
+          context,
+          widget.tripsCubit.state.errorMessage,
+        ),
         variant: AmomyAlertVariant.error,
       );
     }
@@ -116,7 +178,8 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final isAr = context.isArabic;
+    final l10n = context.l10n;
     final currentSeatNumber = widget.trip.seatNumber ?? '—';
 
     // Find other available seats excluding the passenger's current seat
@@ -149,13 +212,15 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => Navigator.of(context).maybePop(),
-                child: const SizedBox(
+                child: SizedBox(
                   width: 38,
                   height: 38,
                   child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 16,
-                    color: Color(0xFF1E293B),
+                    isAr
+                        ? Icons.arrow_forward_rounded
+                        : Icons.arrow_back_rounded,
+                    size: 18,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ),
@@ -349,110 +414,37 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                     child: Column(
                       children: [
                         // Hint banner
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF4FDF7),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.success.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                color: AppColors.success,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  isAr
-                                      ? 'مقعدك الحالي ($currentSeatNumber) يظل محميًا حتى تأكيد المقعد الجديد.'
-                                      : 'Your current seat ($currentSeatNumber) remains protected until new seat is confirmed.',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: const Color(0xFF027A48),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        AppSpacing.gapH16,
-
-                        // Comprehensive Interactive Bus Legend
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            _LegendItem(
-                              color: AppColors.success,
-                              label: isAr ? 'مقعدك الحالي' : 'Current Seat',
-                            ),
-                            _LegendItem(
-                              color: AppColors.primary,
-                              label: isAr ? 'مختار' : 'Selected',
-                            ),
-                            const _LegendItem(
-                              color: Color(0xFFE2E8F0),
-                              labelBorder: Color(0xFF94A3B8),
-                              label: 'متاح',
-                            ),
-                            _LegendItem(
-                              color: const Color(0xFF0F172A),
-                              label: isAr ? 'محجوز (رجال)' : 'Booked (M)',
-                            ),
-                            _LegendItem(
-                              color: const Color(0xFFE11D48),
-                              label: isAr ? 'محجوز (نساء)' : 'Booked (F)',
-                            ),
-                          ],
-                        ),
-
-                        AppSpacing.gapH16,
+                        
 
                         // Physical 28-Seat Bus Interior Map
-                        SizedBox(
-                          height: 520,
-                          child: ProfessionalBusSeatMap(
-                            seats: _seats,
-                            selectedSeat: _selectedNewSeat,
-                            onSeatTap: (seat) {
-                              if (seat.seatNumber == currentSeatNumber) {
-                                AmomyFloatingAlert.show(
-                                  context,
-                                  title: isAr
-                                      ? 'هذا هو مقعدك الحالي المحجوز'
-                                      : 'This is your current booked seat',
-                                  variant: AmomyAlertVariant.info,
-                                );
-                                return;
-                              }
+                        BusSeatMapWidget(
+                          seats: _seats,
+                          selectedSeat: _selectedNewSeat,
+                          onSeatTap: (seat) {
+                            if (seat.seatNumber == currentSeatNumber) {
+                              AmomyFloatingAlert.show(
+                                context,
+                                title: l10n.seatStatusCurrent,
+                                variant: AmomyAlertVariant.info,
+                              );
+                              return;
+                            }
 
-                              if (!seat.isAvailable) {
-                                AmomyFloatingAlert.show(
-                                  context,
-                                  title: isAr
-                                      ? 'هذا المقعد غير متاح للاختيار'
-                                      : 'This seat is unavailable',
-                                  variant: AmomyAlertVariant.warning,
-                                );
-                                return;
-                              }
+                            if (!seat.isAvailable) {
+                              AmomyFloatingAlert.show(
+                                context,
+                                title: isAr
+                                    ? 'هذا المقعد غير متاح للاختيار'
+                                    : 'This seat is unavailable',
+                                variant: AmomyAlertVariant.warning,
+                              );
+                              return;
+                            }
 
-                              setState(() {
-                                _selectedNewSeat = seat;
-                              });
-                            },
-                          ),
+                            setState(() {
+                              _selectedNewSeat = seat;
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -467,9 +459,7 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFE4E7EC)),
-                  ),
+                  border: Border(top: BorderSide(color: Color(0xFFE4E7EC))),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x0A000000),
@@ -487,8 +477,9 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor:
-                          AppColors.primary.withValues(alpha: 0.35),
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 0.35,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -500,18 +491,19 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
                             _selectedNewSeat == null
                                 ? (isAr
-                                    ? 'اختر مقعدًا جديدًا من المخطط'
-                                    : 'Select a new seat from map')
+                                      ? 'اختر مقعدًا جديدًا من المخطط'
+                                      : 'Select a new seat from map')
                                 : (isAr
-                                    ? 'تأكيد الانتقال إلى مقعد (${_selectedNewSeat!.seatNumber})'
-                                    : 'Confirm Change to Seat (${_selectedNewSeat!.seatNumber})'),
+                                      ? 'تأكيد الانتقال إلى مقعد (${_selectedNewSeat!.seatNumber})'
+                                      : 'Confirm Change to Seat (${_selectedNewSeat!.seatNumber})'),
                             style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
@@ -528,43 +520,5 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final Color? labelBorder;
-  final String label;
 
-  const _LegendItem({
-    required this.color,
-    this.labelBorder,
-    required this.label,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 13,
-          height: 13,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3.5),
-            border: labelBorder != null
-                ? Border.all(color: labelBorder!, width: 1)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            fontSize: 11.5,
-            color: const Color(0xFF475467),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/bus_stop_model.dart';
 import '../../domain/models/live_tracking_status.dart';
-import '../../domain/services/stop_eta_engine.dart';
 import '../cubit/tracking_cubit.dart';
 import '../cubit/tracking_state.dart';
 import '../widgets/live_bus_map_widget.dart';
@@ -18,8 +21,9 @@ import '../widgets/live_bus_map_widget.dart';
 /// that automatically moves upward above any active sheet.
 class LiveMapScreen extends StatefulWidget {
   final TrackingCubit? trackingCubit;
+  final String? tripId;
 
-  const LiveMapScreen({super.key, this.trackingCubit});
+  const LiveMapScreen({super.key, this.trackingCubit, this.tripId});
 
   @override
   State<LiveMapScreen> createState() => _LiveMapScreenState();
@@ -40,11 +44,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
           if (state.isError && state.summary == null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  state.errorMessage ??
-                      l10n?.errorOccurred ??
-                      'An error occurred',
-                ),
+                content: Text(l10n?.errorOccurred ?? 'An error occurred'),
                 backgroundColor: AppColors.error,
               ),
             );
@@ -108,12 +108,12 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 top: 0,
                 left: 0,
                 right: 0,
-
                 child: SafeArea(
+                  minimum: const EdgeInsets.only(top: 4),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 8,
+                      vertical: 10,
                     ),
                     child: _buildTopFloatingHeader(
                       context: context,
@@ -134,12 +134,15 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 bottom: centerButtonBottom,
                 child: Material(
                   color: state.followBus ? AppColors.primary : Colors.white,
-                  borderRadius: BorderRadius.circular(state.followBus ? 28 : 20),
+                  borderRadius: BorderRadius.circular(
+                    state.followBus ? 28 : 20,
+                  ),
                   elevation: 5,
                   shadowColor: Colors.black26,
                   child: InkWell(
-                    borderRadius:
-                        BorderRadius.circular(state.followBus ? 28 : 20),
+                    borderRadius: BorderRadius.circular(
+                      state.followBus ? 28 : 20,
+                    ),
                     onTap: () {
                       context.read<TrackingCubit>().toggleFollowBus(true);
                     },
@@ -165,8 +168,8 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                             state.followBus
                                 ? (locale == 'ar' ? 'تتبع مفعل' : 'Following')
                                 : (locale == 'ar'
-                                    ? 'تتبع الحافلة'
-                                    : 'Follow Bus'),
+                                      ? 'تتبع الحافلة'
+                                      : 'Follow Bus'),
                             style: TextStyle(
                               color: state.followBus
                                   ? Colors.white
@@ -193,9 +196,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   child: _buildStopDetailCard(
                     context: context,
                     stop: selectedStop,
-                    timing: state.stopTimings[selectedStop.id],
                     locale: locale,
-                    isQaPreview: state.isQaPreview,
                     trackingState: state,
                   ),
                 ),
@@ -222,15 +223,23 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
 
     if (widget.trackingCubit != null) {
+      if (widget.tripId != null && widget.tripId!.isNotEmpty) {
+        widget.trackingCubit!.loadTrackingData(tripId: widget.tripId!);
+      }
       return BlocProvider.value(value: widget.trackingCubit!, child: scaffold);
     }
 
     return BlocProvider(
-      create: (context) =>
-          (getIt.isRegistered<TrackingCubit>()
-                ? getIt<TrackingCubit>()
-                : TrackingCubit(repository: getIt()))
-            ..loadTrackingData(),
+      create: (context) {
+        final cubit = getIt.isRegistered<TrackingCubit>()
+            ? getIt<TrackingCubit>()
+            : TrackingCubit(repository: getIt());
+        final tripId = widget.tripId;
+        if (tripId != null && tripId.isNotEmpty) {
+          cubit.loadTrackingData(tripId: tripId);
+        }
+        return cubit;
+      },
       child: scaffold,
     );
   }
@@ -243,20 +252,21 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     required String locale,
     bool isAtStop = false,
   }) {
+    final isAr = locale.startsWith('ar');
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 14,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: AppRadius.radiusLg,
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: AppShadows.md,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Back button
           Material(
@@ -265,17 +275,18 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => Navigator.of(context).maybePop(),
-              child: const Padding(
-                padding: EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: 40,
+                height: 40,
                 child: Icon(
-                  Icons.arrow_back_rounded,
+                  isAr ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
                   size: 20,
-                  color: Color(0xFF0F172A),
+                  color: const Color(0xFF0F172A),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          AppSpacing.gapW12,
 
           // Title & direction
           Expanded(
@@ -286,21 +297,27 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 Text(
                   locale == 'ar' ? 'الحافلة المباشرة' : 'Live Bus',
                   style: AppTextStyles.titleMedium.copyWith(
-                    fontSize: 14.5,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),
+                    height: 1.3,
                   ),
                 ),
+                AppSpacing.gapH2,
                 Text(
                   directionLabel,
-                  style: AppTextStyles.caption.copyWith(
-                    fontSize: 11,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
           ),
+          AppSpacing.gapW10,
 
           // Status Pill
           _buildHeaderStatusPill(status, locale, isAtStop: isAtStop),
@@ -324,6 +341,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       label = locale == 'ar' ? 'بالمحطة' : 'AT STOP';
     } else {
       switch (status) {
+        case LiveTrackingStatus.live:
         case LiveTrackingStatus.online:
           bg = const Color(0xFFE8F5E9);
           dotColor = const Color(0xFF16A34A);
@@ -332,7 +350,27 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
         case LiveTrackingStatus.stale:
           bg = const Color(0xFFFEF3C7);
           dotColor = const Color(0xFFD97706);
-          label = locale == 'ar' ? 'إشارة ضعيفة' : 'RECONNECTING';
+          label = locale == 'ar' ? 'مؤقتاً' : 'STALE';
+          break;
+        case LiveTrackingStatus.assignmentPending:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = locale == 'ar' ? 'قيد التعيين' : 'PENDING';
+          break;
+        case LiveTrackingStatus.tripNotActive:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = locale == 'ar' ? 'غير نشط' : 'INACTIVE';
+          break;
+        case LiveTrackingStatus.outsideTrackingWindow:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label = locale == 'ar' ? 'غير متاح' : 'OFFLINE';
+          break;
+        case LiveTrackingStatus.progressionUnavailable:
+          bg = const Color(0xFFFEF3C7);
+          dotColor = const Color(0xFFD97706);
+          label = locale == 'ar' ? 'المحطات غير متاحة' : 'NO STOPS';
           break;
         case LiveTrackingStatus.betweenRuns:
           bg = const Color(0xFFEEF2FF);
@@ -352,32 +390,42 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: dotColor.withValues(alpha: 0.25), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              color: dotColor,
-              letterSpacing: 0.3,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 126),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: AppRadius.radiusCircular,
+          border: Border.all(color: dotColor.withValues(alpha: 0.25), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-        ],
+            AppSpacing.gapW6,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: dotColor,
+                  height: 1.2,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -386,29 +434,29 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   Widget _buildStopDetailCard({
     required BuildContext context,
     required BusStopModel stop,
-    required StopTimingInfo? timing,
     required String locale,
-    required bool isQaPreview,
     required TrackingState trackingState,
   }) {
-    final telemetry = trackingState.latestTelemetry;
-    final currentStopId = telemetry?.currentStopId ?? trackingState.summary?.currentStopId;
-    final nextStopId = telemetry?.nextStopId ?? trackingState.summary?.nextStopId;
-    final currentStopOrder = telemetry?.currentStopOrder ?? trackingState.currentStop?.stopOrder;
-
-    final isLast = (currentStopId != null && stop.id == currentStopId) ||
-        (timing?.isCurrent ?? false);
-    final isNext = (nextStopId != null && stop.id == nextStopId) ||
-        (timing?.isNext ?? false);
-    final isPassed = !isLast && !isNext &&
-        ((currentStopOrder != null && stop.stopOrder < currentStopOrder) ||
-            (timing?.isPassed ?? false));
+    final l10n = AppLocalizations.of(context);
+    final hasVerifiedCoordinates = stop.hasCanonicalCoordinates;
+    final isLast =
+        stop.semanticState == TrackingStopSemanticState.active ||
+        stop.id == trackingState.summary?.lastPassedStop?.id;
+    final isNext =
+        stop.semanticState == TrackingStopSemanticState.next ||
+        stop.id == trackingState.nextStop?.id ||
+        stop.id == trackingState.summary?.nextStopId;
+    final isPassed = stop.semanticState == TrackingStopSemanticState.passed;
 
     final String roleBadgeText;
     final Color roleBadgeBg;
     final Color roleBadgeTextColor;
 
-    if (isLast) {
+    if (!hasVerifiedCoordinates) {
+      roleBadgeText = locale == 'ar' ? 'غير مؤكد' : 'UNVERIFIED';
+      roleBadgeBg = const Color(0xFFF8FAFC);
+      roleBadgeTextColor = const Color(0xFF64748B);
+    } else if (isLast) {
       roleBadgeText = locale == 'ar' ? 'آخر محطة' : 'LAST';
       roleBadgeBg = AppColors.accentYellow.withValues(alpha: 0.25);
       roleBadgeTextColor = const Color(0xFFB45309);
@@ -418,11 +466,15 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
       roleBadgeTextColor = AppColors.primary;
     } else if (isPassed) {
       roleBadgeText = locale == 'ar' ? 'تم المرور' : 'PASSED';
+      roleBadgeBg = AppColors.accentYellow.withValues(alpha: 0.25);
+      roleBadgeTextColor = const Color(0xFFB45309);
+    } else if (stop.semanticState == TrackingStopSemanticState.unknown) {
+      roleBadgeText = locale == 'ar' ? 'غير معروف' : 'UNKNOWN';
       roleBadgeBg = const Color(0xFFF1F5F9);
       roleBadgeTextColor = const Color(0xFF64748B);
     } else {
       roleBadgeText = locale == 'ar' ? 'قادمة' : 'UPCOMING';
-      roleBadgeBg = const Color(0xFFF1F5F9);
+      roleBadgeBg = Colors.white;
       roleBadgeTextColor = const Color(0xFF334155);
     }
 
@@ -430,62 +482,34 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     final String timingLabel;
     final String timingValue;
 
-    if (stop.stopOrder == 1 && timing?.scheduledDepartureTime != null && !isPassed && !isLast) {
-      timingLabel = locale == 'ar'
-          ? 'موعد الانطلاق'
-          : 'Departure';
-      timingValue = timing!.scheduledDepartureTime!;
+    if (!hasVerifiedCoordinates) {
+      timingLabel = locale == 'ar' ? 'حالة المحطة' : 'Status';
+      timingValue =
+          l10n?.trackingProgressUnavailable ??
+          'Stop progress temporarily unavailable';
     } else if (isLast || isPassed) {
-      if (timing?.actualArrivalTime != null) {
-        final clockStr = StopEtaEngine.formatClockTime(
-          timing!.actualArrivalTime!,
-          locale,
+      if (stop.actualArrivalTime != null) {
+        final clockStr = AppTimeFormatter.formatDepartureTime(
+          departureAt: stop.actualArrivalTime!,
+          locale: locale,
         );
         timingLabel = locale == 'ar' ? 'الحالة' : 'Status';
-        timingValue = locale == 'ar' ? 'وصل الساعة $clockStr' : 'Arrived at $clockStr';
+        timingValue =
+            l10n?.trackingReached(clockStr) ??
+            (locale == 'ar' ? 'وصل الساعة $clockStr' : 'Reached $clockStr');
       } else {
         timingLabel = locale == 'ar' ? 'الحالة' : 'Status';
-        timingValue = locale == 'ar' ? 'وقت الوصول غير متاح' : 'Arrival time unavailable';
+        timingValue = l10n?.trackingUnavailable ?? 'Tracking unavailable';
       }
     } else if (isNext) {
-      if (timing?.estimatedArrivalTime != null && (!stop.isTemporaryQa || isQaPreview)) {
-        final clockStr = StopEtaEngine.formatClockTime(
-          timing!.estimatedArrivalTime!,
-          locale,
-        );
-        final countStr = StopEtaEngine.formatRemainingMinutes(
-          timing.estimatedArrivalTime!,
-          locale,
-        );
-        timingLabel = locale == 'ar' ? 'الوصول المتوقع' : 'Expected';
-        timingValue = '$clockStr ($countStr)';
-      } else if (stop.isTemporaryQa && !isQaPreview) {
-        timingLabel = locale == 'ar' ? 'حالة المحطة' : 'Status';
-        timingValue = locale == 'ar'
-            ? 'قيد التدقيق (QA)'
-            : 'Pending verification';
-      } else {
-        timingLabel = locale == 'ar' ? 'الوصول المتوقع' : 'Expected';
-        timingValue = locale == 'ar' ? 'قيد الحساب...' : 'Calculating...';
-      }
+      timingLabel = locale == 'ar' ? 'الوصول المتوقع' : 'Expected';
+      timingValue = l10n?.trackingEtaUnavailable ?? 'ETA unavailable';
     } else {
-      // Future Stop
-      if (timing?.estimatedArrivalTime != null && (!stop.isTemporaryQa || isQaPreview)) {
-        final clockStr = StopEtaEngine.formatClockTime(
-          timing!.estimatedArrivalTime!,
-          locale,
-        );
-        timingLabel = locale == 'ar' ? 'الوصول المتوقع' : 'Expected';
-        timingValue = clockStr;
-      } else if (stop.isTemporaryQa && !isQaPreview) {
-        timingLabel = locale == 'ar' ? 'حالة المحطة' : 'Status';
-        timingValue = locale == 'ar'
-            ? 'قيد التدقيق (QA)'
-            : 'Pending verification';
-      } else {
-        timingLabel = locale == 'ar' ? 'حالة المحطة' : 'Status';
-        timingValue = locale == 'ar' ? 'محطة قادمة' : 'Upcoming stop';
-      }
+      timingLabel = locale == 'ar' ? 'حالة المحطة' : 'Status';
+      timingValue = stop.semanticState == TrackingStopSemanticState.unknown
+          ? (l10n?.trackingProgressUnavailable ??
+                'Stop progress temporarily unavailable')
+          : (locale == 'ar' ? 'محطة قادمة' : 'Upcoming stop');
     }
 
     return Container(
@@ -542,8 +566,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               if (stop.farePoints > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.accentYellow.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(8),
@@ -655,81 +681,56 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
   }) {
     final summary = state.summary;
     final telemetry = state.latestTelemetry;
-    final isOffline = state.isOffline;
-    final isBetweenRuns = state.isBetweenRuns;
+    final l10n = AppLocalizations.of(context);
 
     // Current / Last Stop logic
-    final currentStop = state.currentStop;
-    final currentTiming = state.currentStopTiming;
+    final currentStop = summary?.lastPassedStop;
+    final isCurrentStopVerified = currentStop?.hasCanonicalCoordinates ?? false;
     final currentStopName =
         currentStop?.localizedName(locale) ??
-        (isOffline
-            ? (locale == 'ar' ? 'نهاية الخط' : 'Route Terminal')
-            : (locale == 'ar' ? 'جاري التحديد...' : 'Locating...'));
+        (l10n?.trackingUnavailable ?? 'Tracking unavailable');
 
     final String currentReachedText;
-    if (currentTiming?.actualArrivalTime != null) {
-      final clockStr = StopEtaEngine.formatClockTime(
-        currentTiming!.actualArrivalTime!,
-        locale,
+    if (currentStop?.actualArrivalTime != null) {
+      final clockStr = AppTimeFormatter.formatDepartureTime(
+        departureAt: currentStop!.actualArrivalTime!,
+        locale: locale,
       );
-      currentReachedText = locale == 'ar'
-          ? 'وصل الساعة $clockStr'
-          : 'Arrived at $clockStr';
-    } else if (isOffline) {
-      currentReachedText = locale == 'ar' ? 'آخر موقع مسجل' : 'Last recorded';
+      currentReachedText =
+          l10n?.trackingReached(clockStr) ??
+          (locale == 'ar' ? 'وصل الساعة $clockStr' : 'Reached $clockStr');
     } else {
-      currentReachedText = locale == 'ar' ? 'وقت الوصول غير متاح' : 'Arrival time unavailable';
+      currentReachedText = l10n?.trackingUnavailable ?? 'Tracking unavailable';
     }
 
     // Next Stop logic
     final nextStop = state.nextStop;
-    final nextTiming = state.nextStopTiming;
+    final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
     final nextStopName =
         nextStop?.localizedName(locale) ??
-        (isOffline
-            ? (summary?.nextWindowStartTime != null
-                  ? (locale == 'ar'
-                        ? 'الساعة ${summary!.nextWindowStartTime}'
-                        : summary!.nextWindowStartTime!)
-                  : (locale == 'ar' ? '08:00 صباحاً' : '08:00 AM'))
-            : (locale == 'ar' ? 'جاري التحديد...' : 'Locating...'));
-
-    final String nextEtaText;
-    if (nextTiming?.estimatedArrivalTime != null && !isOffline) {
-      final remainingStr = StopEtaEngine.formatRemainingMinutes(
-        nextTiming!.estimatedArrivalTime!,
-        locale,
-      );
-      nextEtaText = remainingStr;
-    } else if (isOffline) {
-      nextEtaText = locale == 'ar' ? 'استئناف الخدمة' : 'Service resumes';
-    } else if (isBetweenRuns) {
-      nextEtaText = locale == 'ar' ? 'الرحلة التالية' : 'Next Run';
-    } else {
-      nextEtaText = locale == 'ar' ? 'قيد التقدير' : 'Estimating';
-    }
-
-    // Speed display
-    final speedValue = telemetry != null && telemetry.speedKmh > 0
-        ? '${telemetry.speedKmh.toStringAsFixed(0)} ${locale == 'ar' ? 'كم/س' : 'km/h'}'
-        : '0 ${locale == 'ar' ? 'كم/س' : 'km/h'}';
+        (l10n?.trackingUnavailable ?? 'Tracking unavailable');
+    final nextEtaText = l10n?.trackingEtaUnavailable ?? 'ETA unavailable';
 
     // Freshness text
-    final String freshnessText;
-    if (telemetry != null) {
-      final age = telemetry.ageSeconds;
-      if (age < 30) {
-        freshnessText = locale == 'ar' ? 'منذ لحظات' : 'Just now';
-      } else if (age < 120) {
-        freshnessText = locale == 'ar' ? 'منذ $age ث' : '$age sec ago';
-      } else {
-        final m = (age / 60).floor();
-        freshnessText = locale == 'ar' ? 'منذ $m د' : '$m min ago';
-      }
-    } else {
-      freshnessText = locale == 'ar' ? 'غير متصل' : 'Offline';
-    }
+    final freshnessText = switch (state.trackingStatus) {
+      LiveTrackingStatus.live || LiveTrackingStatus.online =>
+        telemetry == null
+            ? (l10n?.trackingUnavailable ?? 'Tracking unavailable')
+            : (locale == 'ar' ? 'تم التحديث الآن' : 'Updated just now'),
+      LiveTrackingStatus.assignmentPending =>
+        l10n?.trackingAssignmentPending ?? 'Bus assignment pending',
+      LiveTrackingStatus.stale =>
+        l10n?.trackingLocationUnavailable ?? 'Location temporarily unavailable',
+      LiveTrackingStatus.progressionUnavailable =>
+        l10n?.trackingProgressUnavailable ??
+            'Stop progress temporarily unavailable',
+      LiveTrackingStatus.tripNotActive =>
+        l10n?.trackingTripNotActive ?? 'Trip tracking is not active',
+      LiveTrackingStatus.offline || LiveTrackingStatus.outsideTrackingWindow =>
+        l10n?.trackingOffline ?? 'OFFLINE',
+      LiveTrackingStatus.betweenRuns || LiveTrackingStatus.qaPreview =>
+        l10n?.trackingUnavailable ?? 'Tracking unavailable',
+    };
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
@@ -784,8 +785,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildHeaderStatusPill(state.trackingStatus, locale,
-                    isAtStop: state.isAtStop),
+                _buildHeaderStatusPill(
+                  state.trackingStatus,
+                  locale,
+                  isAtStop: state.isAtStop,
+                ),
                 const Spacer(),
                 InkWell(
                   onTap: () {
@@ -827,8 +831,10 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.accentYellow,
+                              decoration: BoxDecoration(
+                                color: isCurrentStopVerified
+                                    ? AppColors.accentYellow
+                                    : const Color(0xFFCBD5E1),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -886,17 +892,21 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
+                              decoration: BoxDecoration(
+                                color: isNextStopVerified
+                                    ? AppColors.primary
+                                    : const Color(0xFFCBD5E1),
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               locale == 'ar' ? 'المحطة القادمة' : 'Next Stop',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.primary,
+                                color: isNextStopVerified
+                                    ? AppColors.primary
+                                    : const Color(0xFF64748B),
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -916,9 +926,11 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                         const SizedBox(height: 2),
                         Text(
                           nextEtaText,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10.5,
-                            color: AppColors.primaryDark,
+                            color: isNextStopVerified
+                                ? AppColors.primaryDark
+                                : const Color(0xFF64748B),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -930,7 +942,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Telemetry stats row: Speed + Last Updated
+            // Tracking state row: privacy-safe operational summary.
             Row(
               children: [
                 Container(
@@ -946,13 +958,13 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.speed_rounded,
+                        Icons.directions_bus_rounded,
                         size: 14,
                         color: Color(0xFF64748B),
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        '${locale == 'ar' ? 'السرعة: ' : 'Speed: '}$speedValue',
+                        locale == 'ar' ? 'أتوبيس عمومي' : 'AMOMY Bus',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -973,7 +985,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${locale == 'ar' ? 'آخر تحديث: ' : 'Updated: '}$freshnessText',
+                      freshnessText,
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),

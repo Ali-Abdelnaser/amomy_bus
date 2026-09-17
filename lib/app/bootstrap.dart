@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/config/app_config.dart';
@@ -25,7 +25,8 @@ Future<void> bootstrap({
 }) async {
   runZonedGuarded<Future<void>>(
     () async {
-      WidgetsFlutterBinding.ensureInitialized();
+      final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+      FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
       // Initialize App Configuration
       AppConfig.init(
@@ -69,19 +70,20 @@ Future<void> bootstrap({
         try {
           await getIt<NotificationService>().initialize();
         } catch (e) {
-          developer.log('NotificationService init error: $e', name: 'BOOTSTRAP');
+          developer.log(
+            'NotificationService init error: $e',
+            name: 'BOOTSTRAP',
+          );
         }
       }
 
       // Initialize App Locale Controller
       await AppLocaleController.instance.init();
 
-      runApp(
-        DevicePreview(
-          enabled: kDebugMode,
-          builder: (context) => const AmomyApp(),
-        ),
-      );
+      runApp(const AmomyApp());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FlutterNativeSplash.remove();
+      });
     },
     (error, stackTrace) {
       developer.log(
@@ -111,16 +113,24 @@ Future<void> _initializeBackendServicesIfConfigured() async {
       // Initialize Firebase App exactly once
       try {
         await Firebase.initializeApp();
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
         developer.log('Firebase initialized successfully.', name: 'BOOTSTRAP');
       } catch (fe) {
-        developer.log('Firebase initialization skipped or error: $fe', name: 'BOOTSTRAP');
+        developer.log(
+          'Firebase initialization skipped or error: $fe',
+          name: 'BOOTSTRAP',
+        );
       }
     } catch (e) {
       developer.log('Backend initialization warning: $e', name: 'BOOTSTRAP');
     }
   } else {
-    developer.log('Running with mock/offline backend placeholders (no Supabase keys set).', name: 'BOOTSTRAP');
+    developer.log(
+      'Running with mock/offline backend placeholders (no Supabase keys set).',
+      name: 'BOOTSTRAP',
+    );
   }
 
   // Debug-only safe auth config log
@@ -133,7 +143,9 @@ Future<void> _initializeBackendServicesIfConfigured() async {
       final webId = AuthConfig.googleWebClientId;
       final suffix = webId.endsWith('.apps.googleusercontent.com')
           ? '...apps.googleusercontent.com'
-          : (webId.length > 28 ? '...${webId.substring(webId.length - 28)}' : webId);
+          : (webId.length > 28
+                ? '...${webId.substring(webId.length - 28)}'
+                : webId);
       developer.log(
         '[AUTH CONFIG] Web Client ID suffix: $suffix',
         name: 'AUTH CONFIG',
@@ -151,9 +163,15 @@ Future<void> _initializeBackendServicesIfConfigured() async {
             ? AuthConfig.googleIosClientId
             : null,
       );
-      developer.log('GoogleSignIn initialized once (serverClientId audience set).', name: 'BOOTSTRAP');
+      developer.log(
+        'GoogleSignIn initialized once (serverClientId audience set).',
+        name: 'BOOTSTRAP',
+      );
     } else {
-      developer.log('GOOGLE_WEB_CLIENT_ID not provided. Google Sign-In will validate upon button press.', name: 'BOOTSTRAP');
+      developer.log(
+        'GOOGLE_WEB_CLIENT_ID not provided. Google Sign-In will validate upon button press.',
+        name: 'BOOTSTRAP',
+      );
     }
   } catch (e) {
     developer.log('GoogleSignIn initialization warning: $e', name: 'BOOTSTRAP');

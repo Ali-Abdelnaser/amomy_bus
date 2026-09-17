@@ -21,6 +21,7 @@ class AppButton extends StatelessWidget {
   final double height;
   final bool isFullWidth;
   final TextStyle? textStyle;
+  final EdgeInsetsGeometry? padding;
 
   const AppButton({
     super.key,
@@ -34,6 +35,7 @@ class AppButton extends StatelessWidget {
     this.height = 48.0,
     this.isFullWidth = false,
     this.textStyle,
+    this.padding,
   }) : assert(
          label != null || text != null,
          'Either label or text must be provided',
@@ -64,12 +66,8 @@ class AppButton extends StatelessWidget {
         break;
     }
 
-    final childWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isLoading)
-          SizedBox(
+    final childWidget = isLoading
+        ? SizedBox(
             width: 20,
             height: 20,
             child: CircularProgressIndicator(
@@ -77,12 +75,23 @@ class AppButton extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           )
-        else ...[
-          if (iconWidget != null) ...[iconWidget, AppSpacing.gapW8],
-          Text(displayLabel, style: textStyle),
-        ],
-      ],
-    );
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (iconWidget != null) ...[iconWidget, AppSpacing.gapW8],
+              Flexible(
+                child: Text(
+                  displayLabel,
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          );
 
     Widget button;
 
@@ -96,6 +105,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusLg,
             ),
@@ -113,6 +123,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),
@@ -129,6 +140,7 @@ class AppButton extends StatelessWidget {
             disabledForegroundColor: AppColors.disabled,
             side: const BorderSide(color: AppColors.border, width: 1.5),
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),
@@ -143,6 +155,7 @@ class AppButton extends StatelessWidget {
             foregroundColor: AppColors.primary,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusSm,
             ),
@@ -159,6 +172,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: AppColors.disabledBackground,
             disabledForegroundColor: AppColors.disabled,
             textStyle: AppTextStyles.labelLarge,
+            padding: padding,
             shape: const RoundedRectangleBorder(
               borderRadius: AppRadius.radiusMd,
             ),

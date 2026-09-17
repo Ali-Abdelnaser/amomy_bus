@@ -58,9 +58,7 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  ResultFuture<List<TripSeat>> getTripSeatMap({
-    required String tripId,
-  }) async {
+  ResultFuture<List<TripSeat>> getTripSeatMap({required String tripId}) async {
     if (!await _networkInfo.isConnected) {
       return const Error(NetworkFailure());
     }
@@ -98,9 +96,7 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  ResultFuture<void> releaseBookingHold({
-    required String holdId,
-  }) async {
+  ResultFuture<void> releaseBookingHold({required String holdId}) async {
     try {
       await _remoteDataSource.releaseBookingHold(holdId: holdId);
       return const Success(null);
@@ -232,6 +228,11 @@ class BookingRepositoryImpl implements BookingRepository {
     return _remoteDataSource.subscribeToTripSeatUpdates(tripId);
   }
 
+  @override
+  Stream<void> subscribeToPassengerBookingUpdates() {
+    return _remoteDataSource.subscribeToPassengerBookingUpdates();
+  }
+
   Failure _mapExceptionToFailure(dynamic error) {
     final message = error.toString().toLowerCase();
     if (message.contains('cancellation_window_closed')) {
@@ -277,6 +278,8 @@ class BookingRepositoryImpl implements BookingRepository {
         message.contains('trip_cancelled')) {
       return const TripUnavailableFailure();
     }
-    return const ServerFailure(message: 'Something went wrong. Please try again.');
+    return const ServerFailure(
+      message: 'Something went wrong. Please try again.',
+    );
   }
 }

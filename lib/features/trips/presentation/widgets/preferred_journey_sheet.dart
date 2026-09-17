@@ -47,12 +47,13 @@ class PreferredJourneySheet extends StatefulWidget {
     final cubit = context.read<PassengerTripsCubit>();
     return showModalBottomSheet(
       context: context,
-      useRootNavigator: false,
+      useSafeArea: false,
+      useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: false,
       backgroundColor: Colors.transparent,
       elevation: 0,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
+      barrierColor: Colors.black.withValues(alpha: 0.40),
       builder: (sheetContext) => BlocProvider.value(
         value: cubit,
         child: PreferredJourneySheet(
@@ -109,10 +110,6 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
     final isAr = locale.startsWith('ar');
     final mediaQuery = MediaQuery.of(context);
     final disableAnimations = mediaQuery.disableAnimations;
-    final bottomClearance = AmomySheetDimensions.computeBottomClearance(
-      context,
-      hasBottomNav: true,
-    );
 
     final hasCurrent = widget.preference != null;
     final currentOrigin = hasCurrent
@@ -126,15 +123,19 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
             : widget.preference!.destinationNameEn)
         : null;
 
+    final bottomSafeArea = mediaQuery.padding.bottom;
+
     Widget sheetPanel = Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(AmomySheetDimensions.sheetCornerRadius),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AmomySheetDimensions.sheetCornerRadius),
+      ),
       clipBehavior: Clip.antiAlias,
-      elevation: 10,
+      elevation: 16,
       shadowColor: Colors.black.withValues(alpha: 0.18),
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomSafeArea),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -527,9 +528,7 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(
-        left: 14,
-        right: 14,
-        bottom: bottomClearance,
+        bottom: mediaQuery.viewInsets.bottom,
       ),
       child: sheetPanel,
     );

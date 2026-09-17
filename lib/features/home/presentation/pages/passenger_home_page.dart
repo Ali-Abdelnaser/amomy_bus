@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_scaffold.dart';
-import '../../domain/entities/announcement.dart';
 import '../../domain/entities/home_summary.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
@@ -24,6 +26,9 @@ import '../../../tracking/presentation/widgets/home_live_tracking_card.dart';
 import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 import '../../../wallet/presentation/cubit/wallet_state.dart';
 
+import '../../../notifications/domain/repositories/notification_repository.dart';
+import '../../../notifications/presentation/cubit/notification_cubit.dart';
+import '../../../notifications/presentation/cubit/notification_state.dart';
 import '../../../notifications/presentation/services/notification_service.dart';
 
 class PassengerHomePage extends StatefulWidget {
@@ -68,29 +73,55 @@ class PassengerHomePage extends StatefulWidget {
     ),
   );
 
-  static final List<Announcement> _skeletonAnnouncements = [
-    const Announcement(
-      id: 'dummy-announcement',
-      titleAr: 'تنبيه الرحلات',
-      titleEn: 'Trip Alert',
-      descriptionAr: 'تابع مواعيد رحلاتك من التطبيق قبل التحرك.',
-      descriptionEn: 'Track your trip schedules before departure.',
-      type: 'announcement',
-      sortOrder: 1,
-    ),
-  ];
-
   @override
   State<PassengerHomePage> createState() => _PassengerHomePageState();
 }
 
-class _PassengerHomePageState extends State<PassengerHomePage> {
+/// Keeps the existing announcement feature available while its Home experience
+/// is prepared for a future product-approved redesign.
+const bool homeAnnouncementsEnabled = false;
+
+class _PassengerHomePageState extends State<PassengerHomePage>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotificationPermission();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      _refreshHomeData();
+    }
+  }
+
+  void _refreshHomeData() {
+    if (!mounted) return;
+    try {
+      context.read<HomeCubit>().loadHomeData(isRefresh: true);
+      final tripId = context
+          .read<HomeCubit>()
+          .state
+          .summary
+          ?.upcomingTrip
+          ?.tripId;
+      if (tripId != null && tripId.isNotEmpty) {
+        context.read<TrackingCubit>().loadTrackingData(
+          tripId: tripId,
+          isRefresh: true,
+        );
+      }
+    } catch (_) {}
   }
 
   void _checkNotificationPermission() {
@@ -102,6 +133,10 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasNotificationRealtime =
+        getIt.isRegistered<NotificationCubit>() ||
+        getIt.isRegistered<NotificationRepository>();
+
     return MultiBlocProvider(
       providers: [
         BlocProvider<HomeCubit>(
@@ -115,15 +150,40 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
           create: (context) =>
               widget.trackingCubit ??
               (getIt.isRegistered<TrackingCubit>()
-                    ? (getIt<TrackingCubit>()..loadTrackingData())
-                    : TrackingCubit(repository: getIt())
-                ..loadTrackingData()),
+                  ? getIt<TrackingCubit>()
+                  : TrackingCubit(repository: getIt())),
         ),
+        if (hasNotificationRealtime)
+          BlocProvider<NotificationCubit>(
+            create: (context) =>
+                getIt.isRegistered<NotificationCubit>()
+                      ? (getIt<NotificationCubit>()..loadNotifications())
+                      : NotificationCubit(
+                          repository: getIt<NotificationRepository>(),
+                          notificationService:
+                              getIt.isRegistered<NotificationService>()
+                              ? getIt<NotificationService>()
+                              : null,
+                        )
+                  ..loadNotifications(),
+          ),
       ],
       child: AppScaffold(
         body: SafeArea(
           bottom: false,
-          child: BlocBuilder<HomeCubit, HomeState>(
+          child: BlocConsumer<HomeCubit, HomeState>(
+            listenWhen: (previous, current) =>
+                previous.summary?.upcomingTrip?.tripId !=
+                current.summary?.upcomingTrip?.tripId,
+            listener: (context, state) {
+              final tripId = state.summary?.upcomingTrip?.tripId;
+              if (tripId != null && tripId.isNotEmpty) {
+                context.read<TrackingCubit>().loadTrackingData(
+                  tripId: tripId,
+                  isRefresh: true,
+                );
+              }
+            },
             builder: (context, state) {
               final l10n = context.l10n;
 
@@ -135,14 +195,17 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.cloud_off_rounded,
                           size: 48,
                           color: AppColors.error,
                         ),
                         AppSpacing.gapH16,
                         Text(
-                          state.errorMessage ?? l10n.errorOccurred,
+                          StatusLocalizer.localizeError(
+                            context,
+                            state.errorMessage,
+                          ),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -162,10 +225,8 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
 
               // Loading / Skeleton State
               final isLoading = state.isLoading || state.isInitial;
-              final summary = state.summary ?? PassengerHomePage._skeletonSummary;
-              final announcements = state.isLoaded
-                  ? state.announcements
-                  : PassengerHomePage._skeletonAnnouncements;
+              final summary =
+                  state.summary ?? PassengerHomePage._skeletonSummary;
 
               return RefreshIndicator(
                 color: AppColors.primary,
@@ -173,12 +234,19 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                 onRefresh: () async {
                   final futures = <Future>[
                     context.read<HomeCubit>().loadHomeData(isRefresh: true),
-                    context.read<TrackingCubit>().loadTrackingData(
-                      isRefresh: true,
-                    ),
                   ];
+                  final trackingTripId = state.summary?.upcomingTrip?.tripId;
+                  if (trackingTripId != null && trackingTripId.isNotEmpty) {
+                    futures.add(
+                      context.read<TrackingCubit>().loadTrackingData(
+                        tripId: trackingTripId,
+                        isRefresh: true,
+                      ),
+                    );
+                  }
                   try {
-                    final cubit = widget.walletCubit ?? context.read<WalletCubit>();
+                    final cubit =
+                        widget.walletCubit ?? context.read<WalletCubit>();
                     final authState = context.read<AuthBloc>().state;
                     final userId = authState is Authenticated
                         ? authState.user.id
@@ -193,32 +261,34 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                   enabled: isLoading,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // 1. Custom App Bar
-                        HomeAppBar(
-                          fullName: summary.profile.fullName,
-                          avatarUrl: summary.profile.avatarUrl,
-                        ),
-                        AppSpacing.gapH20,
-
-                        // 2. Announcements Carousel
-                        if (announcements.isNotEmpty) ...[
-                          HomeAnnouncementsSection(
-                            announcements: announcements,
+                        if (hasNotificationRealtime)
+                          BlocBuilder<NotificationCubit, NotificationState>(
+                            builder: (context, notificationState) {
+                              final unreadCount =
+                                  notificationState is NotificationLoaded
+                                  ? notificationState.unreadCount
+                                  : 0;
+                              return HomeAppBar(
+                                fullName: summary.profile.fullName,
+                                avatarUrl: summary.profile.avatarUrl,
+                                unreadNotificationsCount: unreadCount,
+                              );
+                            },
+                          )
+                        else
+                          HomeAppBar(
+                            fullName: summary.profile.fullName,
+                            avatarUrl: summary.profile.avatarUrl,
                           ),
-                          AppSpacing.gapH20,
-                        ],
-                        // 4. Live Bus Tracking Card (Global for ALL passengers)
-                        const HomeLiveTrackingCard(),
-                        AppSpacing.gapH24,
-
-                        // 3. Book Your Ride (Integrated with Authoritative Points Balance)
+                        AppSpacing.gapH20,
+                        // Final approved Home section order:
+                        // Book Now -> Live Tracking -> Upcoming Trip -> Activity.
+                        // Do not reorder without explicit product decision.
                         Builder(
                           builder: (context) {
                             final parentWalletCubit =
@@ -239,25 +309,52 @@ class _PassengerHomePageState extends State<PassengerHomePage> {
                                       walletState.status == WalletStatus.loaded
                                       ? walletState.summary.totalAvailablePoints
                                       : summary.availablePoints;
-                                  return HomeBookRideCard(points: livePoints);
+                                  return HomeBookRideCard(
+                                    points: livePoints,
+                                    isBookingAvailable:
+                                        state.isBookingAvailable,
+                                    hasLoadedAvailability:
+                                        state.hasLoadedAvailability,
+                                  );
                                 },
                               );
                             } else {
                               return HomeBookRideCard(
                                 points: summary.availablePoints,
+                                isBookingAvailable: state.isBookingAvailable,
+                                hasLoadedAvailability:
+                                    state.hasLoadedAvailability,
                               );
                             }
                           },
                         ),
-                        AppSpacing.gapH24,
-
-                        // 5. Upcoming Trip
-                        HomeUpcomingTripCard(
-                          upcomingTrip: summary.upcomingTrip,
+                        AppSpacing.gapH20,
+                        if (homeAnnouncementsEnabled &&
+                            state.announcements.isNotEmpty) ...[
+                          HomeAnnouncementsSection(
+                            announcements: state.announcements,
+                          ),
+                          AppSpacing.gapH20,
+                        ],
+                        HomeLiveTrackingCard(
+                          onViewMapTap:
+                              summary.upcomingTrip?.tripId.isNotEmpty == true
+                              ? () => context.push(
+                                  RoutePaths.liveTracking.replaceFirst(
+                                    ':tripId',
+                                    summary.upcomingTrip!.tripId,
+                                  ),
+                                )
+                              : null,
                         ),
                         AppSpacing.gapH24,
-
-                        // 6. Your Activity
+                        HomeUpcomingTripCard(
+                          upcomingTrip: summary.upcomingTrip,
+                          isBookingAvailable: state.isBookingAvailable,
+                          hasLoadedAvailability: state.hasLoadedAvailability,
+                          onCancelBooking: () => context.push(RoutePaths.trips),
+                        ),
+                        AppSpacing.gapH24,
                         HomeActivitySection(activity: summary.activity),
                         // Generous clearance ensuring full visibility above floating nav
                         const SizedBox(height: 110),

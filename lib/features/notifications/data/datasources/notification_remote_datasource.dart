@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/notification_preferences.dart';
 import '../../domain/entities/notification_test_event_result.dart';
 import '../../domain/entities/self_test_result.dart';
@@ -13,6 +16,8 @@ abstract class NotificationRemoteDataSource {
   });
 
   Future<int> getUnreadCount();
+
+  Stream<AppNotification?> subscribeToNotificationUpdates();
 
   Future<bool> markAsRead(String notificationId);
 
@@ -42,14 +47,15 @@ abstract class NotificationRemoteDataSource {
   Future<NotificationPreferencesModel> getPreferences();
 
   Future<NotificationPreferencesModel> updatePreferences(
-      NotificationPreferences preferences);
+    NotificationPreferences preferences,
+  );
 }
 
 class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   final SupabaseClient _client;
 
   NotificationRemoteDataSourceImpl({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   String _maskToken(String? token) {
     if (token == null || token.isEmpty) return 'none';
@@ -81,15 +87,18 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final list = response as List<dynamic>;
       final notifications = list
-          .map((json) => NotificationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => NotificationModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       if (kDebugMode) {
         final latest = notifications.isNotEmpty ? notifications.first : null;
         debugPrint(
-            '[AMOMY_NOTIF] Inbox refresh completed: count=${notifications.length}, '
-            'latest_type=${latest?.type.name ?? "none"}, '
-            'latest_created_at=${latest?.createdAt.toIso8601String() ?? "none"}');
+          '[AMOMY_NOTIF] Inbox refresh completed: count=${notifications.length}, '
+          'latest_type=${latest?.type.name ?? "none"}, '
+          'latest_created_at=${latest?.createdAt.toIso8601String() ?? "none"}',
+        );
       }
 
       return notifications;
@@ -125,14 +134,64 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   }
 
   @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    late final StreamController<AppNotification?> controller;
+    RealtimeChannel? channel;
+
+    controller = StreamController<AppNotification?>.broadcast(
+      onListen: () {
+        channel = _client.channel(
+          'notifications_${identityHashCode(controller)}',
+        );
+        channel!
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'notifications',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'user_id',
+                value: user.id,
+              ),
+              callback: (payload) {
+                if (controller.isClosed) return;
+                if (payload.eventType == PostgresChangeEvent.insert &&
+                    payload.newRecord.isNotEmpty) {
+                  controller.add(NotificationModel.fromJson(payload.newRecord));
+                  return;
+                }
+                controller.add(null);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () {
+        if (channel != null) {
+          _client.removeChannel(channel!);
+        }
+      },
+    );
+
+    return controller.stream;
+  }
+
+  @override
   Future<bool> markAsRead(String notificationId) async {
     try {
-      final response = await _client.rpc('mark_notification_as_read', params: {
-        'p_notification_id': notificationId,
-      });
+      final response = await _client.rpc(
+        'mark_notification_as_read',
+        params: {'p_notification_id': notificationId},
+      );
       final success = response == true;
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] markAsRead ($notificationId): success=$success');
+        debugPrint(
+          '[AMOMY_NOTIF] markAsRead ($notificationId): success=$success',
+        );
       }
       return success;
     } catch (e) {
@@ -173,20 +232,26 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] register_device_token RPC called with ${_maskToken(token)}, platform=$platform');
+          '[AMOMY_NOTIF] register_device_token RPC called with ${_maskToken(token)}, platform=$platform',
+        );
       }
 
-      final response = await _client.rpc('register_device_token', params: {
-        'p_token': token,
-        'p_platform': platform,
-        'p_installation_id': installationId,
-        'p_device_name': deviceName,
-        'p_app_version': appVersion,
-      });
+      final response = await _client.rpc(
+        'register_device_token',
+        params: {
+          'p_token': token,
+          'p_platform': platform,
+          'p_installation_id': installationId,
+          'p_device_name': deviceName,
+          'p_app_version': appVersion,
+        },
+      );
 
       final success = response != null;
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Token registered in Supabase: ${success ? "success" : "failure"}');
+        debugPrint(
+          '[AMOMY_NOTIF] Token registered in Supabase: ${success ? "success" : "failure"}',
+        );
       }
       return success;
     } catch (e) {
@@ -201,11 +266,14 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<bool> deactivateDeviceToken(String token) async {
     try {
       if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] deactivate_device_token RPC called for ${_maskToken(token)}');
+        debugPrint(
+          '[AMOMY_NOTIF] deactivate_device_token RPC called for ${_maskToken(token)}',
+        );
       }
-      final response = await _client.rpc('deactivate_device_token', params: {
-        'p_token': token,
-      });
+      final response = await _client.rpc(
+        'deactivate_device_token',
+        params: {'p_token': token},
+      );
       return response == true;
     } catch (e) {
       if (kDebugMode) {
@@ -228,12 +296,14 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Self-test request sent to Edge Function (delay: ${delaySeconds ?? 0}s)...');
+          '[AMOMY_NOTIF] Self-test request sent to Edge Function (delay: ${delaySeconds ?? 0}s)...',
+        );
       }
 
       final body = <String, dynamic>{
         'action': 'self_test',
-        if (delaySeconds != null && delaySeconds > 0) 'delay_seconds': delaySeconds,
+        if (delaySeconds != null && delaySeconds > 0)
+          'delay_seconds': delaySeconds,
       };
 
       final response = await _client.functions.invoke(
@@ -255,16 +325,17 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Self-test backend response: '
-            'status=$statusCode, '
-            'success=${result.success}, '
-            'request_accepted=${result.requestAccepted}, '
-            'target_devices=${result.totalDevices}, '
-            'fcm_send_attempted=${result.fcmSendAttempted}, '
-            'fcm_successes=${result.fcmSuccesses}, '
-            'fcm_failures=${result.fcmFailures}, '
-            'inbox_inserted=${result.notificationInboxInserted}, '
-            'error=${result.error ?? "none"}');
+          '[AMOMY_NOTIF] Self-test backend response: '
+          'status=$statusCode, '
+          'success=${result.success}, '
+          'request_accepted=${result.requestAccepted}, '
+          'target_devices=${result.totalDevices}, '
+          'fcm_send_attempted=${result.fcmSendAttempted}, '
+          'fcm_successes=${result.fcmSuccesses}, '
+          'fcm_failures=${result.fcmFailures}, '
+          'inbox_inserted=${result.notificationInboxInserted}, '
+          'error=${result.error ?? "none"}',
+        );
       }
 
       return result;
@@ -326,12 +397,14 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         'event_type': eventType,
         'force_delivery': forceDelivery,
         if (customData != null && customData.isNotEmpty) 'data': customData,
-        if (delaySeconds != null && delaySeconds > 0) 'delay_seconds': delaySeconds,
+        if (delaySeconds != null && delaySeconds > 0)
+          'delay_seconds': delaySeconds,
       };
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF] Dispatching Test Lab event: $eventType, force=$forceDelivery');
+          '[AMOMY_NOTIF] Dispatching Test Lab event: $eventType, force=$forceDelivery',
+        );
       }
 
       final response = await _client.functions.invoke(
@@ -353,7 +426,8 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF_TEST] action=test_event event_type=${result.eventType} tester_authorized=true force_delivery=${result.forced} target_devices=${result.totalDevices} inbox_inserted=${result.inboxInserted} fcm_successes=${result.delivered} fcm_failures=${result.fcmFailures}');
+          '[AMOMY_NOTIF_TEST] action=test_event event_type=${result.eventType} tester_authorized=true force_delivery=${result.forced} target_devices=${result.totalDevices} inbox_inserted=${result.inboxInserted} fcm_successes=${result.delivered} fcm_failures=${result.fcmFailures}',
+        );
       }
 
       return result;
@@ -380,9 +454,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       if (kDebugMode) {
         debugPrint(
-            '[AMOMY_NOTIF_TEST] action=test_event event_type=$eventType tester_authorized=false error=$cleanMessage');
+          '[AMOMY_NOTIF_TEST] action=test_event event_type=$eventType tester_authorized=false error=$cleanMessage',
+        );
       }
-      return NotificationTestEventResult.failure(cleanMessage, eventType: eventType);
+      return NotificationTestEventResult.failure(
+        cleanMessage,
+        eventType: eventType,
+      );
     }
   }
 
@@ -394,11 +472,15 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         return const NotificationPreferencesModel();
       }
 
-      final response = await _client.rpc('get_or_create_notification_preferences');
+      final response = await _client.rpc(
+        'get_or_create_notification_preferences',
+      );
       if (response is Map<String, dynamic>) {
         return NotificationPreferencesModel.fromJson(response);
       } else if (response is Map) {
-        return NotificationPreferencesModel.fromJson(Map<String, dynamic>.from(response));
+        return NotificationPreferencesModel.fromJson(
+          Map<String, dynamic>.from(response),
+        );
       }
 
       final row = await _client
@@ -421,25 +503,31 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
   @override
   Future<NotificationPreferencesModel> updatePreferences(
-      NotificationPreferences preferences) async {
+    NotificationPreferences preferences,
+  ) async {
     try {
       final user = _client.auth.currentUser;
       if (user == null) {
         return NotificationPreferencesModel.fromEntity(preferences);
       }
 
-      final response = await _client.rpc('update_notification_preferences', params: {
-        'p_all_enabled': preferences.allEnabled,
-        'p_service_updates': preferences.serviceUpdates,
-        'p_booking_updates': preferences.bookingUpdates,
-        'p_wallet_updates': preferences.walletUpdates,
-        'p_trip_updates': preferences.tripUpdates,
-      });
+      final response = await _client.rpc(
+        'update_notification_preferences',
+        params: {
+          'p_all_enabled': preferences.allEnabled,
+          'p_service_updates': preferences.serviceUpdates,
+          'p_booking_updates': preferences.bookingUpdates,
+          'p_wallet_updates': preferences.walletUpdates,
+          'p_trip_updates': preferences.tripUpdates,
+        },
+      );
 
       if (response is Map<String, dynamic>) {
         return NotificationPreferencesModel.fromJson(response);
       } else if (response is Map) {
-        return NotificationPreferencesModel.fromJson(Map<String, dynamic>.from(response));
+        return NotificationPreferencesModel.fromJson(
+          Map<String, dynamic>.from(response),
+        );
       }
 
       return NotificationPreferencesModel.fromEntity(preferences);

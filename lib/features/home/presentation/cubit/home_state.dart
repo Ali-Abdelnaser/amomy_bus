@@ -10,6 +10,8 @@ class HomeState extends Equatable {
   final List<Announcement> announcements;
   final String? errorMessage;
   final bool isRefreshing;
+  final bool isBookingAvailable;
+  final bool hasLoadedAvailability;
 
   const HomeState({
     this.status = HomeStatus.initial,
@@ -17,6 +19,8 @@ class HomeState extends Equatable {
     this.announcements = const [],
     this.errorMessage,
     this.isRefreshing = false,
+    this.isBookingAvailable = true,
+    this.hasLoadedAvailability = false,
   });
 
   bool get isInitial => status == HomeStatus.initial;
@@ -30,6 +34,8 @@ class HomeState extends Equatable {
     List<Announcement>? announcements,
     String? errorMessage,
     bool? isRefreshing,
+    bool? isBookingAvailable,
+    bool? hasLoadedAvailability,
   }) {
     return HomeState(
       status: status ?? this.status,
@@ -37,15 +43,20 @@ class HomeState extends Equatable {
       announcements: announcements ?? this.announcements,
       errorMessage: errorMessage,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      isBookingAvailable: isBookingAvailable ?? this.isBookingAvailable,
+      hasLoadedAvailability:
+          hasLoadedAvailability ?? this.hasLoadedAvailability,
     );
   }
 
   @override
   List<Object?> get props => [
-        status,
-        summary,
-        announcements,
-        errorMessage,
-        isRefreshing,
-      ];
+    status,
+    summary,
+    announcements,
+    errorMessage,
+    isRefreshing,
+    isBookingAvailable,
+    hasLoadedAvailability,
+  ];
 }

@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_initializing_formals
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
@@ -50,18 +51,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required UpdatePasswordUseCase updatePasswordUseCase,
     required GetWalletPreviewUseCase getWalletPreviewUseCase,
     required SignOutUseCase signOutUseCase,
-  })  : _getCurrentUserUseCase = getCurrentUserUseCase,
-        _signInWithEmailUseCase = signInWithEmailUseCase,
-        _signUpWithEmailUseCase = signUpWithEmailUseCase,
-        _verifyOtpUseCase = verifyOtpUseCase,
-        _resendOtpUseCase = resendOtpUseCase,
-        _signInWithGoogleUseCase = signInWithGoogleUseCase,
-        _completeProfileUseCase = completeProfileUseCase,
-        _sendPasswordResetUseCase = sendPasswordResetUseCase,
-        _updatePasswordUseCase = updatePasswordUseCase,
-        _getWalletPreviewUseCase = getWalletPreviewUseCase,
-        _signOutUseCase = signOutUseCase,
-        super(const AuthInitial()) {
+  }) : _getCurrentUserUseCase = getCurrentUserUseCase,
+       _signInWithEmailUseCase = signInWithEmailUseCase,
+       _signUpWithEmailUseCase = signUpWithEmailUseCase,
+       _verifyOtpUseCase = verifyOtpUseCase,
+       _resendOtpUseCase = resendOtpUseCase,
+       _signInWithGoogleUseCase = signInWithGoogleUseCase,
+       _completeProfileUseCase = completeProfileUseCase,
+       _sendPasswordResetUseCase = sendPasswordResetUseCase,
+       _updatePasswordUseCase = updatePasswordUseCase,
+       _getWalletPreviewUseCase = getWalletPreviewUseCase,
+       _signOutUseCase = signOutUseCase,
+       super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<SignInWithEmailRequested>(_onSignInWithEmailRequested);
     on<SignUpWithEmailRequested>(_onSignUpWithEmailRequested);
@@ -129,10 +130,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       onError: (failure) async => emit(AuthFailureState(failure)),
       onSuccess: (user) async {
         if (!user.isEmailVerified) {
-          emit(EmailVerificationRequired(
-            email: event.email,
-            infoMessage: 'Verification code sent to your email.',
-          ));
+          emit(
+            EmailVerificationRequired(
+              email: event.email,
+              infoMessage: 'Verification code sent to your email.',
+            ),
+          );
         } else {
           await _routeUser(user, emit);
         }
@@ -149,10 +152,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       email: event.email,
       token: event.token,
     );
-    await result.fold(
-      onError: (failure) async => emit(AuthFailureState(failure)),
-      onSuccess: (user) async => _routeUser(user, emit),
-    );
+    if (result.isError) {
+      emit(AuthFailureState(result.failureOrNull!));
+    } else {
+      await _routeUser(result.dataOrNull!, emit);
+    }
   }
 
   Future<void> _onResendOtpRequested(
@@ -162,10 +166,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _resendOtpUseCase(email: event.email);
     result.fold(
       onError: (failure) => emit(AuthFailureState(failure)),
-      onSuccess: (_) => emit(EmailVerificationRequired(
-        email: event.email,
-        infoMessage: 'Verification code resent successfully.',
-      )),
+      onSuccess: (_) => emit(
+        EmailVerificationRequired(
+          email: event.email,
+          infoMessage: 'Verification code resent successfully.',
+        ),
+      ),
     );
   }
 
@@ -238,11 +244,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'AuthBloc: CompleteProfileRequested failed for user ${currentUser.id}: ${failure.message}',
         name: 'AUTH',
       );
-      emit(ProfileSaveFailure(
-        user: currentUser,
-        failure: failure,
-        wallet: currentWallet,
-      ));
+      emit(
+        ProfileSaveFailure(
+          user: currentUser,
+          failure: failure,
+          wallet: currentWallet,
+        ),
+      );
     } else {
       await _routeUser(result.dataOrNull!, emit);
     }
@@ -320,13 +328,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final walletResult = await _getWalletPreviewUseCase(user.id);
     wallet = walletResult.dataOrNull;
 
-    emit(Authenticated(
-      user: user,
-      wallet: wallet,
-    ));
+    emit(Authenticated(user: user, wallet: wallet));
 
-    if (getIt.isRegistered<NotificationService>()) {
-      unawaited(getIt<NotificationService>().syncDeviceToken());
+    // Push registration is a non-critical side effect.
+    // On iOS, token sync MUST NOT be initiated immediately after authentication
+    // before notification authorization and APNs readiness have occurred.
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      if (getIt.isRegistered<NotificationService>()) {
+        unawaited(getIt<NotificationService>().syncDeviceToken());
+      }
     }
   }
 

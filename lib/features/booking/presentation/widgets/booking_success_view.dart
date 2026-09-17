@@ -1,30 +1,26 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/booking_entities.dart';
-import 'booking_qr_ticket_card.dart';
+import 'app_qr_ticket_widget.dart';
 
-/// Premium Booking Success View with realistic printing ticket animation.
-///
-/// Animation Sequence (Total 3100ms):
-/// - 0.00–0.08: Printer wake-up & green checkmark animation (~250ms, status LED, micro warmup).
-/// - 0.08–0.78: Ticket feed & subtle dispenser sound (~2170ms, smooth physical progress).
-/// - 0.78–0.90: Ticket final exit / settle (~370ms, subtle vertical settle, audio stops).
-/// - 0.90–1.00: Confirmation actions smoothly fade and slide in (~310ms).
+/// Boarding ticket shown after a confirmed booking with realistic printer dispensing animation.
 class BookingSuccessView extends StatefulWidget {
   final PassengerBooking booking;
 
-  const BookingSuccessView({
-    super.key,
-    required this.booking,
-  });
+  const BookingSuccessView({super.key, required this.booking});
 
   @override
   State<BookingSuccessView> createState() => _BookingSuccessViewState();
@@ -33,19 +29,30 @@ class BookingSuccessView extends StatefulWidget {
 class _BookingSuccessViewState extends State<BookingSuccessView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final Animation<double> _animation;
+  late final Animation<double> _fadeAnimation;
   AudioPlayer? _audioPlayer;
-  bool _soundStarted = false;
-  bool _soundStopped = false;
+  bool _soundPlayed = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3100),
+      duration: const Duration(milliseconds: 750),
     );
 
-    _controller.addListener(_handleAnimationTick);
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+      ),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -54,45 +61,27 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
       if (disableAnimations) {
         _controller.value = 1.0;
       } else {
+        _playPrinterSound();
         _controller.forward();
       }
     });
   }
 
-  void _handleAnimationTick() {
-    final disableAnimations =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (disableAnimations) return;
-
-    final progress = _controller.value;
-    if (!_soundStarted && progress >= 0.08 && progress < 0.78) {
-      _soundStarted = true;
-      _playPrinterSound();
-    } else if (_soundStarted && !_soundStopped && progress >= 0.78) {
-      _soundStopped = true;
-      _stopPrinterSound();
-    }
-  }
-
-  Future<void> _playPrinterSound() async {
+  void _playPrinterSound() {
+    if (_soundPlayed) return;
+    _soundPlayed = true;
     try {
       _audioPlayer ??= AudioPlayer();
-      await _audioPlayer?.setVolume(0.35);
-      await _audioPlayer?.play(AssetSource('audio/printer_dispense.wav'));
+      _audioPlayer?.setReleaseMode(ReleaseMode.release);
+      _audioPlayer?.setVolume(0.35);
+      _audioPlayer?.play(AssetSource('audio/printer_dispense.wav'));
     } catch (_) {
-      // Audio failsafe: playback failure never blocks or interrupts the UI
+      // Audio playback failsafe — audio issues should never interrupt UI
     }
-  }
-
-  Future<void> _stopPrinterSound() async {
-    try {
-      await _audioPlayer?.stop();
-    } catch (_) {}
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_handleAnimationTick);
     _controller.dispose();
     _audioPlayer?.dispose();
     super.dispose();
@@ -100,308 +89,345 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).languageCode;
-    final isAr = locale.startsWith('ar');
+    final isArabic = Localizations.localeOf(
+      context,
+    ).languageCode.startsWith('ar');
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final safeWidth = screenWidth > 0 ? screenWidth : 375.0;
-
-    // Responsive portrait ticket dimensions (445 x 939)
-    final ticketWidth = math.min(safeWidth - 48.0, 300.0).clamp(240.0, 300.0);
-    final ticketHeight = ticketWidth *
-        (BookingQrTicketSvgBackground.svgHeight /
-            BookingQrTicketSvgBackground.svgWidth);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final progress = _controller.value;
-
-          // -------------------------------------------------------------------
-          // SUCCESS CHECK ANIMATION (450–600ms / ~0.00 – 0.19)
-          // -------------------------------------------------------------------
-          final checkT = (progress / 0.18).clamp(0.0, 1.0);
-          final checkScale = Curves.easeOutBack.transform(checkT);
-          final effectiveScale = 0.75 + (0.25 * checkScale);
-          final checkOpacity = Curves.easeOut.transform((progress / 0.12).clamp(0.0, 1.0));
-
-          // -------------------------------------------------------------------
-          // PHASE 1: Printer Wake-Up (0.00 – 0.08)
-          // -------------------------------------------------------------------
-          final slotGlow = (progress < 0.78)
-              ? (math.sin(progress * math.pi * 3).abs() * 0.7)
-              : 0.0;
-
-          // -------------------------------------------------------------------
-          // PHASE 2: Ticket Feeding (0.08 – 0.78) ~2170ms
-          // -------------------------------------------------------------------
-          final feedT = ((progress - 0.08) / 0.70).clamp(0.0, 1.0);
-          final feedProgress = Curves.easeInOutSine.transform(feedT);
-
-          // Micro-vibration on printer housing during feed only (max 0.6px)
-          final isPrinting = progress >= 0.08 && progress <= 0.78;
-          final printerVibration = isPrinting
-              ? (math.sin(progress * 60.0) * 0.6)
-              : 0.0;
-
-          // -------------------------------------------------------------------
-          // PHASE 3: Settle motion (0.78 – 0.90) ~370ms
-          // -------------------------------------------------------------------
-          double settleOffset = 0.0;
-          if (progress > 0.78 && progress <= 0.90) {
-            final settleT = (progress - 0.78) / 0.12;
-            settleOffset = math.sin(settleT * math.pi) * 2.0;
-          }
-
-          // -------------------------------------------------------------------
-          // PHASE 4: Actions Fade/Slide (0.90 – 1.00) ~310ms
-          // -------------------------------------------------------------------
-          final actionsT = ((progress - 0.90) / 0.10).clamp(0.0, 1.0);
-          final actionsOpacity =
-              actionsT >= 1.0 ? 1.0 : Curves.easeOut.transform(actionsT);
-          final actionsSlideY = (1.0 - actionsOpacity) * 14.0;
-
-          return Column(
+    return Container(
+      color: const Color(0xFFF8FAFC), // Crisp paper background contrast
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.s20,
+            AppSpacing.s20,
+            AppSpacing.s20,
+            math.max(AppSpacing.s24, bottomInset + AppSpacing.s16),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Success Icon & Confirmation Title
-              Center(
-                child: Transform.scale(
-                  scale: effectiveScale,
-                  child: Opacity(
-                    opacity: checkOpacity,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF86EFAC),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF16A34A).withValues(
-                              alpha: (0.28 * checkOpacity).clamp(0.0, 0.28),
-                            ),
-                            blurRadius: 18,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.check_rounded,
-                          color: Color(0xFF16A34A),
-                          size: 34,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                l10n.bookingSuccessTitle,
-                style: AppTextStyles.headlineSmall.copyWith(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22,
-                  color: const Color(0xFF101828),
-                  letterSpacing: -0.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.bookingSuccessSubtitle,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
+              // 1. Animated success check & 2. Localized title & 3. Subtitle
+              const _ConfirmationHeader(),
+              AppSpacing.gapH20,
 
-              // 2. Printer & Portrait Ticket Printing Stage
-              Center(
-                child: SizedBox(
-                  width: ticketWidth + 24.0,
-                  height: 56.0 + ticketHeight + 10.0,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // LAYER 1: The Emergent Portrait Ticket (physically clipped behind printer)
-                      Positioned(
-                        top: 48.0, // Aligned with the printer output slot
-                        left: 12.0,
-                        width: ticketWidth,
-                        height: ticketHeight + 10.0,
-                        child: ClipRect(
-                          child: Transform.translate(
-                            offset: Offset(
-                              0,
-                              -(ticketHeight * (1.0 - feedProgress)) +
-                                  settleOffset,
-                            ),
-                            child: BookingQrTicketCard(
-                              booking: widget.booking,
-                              ticketWidth: ticketWidth,
-                              ticketHeight: ticketHeight,
-                              isAr: isAr,
-                              locale: locale,
-                              feedProgress: feedProgress,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // LAYER 2: Printer Housing Layer (rendered ON TOP of ticket)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 56.0,
-                        child: Transform.translate(
-                          offset: Offset(printerVibration, 0),
-                          child: _TicketPrinterHousing(
-                            width: ticketWidth + 24.0,
-                            ticketWidth: ticketWidth,
-                            slotGlow: slotGlow,
-                            isPrinting: isPrinting,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              // 4. Stylized printer slot & 5. Animated emerging ticket
+              _TicketPrinterSection(
+                booking: widget.booking,
+                isArabic: isArabic,
+                animation: _animation,
+                fadeAnimation: _fadeAnimation,
               ),
+              AppSpacing.gapH24,
 
-              const SizedBox(height: 24),
-
-              // 3. Post-Print Action Buttons (Side-by-Side: View My Trips + Back to Home)
-              Opacity(
-                opacity: actionsOpacity,
-                child: Transform.translate(
-                  offset: Offset(0, actionsSlideY),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
-                    child: Row(
-                      children: [
-                        // Primary Action: View My Trips (Filled AMOMY Blue)
-                        Expanded(
-                          child: AppButton(
-                            label: l10n.viewMyTrips,
-                            icon: const Icon(
-                              AppIcons.bus,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                            height: 48.0,
-                            isFullWidth: true,
-                            textStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            onPressed: actionsOpacity > 0.5
-                                ? () => context.go('/trips')
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-
-                        // Secondary Action: Back to Home (Soft / Outlined)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: actionsOpacity > 0.5
-                                ? () => context.go('/home')
-                                : null,
-                            icon: const Icon(
-                              AppIcons.home,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                            label: Text(
-                              isAr ? 'العودة للرئيسية' : 'Back to Home',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 48.0),
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              side: const BorderSide(
-                                color: Color(0xFFCBD5E1),
-                                width: 1.4,
-                              ),
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: AppRadius.radiusLg,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // 6. My Trips & 7. Go to Home
+              const _SuccessActions(),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 }
 
-/// Compact stylized digital boarding-ticket machine housing.
-class _TicketPrinterHousing extends StatelessWidget {
-  final double width;
-  final double ticketWidth;
-  final double slotGlow;
-  final bool isPrinting;
+/// Redesigned bold confirmation badge with multi-layer pulsing rings and spring animation.
+class _ConfirmationHeader extends StatefulWidget {
+  const _ConfirmationHeader();
 
-  const _TicketPrinterHousing({
-    required this.width,
-    required this.ticketWidth,
-    required this.slotGlow,
-    required this.isPrinting,
+  @override
+  State<_ConfirmationHeader> createState() => _ConfirmationHeaderState();
+}
+
+class _ConfirmationHeaderState extends State<_ConfirmationHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _checkAnimController;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _pulseRingAnimation;
+  late final Animation<double> _ringOpacityAnimation;
+  late final Animation<double> _textFadeAnimation;
+  late final Animation<Offset> _textSlideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _checkAnimController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+    );
+
+    _pulseRingAnimation = Tween<double>(begin: 0.8, end: 1.35).animate(
+      CurvedAnimation(
+        parent: _checkAnimController,
+        curve: const Interval(0.15, 0.75, curve: Curves.easeOutQuad),
+      ),
+    );
+
+    _ringOpacityAnimation = Tween<double>(begin: 0.6, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _checkAnimController,
+        curve: const Interval(0.2, 0.75, curve: Curves.easeOut),
+      ),
+    );
+
+    _textFadeAnimation = CurvedAnimation(
+      parent: _checkAnimController,
+      curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+    );
+
+    _textSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _checkAnimController,
+            curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
+          ),
+        );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (disableAnimations) {
+        _checkAnimController.value = 1.0;
+      } else {
+        _checkAnimController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _checkAnimController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      children: [
+        // Redesigned Animated Green Success Badge
+        SizedBox(
+          width: 88,
+          height: 88,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer pulsing shockwave ripple ring
+              AnimatedBuilder(
+                animation: _checkAnimController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _pulseRingAnimation.value,
+                    child: Opacity(
+                      opacity: _ringOpacityAnimation.value,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF10B981),
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // Soft static ambient glow ring
+              Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                ),
+              ),
+
+              // Spring-scaled vibrant emerald badge
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF34D399), // Emerald 400
+                        Color(0xFF059669), // Emerald 600
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.38),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 34,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        AppSpacing.gapH12,
+
+        // Animated Headline & Subtitle
+        SlideTransition(
+          position: _textSlideAnimation,
+          child: FadeTransition(
+            opacity: _textFadeAnimation,
+            child: Column(
+              children: [
+                Text(
+                  l10n.bookingSuccessTitle,
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                AppSpacing.gapH4,
+                Text(
+                  l10n.bookingSuccessSubtitle,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Printer output area + ticket emerging downwards with realistic receipt animation.
+class _TicketPrinterSection extends StatelessWidget {
+  final PassengerBooking booking;
+  final bool isArabic;
+  final Animation<double> animation;
+  final Animation<double> fadeAnimation;
+
+  const _TicketPrinterSection({
+    required this.booking,
+    required this.isArabic,
+    required this.animation,
+    required this.fadeAnimation,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxAvailableWidth = constraints.maxWidth;
+        final ticketWidth = math.min(maxAvailableWidth, 340.0);
+        final ticketHeight = ticketWidth * 633 / 444;
+        final printerWidth = math.min(maxAvailableWidth, ticketWidth + 24.0);
+        const slotY = 34.0; // Emergence point right below printer body aperture
+
+        return Center(
+          child: SizedBox(
+            width: printerWidth,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
+              children: [
+                // Emerging ticket container (clipped at top so it emerges from slot)
+                Padding(
+                  padding: const EdgeInsets.only(top: slotY),
+                  child: ClipRect(
+                    child: AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        final translateY = (1.0 - animation.value) * -80.0;
+                        final opacity = fadeAnimation.value;
+                        return Transform.translate(
+                          offset: Offset(0, translateY),
+                          child: Opacity(opacity: opacity, child: child),
+                        );
+                      },
+                      child: SizedBox(
+                        width: ticketWidth,
+                        height: ticketHeight,
+                        child: _BookingTicket(
+                          booking: booking,
+                          isArabic: isArabic,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Enhanced printer head housing with "Amomy Bus"
+                Positioned(
+                  top: 0,
+                  child: _PrinterSlot(
+                    width: printerWidth,
+                    slotWidth: ticketWidth,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Stylized digital printer head housing (taller profile, LED, Amomy Bus branding, and paper slot).
+class _PrinterSlot extends StatelessWidget {
+  final double width;
+  final double slotWidth;
+
+  const _PrinterSlot({required this.width, required this.slotWidth});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      height: 56.0,
+      height: 42.0,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(16),
-          bottom: Radius.circular(10),
+          top: Radius.circular(12),
+          bottom: Radius.circular(6),
         ),
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
+            Color(0xFF1E293B), // Slate 800
             Color(0xFF0F172A), // Slate 900
-            Color(0xFF0B192C), // Sleek AMOMY Dark Navy
           ],
         ),
-        border: Border.all(
-          color: const Color(0xFF1E293B),
-          width: 1.2,
-        ),
+        border: Border.all(color: const Color(0xFF334155), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.22),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -413,17 +439,17 @@ class _TicketPrinterHousing extends StatelessWidget {
           // Top subtle specular highlight edge
           Positioned(
             top: 0,
-            left: 16,
-            right: 16,
+            left: 14,
+            right: 14,
             height: 1.0,
             child: Container(
               color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
             ),
           ),
 
-          // Center Branding & Status LED
+          // Center Branding: LED indicator + "Amomy Bus"
           Positioned(
-            top: 10,
+            top: 9,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -436,55 +462,42 @@ class _TicketPrinterHousing extends StatelessWidget {
                     color: const Color(0xFF22C55E),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF22C55E).withValues(
-                          alpha: isPrinting ? 0.9 : 0.5,
-                        ),
-                        blurRadius: isPrinting ? 6 : 3,
-                        spreadRadius: isPrinting ? 1 : 0,
+                        color: const Color(0xFF22C55E).withValues(alpha: 0.8),
+                        blurRadius: 6,
+                        spreadRadius: 1,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'AMOMY DIGITAL DISPENSER',
+                  'Amomy Bus',
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 8.5,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: Color(0xFF94A3B8),
+                    letterSpacing: 1.5,
+                    color: Color(0xFFE2E8F0),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Output Slot Cavity at bottom matching portrait ticket width
+          // Output slot aperture at bottom
           Positioned(
             bottom: 3,
             child: Container(
-              width: ticketWidth + 8.0,
-              height: 7.5,
+              width: slotWidth * 0.95,
+              height: 4.5,
               decoration: BoxDecoration(
-                color: const Color(0xFF020617), // Deep black cavity
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: const Color(0xFF334155),
-                  width: 0.8,
-                ),
+                color: const Color(0xFF020617),
+                borderRadius: BorderRadius.circular(2.5),
+                border: Border.all(color: const Color(0xFF1E293B), width: 0.8),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF38BDF8).withValues(
-                      alpha: (slotGlow * 0.4).clamp(0.0, 0.4),
-                    ),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-                  const BoxShadow(
-                    color: Colors.black,
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                    blurRadius: 4,
                   ),
                 ],
               ),
@@ -492,6 +505,180 @@ class _TicketPrinterHousing extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Official SVG Ticket Card displaying QR code on top and 3 meta columns at bottom with paper depth.
+class _BookingTicket extends StatelessWidget {
+  final PassengerBooking booking;
+  final bool isArabic;
+
+  const _BookingTicket({required this.booking, required this.isArabic});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final departureTime = AppTimeFormatter.formatPassengerBooking(
+      booking,
+      isArabic: isArabic,
+    );
+    final fare = '${booking.farePoints.toInt()} ${l10n.pointsUnit}';
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: LayoutBuilder(
+        builder: (context, ticketConstraints) {
+          final width = ticketConstraints.maxWidth;
+          final height = ticketConstraints.maxHeight;
+          final qrSize = (width * 0.72).clamp(200.0, 260.0);
+
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+                bottom: Radius.circular(8),
+              ),
+              boxShadow: [
+                // Soft ambient paper drop shadow for tactile depth
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                  spreadRadius: -2,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 1. Ticket SVG Background (renders vector outline + white fill)
+                SvgPicture.asset(
+                  'assets/images/booking_ticket.svg',
+                  fit: BoxFit.fill,
+                  matchTextDirection: false,
+                ),
+
+                // 2. Upper area: ONLY the QR code (large, centered)
+                Positioned(
+                  top: height * (32 / 633),
+                  left: 0,
+                  right: 0,
+                  bottom: height * (175 / 633),
+                  child: Center(
+                    child: AppQrTicketWidget(
+                      data: booking.qrToken,
+                      size: qrSize,
+                    ),
+                  ),
+                ),
+
+                // 3. Lower area: exactly 3 columns (TIME, SEAT, FEES)
+                Positioned(
+                  left: width * (20 / 444),
+                  right: width * (20 / 444),
+                  top: height * (490 / 633),
+                  bottom: height * (22 / 633),
+                  child: Row(
+                    children: [
+                      _TicketValue(
+                        label: l10n.bookingTicketTime,
+                        value: departureTime,
+                      ),
+                      _TicketValue(
+                        label: l10n.bookingTicketSeat,
+                        value: booking.seatNumber,
+                      ),
+                      _TicketValue(label: l10n.bookingTicketFees, value: fare),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TicketValue extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TicketValue({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            AppSpacing.gapH4,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+                maxLines: 1,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SuccessActions extends StatelessWidget {
+  const _SuccessActions();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppButton(
+          label: l10n.bookingSuccessMyTrips,
+          icon: const Icon(AppIcons.bus, size: 18, color: Colors.white),
+          height: 48,
+          isFullWidth: true,
+          onPressed: () => context.go(RoutePaths.trips),
+        ),
+        AppSpacing.gapH10,
+        AppButton(
+          label: l10n.bookingSuccessGoHome,
+          icon: const Icon(AppIcons.home, size: 18),
+          variant: ButtonVariant.outline,
+          height: 48,
+          isFullWidth: true,
+          onPressed: () => context.go(RoutePaths.home),
+        ),
+      ],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/booking_entities.dart';
 
@@ -16,13 +17,14 @@ class DirectionSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final l10n = context.l10n;
+    final isAr = context.isArabic;
     final isOutbound = selectedDirection == BookingDirection.outbound;
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-    final outboundLabel = isAr ? 'ذهاب' : 'Outbound';
-    final returnLabel = isAr ? 'عودة' : 'Return';
+    final outboundLabel = l10n.directionOutbound;
+    final returnLabel = l10n.directionReturn;
 
     const pillHeight = 50.0;
     const cornerRadius = 16.0;
@@ -32,10 +34,7 @@ class DirectionSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(cornerRadius),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -49,9 +48,9 @@ class DirectionSelector extends StatelessWidget {
                     ? Duration.zero
                     : const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                alignment: isAr
-                    ? (isOutbound ? Alignment.centerRight : Alignment.centerLeft)
-                    : (isOutbound ? Alignment.centerLeft : Alignment.centerRight),
+                alignment: isOutbound
+                    ? AlignmentDirectional.centerStart
+                    : AlignmentDirectional.centerEnd,
                 child: Padding(
                   padding: const EdgeInsets.all(3.0),
                   child: Container(
@@ -87,10 +86,15 @@ class DirectionSelector extends StatelessWidget {
                       child: InkWell(
                         onTap: isOutbound
                             ? null
-                            : () => onDirectionChanged(BookingDirection.outbound),
+                            : () =>
+                                  onDirectionChanged(BookingDirection.outbound),
                         borderRadius: BorderRadius.horizontal(
-                          left: isAr ? Radius.zero : const Radius.circular(cornerRadius),
-                          right: isAr ? const Radius.circular(cornerRadius) : Radius.zero,
+                          left: isAr
+                              ? Radius.zero
+                              : const Radius.circular(cornerRadius),
+                          right: isAr
+                              ? const Radius.circular(cornerRadius)
+                              : Radius.zero,
                         ),
                         child: Center(
                           child: Row(
@@ -133,10 +137,16 @@ class DirectionSelector extends StatelessWidget {
                       child: InkWell(
                         onTap: !isOutbound
                             ? null
-                            : () => onDirectionChanged(BookingDirection.returnTrip),
+                            : () => onDirectionChanged(
+                                BookingDirection.returnTrip,
+                              ),
                         borderRadius: BorderRadius.horizontal(
-                          left: isAr ? const Radius.circular(cornerRadius) : Radius.zero,
-                          right: isAr ? Radius.zero : const Radius.circular(cornerRadius),
+                          left: isAr
+                              ? const Radius.circular(cornerRadius)
+                              : Radius.zero,
+                          right: isAr
+                              ? Radius.zero
+                              : const Radius.circular(cornerRadius),
                         ),
                         child: Center(
                           child: Row(

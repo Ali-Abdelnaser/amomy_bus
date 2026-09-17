@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
+import '../../../../core/localization/app_time_formatter.dart';
+import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/amomy_floating_alert.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../cubit/passenger_trips_cubit.dart';
 
@@ -19,10 +22,7 @@ import '../cubit/passenger_trips_cubit.dart';
 class BookedTripOverflowMenu extends StatelessWidget {
   final PassengerTodayTrip trip;
 
-  const BookedTripOverflowMenu({
-    super.key,
-    required this.trip,
-  });
+  const BookedTripOverflowMenu({super.key, required this.trip});
 
   bool get _isCutoff {
     final cutoffTime = trip.departureAt.subtract(const Duration(minutes: 30));
@@ -36,6 +36,7 @@ class BookedTripOverflowMenu extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
@@ -91,8 +92,8 @@ class BookedTripOverflowMenu extends StatelessWidget {
                           children: [
                             Text(
                               isAr
-                                  ? 'رحلة ${trip.departureTime} — مقعد (${trip.seatNumber ?? "—"})'
-                                  : '${trip.departureTime} Trip — Seat (${trip.seatNumber ?? "—"})',
+                                  ? 'رحلة ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: true)} — مقعد (${trip.seatNumber ?? "—"})'
+                                  : '${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: false)} Trip — Seat (${trip.seatNumber ?? "—"})',
                               style: AppTextStyles.titleMedium.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: const Color(0xFF101828),
@@ -165,20 +166,17 @@ class BookedTripOverflowMenu extends StatelessWidget {
                     title: isAr ? 'تغيير المقعد' : 'Change Seat',
                     subtitle: isCutoff
                         ? (isAr
-                            ? 'غير متاح بعد موعد الإغلاق'
-                            : 'Unavailable after cutoff')
+                              ? 'غير متاح بعد موعد الإغلاق'
+                              : 'Unavailable after cutoff')
                         : (isAr
-                            ? 'اختر مقعدًا آخر متاحًا على نفس الحافلة'
-                            : 'Choose another available seat on this bus'),
+                              ? 'اختر مقعدًا آخر متاحًا على نفس الحافلة'
+                              : 'Choose another available seat on this bus'),
                     enabled: !isCutoff,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       context.push(
                         RoutePaths.changeSeat,
-                        extra: {
-                          'trip': trip,
-                          'tripsCubit': cubit,
-                        },
+                        extra: {'trip': trip, 'tripsCubit': cubit},
                       );
                     },
                   ),
@@ -193,11 +191,11 @@ class BookedTripOverflowMenu extends StatelessWidget {
                     title: isAr ? 'إلغاء الحجز' : 'Cancel Booking',
                     subtitle: isCutoff
                         ? (isAr
-                            ? 'غير متاح بعد موعد الإغلاق'
-                            : 'Unavailable after cutoff')
+                              ? 'غير متاح بعد موعد الإغلاق'
+                              : 'Unavailable after cutoff')
                         : (isAr
-                            ? 'استرداد ${trip.farePoints.toInt()} نقطة إلى محفظتك'
-                            : 'Refund ${trip.farePoints.toInt()} points to your wallet'),
+                              ? 'استرداد ${trip.farePoints.toInt()} نقطة إلى محفظتك'
+                              : 'Refund ${trip.farePoints.toInt()} points to your wallet'),
                     enabled: !isCutoff,
                     isDestructive: true,
                     onTap: () {
@@ -219,104 +217,40 @@ class BookedTripOverflowMenu extends StatelessWidget {
     PassengerTripsCubit cubit,
     bool isAr,
   ) {
-    showDialog<void>(
+    showConfirmDialog(
       context: context,
-      useRootNavigator: true,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.errorLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.error,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  isAr ? 'تأكيد إلغاء الحجز' : 'Confirm Cancellation',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF101828),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            isAr
-                ? 'هل أنت متأكد من رغبتك في إلغاء حجز المقعد (${trip.seatNumber ?? "—"}) لرحلة الساعة ${trip.departureTime}؟\n\nسيتم استرداد ${trip.farePoints.toInt()} نقطة بالكامل إلى محفظتك.'
-                : 'Are you sure you want to cancel Seat (${trip.seatNumber ?? "—"}) for the ${trip.departureTime} trip?\n\n${trip.farePoints.toInt()} points will be fully refunded to your wallet.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: const Color(0xFF475467),
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                isAr ? 'تراجع' : 'Keep Booking',
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: const Color(0xFF667085),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                if (trip.bookingId == null) return;
+      title: isAr ? 'تأكيد إلغاء الحجز' : 'Confirm Cancellation',
+      message: isAr
+          ? 'هل أنت متأكد من رغبتك في إلغاء حجز المقعد (${trip.seatNumber ?? "—"}) لرحلة الساعة ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: true)}؟\n\nسيتم استرداد ${trip.farePoints.toInt()} نقطة بالكامل إلى محفظتك.'
+          : 'Are you sure you want to cancel Seat (${trip.seatNumber ?? "—"}) for the ${AppTimeFormatter.formatPassengerTodayTrip(trip, isArabic: false)} trip?\n\n${trip.farePoints.toInt()} points will be fully refunded to your wallet.',
+      cancelText: isAr ? 'الاحتفاظ بالحجز' : 'Keep Booking',
+      confirmText: isAr ? 'إلغاء الحجز' : 'Cancel Booking',
+      isDestructive: true,
+      variant: AppDialogVariant.destructive,
+      onConfirm: () async {
+        if (trip.bookingId == null) return;
 
-                final success = await cubit.cancelBooking(trip.bookingId!);
-                if (!context.mounted) return;
+        final success = await cubit.cancelBooking(trip.bookingId!);
+        if (!context.mounted) return;
 
-                if (success) {
-                  AmomyFloatingAlert.show(
-                    context,
-                    title: isAr
-                        ? 'تم إلغاء الحجز واسترداد ${trip.farePoints.toInt()} نقطة بنجاح'
-                        : 'Booking cancelled and ${trip.farePoints.toInt()} points refunded',
-                    variant: AmomyAlertVariant.success,
-                  );
-                } else {
-                  AmomyFloatingAlert.show(
-                    context,
-                    title: cubit.state.errorMessage ??
-                        (isAr ? 'فشل إلغاء الحجز' : 'Failed to cancel booking'),
-                    variant: AmomyAlertVariant.error,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                isAr ? 'تأكيد الإلغاء' : 'Cancel Booking',
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
+        if (success) {
+          AmomyFloatingAlert.show(
+            context,
+            title: isAr
+                ? 'تم إلغاء الحجز واسترداد ${trip.farePoints.toInt()} نقطة بنجاح'
+                : 'Booking cancelled and ${trip.farePoints.toInt()} points refunded',
+            variant: AmomyAlertVariant.success,
+          );
+        } else {
+          AmomyFloatingAlert.show(
+            context,
+            title: StatusLocalizer.localizeError(
+              context,
+              cubit.state.errorMessage,
             ),
-          ],
-        );
+            variant: AmomyAlertVariant.error,
+          );
+        }
       },
     );
   }
@@ -385,9 +319,7 @@ class _ActionTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFE4E7EC),
-              ),
+              border: Border.all(color: const Color(0xFFE4E7EC)),
             ),
             child: Row(
               children: [

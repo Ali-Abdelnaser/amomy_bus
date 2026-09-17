@@ -40,6 +40,7 @@ For in-depth architectural details, refer to:
 - [02 — Folder Structure](docs/02_FOLDER_STRUCTURE.md)
 - [03 — Coding Standards](docs/03_CODING_STANDARDS.md)
 - [04 — Business Rules](docs/04_BUSINESS_RULES.md)
+- [Master Production Completion Roadmap](docs/PRODUCTION_COMPLETION_ROADMAP.md)
 
 ---
 
@@ -159,10 +160,9 @@ Comprehensive, reconciled documentation is available in the [`docs/`](docs/) dir
   - Authoritative 28-Seat Physical Cabin Map (1 front + 12 left + 10 right + 5 rear bench) with 5-minute atomic holds
   - Dynamic 3-Tier Stop Pricing (34 stops: Zone 30 pts, Zone 25 pts, Zone 20 pts) with frozen fare snapshots
   - Duplicate-Trip Booking Prevention & 30-Minute Cutoff for Cancellations/Seat Swaps
-  - Live GPS Bus Tracking (Google Maps Platform, Silver AMOMY styling, ETrack hardware IoT telemetry for Amomy 1 & 2, road-following Google Routes geometry, stop arrival events & ETA engine)
+  - Live GPS Bus Tracking (Google Maps Platform default map styling, ETrack hardware IoT telemetry for Amomy 1 & 2, road-following Google Routes geometry, stop arrival events & ETA engine)
   - Points Wallet (1 EGP = 1 Point, minimum 200 PTS top-up, Vodafone Cash / InstaPay manual top-up with resubmission support, double-entry immutable ledger)
   - My Trips Hub with QR Ticket Pass, Booking History, Seat Swaps, and Exact-Batch Refunds
 - **Next Development Phase**: Push Notifications Infrastructure (Firebase Messaging, transactional alerts, bus approach triggers).
 - **Last Updated**: 2026-09-14
-
 

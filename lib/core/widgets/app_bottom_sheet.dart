@@ -13,31 +13,22 @@ class AmomySheetDimensions {
   static const double dragHandleHeight = 4.0;
   static const Color dragHandleColor = Color(0xFFD0D5DD);
 
-  /// Computes the exact bottom clearance required so the sheet stops cleanly
-  /// above the floating bottom navigation bar, or floats above the keyboard when active.
+  /// Computes the bottom inset for modal sheets.
+  /// The sheet surface stays attached to the bottom edge; only keyboard presence
+  /// moves it upward.
   static double computeBottomClearance(
     BuildContext context, {
     bool hasBottomNav = true,
     double extraGap = 10.0,
   }) {
     final mediaQuery = MediaQuery.of(context);
-    final bottomPadding = mediaQuery.padding.bottom;
     final keyboardInset = mediaQuery.viewInsets.bottom;
 
-    // When virtual keyboard is open, float cleanly above the keyboard
     if (keyboardInset > 0) {
       return keyboardInset + 12.0;
     }
 
-    // When inside the passenger shell that renders FloatingBottomNavBar
-    if (hasBottomNav) {
-      final navBarMargin = bottomPadding > 0 ? bottomPadding + 8.0 : 16.0;
-      final navBarTotalHeight = navBarHeight + navBarMargin;
-      return navBarTotalHeight + extraGap;
-    }
-
-    // Default standalone bottom padding
-    return (bottomPadding > 0 ? bottomPadding : 12.0) + extraGap;
+    return 0;
   }
 }
 
@@ -60,10 +51,10 @@ class AmomyDragHandle extends StatelessWidget {
   }
 }
 
-/// Standardized container for AMOMY floating bottom sheets.
+/// Standardized container for AMOMY modal bottom sheets.
 ///
 /// Features:
-/// - Floating rounded card (24px radius) that ends above the floating bottom nav bar.
+/// - Full-width sheet attached to the physical bottom edge.
 /// - Single centered internal drag handle.
 /// - Smooth entry and dismiss animations without bounce.
 /// - Dynamic keyboard inset adaptation.
@@ -93,11 +84,15 @@ class AmomySheetContainer extends StatelessWidget {
       context,
       hasBottomNav: hasBottomNav,
     );
+    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
+    final basePadding = padding ?? const EdgeInsets.fromLTRB(20, 12, 20, 20);
+    final resolvedPadding = basePadding.resolve(Directionality.of(context));
 
     Widget content = Material(
       color: Colors.white,
-      borderRadius:
-          BorderRadius.circular(AmomySheetDimensions.sheetCornerRadius),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AmomySheetDimensions.sheetCornerRadius),
+      ),
       clipBehavior: Clip.antiAlias,
       elevation: 10,
       shadowColor: Colors.black.withValues(alpha: 0.16),
@@ -106,7 +101,12 @@ class AmomySheetContainer extends StatelessWidget {
           maxHeight: maxHeight ?? (MediaQuery.of(context).size.height * 0.85),
         ),
         child: Padding(
-          padding: padding ?? const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: EdgeInsets.fromLTRB(
+            resolvedPadding.left,
+            resolvedPadding.top,
+            resolvedPadding.right,
+            resolvedPadding.bottom + bottomSafeArea,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,10 +115,7 @@ class AmomySheetContainer extends StatelessWidget {
                 const AmomyDragHandle(),
                 SizedBox(height: topGap),
               ],
-              Flexible(
-                fit: FlexFit.loose,
-                child: child,
-              ),
+              Flexible(fit: FlexFit.loose, child: child),
             ],
           ),
         ),
@@ -143,11 +140,7 @@ class AmomySheetContainer extends StatelessWidget {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-        left: 14,
-        right: 14,
-        bottom: bottomClearance,
-      ),
+      padding: EdgeInsets.only(bottom: bottomClearance),
       child: content,
     );
   }
@@ -170,6 +163,7 @@ Future<T?> showAmomyModalBottomSheet<T>({
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     showDragHandle: false,
+    useSafeArea: false,
     backgroundColor: Colors.transparent,
     elevation: 0,
     barrierColor: barrierColor ?? Colors.black.withValues(alpha: 0.35),

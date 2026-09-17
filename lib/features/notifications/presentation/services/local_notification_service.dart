@@ -3,24 +3,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'notification_router.dart';
 
-/// Service managing local Android system notifications for foreground push presentation.
+/// Service managing local foreground system notifications and tap routing.
 class LocalNotificationService {
   static const String channelId = 'amomy_high_importance';
   static const String channelName = 'AMOMY Notifications';
   static const String channelDescription =
       'Booking, wallet, trip, and service updates';
+  static const int _maxNotificationId = 0x7FFFFFFF;
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _isInitialized = false;
-  DateTime? _lastShowAttempt;
-  String? _lastShowResult;
 
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   bool get isInitialized => _isInitialized;
-  DateTime? get lastShowAttempt => _lastShowAttempt;
-  String? get lastShowResult => _lastShowResult;
 
   /// Initializes the local notifications plugin and creates the Android high importance channel.
   Future<void> initialize({
@@ -29,8 +26,9 @@ class LocalNotificationService {
     if (_isInitialized) return;
 
     try {
-      const androidSettings =
-          AndroidInitializationSettings('@drawable/ic_notification');
+      const androidSettings = AndroidInitializationSettings(
+        '@drawable/ic_notification',
+      );
       const iosSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
@@ -44,7 +42,8 @@ class LocalNotificationService {
 
       await _plugin.initialize(
         initSettings,
-        onDidReceiveNotificationResponse: onNotificationTap ??
+        onDidReceiveNotificationResponse:
+            onNotificationTap ??
             (response) {
               _handleNotificationTap(response.payload);
             },
@@ -54,7 +53,8 @@ class LocalNotificationService {
       if (defaultTargetPlatform == TargetPlatform.android) {
         final androidImplementation = _plugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
         if (androidImplementation != null) {
           const channel = AndroidNotificationChannel(
@@ -70,40 +70,25 @@ class LocalNotificationService {
       }
 
       _isInitialized = true;
-      if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] Local notification service initialized: success (channel: $channelId)');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Local notification service initialization error: $e');
-      }
-    }
+    } catch (_) {}
   }
 
-  /// Displays a heads-up system notification on Android when app is in foreground.
+  /// Displays a heads-up system notification when app is in foreground.
   Future<bool> showForegroundNotification({
     required int id,
     required String title,
     required String body,
     Map<String, dynamic>? payload,
   }) async {
-    _lastShowAttempt = DateTime.now();
-
-    // Only display local notifications on Android (iOS uses native presentation options)
-    if (defaultTargetPlatform != TargetPlatform.android && !kIsWeb) {
-      if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] Skipping local notification show on non-Android platform: $defaultTargetPlatform');
-      }
-      _lastShowResult = 'skipped_non_android';
-      return true;
-    }
+    final normalizedId = _normalizeNotificationId(id);
 
     try {
-      if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] Local notification show called: id=$id, channelId=$channelId, title="$title"');
+      if (!_isInitialized) {
+        await initialize();
+      }
+
+      if (!_isInitialized) {
+        return false;
       }
 
       const androidDetails = AndroidNotificationDetails(
@@ -117,43 +102,40 @@ class LocalNotificationService {
         enableVibration: true,
       );
 
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        presentBanner: true,
+        presentList: true,
+      );
+
       const notificationDetails = NotificationDetails(
         android: androidDetails,
+        iOS: iosDetails,
       );
 
       final payloadString = payload != null ? jsonEncode(payload) : null;
 
       await _plugin.show(
-        id,
+        normalizedId,
         title,
         body,
         notificationDetails,
         payload: payloadString,
       );
 
-      _lastShowResult = 'success';
-      if (kDebugMode) {
-        debugPrint(
-            '[AMOMY_NOTIF] Local notification show result: success for #$id');
-      }
       return true;
-    } catch (e, st) {
-      _lastShowResult = 'error: $e';
-      if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Local notification show result: ERROR - $e\n$st');
-      }
+    } catch (_) {
       return false;
     }
   }
 
-  /// Direct debug test for local notifications (isolated from Firebase/Supabase).
-  Future<bool> showTestLocalNotification() async {
-    return showForegroundNotification(
-      id: 999001,
-      title: 'AMOMY Local Test',
-      body: 'Local notifications are working.',
-      payload: {'test': 'local_diagnostic', 'screen': 'notifications'},
-    );
+  bool _isValidNotificationId(int id) => id >= 0 && id <= _maxNotificationId;
+
+  int _normalizeNotificationId(int id) {
+    if (_isValidNotificationId(id)) return id;
+    return id.hashCode & _maxNotificationId;
   }
 
   void _handleNotificationTap(String? payloadString) {
@@ -169,10 +151,7 @@ class LocalNotificationService {
       } else {
         NotificationRouter.navigateToDestination(null);
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[AMOMY_NOTIF] Error parsing tap payload: $e');
-      }
+    } catch (_) {
       NotificationRouter.navigateToDestination(null);
     }
   }

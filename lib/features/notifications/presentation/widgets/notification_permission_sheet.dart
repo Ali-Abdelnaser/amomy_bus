@@ -16,8 +16,8 @@ class NotificationPermissionSheet extends StatelessWidget {
   static Future<bool?> show(BuildContext context) {
     return showModalBottomSheet<bool>(
       context: context,
+      useSafeArea: false,
       useRootNavigator: true,
-      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => NotificationPermissionSheet(

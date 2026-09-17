@@ -5,7 +5,10 @@ import 'package:amomy_bus/features/notifications/domain/entities/self_test_resul
 import 'package:amomy_bus/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:amomy_bus/features/notifications/presentation/cubit/notification_cubit.dart';
 import 'package:amomy_bus/features/notifications/presentation/cubit/notification_state.dart';
+import 'package:amomy_bus/features/notifications/presentation/services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
 
 class _FakeNotificationRepository implements NotificationRepository {
   List<AppNotification> notifications = [];
@@ -13,15 +16,24 @@ class _FakeNotificationRepository implements NotificationRepository {
   bool selfTestSuccess = true;
   String? registeredToken;
   String? deactivatedToken;
+  final realtimeController = StreamController<AppNotification?>.broadcast();
 
   @override
-  Future<List<AppNotification>> getNotifications({int limit = 50, int offset = 0}) async {
+  Future<List<AppNotification>> getNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async {
     return notifications;
   }
 
   @override
   Future<int> getUnreadCount() async {
     return unreadCount;
+  }
+
+  @override
+  Stream<AppNotification?> subscribeToNotificationUpdates() {
+    return realtimeController.stream;
   }
 
   @override
@@ -39,7 +51,9 @@ class _FakeNotificationRepository implements NotificationRepository {
   @override
   Future<int> markAllAsRead() async {
     final count = notifications.where((n) => !n.isRead).length;
-    notifications = notifications.map((n) => n.copyWith(readAt: DateTime.now())).toList();
+    notifications = notifications
+        .map((n) => n.copyWith(readAt: DateTime.now()))
+        .toList();
     unreadCount = 0;
     return count;
   }
@@ -111,8 +125,28 @@ class _FakeNotificationRepository implements NotificationRepository {
   }
 
   @override
-  Future<NotificationPreferences> updatePreferences(NotificationPreferences preferences) async {
+  Future<NotificationPreferences> updatePreferences(
+    NotificationPreferences preferences,
+  ) async {
     return preferences;
+  }
+}
+
+class _FakeNotificationService extends Fake implements NotificationService {
+  final presented = <AppNotification>[];
+
+  @override
+  Stream<RemoteMessage> get onForegroundNotification => const Stream.empty();
+
+  @override
+  void recordInboxRefresh({required int count, required int unreadCount}) {}
+
+  @override
+  Future<bool> presentForegroundNotificationRow(
+    AppNotification notification,
+  ) async {
+    presented.add(notification);
+    return true;
   }
 }
 
@@ -133,34 +167,37 @@ void main() {
     expect(cubit.state, const NotificationInitial());
   });
 
-  test('loadNotifications emits loading then loaded with notifications', () async {
-    final notif = AppNotification(
-      id: 'n1',
-      userId: 'u1',
-      type: NotificationType.system,
-      titleAr: 'تنبيه',
-      bodyAr: 'مرحبا',
-      titleEn: 'Alert',
-      bodyEn: 'Hello',
-      createdAt: DateTime.now(),
-    );
-    fakeRepo.notifications = [notif];
-    fakeRepo.unreadCount = 1;
+  test(
+    'loadNotifications emits loading then loaded with notifications',
+    () async {
+      final notif = AppNotification(
+        id: 'n1',
+        userId: 'u1',
+        type: NotificationType.system,
+        titleAr: 'تنبيه',
+        bodyAr: 'مرحبا',
+        titleEn: 'Alert',
+        bodyEn: 'Hello',
+        createdAt: DateTime.now(),
+      );
+      fakeRepo.notifications = [notif];
+      fakeRepo.unreadCount = 1;
 
-    expectLater(
-      cubit.stream,
-      emitsInOrder([
-        const NotificationLoading(),
-        NotificationLoaded(
-          notifications: [notif],
-          unreadCount: 1,
-          isRefreshing: false,
-        ),
-      ]),
-    );
+      expectLater(
+        cubit.stream,
+        emitsInOrder([
+          const NotificationLoading(),
+          NotificationLoaded(
+            notifications: [notif],
+            unreadCount: 1,
+            isRefreshing: false,
+          ),
+        ]),
+      );
 
-    await cubit.loadNotifications();
-  });
+      await cubit.loadNotifications();
+    },
+  );
 
   test('markAsRead updates state optimistically', () async {
     final notif = AppNotification(
@@ -226,5 +263,85 @@ void main() {
     final state = cubit.state as NotificationLoaded;
     expect(state.notifications, isNotEmpty);
     expect(state.notifications.first.titleEn, 'Test');
+  });
+
+  test('realtime insert reloads notification list and unread count', () async {
+    await cubit.loadNotifications();
+
+    final notif = AppNotification(
+      id: 'n-live',
+      userId: 'u1',
+      type: NotificationType.walletCredit,
+      titleAr: 'رصيد',
+      bodyAr: 'تم تحديث الرصيد',
+      titleEn: 'Wallet',
+      bodyEn: 'Balance updated',
+      createdAt: DateTime.now(),
+    );
+    fakeRepo.notifications = [notif];
+    fakeRepo.unreadCount = 1;
+    fakeRepo.realtimeController.add(notif);
+    await pumpEventQueue();
+
+    final state = cubit.state as NotificationLoaded;
+    expect(state.notifications.single.id, 'n-live');
+    expect(state.unreadCount, 1);
+  });
+
+  test(
+    'realtime inserted notification row is presented through notification service once',
+    () async {
+      final notificationService = _FakeNotificationService();
+      await cubit.close();
+      cubit = NotificationCubit(
+        repository: fakeRepo,
+        notificationService: notificationService,
+      );
+      await cubit.loadNotifications();
+
+      final notif = AppNotification(
+        id: 'n-present',
+        userId: 'u1',
+        type: NotificationType.bookingConfirmed,
+        titleAr: 'تم تأكيد الحجز',
+        bodyAr: 'تم تأكيد رحلتك',
+        titleEn: 'Booking Confirmed',
+        bodyEn: 'Your trip is confirmed.',
+        createdAt: DateTime.now(),
+      );
+      fakeRepo.notifications = [notif];
+      fakeRepo.unreadCount = 1;
+      expect(fakeRepo.realtimeController.hasListener, isTrue);
+      fakeRepo.realtimeController.add(notif);
+      await pumpEventQueue(times: 5);
+
+      expect(notificationService.presented, [notif]);
+      expect((cubit.state as NotificationLoaded).notifications, [notif]);
+    },
+  );
+
+  test('realtime read change updates unread state', () async {
+    final notif = AppNotification(
+      id: 'n-read',
+      userId: 'u1',
+      type: NotificationType.system,
+      titleAr: 'تنبيه',
+      bodyAr: 'مرحبا',
+      titleEn: 'Alert',
+      bodyEn: 'Hello',
+      createdAt: DateTime.now(),
+    );
+    fakeRepo.notifications = [notif];
+    fakeRepo.unreadCount = 1;
+    await cubit.loadNotifications();
+
+    fakeRepo.notifications = [notif.copyWith(readAt: DateTime.now())];
+    fakeRepo.unreadCount = 0;
+    fakeRepo.realtimeController.add(null);
+    await pumpEventQueue();
+
+    final state = cubit.state as NotificationLoaded;
+    expect(state.notifications.single.isRead, isTrue);
+    expect(state.unreadCount, 0);
   });
 }

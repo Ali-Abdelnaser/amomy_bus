@@ -158,8 +158,8 @@ AMOMY employs a crisp, flat-by-default architectural aesthetic with subtle tonal
 - **Destinations:** Home, My Trips, Wallet, Profile.
 - **Active State:** Tinted blue icon and bold label; inactive state text secondary `#667085`.
 
-### Live Google Map System (Silver / Monochrome Palette)
-- **Base Map Style**: Google Maps Platform Silver JSON styling (`#EBEBEB` land, `#C5CAD1` water, `#D6D6D6` roads) to create a clean, non-distracting background for route overlays.
+### Live Google Map System (Default Google Maps Palette)
+- **Base Map Style**: Native Google Maps default styling on Android and iOS, preserving Google's standard parks, water, roads, labels, and POI rendering.
 - **Route Polyline Progression**:
   - Unreached / Upcoming road path: Official AMOMY Brand Blue `#01589F` (width: 5.5px, rounded cap).
   - Traveled / Behind the bus: Soft muted slate `#94A3B8` (width: 4.5px, opacity: 0.6).

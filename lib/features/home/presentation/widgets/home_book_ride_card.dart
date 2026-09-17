@@ -10,8 +10,15 @@ import '../../../../core/theme/app_spacing.dart';
 /// Matches the official AMOMY design with high visual fidelity in both RTL and LTR.
 class HomeBookRideCard extends StatelessWidget {
   final int points;
+  final bool isBookingAvailable;
+  final bool hasLoadedAvailability;
 
-  const HomeBookRideCard({super.key, required this.points});
+  const HomeBookRideCard({
+    super.key,
+    required this.points,
+    this.isBookingAvailable = true,
+    this.hasLoadedAvailability = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,15 +55,10 @@ class HomeBookRideCard extends StatelessWidget {
               children: [
                 // 1. Background Bus Artwork with perfectly balanced composition
                 Positioned.fill(
-                  child: Transform.flip(
-                    flipX: isRtl,
-                    child: Image.asset(
-                      AppAssets.bookCardBg,
-                      fit: BoxFit.cover,
-                      alignment: isRtl
-                          ? Alignment.centerLeft
-                          : Alignment.centerRight,
-                    ),
+                  child: Image.asset(
+                    AppAssets.bookCardBg,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.centerRight,
                   ),
                 ),
 
@@ -75,14 +77,17 @@ class HomeBookRideCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Fast & Direct Badge (discreet and elegant)
-                          Text(
-                            isAr ? 'سريع ومباشر' : 'FAST & DIRECT',
-                            style: const TextStyle(
-                              fontSize: 11.0,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF01589F),
-                              letterSpacing: 1.1,
+                          Flexible(
+                            child: Text(
+                              l10n.homeFastDirect,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF01589F),
+                                letterSpacing: 1.1,
+                              ),
                             ),
                           ),
 
@@ -154,81 +159,158 @@ class HomeBookRideCard extends StatelessWidget {
                       AppSpacing.gapH16,
 
                       // Leading Text Section: Title + Subtitle + CTA Button
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: textMaxWidth),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              l10n.bookRideTitle,
-                              style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0A1D37),
-                                letterSpacing: -0.4,
-                                height: 1.15,
-                              ),
-                            ),
-                            AppSpacing.gapH8,
-                            Text(
-                              l10n.bookRideSubtitle,
-                              style: const TextStyle(
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF5A728D),
-                                height: 1.35,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            AppSpacing.gapH18,
-
-                            // CTA Button: Book Now ->
-                            GestureDetector(
-                              onTap: () => context.push('/book-trip'),
-                              child: Container(
-                                height: 42,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF01589F),
-                                  borderRadius: BorderRadius.circular(22),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF01589F,
-                                      ).withValues(alpha: 0.28),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: textMaxWidth),
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    l10n.bookRideTitle,
+                                    textDirection: isAr
+                                        ? TextDirection.rtl
+                                        : TextDirection.ltr,
+                                    textAlign: isAr
+                                        ? TextAlign.right
+                                        : TextAlign.left,
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0A1D37),
+                                      letterSpacing: -0.4,
+                                      height: 1.15,
                                     ),
-                                  ],
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      l10n.bookNow,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                AppSpacing.gapH8,
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    l10n.bookRideSubtitle,
+                                    textDirection: isAr
+                                        ? TextDirection.rtl
+                                        : TextDirection.ltr,
+                                    textAlign: isAr
+                                        ? TextAlign.right
+                                        : TextAlign.left,
+                                    style: const TextStyle(
+                                      fontSize: 13.0,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF5A728D),
+                                      height: 1.35,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                AppSpacing.gapH18,
+                                // CTA Button: Book Now ->
+                                () {
+                                  final isCtaDisabled =
+                                      hasLoadedAvailability &&
+                                      !isBookingAvailable;
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: isCtaDisabled
+                                            ? null
+                                            : () => context.push('/book-trip'),
+                                        child: Container(
+                                          height: 42,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isCtaDisabled
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF01589F),
+                                            borderRadius: BorderRadius.circular(
+                                              22,
+                                            ),
+                                            boxShadow: isCtaDisabled
+                                                ? null
+                                                : [
+                                                    BoxShadow(
+                                                      color: const Color(
+                                                        0xFF01589F,
+                                                      ).withValues(alpha: 0.28),
+                                                      blurRadius: 10,
+                                                      offset: const Offset(
+                                                        0,
+                                                        4,
+                                                      ),
+                                                    ),
+                                                  ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                l10n.bookNow,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isCtaDisabled
+                                                      ? const Color(0xFFF1F5F9)
+                                                      : Colors.white,
+                                                ),
+                                              ),
+                                              AppSpacing.gapW8,
+                                              Icon(
+                                                isRtl
+                                                    ? AppIcons.arrowBack
+                                                    : AppIcons.arrowForward,
+                                                size: 15,
+                                                color: isCtaDisabled
+                                                    ? const Color(0xFFF1F5F9)
+                                                    : Colors.white,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    AppSpacing.gapW8,
-                                    Icon(
-                                      isRtl
-                                          ? AppIcons.arrowBack
-                                          : AppIcons.arrowForward,
-                                      size: 15,
-                                      color: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                      if (isCtaDisabled) ...[
+                                        AppSpacing.gapH8,
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.info_outline_rounded,
+                                              size: 13,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                l10n.noMoreTripsAvailableToday,
+                                                style: const TextStyle(
+                                                  fontSize: 11.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF64748B),
+                                                  height: 1.3,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }(),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],

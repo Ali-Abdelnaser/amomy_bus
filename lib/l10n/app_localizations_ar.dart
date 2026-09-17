@@ -18,6 +18,89 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'إعادة المحاولة';
 
   @override
+  String get homeFastDirect => 'سريع ومباشر';
+
+  @override
+  String get notificationSettingsTitle => 'إعدادات الإشعارات';
+
+  @override
+  String get notificationCategories => 'فئات الإشعارات';
+
+  @override
+  String get serviceUpdatesTitle => 'تحديثات الخدمة والإشعارات العامة';
+
+  @override
+  String get serviceUpdatesDescription =>
+      'إعلانات وتحديثات مهمة تخص خدمة عمومي.';
+
+  @override
+  String get bookingUpdatesTitle => 'تحديثات الحجز';
+
+  @override
+  String get bookingUpdatesDescription => 'تأكيد الحجز والإلغاء وتغيير المقعد.';
+
+  @override
+  String get notificationsDisabledInDevice =>
+      'الإشعارات متوقفة من إعدادات الجهاز';
+
+  @override
+  String get notificationsDisabledInDeviceDescription =>
+      'يرجى السماح للإشعارات من إعدادات الهاتف لتتمكن من استلام تنبيهات الرحلات والمحفظة.';
+
+  @override
+  String get enableInDeviceSettings => 'تفعيل من إعدادات الجهاز';
+
+  @override
+  String get allNotifications => 'كل الإشعارات';
+
+  @override
+  String get allNotificationsDescription =>
+      'التحكم في وصول الإشعارات لتطبيق عمومي';
+
+  @override
+  String get notificationTestLabTitle => 'معمل اختبار الإشعارات';
+
+  @override
+  String get notificationTestLabLocalTitle => 'اختبار محلي';
+
+  @override
+  String get notificationTestLabLocalSubtitle =>
+      'يختبر عرض الإشعار محلياً على هذا الجهاز فقط.';
+
+  @override
+  String get notificationTestLabLocalButton => 'اختبار محلي';
+
+  @override
+  String get notificationTestLabRemoteTitle => 'اختبار FCM عن بُعد';
+
+  @override
+  String get notificationTestLabRemoteSubtitle =>
+      'يطلب إشعاراً حقيقياً عبر FCM وAPNs.';
+
+  @override
+  String get notificationTestLabRemoteButton => 'اختبار الإشعار عن بُعد';
+
+  @override
+  String get notificationTestLabLocalShown =>
+      'تم عرض الإشعار المحلي على هذا الجهاز.';
+
+  @override
+  String get notificationTestLabRemoteRequested =>
+      'تم طلب الإشعار. ضع التطبيق في الخلفية أو اقفل الهاتف.';
+
+  @override
+  String get notificationTestLabRequestFailed => 'تعذر طلب الإشعار عن بُعد.';
+
+  @override
+  String get seatStatusCurrent => 'مقعدك الحالي';
+
+  @override
+  String get seatStatusBookedMale => 'محجوز (رجال)';
+
+  @override
+  String get seatStatusBookedFemale => 'محجوز (نساء)';
+
+  @override
   String get errorOccurred => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
@@ -132,6 +215,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get changeEmail => 'تغيير البريد / رجوع';
+
+  @override
+  String get didntReceiveCode => 'لم تستلم الرمز؟';
+
+  @override
+  String get wrongEmailPrompt => 'البريد الإلكتروني غير صحيح؟';
+
+  @override
+  String get changeEmailAction => 'تغيير البريد';
+
+  @override
+  String get otpInvalid => 'رمز التحقق غير صحيح.';
+
+  @override
+  String get otpExpired => 'انتهت صلاحية هذا الرمز. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpRateLimited => 'يرجى الانتظار قليلاً قبل طلب رمز جديد.';
+
+  @override
+  String get otpNetworkError =>
+      'تعذر التحقق من الرمز. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get selectDateTitle => 'تحديد التاريخ';
+
+  @override
+  String get confirmDate => 'تأكيد التاريخ';
+
+  @override
+  String get dayColumnLabel => 'اليوم';
+
+  @override
+  String get monthColumnLabel => 'الشهر';
+
+  @override
+  String get yearColumnLabel => 'السنة';
 
   @override
   String get completeProfileTitle => 'استكمال البيانات';
@@ -337,6 +457,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noUpcomingTrip => 'مفيش رحلة محجوزة حاليًا';
 
   @override
+  String get noUpcomingTripSubtitle => 'احجز مقعدك عند توفر رحلة مناسبة.';
+
+  @override
+  String get qr => 'QR';
+
+  @override
   String get bookTripCta => 'احجز رحلة';
 
   @override
@@ -493,11 +619,37 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم حجز مقعدك بنجاح وجاهز لرحلتك القادمة.';
 
   @override
+  String get bookingTicketTime => 'الوقت';
+
+  @override
+  String get bookingTicketSeat => 'المقعد';
+
+  @override
+  String get bookingTicketFees => 'التكلفة';
+
+  @override
+  String get bookingSuccessMyTrips => 'رحلاتي';
+
+  @override
+  String get bookingSuccessGoHome => 'العودة للرئيسية';
+
+  @override
   String get qrTicketInstruction =>
       'قم بإبراز رمز الـ QR هذا للمسؤول أو الماسح الضوئي عند صعود الحافلة.';
 
   @override
   String get viewMyTrips => 'عرض رحلاتي';
+
+  @override
+  String get mitFadalaStopName => 'ميت فضالة';
+
+  @override
+  String departureBusAtFirstStop(Object stopName) {
+    return 'موعد الباص في $stopName';
+  }
+
+  @override
+  String get firstStopLabel => 'أول نقطة انطلاق';
 
   @override
   String get tripDetailsDirection => 'اتجاه الرحلة';
@@ -688,6 +840,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get completedTrips => 'رحلات مكتملة';
 
   @override
+  String get completionRate => 'معدل الإكمال';
+
+  @override
   String get pointsSpentThisMonth => 'نقاط مصروفة هذا الشهر';
 
   @override
@@ -756,6 +911,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get departureSelected => 'تم الاختيار';
 
   @override
+  String get departureSelectedTrip => 'الرحلة المختارة';
+
+  @override
+  String get departureAvailable => 'متاح';
+
+  @override
+  String get departureFullyBooked => 'مكتمل';
+
+  @override
   String get departureAvailableNow => 'متاح الآن';
 
   @override
@@ -788,13 +952,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get amomyWallet => 'محفظة عمومي';
 
   @override
-  String get txTypeTrip => 'رحلة';
+  String get txTypeTrip => 'حجز رحلة';
+
+  @override
+  String get txTypeTripBooking => 'حجز رحلة';
+
+  @override
+  String get txTypeExtraSeat => 'مقعد إضافي';
+
+  @override
+  String get txTypeRefund => 'استرداد';
 
   @override
   String get txTypeTopUp => 'شحن نقاط';
 
   @override
-  String get txTypeRefund => 'استرداد حجز';
+  String get txTypePointsTopup => 'شحن نقاط';
+
+  @override
+  String get txTypeExtraPoints => 'نقاط إضافية';
+
+  @override
+  String get txTypeSubscriptionPoints => 'نقاط اشتراك';
+
+  @override
+  String get txTypePointsExpired => 'نقاط منتهية';
 
   @override
   String get txTypeBonus => 'مكافأة';
@@ -804,6 +986,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get txTypeAdjustment => 'تعديل رصيد';
+
+  @override
+  String get txTypeBalanceAdjustment => 'تعديل رصيد';
+
+  @override
+  String get txTypePointsAdjustment => 'تعديل نقاط';
+
+  @override
+  String get txTypeTransaction => 'معاملة';
+
+  @override
+  String seatNumberLabel(String seat) {
+    return 'مقعد $seat';
+  }
+
+  @override
+  String get loadMoreTransactions => 'تحميل معاملات أقدم';
 
   @override
   String get ptsUnit => 'نقطة';
@@ -933,9 +1132,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get instapayAccount => 'حساب إنستاباي';
 
   @override
-  String get txTypePointsAdjustment => 'تعديل نقاط';
-
-  @override
   String get pendingPoints => 'نقاط قيد المراجعة';
 
   @override
@@ -963,16 +1159,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationSettings => 'إعدادات الإشعارات';
 
   @override
-  String get allNotifications => 'كل الإشعارات';
-
-  @override
-  String get serviceUpdatesTitle => 'تحديثات الخدمة والإشعارات العامة';
-
-  @override
   String get serviceUpdatesDesc => 'إعلانات وتحديثات مهمة تخص خدمة عمومي.';
-
-  @override
-  String get bookingUpdatesTitle => 'تحديثات الحجز';
 
   @override
   String get bookingUpdatesDesc => 'تأكيد الحجز والإلغاء وتغيير المقعد.';
@@ -1140,4 +1327,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get allRightsReserved => 'جميع الحقوق محفوظة.';
+
+  @override
+  String get privacyPolicyUrl => 'https://amomy.com/privacy-policy';
+
+  @override
+  String get termsAndConditionsUrl => 'https://amomy.com/terms-and-conditions';
+
+  @override
+  String get noTripsAvailableToday => 'لا توجد رحلات متاحة اليوم';
+
+  @override
+  String get noMoreTripsAvailableToday => 'لا توجد رحلات متاحة للحجز اليوم';
+
+  @override
+  String get trackingOffline => 'غير متاح';
+
+  @override
+  String get trackingLive => 'مباشر';
+
+  @override
+  String get trackingAssignmentPending => 'تعيين الأتوبيس قيد الانتظار';
+
+  @override
+  String get trackingLocationUnavailable => 'الموقع غير متاح مؤقتاً';
+
+  @override
+  String get trackingUnavailable => 'التتبع غير متاح';
+
+  @override
+  String get trackingProgressUnavailable => 'تقدم المحطات غير متاح مؤقتاً';
+
+  @override
+  String get trackingTripNotActive => 'تتبع الرحلة غير نشط حالياً';
+
+  @override
+  String get trackingLastStop => 'آخر محطة';
+
+  @override
+  String trackingReached(String time) {
+    return 'وصل الساعة $time';
+  }
+
+  @override
+  String get trackingCurrentStop => 'المحطة الحالية';
+
+  @override
+  String get trackingNextStop => 'المحطة التالية';
+
+  @override
+  String get trackingEtaUnavailable => 'وقت الوصول غير متاح';
+
+  @override
+  String get trackingResumesMidday => 'يستأنف التتبع الساعة 1:00 م';
+
+  @override
+  String get trackingResumesTomorrow => 'يستأنف التتبع غداً الساعة 8:00 ص';
+
+  @override
+  String get bookingStatusCompleted => 'مكتملة';
+
+  @override
+  String get bookingStatusNoShow => 'لم يحضر';
+
+  @override
+  String get bookingStatusPending => 'قيد الانتظار';
+
+  @override
+  String get errorHoldExpired => 'انتهت مهلة حجز المقعد. يرجى اختيار مقعد آخر.';
+
+  @override
+  String get errorBookingClosed => 'الحجز غير متاح حالياً لهذه الرحلة.';
+
+  @override
+  String get errorCancellationWindowClosed =>
+      'انتهت مهلة إلغاء الحجز (قبل 30 دقيقة من التحرك).';
+
+  @override
+  String get errorChangeSeatWindowClosed =>
+      'انتهت مهلة تغيير المقعد (قبل 30 دقيقة من التحرك).';
+
+  @override
+  String get errorServiceDayOff => 'لا توجد رحلات متاحة اليوم.';
+
+  @override
+  String get changeSeat => 'تغيير المقعد';
+
+  @override
+  String get cancelBooking => 'إلغاء الحجز';
+
+  @override
+  String get viewLiveMap => 'عرض الخريطة الحية';
+
+  @override
+  String get viewTrip => 'عرض الرحلة';
+
+  @override
+  String get extraSeat => 'مقعد إضافي';
+
+  @override
+  String get addExtraSeat => 'إضافة مقعد إضافي';
+
+  @override
+  String get digitalBoardingPass => 'تذكرة صعود رقمية';
 }

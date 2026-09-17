@@ -24,6 +24,9 @@ class FakeWalletCubit extends Cubit<WalletState> implements WalletCubit {
 
   @override
   Future<void> loadWalletSummary(String userId) async {}
+
+  @override
+  Future<void> loadMoreHistory() async {}
 }
 
 class FakeAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
@@ -31,7 +34,10 @@ class FakeAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
 }
 
 void main() {
-  Widget buildTestableWidget(Widget child, {Locale locale = const Locale('en')}) {
+  Widget buildTestableWidget(
+    Widget child, {
+    Locale locale = const Locale('en'),
+  }) {
     return MaterialApp(
       locale: locale,
       localizationsDelegates: const [
@@ -46,12 +52,10 @@ void main() {
   }
 
   group('WalletCardWidget tests', () {
-    testWidgets('renders hero card with contactless icon and no clutter', (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const WalletCardWidget(),
-        ),
-      );
+    testWidgets('renders hero card with contactless icon and no clutter', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const WalletCardWidget()));
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.contactless_rounded), findsOneWidget);
@@ -62,7 +66,9 @@ void main() {
   });
 
   group('WalletPointsSummaryCard tests', () {
-    testWidgets('renders available points, unit PTS and add points button', (tester) async {
+    testWidgets('renders available points, unit PTS and add points button', (
+      tester,
+    ) async {
       bool addTapped = false;
       await tester.pumpWidget(
         buildTestableWidget(
@@ -86,10 +92,7 @@ void main() {
     testWidgets('renders localized points summary in Arabic', (tester) async {
       await tester.pumpWidget(
         buildTestableWidget(
-          WalletPointsSummaryCard(
-            points: 0,
-            onAddPoints: () {},
-          ),
+          WalletPointsSummaryCard(points: 0, onAddPoints: () {}),
           locale: const Locale('ar'),
         ),
       );
@@ -115,10 +118,12 @@ void main() {
         createdAt: DateTime(2026, 9, 13, 8, 0),
       );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
+      await tester.pumpWidget(
+        buildTestableWidget(WalletTransactionTile(transaction: tx)),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('Trip'), findsOneWidget);
+      expect(find.text('Trip Booking'), findsOneWidget);
       expect(find.text('-30 PTS'), findsOneWidget);
       expect(find.byIcon(Icons.directions_bus_rounded), findsOneWidget);
     });
@@ -134,7 +139,9 @@ void main() {
         createdAt: DateTime(2026, 9, 13, 11, 42),
       );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
+      await tester.pumpWidget(
+        buildTestableWidget(WalletTransactionTile(transaction: tx)),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Points Top-up'), findsOneWidget);
@@ -161,7 +168,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('استرداد حجز'), findsOneWidget);
+      expect(find.text('استرداد'), findsOneWidget);
       expect(find.text('+30 نقطة'), findsOneWidget);
     });
 
@@ -176,7 +183,9 @@ void main() {
         createdAt: DateTime(2026, 9, 13, 10, 0),
       );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
+      await tester.pumpWidget(
+        buildTestableWidget(WalletTransactionTile(transaction: tx)),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Bonus'), findsOneWidget);
@@ -194,89 +203,103 @@ void main() {
         createdAt: DateTime(2026, 9, 13, 10, 0),
       );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
+      await tester.pumpWidget(
+        buildTestableWidget(WalletTransactionTile(transaction: tx)),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Gift'), findsOneWidget);
       expect(find.text('+100 PTS'), findsOneWidget);
     });
 
-    testWidgets('renders Balance Adjustment for reference_type admin_adjustment', (tester) async {
-      final tx = PointTransaction(
-        id: 'tx-adj',
-        userId: 'u-1',
-        walletId: 'w-1',
-        transactionType: PointTransactionType.credit,
-        amount: 25,
-        referenceType: 'admin_adjustment',
-        createdAt: DateTime(2026, 9, 13, 10, 0),
-      );
+    testWidgets(
+      'renders Balance Adjustment for reference_type admin_adjustment',
+      (tester) async {
+        final tx = PointTransaction(
+          id: 'tx-adj',
+          userId: 'u-1',
+          walletId: 'w-1',
+          transactionType: PointTransactionType.credit,
+          amount: 25,
+          referenceType: 'admin_adjustment',
+          createdAt: DateTime(2026, 9, 13, 10, 0),
+        );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestableWidget(WalletTransactionTile(transaction: tx)),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Balance Adjustment'), findsOneWidget);
-      expect(find.text('+25 PTS'), findsOneWidget);
-    });
+        expect(find.text('Balance Adjustment'), findsOneWidget);
+        expect(find.text('+25 PTS'), findsOneWidget);
+      },
+    );
 
-    testWidgets('renders Points Adjustment (NEVER Bonus) for unknown reference_type', (tester) async {
-      final tx = PointTransaction(
-        id: 'tx-unknown',
-        userId: 'u-1',
-        walletId: 'w-1',
-        transactionType: PointTransactionType.credit,
-        amount: 15,
-        referenceType: 'custom_referral_promo',
-        createdAt: DateTime(2026, 9, 13, 10, 0),
-      );
+    testWidgets(
+      'renders Points Adjustment (NEVER Bonus) for unknown reference_type',
+      (tester) async {
+        final tx = PointTransaction(
+          id: 'tx-unknown',
+          userId: 'u-1',
+          walletId: 'w-1',
+          transactionType: PointTransactionType.credit,
+          amount: 15,
+          referenceType: 'custom_referral_promo',
+          createdAt: DateTime(2026, 9, 13, 10, 0),
+        );
 
-      await tester.pumpWidget(buildTestableWidget(WalletTransactionTile(transaction: tx)));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestableWidget(WalletTransactionTile(transaction: tx)),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Points Adjustment'), findsOneWidget);
-      expect(find.text('Bonus'), findsNothing);
-      expect(find.text('+15 PTS'), findsOneWidget);
-    });
+        expect(find.text('Points Adjustment'), findsOneWidget);
+        expect(find.text('Bonus'), findsNothing);
+        expect(find.text('+15 PTS'), findsOneWidget);
+      },
+    );
   });
 
   group('WalletPendingPointsSection tests', () {
-    testWidgets('renders pending top-up with visually dominant points and under review pill', (tester) async {
-      final request = TopUpRequest(
-        id: 'req-pending-1',
-        userId: 'u-1',
-        requestedAmount: 500,
-        expectedAmountEgp: 500,
-        paymentMethodCode: 'VODAFONE_CASH',
-        paymentMethodNameEn: 'Vodafone Cash',
-        status: TopUpStatus.pending,
-        submittedAt: DateTime(2026, 9, 13, 14, 32),
-        createdAt: DateTime(2026, 9, 13, 14, 30),
-      );
+    testWidgets(
+      'renders pending top-up with visually dominant points and under review pill',
+      (tester) async {
+        final request = TopUpRequest(
+          id: 'req-pending-1',
+          userId: 'u-1',
+          requestedAmount: 500,
+          expectedAmountEgp: 500,
+          paymentMethodCode: 'VODAFONE_CASH',
+          paymentMethodNameEn: 'Vodafone Cash',
+          status: TopUpStatus.pending,
+          submittedAt: DateTime(2026, 9, 13, 14, 32),
+          createdAt: DateTime(2026, 9, 13, 14, 30),
+        );
 
-      await tester.pumpWidget(
-        buildTestableWidget(
-          WalletPendingPointsSection(
-            requests: [request],
-            onResubmit: (_) {},
+        await tester.pumpWidget(
+          buildTestableWidget(
+            WalletPendingPointsSection(requests: [request], onResubmit: (_) {}),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Heading
-      expect(find.text('Pending Points'), findsOneWidget);
+        // Heading
+        expect(find.text('Pending Points'), findsOneWidget);
 
-      // Dominant points amount
-      expect(find.text('500 PTS'), findsOneWidget);
+        // Dominant points amount
+        expect(find.text('500 PTS'), findsOneWidget);
 
-      // Under Review status pill
-      expect(find.text('Under Review'), findsOneWidget);
+        // Under Review status pill
+        expect(find.text('Under Review'), findsOneWidget);
 
-      // EGP amount
-      expect(find.text('EGP 500'), findsOneWidget);
-    });
+        // EGP amount
+        expect(find.text('EGP 500'), findsOneWidget);
+      },
+    );
 
-    testWidgets('does not render approved requests in pending section', (tester) async {
+    testWidgets('does not render approved requests in pending section', (
+      tester,
+    ) async {
       final request = TopUpRequest(
         id: 'req-approved-1',
         userId: 'u-1',
@@ -290,10 +313,7 @@ void main() {
 
       await tester.pumpWidget(
         buildTestableWidget(
-          WalletPendingPointsSection(
-            requests: [request],
-            onResubmit: (_) {},
-          ),
+          WalletPendingPointsSection(requests: [request], onResubmit: (_) {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -302,7 +322,9 @@ void main() {
       expect(find.text('500 PTS'), findsNothing);
     });
 
-    testWidgets('renders rejected card with friendly reason and Resubmit CTA', (tester) async {
+    testWidgets('renders rejected card with friendly reason and Resubmit CTA', (
+      tester,
+    ) async {
       TopUpRequest? resubmitted;
       final request = TopUpRequest(
         id: 'req-rejected-1',
@@ -333,7 +355,10 @@ void main() {
       expect(find.text('Rejected'), findsOneWidget);
 
       // Friendly rejection message
-      expect(find.text('The screenshot could not be verified.'), findsOneWidget);
+      expect(
+        find.text('The screenshot could not be verified.'),
+        findsOneWidget,
+      );
 
       // Resubmit CTA
       expect(find.text('Resubmit'), findsOneWidget);
@@ -350,7 +375,9 @@ void main() {
       fullName: 'Passenger One',
     );
 
-    testWidgets('renders My Trips style header, hero card, and points summary', (tester) async {
+    testWidgets('renders My Trips style header, hero card, and points summary', (
+      tester,
+    ) async {
       final fakeAuthBloc = FakeAuthBloc(const Authenticated(user: testUser));
       final fakeWalletCubit = FakeWalletCubit(
         WalletState(
@@ -413,51 +440,57 @@ void main() {
 
       // Verify Recent Transactions header and items
       expect(find.text('Recent Transactions'), findsOneWidget);
-      expect(find.text('Trip'), findsOneWidget);
+      expect(find.text('Trip Booking'), findsOneWidget);
       expect(find.text('-30 PTS'), findsOneWidget);
     });
 
-    testWidgets('renders 0 PTS and clean empty state when test account has zero balance & transactions', (tester) async {
-      final fakeAuthBloc = FakeAuthBloc(const Authenticated(user: testUser));
-      final fakeWalletCubit = FakeWalletCubit(
-        const WalletState(
-          status: WalletStatus.loaded,
-          summary: WalletSummary(
-            totalAvailablePoints: 0,
-            cashPoints: 0,
-            subscriptionPoints: 0,
+    testWidgets(
+      'renders 0 PTS and clean empty state when test account has zero balance & transactions',
+      (tester) async {
+        final fakeAuthBloc = FakeAuthBloc(const Authenticated(user: testUser));
+        final fakeWalletCubit = FakeWalletCubit(
+          const WalletState(
+            status: WalletStatus.loaded,
+            summary: WalletSummary(
+              totalAvailablePoints: 0,
+              cashPoints: 0,
+              subscriptionPoints: 0,
+            ),
+            transactions: [],
           ),
-          transactions: [],
-        ),
-      );
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en'), Locale('ar')],
-          home: BlocProvider<AuthBloc>.value(
-            value: fakeAuthBloc,
-            child: WalletPage(
-              walletCubit: fakeWalletCubit,
-              topUpHistoryCubit: TopUpHistoryCubit.idle(),
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('ar')],
+            home: BlocProvider<AuthBloc>.value(
+              value: fakeAuthBloc,
+              child: WalletPage(
+                walletCubit: fakeWalletCubit,
+                topUpHistoryCubit: TopUpHistoryCubit.idle(),
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Zero Points
-      expect(find.text('0'), findsOneWidget);
-      expect(find.text('PTS'), findsWidgets);
+        // Zero Points
+        expect(find.text('0'), findsOneWidget);
+        expect(find.text('PTS'), findsWidgets);
 
-      // Empty State
-      expect(find.text('No transactions yet'), findsOneWidget);
-      expect(find.text('Your points activity will appear here.'), findsOneWidget);
-    });
+        // Empty State
+        expect(find.text('No transactions yet'), findsOneWidget);
+        expect(
+          find.text('Your points activity will appear here.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

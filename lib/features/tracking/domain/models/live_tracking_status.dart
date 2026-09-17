@@ -1,4 +1,7 @@
 enum LiveTrackingStatus {
+  /// Canonical Phase 8 trip-specific live tracking state.
+  live,
+
   /// Bus is actively transmitting fresh telemetry within scheduled service window.
   online,
 
@@ -11,8 +14,44 @@ enum LiveTrackingStatus {
   /// Outside operating hours (08:00-12:00, 13:00-17:00 Cairo time).
   offline,
 
+  /// Driver has not claimed an operational bus for this trip yet.
+  assignmentPending,
+
+  /// The booked trip is not active for tracking.
+  tripNotActive,
+
+  /// Backend says this trip is outside its tracking window.
+  outsideTrackingWindow,
+
+  /// Location may be available, but stop progression cannot be safely computed.
+  progressionUnavailable,
+
   /// Safe authorized preview outside operating hours for visual route verification.
   qaPreview,
+}
+
+enum TrackingStopSemanticState {
+  passed,
+  active,
+  next,
+  future,
+  unknown;
+
+  static TrackingStopSemanticState fromString(String? value) {
+    switch (value?.toLowerCase()) {
+      case 'passed':
+        return TrackingStopSemanticState.passed;
+      case 'active':
+      case 'current':
+        return TrackingStopSemanticState.active;
+      case 'next':
+        return TrackingStopSemanticState.next;
+      case 'future':
+        return TrackingStopSemanticState.future;
+      default:
+        return TrackingStopSemanticState.unknown;
+    }
+  }
 }
 
 /// Service direction: Outbound (morning) or Return (afternoon).
@@ -40,8 +79,4 @@ enum TrackingDirection {
 }
 
 /// Dynamic approach status relative to a specific route stop.
-enum ApproachStatus {
-  approaching,
-  atStop,
-  departed,
-}
+enum ApproachStatus { approaching, atStop, departed }

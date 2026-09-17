@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
+import '../../../booking/domain/services/passenger_booking_availability.dart';
 
 enum PassengerTripsStatus { initial, loading, loaded, error }
 
@@ -22,11 +23,13 @@ class PassengerTripsState extends Equatable {
     this.errorMessage,
   });
 
-  List<PassengerTodayTrip> get outboundTodayTrips =>
-      todayTrips.where((t) => t.direction == BookingDirection.outbound).toList();
+  List<PassengerTodayTrip> get outboundTodayTrips => todayTrips
+      .where((t) => t.direction == BookingDirection.outbound)
+      .toList();
 
-  List<PassengerTodayTrip> get returnTodayTrips =>
-      todayTrips.where((t) => t.direction == BookingDirection.returnTrip).toList();
+  List<PassengerTodayTrip> get returnTodayTrips => todayTrips
+      .where((t) => t.direction == BookingDirection.returnTrip)
+      .toList();
 
   PassengerTodayTrip? get nextAvailableTrip {
     final available = todayTrips.where((t) => t.isBookable).toList();
@@ -34,6 +37,14 @@ class PassengerTripsState extends Equatable {
     available.sort((a, b) => a.departureAt.compareTo(b.departureAt));
     return available.first;
   }
+
+  bool get hasLoadedTodayTrips => status == PassengerTripsStatus.loaded;
+
+  bool get hasAnyBookableTrip =>
+      PassengerBookingAvailability.hasAnyBookableTrip(todayTrips);
+
+  bool get shouldDisableBookingEntry =>
+      hasLoadedTodayTrips && !hasAnyBookableTrip;
 
   PassengerBooking? get nearestUpcomingTrip =>
       upcomingTrips.isNotEmpty ? upcomingTrips.first : null;
@@ -64,12 +75,12 @@ class PassengerTripsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        todayTrips,
-        preferredJourney,
-        historyTrips,
-        upcomingTrips,
-        availableStops,
-        errorMessage,
-      ];
+    status,
+    todayTrips,
+    preferredJourney,
+    historyTrips,
+    upcomingTrips,
+    availableStops,
+    errorMessage,
+  ];
 }

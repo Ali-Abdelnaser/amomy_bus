@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../shell/presentation/widgets/nav_svg_icon.dart';
@@ -58,9 +58,24 @@ class _BookingReviewCardState extends State<BookingReviewCard>
   late final Animation<double> _fareFadeAnim;
   late final Animation<double> _ctaFadeAnim;
 
-  Timer? _timer;
-  int _secondsRemaining = 0;
-  bool _isExpired = false;
+  int get _secondsRemaining {
+    if (widget.initialHoldSecondsRemaining != null) {
+      return widget.initialHoldSecondsRemaining!;
+    }
+    if (widget.seat.heldExpiresAt != null) {
+      final diff = widget.seat.heldExpiresAt!
+          .toUtc()
+          .difference(DateTime.now().toUtc())
+          .inSeconds;
+      return diff > 0 ? diff : 0;
+    }
+    return 0;
+  }
+
+  bool get _isExpired =>
+      _secondsRemaining <= 0 &&
+      (widget.initialHoldSecondsRemaining != null ||
+          widget.seat.heldExpiresAt != null);
 
   @override
   void initState() {
@@ -103,55 +118,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
       curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
     );
 
-    _initHoldTimer();
     _animController.forward();
-  }
-
-  void _initHoldTimer() {
-    // Prefer authoritative countdown seconds passed from BookingCubit
-    if (widget.initialHoldSecondsRemaining != null) {
-      _secondsRemaining = widget.initialHoldSecondsRemaining!;
-    } else if (widget.seat.heldExpiresAt != null) {
-      final diff = widget.seat.heldExpiresAt!.toUtc().difference(DateTime.now().toUtc()).inSeconds;
-      _secondsRemaining = diff > 0 ? diff : 0;
-    } else {
-      _secondsRemaining = 0;
-    }
-
-    if (_secondsRemaining <= 0 &&
-        (widget.initialHoldSecondsRemaining != null || widget.seat.heldExpiresAt != null)) {
-      _isExpired = true;
-    } else if (_secondsRemaining > 0) {
-      _isExpired = false;
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) return;
-        setState(() {
-          if (_secondsRemaining > 0) {
-            _secondsRemaining--;
-          }
-          if (_secondsRemaining <= 0) {
-            _isExpired = true;
-            _timer?.cancel();
-          }
-        });
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant BookingReviewCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.seat.heldExpiresAt != widget.seat.heldExpiresAt ||
-        oldWidget.initialHoldSecondsRemaining !=
-            widget.initialHoldSecondsRemaining) {
-      _timer?.cancel();
-      _initHoldTimer();
-    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -306,7 +277,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      widget.trip.departureTime,
+                      AppTimeFormatter.formatTripOption(
+                        widget.trip,
+                        isArabic: isAr,
+                      ),
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,

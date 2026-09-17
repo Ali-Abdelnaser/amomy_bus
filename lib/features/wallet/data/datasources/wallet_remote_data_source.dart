@@ -1,12 +1,22 @@
 import 'package:amomy_bus/features/wallet/data/models/point_transaction_model.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/wallet_history_event_model.dart';
 import '../models/wallet_summary_model.dart';
 
 abstract class WalletRemoteDataSource {
   Future<WalletSummaryModel> getWalletSummary(String userId);
-  Future<List<PointTransactionModel>> getTransactions(String userId, {int limit = 20});
+  Future<List<PointTransactionModel>> getTransactions(
+    String userId, {
+    int limit = 20,
+  });
+  Future<WalletHistoryPageModel> getWalletHistory({
+    int limit = 20,
+    String? beforeCreatedAt,
+    String? beforeEventId,
+  });
   Stream<int> subscribeToWalletBalance(String userId);
+  Stream<PointTransactionModel> subscribeToPointTransactions(String userId);
 }
 
 @LazySingleton(as: WalletRemoteDataSource)
@@ -63,8 +73,39 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
     final list = response as List<dynamic>;
     return list
-        .map((item) => PointTransactionModel.fromJson(item as Map<String, dynamic>))
+        .map(
+          (item) =>
+              PointTransactionModel.fromJson(item as Map<String, dynamic>),
+        )
         .toList();
+  }
+
+  @override
+  Future<WalletHistoryPageModel> getWalletHistory({
+    int limit = 20,
+    String? beforeCreatedAt,
+    String? beforeEventId,
+  }) async {
+    final params = <String, dynamic>{'p_limit': limit};
+    if (beforeCreatedAt != null) {
+      params['p_before_created_at'] = beforeCreatedAt;
+    }
+    if (beforeEventId != null) {
+      params['p_before_event_id'] = beforeEventId;
+    }
+
+    final response = await _supabase.rpc(
+      'get_my_wallet_history',
+      params: params,
+    );
+
+    if (response is Map) {
+      return WalletHistoryPageModel.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+    }
+
+    return const WalletHistoryPageModel(events: [], hasMore: false);
   }
 
   @override
@@ -83,6 +124,26 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
           if (raw is num) return raw.toInt();
           if (raw is String) return (double.tryParse(raw) ?? 0).toInt();
           return 0;
-        });
+        })
+        .handleError((_) {});
+  }
+
+  @override
+  Stream<PointTransactionModel> subscribeToPointTransactions(String userId) {
+    if (userId.isEmpty) {
+      return const Stream.empty();
+    }
+
+    return _supabase
+        .from('point_transactions')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .map(
+          (rows) =>
+              rows.map((row) => PointTransactionModel.fromJson(row)).toList(),
+        )
+        .expand((rows) => rows)
+        .handleError((_) {});
   }
 }

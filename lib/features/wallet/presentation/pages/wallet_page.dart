@@ -14,10 +14,11 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../topup/domain/entities/topup_entities.dart';
 import '../../../topup/presentation/cubit/topup_history_cubit.dart';
 import '../../../topup/presentation/cubit/topup_history_state.dart';
-import '../../domain/entities/point_transaction.dart';
+import '../../domain/entities/wallet_history_event.dart';
 import '../cubit/wallet_cubit.dart';
 import '../cubit/wallet_state.dart';
 import '../widgets/wallet_card_widget.dart';
+import '../widgets/wallet_history_event_tile.dart';
 import '../widgets/wallet_pending_points_section.dart';
 import '../widgets/wallet_points_summary_card.dart';
 import '../widgets/wallet_transaction_tile.dart';
@@ -26,17 +27,14 @@ class WalletPage extends StatefulWidget {
   final WalletCubit? walletCubit;
   final TopUpHistoryCubit? topUpHistoryCubit;
 
-  const WalletPage({
-    super.key,
-    this.walletCubit,
-    this.topUpHistoryCubit,
-  });
+  const WalletPage({super.key, this.walletCubit, this.topUpHistoryCubit});
 
   @override
   State<WalletPage> createState() => _WalletPageState();
 }
 
-class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateMixin {
+class _WalletPageState extends State<WalletPage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final Animation<double> _cardFadeAnim;
   late final Animation<Offset> _cardSlideAnim;
@@ -55,13 +53,13 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
       curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
     );
 
-    _cardSlideAnim = Tween<Offset>(
-      begin: const Offset(0.0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: const Interval(0.0, 0.75, curve: Curves.easeOutCubic),
-    ));
+    _cardSlideAnim =
+        Tween<Offset>(begin: const Offset(0.0, 0.05), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.0, 0.75, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _contentFadeAnim = CurvedAnimation(
       parent: _animController,
@@ -78,7 +76,11 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
   }
 
   Future<void> _navigateToAddPoints(BuildContext context, String userId) async {
-    final availablePoints = context.read<WalletCubit>().state.summary.totalAvailablePoints;
+    final availablePoints = context
+        .read<WalletCubit>()
+        .state
+        .summary
+        .totalAvailablePoints;
     await context.push(RoutePaths.addPoints, extra: availablePoints);
     if (context.mounted && userId.isNotEmpty) {
       context.read<WalletCubit>().loadWalletSummary(userId);
@@ -86,7 +88,11 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
     }
   }
 
-  Future<void> _navigateToResubmit(BuildContext context, TopUpRequest request, String userId) async {
+  Future<void> _navigateToResubmit(
+    BuildContext context,
+    TopUpRequest request,
+    String userId,
+  ) async {
     await context.push(RoutePaths.addPoints, extra: request);
     if (context.mounted && userId.isNotEmpty) {
       context.read<WalletCubit>().loadWalletSummary(userId);
@@ -103,13 +109,15 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
       builder: (context, authState) {
         final userId = authState is Authenticated ? authState.user.id : '';
 
-        final parentWalletCubit = widget.walletCubit ?? () {
-          try {
-            return context.read<WalletCubit>();
-          } catch (_) {
-            return null;
-          }
-        }();
+        final parentWalletCubit =
+            widget.walletCubit ??
+            () {
+              try {
+                return context.read<WalletCubit>();
+              } catch (_) {
+                return null;
+              }
+            }();
 
         return MultiBlocProvider(
           providers: [
@@ -123,11 +131,12 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
               ),
             BlocProvider(
               create: (context) {
-                final cubit = widget.topUpHistoryCubit ??
+                final cubit =
+                    widget.topUpHistoryCubit ??
                     (getIt.isRegistered<TopUpHistoryCubit>()
                         ? (getIt<TopUpHistoryCubit>()
-                          ..loadRequests()
-                          ..startListeningToUpdates())
+                            ..loadRequests()
+                            ..startListeningToUpdates())
                         : TopUpHistoryCubit.idle());
                 cubit.onApprovedTopUpDetected = () {
                   if (context.mounted && userId.isNotEmpty) {
@@ -145,14 +154,16 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
                   final isLoading = walletState.status == WalletStatus.loading;
                   final isError = walletState.status == WalletStatus.error;
                   final summary = walletState.summary;
-                  final fallbackWallet = authState is Authenticated ? authState.wallet : null;
+                  final fallbackWallet = authState is Authenticated
+                      ? authState.wallet
+                      : null;
 
                   // Authoritative single points balance from backend/state
                   final totalPoints = walletState.status == WalletStatus.loaded
                       ? summary.totalAvailablePoints
-                      : (fallbackWallet?.availablePoints ?? fallbackWallet?.totalPoints ?? 0);
-
-                  final transactions = walletState.transactions;
+                      : (fallbackWallet?.availablePoints ??
+                            fallbackWallet?.totalPoints ??
+                            0);
 
                   return Scaffold(
                     backgroundColor: AppColors.background,
@@ -181,27 +192,36 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
 
                           // 2. MAIN SCROLLABLE CONTENT
                           Expanded(
-                            child: isError && walletState.summary.totalAvailablePoints == 0
+                            child:
+                                isError &&
+                                    walletState.summary.totalAvailablePoints ==
+                                        0
                                 ? _buildErrorView(context, userId)
                                 : RefreshIndicator(
                                     onRefresh: () async {
                                       if (userId.isNotEmpty) {
                                         await Future.wait([
-                                          context.read<WalletCubit>().loadWalletSummary(userId),
-                                          context.read<TopUpHistoryCubit>().loadRequests(),
+                                          context
+                                              .read<WalletCubit>()
+                                              .loadWalletSummary(userId),
+                                          context
+                                              .read<TopUpHistoryCubit>()
+                                              .loadRequests(),
                                         ]);
                                       }
                                     },
                                     child: Skeletonizer(
                                       enabled: isLoading,
                                       child: SingleChildScrollView(
-                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
                                           vertical: 8,
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
                                           children: [
                                             // A. Hero Wallet Card: Wide, almost full width
                                             disableAnim
@@ -210,7 +230,8 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
                                                     opacity: _cardFadeAnim,
                                                     child: SlideTransition(
                                                       position: _cardSlideAnim,
-                                                      child: const WalletCardWidget(),
+                                                      child:
+                                                          const WalletCardWidget(),
                                                     ),
                                                   ),
 
@@ -221,30 +242,50 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
                                                 ? WalletPointsSummaryCard(
                                                     points: totalPoints,
                                                     onAddPoints: () =>
-                                                        _navigateToAddPoints(context, userId),
+                                                        _navigateToAddPoints(
+                                                          context,
+                                                          userId,
+                                                        ),
                                                   )
                                                 : FadeTransition(
                                                     opacity: _contentFadeAnim,
                                                     child: WalletPointsSummaryCard(
                                                       points: totalPoints,
                                                       onAddPoints: () =>
-                                                          _navigateToAddPoints(context, userId),
+                                                          _navigateToAddPoints(
+                                                            context,
+                                                            userId,
+                                                          ),
                                                     ),
                                                   ),
 
                                             // C. Pending / Rejected Top-Ups Section
-                                            BlocBuilder<TopUpHistoryCubit, TopUpHistoryState>(
+                                            BlocBuilder<
+                                              TopUpHistoryCubit,
+                                              TopUpHistoryState
+                                            >(
                                               builder: (context, historyState) {
-                                                final requests = walletState.topUpRequests.isNotEmpty
+                                                final requests =
+                                                    walletState
+                                                        .topUpRequests
+                                                        .isNotEmpty
                                                     ? walletState.topUpRequests
                                                     : historyState.requests;
                                                 return Padding(
-                                                  padding: const EdgeInsets.only(top: 14),
-                                                  child: WalletPendingPointsSection(
-                                                    requests: requests,
-                                                    onResubmit: (req) =>
-                                                        _navigateToResubmit(context, req, userId),
-                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 14,
+                                                      ),
+                                                  child:
+                                                      WalletPendingPointsSection(
+                                                        requests: requests,
+                                                        onResubmit: (req) =>
+                                                            _navigateToResubmit(
+                                                              context,
+                                                              req,
+                                                              userId,
+                                                            ),
+                                                      ),
                                                 );
                                               },
                                             ),
@@ -253,10 +294,15 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
 
                                             // D. Recent Transactions Header
                                             disableAnim
-                                                ? _buildTransactionsHeader(context)
+                                                ? _buildTransactionsHeader(
+                                                    context,
+                                                  )
                                                 : FadeTransition(
                                                     opacity: _contentFadeAnim,
-                                                    child: _buildTransactionsHeader(context),
+                                                    child:
+                                                        _buildTransactionsHeader(
+                                                          context,
+                                                        ),
                                                   ),
 
                                             const SizedBox(height: 12),
@@ -266,15 +312,16 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
                                                 ? _buildTransactionsContent(
                                                     context,
                                                     isLoading,
-                                                    transactions,
+                                                    walletState,
                                                   )
                                                 : FadeTransition(
                                                     opacity: _contentFadeAnim,
-                                                    child: _buildTransactionsContent(
-                                                      context,
-                                                      isLoading,
-                                                      transactions,
-                                                    ),
+                                                    child:
+                                                        _buildTransactionsContent(
+                                                          context,
+                                                          isLoading,
+                                                          walletState,
+                                                        ),
                                                   ),
 
                                             AppSpacing.gapBottomNav,
@@ -318,24 +365,24 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
   Widget _buildTransactionsContent(
     BuildContext context,
     bool isLoading,
-    List<PointTransaction> transactions,
+    WalletState walletState,
   ) {
     final l10n = context.l10n;
+    final historyEvents = walletState.historyEvents;
+    final legacyTransactions = walletState.transactions;
 
     // Loading skeleton placeholder items
-    if (isLoading && transactions.isEmpty) {
+    if (isLoading && historyEvents.isEmpty && legacyTransactions.isEmpty) {
       return Column(
         children: List.generate(
           4,
-          (index) => WalletTransactionTile(
-            transaction: PointTransaction(
-              id: 'skeleton_$index',
-              userId: 'skeleton',
-              walletId: 'skeleton',
-              transactionType:
-                  index.isEven ? PointTransactionType.debit : PointTransactionType.credit,
-              amount: index.isEven ? 30 : 500,
-              referenceType: index.isEven ? 'booking' : 'topup',
+          (index) => WalletHistoryEventTile(
+            event: WalletHistoryEvent(
+              eventId: 'skeleton_$index',
+              semanticType: index.isEven
+                  ? WalletSemanticType.tripBooking
+                  : WalletSemanticType.pointsTopup,
+              signedAmount: index.isEven ? -25 : 300,
               createdAt: DateTime.now(),
             ),
           ),
@@ -344,7 +391,7 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
     }
 
     // Clean Empty State
-    if (transactions.isEmpty) {
+    if (historyEvents.isEmpty && legacyTransactions.isEmpty) {
       return Container(
         margin: const EdgeInsets.only(top: 4),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
@@ -401,7 +448,12 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
       );
     }
 
-    // Modern Banking Transaction List with clean hairline dividers
+    // Semantic History List (preferred) or Legacy Transactions fallback
+    final bool useSemantic = historyEvents.isNotEmpty;
+    final int itemCount = useSemantic
+        ? historyEvents.length + (walletState.hasMoreHistory ? 1 : 0)
+        : legacyTransactions.length;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -419,15 +471,42 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: transactions.length,
-        separatorBuilder: (context, index) => const Divider(
-          height: 1,
-          thickness: 0.75,
-          color: Color(0xFFF2F4F7),
-        ),
+        itemCount: itemCount,
+        separatorBuilder: (context, index) =>
+            const Divider(height: 1, thickness: 0.75, color: Color(0xFFF2F4F7)),
         itemBuilder: (context, index) {
-          final tx = transactions[index];
-          return WalletTransactionTile(transaction: tx);
+          if (useSemantic) {
+            if (index == historyEvents.length) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: walletState.isLoadingMoreHistory
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : TextButton(
+                          onPressed: () {
+                            context.read<WalletCubit>().loadMoreHistory();
+                          },
+                          child: Text(
+                            l10n.loadMoreTransactions,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                ),
+              );
+            }
+            final event = historyEvents[index];
+            return WalletHistoryEventTile(event: event);
+          } else {
+            final tx = legacyTransactions[index];
+            return WalletTransactionTile(transaction: tx);
+          }
         },
       ),
     );
@@ -475,9 +554,12 @@ class _WalletPageState extends State<WalletPage> with SingleTickerProviderStateM
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),

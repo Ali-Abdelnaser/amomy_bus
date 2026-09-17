@@ -26,7 +26,7 @@ class MockTrackingRepository implements TrackingRepository {
   MockTrackingRepository({required this.summary});
 
   @override
-  Future<TrackingSummary> getTrackingSummary({bool includeQa = false}) async {
+  Future<TrackingSummary> getTripTracking({required String tripId}) async {
     return summary;
   }
 
@@ -37,7 +37,7 @@ class MockTrackingRepository implements TrackingRepository {
   }) async => null;
 
   @override
-  Stream<BusTelemetry> subscribeToBusLiveLocation() =>
+  Stream<void> subscribeToTripTrackingState({required String tripId}) =>
       _telemetryController.stream;
 
   void emitTelemetry(BusTelemetry tel) => _telemetryController.add(tel);
@@ -72,7 +72,10 @@ class MockTrackingRepository implements TrackingRepository {
   }
 }
 
-Widget createTestApp({required Widget child, Locale locale = const Locale('en')}) {
+Widget createTestApp({
+  required Widget child,
+  Locale locale = const Locale('en'),
+}) {
   return MaterialApp(
     locale: locale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -179,30 +182,42 @@ void main() {
   );
 
   group('AMOMY Tracking Phase 6 — Final Experience Tests', () {
-    test('1. Production Map configuration uses Stadia Alidade Smooth when API key provided', () {
-      final config = MapTileConfig.productionStadia('test_key');
-      expect(config.tileUrl, contains('tiles.stadiamaps.com/tiles/alidade_smooth'));
-      expect(config.tileUrl, contains('api_key=test_key'));
-      expect(config.attribution, contains('Stadia Maps'));
-      expect(config.attribution, contains('OpenMapTiles'));
-      expect(config.attribution, contains('OpenStreetMap contributors'));
-    });
+    test(
+      '1. Production Map configuration uses Stadia Alidade Smooth when API key provided',
+      () {
+        final config = MapTileConfig.productionStadia('test_key');
+        expect(
+          config.tileUrl,
+          contains('tiles.stadiamaps.com/tiles/alidade_smooth'),
+        );
+        expect(config.tileUrl, contains('api_key=test_key'));
+        expect(config.attribution, contains('Stadia Maps'));
+        expect(config.attribution, contains('OpenMapTiles'));
+        expect(config.attribution, contains('OpenStreetMap contributors'));
+      },
+    );
 
-    test('2. Debug fallback uses OSM Standard while Release without key is unavailable', () {
-      final debugConfig = MapTileConfig.resolveActiveConfig(
-        explicitApiKey: '',
-        isReleaseModeOverride: false,
-      );
-      expect(debugConfig.tileUrl, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
-      expect(debugConfig.isAvailable, isTrue);
+    test(
+      '2. Debug fallback uses OSM Standard while Release without key is unavailable',
+      () {
+        final debugConfig = MapTileConfig.resolveActiveConfig(
+          explicitApiKey: '',
+          isReleaseModeOverride: false,
+        );
+        expect(
+          debugConfig.tileUrl,
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        );
+        expect(debugConfig.isAvailable, isTrue);
 
-      final releaseConfig = MapTileConfig.resolveActiveConfig(
-        explicitApiKey: '',
-        isReleaseModeOverride: true,
-      );
-      expect(releaseConfig.isAvailable, isFalse);
-      expect(releaseConfig.tileUrl, isEmpty);
-    });
+        final releaseConfig = MapTileConfig.resolveActiveConfig(
+          explicitApiKey: '',
+          isReleaseModeOverride: true,
+        );
+        expect(releaseConfig.isAvailable, isFalse);
+        expect(releaseConfig.tileUrl, isEmpty);
+      },
+    );
 
     test('3. Follow mode is ON initially in TrackingState', () {
       const state = TrackingState();
@@ -210,7 +225,9 @@ void main() {
     });
 
     test('4. Toggle follow bus updates state', () {
-      final cubit = TrackingCubit(repository: MockTrackingRepository(summary: activeSummary));
+      final cubit = TrackingCubit(
+        repository: MockTrackingRepository(summary: activeSummary),
+      );
       expect(cubit.state.followBus, isTrue);
       cubit.toggleFollowBus(false);
       expect(cubit.state.followBus, isFalse);
@@ -219,17 +236,20 @@ void main() {
       cubit.close();
     });
 
-    test('5. Shortest heading rotation calculation handles 360 wrap cleanly', () {
-      double delta = (10.0 - 350.0) % 360;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      expect(delta, 20.0);
+    test(
+      '5. Shortest heading rotation calculation handles 360 wrap cleanly',
+      () {
+        double delta = (10.0 - 350.0) % 360;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        expect(delta, 20.0);
 
-      double deltaRev = (350.0 - 10.0) % 360;
-      if (deltaRev > 180) deltaRev -= 360;
-      if (deltaRev < -180) deltaRev += 360;
-      expect(deltaRev, -20.0);
-    });
+        double deltaRev = (350.0 - 10.0) % 360;
+        if (deltaRev > 180) deltaRev -= 360;
+        if (deltaRev < -180) deltaRev += 360;
+        expect(deltaRev, -20.0);
+      },
+    );
 
     test('6. Suspicious GPS jump exceeding 150 km/h is flagged', () {
       const dist = Distance();
@@ -243,7 +263,9 @@ void main() {
     });
 
     test('7. AT STOP progress state flags isAtStop in TrackingState', () {
-      final atStopTelemetry = activeTelemetry.copyWith(progressState: 'at_stop');
+      final atStopTelemetry = activeTelemetry.copyWith(
+        progressState: 'at_stop',
+      );
       final state = TrackingState(latestTelemetry: atStopTelemetry);
       expect(state.isAtStop, isTrue);
 
@@ -262,79 +284,94 @@ void main() {
       expect(timings[testStops[3].id]?.estimatedArrivalTime, isNull);
     });
 
-    test('9. QA temporary coordinates never leak as verified production coordinates', () {
-      expect(testStops[0].isTemporaryQa, isTrue);
-      expect(testStops[2].isTemporaryQa, isFalse);
-    });
+    test(
+      '9. QA temporary coordinates never leak as verified production coordinates',
+      () {
+        expect(testStops[0].isTemporaryQa, isTrue);
+        expect(testStops[2].isTemporaryQa, isFalse);
+      },
+    );
 
-    testWidgets('10. LiveMapScreen renders Follow Bus control with correct icon and text', (tester) async {
-      final repo = MockTrackingRepository(summary: activeSummary);
-      final cubit = TrackingCubit(repository: repo);
-      await cubit.loadTrackingData();
+    testWidgets(
+      '10. LiveMapScreen renders Follow Bus control with correct icon and text',
+      (tester) async {
+        final repo = MockTrackingRepository(summary: activeSummary);
+        final cubit = TrackingCubit(repository: repo);
+        await cubit.loadTrackingData(tripId: 'trip-test');
 
-      await tester.pumpWidget(
-        createTestApp(
-          child: LiveMapScreen(trackingCubit: cubit),
-        ),
-      );
-      await pumpAndAdvance(tester);
+        await tester.pumpWidget(
+          createTestApp(child: LiveMapScreen(trackingCubit: cubit)),
+        );
+        await pumpAndAdvance(tester);
 
-      expect(find.byIcon(Icons.directions_bus_filled_rounded), findsOneWidget);
-      expect(find.text('Following'), findsOneWidget);
+        expect(
+          find.byIcon(Icons.directions_bus_filled_rounded),
+          findsOneWidget,
+        );
+        expect(find.text('Following'), findsOneWidget);
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
-    testWidgets('11. HomeLiveTrackingCard renders without duplicate resume messages', (tester) async {
-      final offlineSummary = activeSummary.copyWith(
-        status: LiveTrackingStatus.offline,
-        serviceState: 'offline',
-        nextWindowStartTime: '08:00 AM',
-      );
-      final repo = MockTrackingRepository(summary: offlineSummary);
-      final cubit = TrackingCubit(repository: repo);
-      await cubit.loadTrackingData();
+    testWidgets(
+      '11. HomeLiveTrackingCard renders without duplicate resume messages',
+      (tester) async {
+        final offlineSummary = activeSummary.copyWith(
+          status: LiveTrackingStatus.offline,
+          serviceState: 'offline',
+          nextWindowStartTime: '08:00 AM',
+        );
+        final repo = MockTrackingRepository(summary: offlineSummary);
+        final cubit = TrackingCubit(repository: repo);
+        await cubit.loadTrackingData(tripId: 'trip-test');
 
-      await tester.pumpWidget(
-        createTestApp(
-          child: SingleChildScrollView(
-            child: BlocProvider<TrackingCubit>.value(
-              value: cubit,
-              child: const HomeLiveTrackingCard(),
+        await tester.pumpWidget(
+          createTestApp(
+            child: SingleChildScrollView(
+              child: BlocProvider<TrackingCubit>.value(
+                value: cubit,
+                child: const HomeLiveTrackingCard(),
+              ),
             ),
           ),
-        ),
-      );
-      await pumpAndAdvance(tester);
+        );
+        await pumpAndAdvance(tester);
 
-      // Resume message appears only in the frosted bar on mini-map, not repeated in subtitle
-      expect(find.textContaining('resumes at 08:00 AM'), findsOneWidget);
-      expect(find.text('Service currently inactive'), findsOneWidget);
+        // Resume message appears only in the frosted bar on mini-map, not repeated in subtitle
+        expect(find.textContaining('resumes at 08:00 AM'), findsOneWidget);
+        expect(find.text('OFFLINE'), findsWidgets);
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
-    testWidgets('12. Mini-map in HomeLiveTrackingCard displays nearby stops only', (tester) async {
-      final repo = MockTrackingRepository(summary: activeSummary);
-      final cubit = TrackingCubit(repository: repo);
-      await cubit.loadTrackingData();
+    testWidgets(
+      '12. Mini-map in HomeLiveTrackingCard displays nearby stops only',
+      (tester) async {
+        final repo = MockTrackingRepository(summary: activeSummary);
+        final cubit = TrackingCubit(repository: repo);
+        await cubit.loadTrackingData(tripId: 'trip-test');
 
-      await tester.pumpWidget(
-        createTestApp(
-          child: SingleChildScrollView(
-            child: BlocProvider<TrackingCubit>.value(
-              value: cubit,
-              child: const HomeLiveTrackingCard(),
+        await tester.pumpWidget(
+          createTestApp(
+            child: SingleChildScrollView(
+              child: BlocProvider<TrackingCubit>.value(
+                value: cubit,
+                child: const HomeLiveTrackingCard(),
+              ),
             ),
           ),
-        ),
-      );
-      await pumpAndAdvance(tester);
+        );
+        await pumpAndAdvance(tester);
 
-      final mapWidget = tester.widget<LiveBusMapWidget>(find.byType(LiveBusMapWidget));
-      expect(mapWidget.isCompactPreview, isTrue);
+        final mapWidget = tester.widget<LiveBusMapWidget>(
+          find.byType(LiveBusMapWidget),
+        );
+        expect(mapWidget.isCompactPreview, isTrue);
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
   });
 }

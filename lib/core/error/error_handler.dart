@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,10 +23,45 @@ class ErrorHandler {
     }
 
     if (error is AuthException) {
-      return AuthenticationFailure(
-        message: error.message,
-        statusCode: int.tryParse(error.statusCode ?? ''),
-      );
+      final isAr = AppLocaleController.instance.isArabic;
+      final msg = error.message.toLowerCase();
+      final status = int.tryParse(error.statusCode ?? '');
+
+      if (msg.contains('rate limit') || status == 429) {
+        return AuthenticationFailure(
+          message: isAr
+              ? 'يرجى الانتظار قليلاً قبل طلب رمز جديد.'
+              : 'Please wait before requesting another code.',
+          statusCode: 429,
+        );
+      }
+
+      // Supabase GoTrue returns "Token has expired or is invalid" (HTTP 403)
+      // for any incorrect, consumed, or invalid OTP code.
+      // Differentiate between "invalid" (including "expired or is invalid") and pure "expired".
+      if (msg.contains('token has expired or is invalid') ||
+          (msg.contains('invalid') &&
+              (msg.contains('token') ||
+                  msg.contains('otp') ||
+                  msg.contains('code')))) {
+        return AuthenticationFailure(
+          message: isAr
+              ? 'رمز التحقق غير صحيح.'
+              : 'The verification code is incorrect.',
+          statusCode: status,
+        );
+      }
+
+      if (msg.contains('expired')) {
+        return AuthenticationFailure(
+          message: isAr
+              ? 'انتهت صلاحية هذا الرمز. يرجى طلب رمز جديد.'
+              : 'This code has expired. Request a new one.',
+          statusCode: status,
+        );
+      }
+
+      return AuthenticationFailure(message: error.message, statusCode: status);
     }
 
     if (error is PostgrestException) {
@@ -33,10 +69,7 @@ class ErrorHandler {
         final message = AppLocaleController.instance.isArabic
             ? 'البيانات المدخلة (رقم الهاتف أو البريد) مسجلة مسبقاً لحساب آخر.'
             : 'The entered details (phone or email) are already in use by another account.';
-        return ValidationFailure(
-          message: message,
-          statusCode: 409,
-        );
+        return ValidationFailure(message: message, statusCode: 409);
       }
       return ServerFailure(
         message: error.message,
@@ -47,7 +80,8 @@ class ErrorHandler {
     // GoogleSignInException specific handling
     if (error is GoogleSignInException) {
       final desc = error.description ?? '';
-      final isError16 = desc.contains('Account reauth failed') ||
+      final isError16 =
+          desc.contains('Account reauth failed') ||
           desc.contains('[16]') ||
           desc.contains('16');
 
@@ -78,7 +112,8 @@ class ErrorHandler {
     }
 
     final errorStr = error?.toString() ?? '';
-    final isGoogleError16 = errorStr.contains('Account reauth failed') ||
+    final isGoogleError16 =
+        errorStr.contains('Account reauth failed') ||
         (errorStr.contains('[16]') && errorStr.contains('GoogleSignIn'));
 
     if (isGoogleError16) {
@@ -88,7 +123,8 @@ class ErrorHandler {
       return AuthenticationFailure(message: message);
     }
 
-    final isGoogleCancellation = errorStr.contains('sign_in_canceled') ||
+    final isGoogleCancellation =
+        errorStr.contains('sign_in_canceled') ||
         errorStr.contains('popup_closed_by_user') ||
         errorStr.contains('User canceled Google Sign-In') ||
         errorStr.contains('The user canceled the sign-in flow');
@@ -105,6 +141,17 @@ class ErrorHandler {
       );
     }
 
+    if (error is SocketException ||
+        errorStr.contains('SocketException') ||
+        errorStr.contains('Failed host lookup') ||
+        errorStr.contains('NetworkRequestFailed') ||
+        errorStr.contains('ClientException')) {
+      final message = AppLocaleController.instance.isArabic
+          ? 'تعذر التحقق من الرمز. تحقق من اتصالك وحاول مرة أخرى.'
+          : 'Couldn\'t verify the code. Check your connection and try again.';
+      return NetworkFailure(message: message);
+    }
+
     return UnknownFailure(
       message: error?.toString() ?? 'An unexpected error occurred.',
     );
@@ -112,10 +159,14 @@ class ErrorHandler {
 
   static Failure _mapAppException(AppException exception) {
     return switch (exception) {
-      NetworkException(:final message, :final statusCode) =>
-        NetworkFailure(message: message, statusCode: statusCode),
-      ServerException(:final message, :final statusCode) =>
-        ServerFailure(message: message, statusCode: statusCode),
+      NetworkException(:final message, :final statusCode) => NetworkFailure(
+        message: message,
+        statusCode: statusCode,
+      ),
+      ServerException(:final message, :final statusCode) => ServerFailure(
+        message: message,
+        statusCode: statusCode,
+      ),
       UnauthorizedException(:final message, :final statusCode) =>
         AuthenticationFailure(message: message, statusCode: statusCode),
       ForbiddenException(:final message, :final statusCode) =>
@@ -124,9 +175,9 @@ class ErrorHandler {
         ValidationFailure(message: message, statusCode: statusCode),
       CacheException(:final message) => CacheFailure(message: message),
       _ => ServerFailure(
-          message: exception.message,
-          statusCode: exception.statusCode,
-        ),
+        message: exception.message,
+        statusCode: exception.statusCode,
+      ),
     };
   }
 
