@@ -32,6 +32,16 @@ abstract class TopUpRemoteDataSource {
     required String fileExtension,
   });
 
+  Future<TopUpCreatedResponse> submitNewTopUpRequest({
+    required int amount,
+    required String paymentMethod,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  });
+
   Future<List<TopUpRequestModel>> getMyTopUpRequests();
 
   Stream<void> subscribeToTopUpUpdates();
@@ -169,6 +179,100 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
       senderPhone: '01014045363',
       fileBytes: fileBytes,
       fileExtension: fileExtension,
+    );
+  }
+
+  @override
+  Future<TopUpCreatedResponse> submitNewTopUpRequest({
+    required int amount,
+    required String paymentMethod,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw const AuthException('Not authenticated');
+    }
+
+    final cleanExt = fileExtension.replaceAll('.', '').toLowerCase();
+    final validExt = switch (cleanExt) {
+      'png' => 'png',
+      'webp' => 'webp',
+      'heic' => 'heic',
+      _ => 'jpg',
+    };
+
+    final contentType = switch (validExt) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      _ => 'image/jpeg',
+    };
+
+    final filename = 'proof_${DateTime.now().millisecondsSinceEpoch}.$validExt';
+    final storagePath = '$userId/$filename';
+
+    // 1. Upload screenshot to 'payment-proofs' storage bucket
+    await _supabase.storage
+        .from('payment-proofs')
+        .uploadBinary(
+          storagePath,
+          Uint8List.fromList(fileBytes),
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
+        );
+
+    // 2. ONLY after screenshot upload succeeds call submit_new_topup_request
+    final response = await _supabase.rpc(
+      'submit_new_topup_request',
+      params: {
+        'p_requested_amount': amount,
+        'p_payment_method': paymentMethod,
+        'p_sender_phone': senderPhone,
+        'p_transfer_reference':
+            (transferReference != null && transferReference.trim().isNotEmpty)
+                ? transferReference.trim()
+                : null,
+        'p_transferred_at': (transferredAt ?? DateTime.now()).toIso8601String(),
+        'p_screenshot_path': storagePath,
+      },
+    );
+
+    if (response is Map) {
+      final map = Map<String, dynamic>.from(response);
+      final reqId = (map['request_id'] ?? map['id'] ?? '') as String;
+      final pubId = (map['public_id'] ?? '') as String;
+      final statusStr = (map['status'] ?? 'pending_review') as String;
+      return TopUpCreatedResponse(
+        requestId: reqId,
+        publicId: pubId.isNotEmpty ? pubId : 'AMY-TOPUP',
+        requestedPoints: (map['requested_points'] as num?)?.toInt() ??
+            (map['requested_amount'] as num?)?.toInt() ??
+            amount,
+        expectedAmountEgp: (map['expected_amount_egp'] as num?)?.toDouble() ??
+            amount.toDouble(),
+        receivingPhone: map['receiving_phone'] as String? ?? '',
+        conversionRate: (map['conversion_rate'] as num?)?.toDouble() ?? 1.0,
+        status: TopUpStatus.fromString(statusStr),
+      );
+    }
+
+    if (response is String) {
+      return TopUpCreatedResponse(
+        requestId: response,
+        publicId: response,
+        requestedPoints: amount,
+        expectedAmountEgp: amount.toDouble(),
+        receivingPhone: '',
+        conversionRate: 1.0,
+        status: TopUpStatus.pending,
+      );
+    }
+
+    throw const FormatException(
+      'Failed to obtain top-up request details from backend.',
     );
   }
 

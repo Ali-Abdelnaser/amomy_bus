@@ -164,7 +164,7 @@ class _BookingProfileGuardSheet extends StatelessWidget {
             // Complete Profile CTA
             AppButton(
               label: l10n.completeProfileCta,
-              icon: AppIcons.arrowForward,
+              icon: context.isRtl ? AppIcons.arrowBack : AppIcons.arrowForward,
               isFullWidth: true,
               onPressed: () {
                 Navigator.of(context).pop(false);

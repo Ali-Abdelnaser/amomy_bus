@@ -113,6 +113,43 @@ class TopUpRepositoryImpl implements TopUpRepository {
   }
 
   @override
+  ResultFuture<TopUpCreatedResponse> submitNewTopUpRequest({
+    required int amount,
+    required String paymentMethod,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    try {
+      if (amount < 200) {
+        return const Error(
+          ServerFailure(message: 'Minimum top-up is 200 Points.'),
+        );
+      }
+      final created = await _remoteDataSource.submitNewTopUpRequest(
+        amount: amount,
+        paymentMethod: paymentMethod,
+        senderPhone: senderPhone,
+        transferReference: transferReference,
+        transferredAt: transferredAt,
+        fileBytes: fileBytes,
+        fileExtension: fileExtension,
+      );
+      return Success(created);
+    } on SocketException catch (_) {
+      return const Error(NetworkFailure());
+    } on StorageException catch (e) {
+      return Error(ProofUploadFailedFailure(message: e.message));
+    } on PostgrestException catch (e) {
+      return Error(_mapPostgrestError(e));
+    } catch (e) {
+      return Error(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<List<TopUpRequest>> getMyTopUpRequests() async {
     try {
       final requests = await _remoteDataSource.getMyTopUpRequests();

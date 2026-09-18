@@ -2720,6 +2720,12 @@ abstract class AppLocalizations {
   /// **'Completed'**
   String get bookingStatusCompleted;
 
+  /// No description provided for @bookingStatusFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get bookingStatusFinished;
+
   /// No description provided for @bookingStatusNoShow.
   ///
   /// In en, this message translates to:

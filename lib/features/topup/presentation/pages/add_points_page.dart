@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_loading.dart';
@@ -76,7 +75,7 @@ class AddPointsPage extends StatelessWidget {
               leading: state.currentStep == TopUpStep.pendingReview
                   ? const SizedBox.shrink()
                   : IconButton(
-                      icon: const Icon(AppIcons.arrowBack),
+                      icon: const BackButtonIcon(),
                       onPressed: () {
                         if (state.isResubmit ||
                             state.currentStep == TopUpStep.amount) {
@@ -145,8 +144,7 @@ class AddPointsPage extends StatelessWidget {
                                               'ar',
                                         ),
                                     isSubmitting: state.isSubmitting,
-                                    onTransferred:
-                                        cubit.confirmTransferAndCreateRequest,
+                                    onTransferred: cubit.proceedToDetails,
                                     onBack: cubit.previousStep,
                                   ),
                                 TopUpStep.details => TransferDetailsStepWidget(

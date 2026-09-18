@@ -522,6 +522,7 @@
   "trackingResumesMidday": "Tracking resumes at 1:00 PM",
   "trackingResumesTomorrow": "Tracking resumes tomorrow at 8:00 AM",
   "bookingStatusCompleted": "Completed",
+  "bookingStatusFinished": "Finished",
   "bookingStatusNoShow": "No Show",
   "bookingStatusPending": "Pending",
   "errorHoldExpired": "Seat hold expired. Please select a seat again.",

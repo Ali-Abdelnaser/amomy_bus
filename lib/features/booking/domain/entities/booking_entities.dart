@@ -284,6 +284,7 @@ class PassengerBooking extends Equatable {
   final String? routeStopId;
   final String? stopName;
   final String? locality;
+  final DateTime? checkedInAt;
 
   const PassengerBooking({
     required this.bookingId,
@@ -304,10 +305,15 @@ class PassengerBooking extends Equatable {
     this.routeStopId,
     this.stopName,
     this.locality,
+    this.checkedInAt,
   });
 
+  bool get isFinished => checkedInAt != null;
+
   bool get isUpcoming =>
-      status == 'confirmed' && departureAt.isAfter(DateTime.now());
+      status == 'confirmed' &&
+      checkedInAt == null &&
+      departureAt.isAfter(DateTime.now());
 
   String originName(String locale) => locale.startsWith('ar')
       ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
@@ -340,6 +346,7 @@ class PassengerBooking extends Equatable {
     routeStopId,
     stopName,
     locality,
+    checkedInAt,
   ];
 }
 

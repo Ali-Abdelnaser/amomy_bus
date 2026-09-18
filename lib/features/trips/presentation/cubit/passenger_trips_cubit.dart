@@ -84,6 +84,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
                       .where(
                         (b) =>
                             b.status == 'confirmed' &&
+                            b.checkedInAt == null &&
                             b.departureAt.isAfter(now),
                       )
                       .toList()
@@ -93,6 +94,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
                   bookings
                       .where(
                         (b) =>
+                            b.checkedInAt != null ||
                             b.status != 'confirmed' ||
                             !b.departureAt.isAfter(now),
                       )

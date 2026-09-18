@@ -223,6 +223,7 @@ class PassengerBookingModel extends PassengerBooking {
     super.routeStopId,
     super.stopName,
     super.locality,
+    super.checkedInAt,
   });
 
   factory PassengerBookingModel.fromJson(Map<String, dynamic> json) {
@@ -263,6 +264,9 @@ class PassengerBookingModel extends PassengerBooking {
       routeStopId: json['route_stop_id'] as String?,
       stopName: (json['stop_name_ar'] ?? json['stop_name']) as String?,
       locality: json['locality_ar'] as String?,
+      checkedInAt: json['checked_in_at'] != null
+          ? DateTime.tryParse(json['checked_in_at'] as String)
+          : null,
     );
   }
 }

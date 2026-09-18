@@ -64,7 +64,12 @@ class PassengerUpcomingTrip extends Equatable {
     this.routeStopId,
     this.stopNameAr,
     this.localityAr,
+    this.checkedInAt,
   });
+
+  final DateTime? checkedInAt;
+
+  bool get isFinished => checkedInAt != null;
 
   String originName(String locale) => locale.startsWith('ar')
       ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
@@ -107,6 +112,7 @@ class PassengerUpcomingTrip extends Equatable {
     routeStopId,
     stopNameAr,
     localityAr,
+    checkedInAt,
   ];
 }
 

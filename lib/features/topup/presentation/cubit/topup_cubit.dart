@@ -8,6 +8,7 @@ import '../../domain/entities/topup_entities.dart';
 import '../../domain/usecases/create_topup_request_usecase.dart';
 import '../../domain/usecases/get_active_payment_methods_usecase.dart';
 import '../../domain/usecases/get_payment_config_usecase.dart';
+import '../../domain/usecases/submit_new_topup_request_usecase.dart';
 import '../../domain/usecases/submit_topup_proof_usecase.dart';
 import 'topup_state.dart';
 
@@ -15,26 +16,33 @@ import 'topup_state.dart';
 class TopUpCubit extends Cubit<TopUpState> {
   final GetPaymentConfigUseCase? _getPaymentConfigUseCase;
   final GetActivePaymentMethodsUseCase? _getActivePaymentMethodsUseCase;
-  final CreateTopUpRequestUseCase? _createTopUpRequestUseCase;
   final SubmitTopUpProofUseCase? _submitTopUpProofUseCase;
+  final SubmitNewTopUpRequestUseCase? _submitNewTopUpRequestUseCase;
 
   TopUpCubit(
     GetPaymentConfigUseCase getPaymentConfigUseCase,
     GetActivePaymentMethodsUseCase getActivePaymentMethodsUseCase,
-    CreateTopUpRequestUseCase createTopUpRequestUseCase,
-    SubmitTopUpProofUseCase submitTopUpProofUseCase,
-  ) : _getPaymentConfigUseCase = getPaymentConfigUseCase,
-      _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
-      _createTopUpRequestUseCase = createTopUpRequestUseCase,
-      _submitTopUpProofUseCase = submitTopUpProofUseCase,
-      super(const TopUpState());
+    CreateTopUpRequestUseCase? createTopUpRequestUseCase,
+    SubmitTopUpProofUseCase submitTopUpProofUseCase, {
+    SubmitNewTopUpRequestUseCase? submitNewUseCase,
+  }) : _getPaymentConfigUseCase = getPaymentConfigUseCase,
+       _getActivePaymentMethodsUseCase = getActivePaymentMethodsUseCase,
+       _submitTopUpProofUseCase = submitTopUpProofUseCase,
+       _submitNewTopUpRequestUseCase = submitNewUseCase,
+       super(const TopUpState());
 
   TopUpCubit.idle()
     : _getPaymentConfigUseCase = null,
       _getActivePaymentMethodsUseCase = null,
-      _createTopUpRequestUseCase = null,
       _submitTopUpProofUseCase = null,
+      _submitNewTopUpRequestUseCase = null,
       super(const TopUpState());
+
+  SubmitNewTopUpRequestUseCase? get _effectiveSubmitNewTopUpRequestUseCase =>
+      _submitNewTopUpRequestUseCase ??
+      (getIt.isRegistered<SubmitNewTopUpRequestUseCase>()
+          ? getIt<SubmitNewTopUpRequestUseCase>()
+          : null);
 
   void initWithResubmit(TopUpRequest request) {
     emit(
@@ -198,54 +206,28 @@ class TopUpCubit extends Cubit<TopUpState> {
     );
   }
 
-  Future<void> confirmTransferAndCreateRequest() async {
-    if (_createTopUpRequestUseCase == null) {
-      emit(state.copyWith(currentStep: TopUpStep.details));
-      return;
-    }
+  void proceedToDetails() {
+    final method = state.selectedMethod;
+    final receiving = method?.accountIdentifier.isNotEmpty == true
+        ? method!.accountIdentifier
+        : state.effectiveReceivingNumber;
+    final expectedEgp = state.paymentConfig
+        .calculateExpectedEgp(state.amount)
+        .toDouble();
 
-    // If request already created for this exact amount, advance directly
-    if (state.createdRequestId != null && state.amount == state.amount) {
-      emit(
-        state.copyWith(
-          currentStep: TopUpStep.details,
-          errorMessage: () => null,
-        ),
-      );
-      return;
-    }
-
-    emit(state.copyWith(isSubmitting: true, errorMessage: () => null));
-
-    final methodCode = state.selectedMethod?.code ?? 'VODAFONE_CASH';
-    final result = await _createTopUpRequestUseCase(
-      amount: state.amount,
-      paymentMethodCode: methodCode,
+    emit(
+      state.copyWith(
+        currentStep: TopUpStep.details,
+        expectedAmountEgp: expectedEgp,
+        receivingPhone: () => receiving,
+        errorMessage: () => null,
+      ),
     );
+  }
 
-    result.fold(
-      onError: (failure) {
-        emit(
-          state.copyWith(
-            isSubmitting: false,
-            errorMessage: () => failure.message,
-          ),
-        );
-      },
-      onSuccess: (created) {
-        emit(
-          state.copyWith(
-            isSubmitting: false,
-            createdRequestId: () => created.requestId,
-            createdPublicId: () => created.publicId,
-            expectedAmountEgp: created.expectedAmountEgp,
-            receivingPhone: () => created.receivingPhone,
-            currentStep: TopUpStep.details,
-            errorMessage: () => null,
-          ),
-        );
-      },
-    );
+  // Alias for backward compatibility
+  void confirmTransferAndCreateRequest() {
+    proceedToDetails();
   }
 
   void setSenderPhone(String phone) {
@@ -339,8 +321,6 @@ class TopUpCubit extends Cubit<TopUpState> {
       return;
     }
 
-    if (_submitTopUpProofUseCase == null) return;
-
     emit(
       state.copyWith(
         isSubmitting: true,
@@ -349,8 +329,67 @@ class TopUpCubit extends Cubit<TopUpState> {
       ),
     );
 
-    final result = await _submitTopUpProofUseCase(
-      requestId: state.createdRequestId!,
+    // Flow 1: Existing Rejected / Resubmission flow
+    if (state.isResubmit) {
+      if (_submitTopUpProofUseCase == null || state.createdRequestId == null) {
+        emit(state.copyWith(isSubmitting: false));
+        return;
+      }
+
+      final result = await _submitTopUpProofUseCase(
+        requestId: state.createdRequestId!,
+        senderPhone: state.senderPhone,
+        transferReference: state.paymentReference.isNotEmpty
+            ? state.paymentReference
+            : null,
+        transferredAt: state.transferredAt ?? DateTime.now(),
+        fileBytes: state.proofBytes!,
+        fileExtension: state.proofExtension ?? 'jpg',
+      );
+
+      result.fold(
+        onError: (failure) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              proofStatus: ProofUploadStatus.failed,
+              errorMessage: () => failure.message,
+            ),
+          );
+        },
+        onSuccess: (path) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              isSuccess: true,
+              proofStatus: ProofUploadStatus.uploaded,
+              currentStep: TopUpStep.pendingReview,
+              submittedPublicId: () => state.createdPublicId,
+              errorMessage: () => null,
+            ),
+          );
+        },
+      );
+      return;
+    }
+
+    // Flow 2: NEW Top-Up Request Flow (submit_new_topup_request)
+    final useCase = _effectiveSubmitNewTopUpRequestUseCase;
+    if (useCase == null) {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          proofStatus: ProofUploadStatus.failed,
+          errorMessage: () => 'Top-up service is currently unavailable.',
+        ),
+      );
+      return;
+    }
+
+    final methodCode = state.selectedMethod?.code ?? 'VODAFONE_CASH';
+    final result = await useCase(
+      amount: state.amount,
+      paymentMethod: methodCode,
       senderPhone: state.senderPhone,
       transferReference: state.paymentReference.isNotEmpty
           ? state.paymentReference
@@ -370,14 +409,16 @@ class TopUpCubit extends Cubit<TopUpState> {
           ),
         );
       },
-      onSuccess: (path) {
+      onSuccess: (created) {
         emit(
           state.copyWith(
             isSubmitting: false,
             isSuccess: true,
             proofStatus: ProofUploadStatus.uploaded,
             currentStep: TopUpStep.pendingReview,
-            submittedPublicId: () => state.createdPublicId,
+            createdRequestId: () => created.requestId,
+            createdPublicId: () => created.publicId,
+            submittedPublicId: () => created.publicId,
             errorMessage: () => null,
           ),
         );

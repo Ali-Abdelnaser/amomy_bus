@@ -23,8 +23,12 @@ class TripBookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
+    final isFinished =
+        booking.checkedInAt != null ||
+        booking.status.toLowerCase() == 'finished';
     final isUpcoming =
-        booking.status == 'confirmed' || booking.status == 'active';
+        !isFinished &&
+        (booking.status == 'confirmed' || booking.status == 'active');
 
     return AppCard(
       padding: AppSpacing.edgeInsetsA16,
@@ -68,19 +72,26 @@ class TripBookingCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isUpcoming
+                  color: isFinished
+                      ? const Color(0xFFF1F5F9)
+                      : isUpcoming
                       ? AppColors.successLight
                       : AppColors.surfaceSoft,
                   borderRadius: BorderRadius.circular(6),
+                  border: isFinished
+                      ? Border.all(color: const Color(0xFFE2E8F0))
+                      : null,
                 ),
                 child: Text(
                   StatusLocalizer.localizeBookingStatus(
                     context,
-                    booking.status,
+                    isFinished ? 'finished' : booking.status,
                   ),
                   style: AppTextStyles.labelSmall.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isUpcoming
+                    color: isFinished
+                        ? const Color(0xFF64748B)
+                        : isUpcoming
                         ? AppColors.success
                         : AppColors.textSecondary,
                   ),

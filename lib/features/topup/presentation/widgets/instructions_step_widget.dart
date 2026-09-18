@@ -444,16 +444,13 @@ class _PaymentDetailsCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Text(
-                        activeIdentifier,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          color: AppColors.textPrimary,
-                        ),
+                    child: Text(
+                      activeIdentifier,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -568,10 +565,7 @@ class _ProviderLogoWidget extends StatelessWidget {
   final String assetPath;
   final bool isSelected;
 
-  const _ProviderLogoWidget({
-    required this.assetPath,
-    this.isSelected = false,
-  });
+  const _ProviderLogoWidget({required this.assetPath, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {

@@ -98,7 +98,9 @@ class BookTripPage extends StatelessWidget {
                       AppSpacing.gapH32,
                       AppButton(
                         label: context.l10n.completeProfileCta,
-                        icon: AppIcons.arrowForward,
+                        icon: context.isRtl
+                            ? AppIcons.arrowBack
+                            : AppIcons.arrowForward,
                         onPressed: () => context.push('/complete-profile'),
                       ),
                     ],

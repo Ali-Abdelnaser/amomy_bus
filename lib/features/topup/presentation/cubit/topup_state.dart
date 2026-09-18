@@ -88,8 +88,15 @@ class TopUpState extends Equatable {
 
   bool get canProceedFromAmount => isAmountValid && !isSubmitting;
 
-  bool get canSubmitDetails =>
-      isSenderPhoneValid && isProofValid && !isSubmitting && createdRequestId != null;
+  bool get canSubmitDetails {
+    if (isResubmit) {
+      return isSenderPhoneValid &&
+          isProofValid &&
+          !isSubmitting &&
+          createdRequestId != null;
+    }
+    return isSenderPhoneValid && isProofValid && !isSubmitting;
+  }
 
   String get effectiveReceivingNumber {
     if (receivingPhone != null && receivingPhone!.isNotEmpty) {

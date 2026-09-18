@@ -624,7 +624,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
                               const Spacer(),
                               Icon(
                                 locale == 'ar'
-                                    ? Icons.arrow_back_ios_rounded
+                                    ? Icons.arrow_forward_ios_rounded
                                     : Icons.arrow_forward_ios_rounded,
                                 color: isActionDisabled
                                     ? const Color(0xFF94A3B8)

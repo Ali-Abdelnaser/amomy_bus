@@ -499,6 +499,7 @@
   "trackingResumesMidday": "يستأنف التتبع الساعة 1:00 م",
   "trackingResumesTomorrow": "يستأنف التتبع غداً الساعة 8:00 ص",
   "bookingStatusCompleted": "مكتملة",
+  "bookingStatusFinished": "تمت الرحلة",
   "bookingStatusNoShow": "لم يحضر",
   "bookingStatusPending": "قيد الانتظار",
   "errorHoldExpired": "انتهت مهلة حجز المقعد. يرجى اختيار مقعد آخر.",

@@ -70,7 +70,10 @@ class HomeWalletCard extends StatelessWidget {
                 onTap: () => context.go('/wallet'),
                 borderRadius: BorderRadius.circular(6),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -81,8 +84,10 @@ class HomeWalletCard extends StatelessWidget {
                         ),
                       ),
                       AppSpacing.gapW4,
-                      const Icon(
-                        AppIcons.arrowForward,
+                      Icon(
+                        context.isRtl
+                            ? AppIcons.arrowBack
+                            : AppIcons.arrowForward,
                         size: 12,
                         color: AppColors.primary,
                       ),
@@ -124,7 +129,10 @@ class HomeWalletCard extends StatelessWidget {
                 onTap: () => context.push('/add-points'),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
@@ -132,7 +140,11 @@ class HomeWalletCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(AppIcons.add, size: 14, color: AppColors.primary),
+                      const Icon(
+                        AppIcons.add,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
                       AppSpacing.gapW4,
                       Text(
                         l10n.addPoints,
@@ -183,11 +195,7 @@ class HomeWalletCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 14,
-                  color: AppColors.border,
-                ),
+                Container(width: 1, height: 14, color: AppColors.border),
                 AppSpacing.gapW12,
                 Expanded(
                   child: Row(

@@ -18,7 +18,8 @@ class HomeSummaryModel extends HomeSummary {
 
     // 2. Wallet
     final walletJson = json['wallet'] as Map<String, dynamic>? ?? {};
-    final availablePoints = (walletJson['available_points'] as num?)?.toInt() ?? 0;
+    final availablePoints =
+        (walletJson['available_points'] as num?)?.toInt() ?? 0;
 
     // 3. Upcoming Trip
     PassengerUpcomingTrip? upcomingTrip;
@@ -33,10 +34,12 @@ class HomeSummaryModel extends HomeSummary {
         destinationNameAr: tripJson['destination_name_ar'] as String? ?? '',
         destinationNameEn: tripJson['destination_name_en'] as String? ?? '',
         serviceDate: tripJson['service_date'] != null
-            ? DateTime.tryParse(tripJson['service_date'].toString()) ?? DateTime.now()
+            ? DateTime.tryParse(tripJson['service_date'].toString()) ??
+                  DateTime.now()
             : DateTime.now(),
         departureAt: tripJson['departure_at'] != null
-            ? DateTime.tryParse(tripJson['departure_at'].toString()) ?? DateTime.now()
+            ? DateTime.tryParse(tripJson['departure_at'].toString()) ??
+                  DateTime.now()
             : DateTime.now(),
         departureTime: tripJson['departure_time'] as String? ?? '--:--',
         seatNumber: tripJson['seat_number'] as String? ?? '',
@@ -46,6 +49,9 @@ class HomeSummaryModel extends HomeSummary {
         routeStopId: tripJson['route_stop_id'] as String?,
         stopNameAr: tripJson['stop_name_ar'] as String?,
         localityAr: tripJson['locality_ar'] as String?,
+        checkedInAt: tripJson['checked_in_at'] != null
+            ? DateTime.tryParse(tripJson['checked_in_at'].toString())
+            : null,
       );
     }
 
@@ -54,7 +60,8 @@ class HomeSummaryModel extends HomeSummary {
     final activity = PassengerActivityMetrics(
       tripsThisMonth: (activityJson['trips_this_month'] as num?)?.toInt() ?? 0,
       completedTrips: (activityJson['completed_trips'] as num?)?.toInt() ?? 0,
-      pointsSpentThisMonth: (activityJson['points_spent_this_month'] as num?)?.toInt() ?? 0,
+      pointsSpentThisMonth:
+          (activityJson['points_spent_this_month'] as num?)?.toInt() ?? 0,
       missedTrips: (activityJson['missed_trips'] as num?)?.toInt() ?? 0,
     );
 

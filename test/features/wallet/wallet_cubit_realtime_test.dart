@@ -98,6 +98,17 @@ class MockTopUpRepository implements TopUpRepository {
   }) async => const Success('path');
 
   @override
+  ResultFuture<TopUpCreatedResponse> submitNewTopUpRequest({
+    required int amount,
+    required String paymentMethod,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async => throw UnimplementedError();
+
+  @override
   ResultFuture<List<TopUpRequest>> getMyTopUpRequests() async =>
       const Success([]);
 

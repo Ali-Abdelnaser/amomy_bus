@@ -1408,6 +1408,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookingStatusCompleted => 'Completed';
 
   @override
+  String get bookingStatusFinished => 'Finished';
+
+  @override
   String get bookingStatusNoShow => 'No Show';
 
   @override

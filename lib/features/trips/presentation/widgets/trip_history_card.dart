@@ -30,6 +30,10 @@ class TripHistoryCard extends StatelessWidget {
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
+    final isFinished =
+        booking.checkedInAt != null ||
+        booking.status.toLowerCase() == 'finished';
+
     // Status colors and background styling
     final (
       statusLabel,
@@ -40,6 +44,15 @@ class TripHistoryCard extends StatelessWidget {
       cardBorder,
       shadowColor,
     ) = switch (booking.status.toLowerCase()) {
+      _ when isFinished => (
+        isAr ? 'تمت الرحلة' : 'Finished',
+        const Color(0xFF64748B),
+        const Color(0xFFF1F5F9),
+        const Color(0xFFE2E8F0),
+        const Color(0xFFF8FAFC),
+        const Color(0xFFE2E8F0),
+        Colors.black.withValues(alpha: 0.03),
+      ),
       'completed' => (
         isAr ? 'مكتملة' : 'Completed',
         AppColors.success,
@@ -68,12 +81,12 @@ class TripHistoryCard extends StatelessWidget {
         const Color(0xFFF59E0B).withValues(alpha: 0.06),
       ),
       _ => (
-        isAr ? 'منتهية' : 'Finished',
+        isAr ? 'تمت الرحلة' : 'Finished',
         const Color(0xFF64748B),
         const Color(0xFFF1F5F9),
-        const Color(0xFFCBD5E1),
+        const Color(0xFFE2E8F0),
         const Color(0xFFF8FAFC),
-        const Color(0xFFCBD5E1),
+        const Color(0xFFE2E8F0),
         Colors.black.withValues(alpha: 0.03),
       ),
     };

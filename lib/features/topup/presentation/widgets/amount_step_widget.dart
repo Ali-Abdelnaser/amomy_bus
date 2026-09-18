@@ -31,14 +31,22 @@ class AmountStepWidget extends StatefulWidget {
 
 class _AmountStepWidgetState extends State<AmountStepWidget> {
   late final TextEditingController _customController;
+  late final FocusNode _focusNode;
+  bool _isFocused = false;
   final List<int> _presetAmounts = const [200, 250, 300, 500, 1000];
   int? _selectedPreset;
 
   @override
   void initState() {
     super.initState();
-    final init = widget.initialAmount >= widget.minimumPoints ? widget.initialAmount : widget.minimumPoints;
-    _customController = TextEditingController(text: init > 0 ? init.toString() : '');
+    final init = widget.initialAmount >= widget.minimumPoints
+        ? widget.initialAmount
+        : widget.minimumPoints;
+    _customController = TextEditingController(
+      text: init > 0 ? init.toString() : '',
+    );
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
     if (_presetAmounts.contains(init)) {
       _selectedPreset = init;
     } else {
@@ -46,8 +54,18 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
     }
   }
 
+  void _onFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _customController.dispose();
     super.dispose();
   }
@@ -87,6 +105,8 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
     final isBelowMin = amount > 0 && amount < widget.minimumPoints;
     final isValid = amount >= widget.minimumPoints;
     final expectedEgp = (amount * widget.egpPerPoint).round();
+
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,77 +188,154 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
                 color: AppColors.textSecondary,
               ),
             ),
-            AppSpacing.gapH6,
-            Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isBelowMin
-                      ? AppColors.error
-                      : (_customController.text.isNotEmpty)
-                          ? AppColors.primary
-                          : const Color(0xFFE2E8F0),
-                  width: 1.5,
+            AppSpacing.gapH8,
+            GestureDetector(
+              onTap: () => _focusNode.requestFocus(),
+              behavior: HitTestBehavior.translucent,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isBelowMin
+                        ? AppColors.error
+                        : _isFocused
+                        ? AppColors.primary
+                        : (_customController.text.isNotEmpty)
+                        ? AppColors.primary.withValues(alpha: 0.4)
+                        : const Color(0xFFE2E8F0),
+                    width: _isFocused || isBelowMin ? 1.8 : 1.2,
+                  ),
+                  boxShadow: [
+                    if (_isFocused)
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        blurRadius: 14,
+                        offset: const Offset(0, 3),
+                      )
+                    else if (isBelowMin)
+                      BoxShadow(
+                        color: AppColors.error.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      )
+                    else
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      ),
+                  ],
                 ),
-              ),
-              child: Row(
-                children: [
-                  AppSpacing.gapW14,
-                  const Icon(
-                    AppIcons.edit,
-                    size: 20,
-                    color: AppColors.textSecondary,
-                  ),
-                  AppSpacing.gapW10,
-                  Expanded(
-                    child: TextField(
-                      controller: _customController,
-                      keyboardType: TextInputType.number,
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.start,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(6),
-                      ],
-                      onChanged: _onCustomChanged,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        letterSpacing: 0.5,
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isBelowMin
+                            ? AppColors.errorLight
+                            : _isFocused
+                            ? AppColors.primaryLight
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      decoration: const InputDecoration(
-                        hintText: '200+',
-                        hintStyle: TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      child: Icon(
+                        AppIcons.wallet,
+                        size: 20,
+                        color: isBelowMin
+                            ? AppColors.error
+                            : _isFocused
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                    AppSpacing.gapW12,
+                    Expanded(
+                      child: TextField(
+                        controller: _customController,
+                        focusNode: _focusNode,
+                        keyboardType: TextInputType.number,
+                        textDirection: TextDirection.ltr,
+                        textAlign: isRtl ? TextAlign.right : TextAlign.left,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
+                        onChanged: _onCustomChanged,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.5,
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        decoration: InputDecoration(
+                          hintText: '${widget.minimumPoints}+',
+                          hintStyle: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FC),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      l10n.ptsUnit,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+                    if (_customController.text.isNotEmpty) ...[
+                      GestureDetector(
+                        onTap: () {
+                          _customController.clear();
+                          _onCustomChanged('');
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF1F5F9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            AppIcons.close,
+                            size: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      AppSpacing.gapW8,
+                    ],
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isFocused
+                            ? AppColors.primary
+                            : const Color(0xFFEFF6FC),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        l10n.ptsUnit,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: _isFocused ? Colors.white : AppColors.primary,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -251,7 +348,11 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               children: [
-                const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.error),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 14,
+                  color: AppColors.error,
+                ),
                 AppSpacing.gapW6,
                 Text(
                   l10n.minTopupNotice,
@@ -281,10 +382,14 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFFEFF6FC) : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFFEFF6FC)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                        color: isSelected
+                            ? AppColors.primary
+                            : const Color(0xFFE2E8F0),
                         width: isSelected ? 1.8 : 1.0,
                       ),
                     ),
@@ -296,7 +401,9 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
-                            color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -305,7 +412,9 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textTertiary,
                           ),
                         ),
                       ],
@@ -332,7 +441,11 @@ class _AmountStepWidgetState extends State<AmountStepWidget> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.currency_pound_rounded, size: 18, color: Color(0xFF16A34A)),
+                    const Icon(
+                      Icons.currency_pound_rounded,
+                      size: 18,
+                      color: Color(0xFF16A34A),
+                    ),
                     AppSpacing.gapW8,
                     Text(
                       l10n.transferAmount,

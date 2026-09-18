@@ -359,7 +359,9 @@ class _ActionTile extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.arrow_forward_ios_rounded,
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Icons.arrow_back_ios_rounded
+                      : Icons.arrow_forward_ios_rounded,
                   size: 14,
                   color: const Color(0xFF98A2B3),
                 ),

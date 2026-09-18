@@ -95,6 +95,8 @@ import '../../features/topup/domain/usecases/submit_topup_proof_usecase.dart'
     as _i27;
 import '../../features/topup/domain/usecases/upload_topup_proof_usecase.dart'
     as _i542;
+import '../../features/topup/domain/usecases/submit_new_topup_request_usecase.dart'
+    as _i999;
 import '../../features/topup/presentation/cubit/topup_cubit.dart' as _i809;
 import '../../features/topup/presentation/cubit/topup_history_cubit.dart'
     as _i1020;
@@ -236,6 +238,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i542.UploadTopUpProofUseCase>(
       () => _i542.UploadTopUpProofUseCase(gh<_i806.TopUpRepository>()),
     );
+    gh.lazySingleton<_i999.SubmitNewTopUpRequestUseCase>(
+      () => _i999.SubmitNewTopUpRequestUseCase(gh<_i806.TopUpRepository>()),
+    );
     gh.lazySingleton<_i178.ClaimWelcomeGiftUseCase>(
       () => _i178.ClaimWelcomeGiftUseCase(gh<_i787.AuthRepository>()),
     );
@@ -281,6 +286,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i170.GetActivePaymentMethodsUseCase>(),
         gh<_i688.CreateTopUpRequestUseCase>(),
         gh<_i27.SubmitTopUpProofUseCase>(),
+        submitNewUseCase: gh<_i999.SubmitNewTopUpRequestUseCase>(),
       ),
     );
     gh.lazySingleton<_i572.DioClient>(

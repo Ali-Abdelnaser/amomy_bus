@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
@@ -14,6 +16,7 @@ import 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository? _homeRepository;
   final BookingRepository? _bookingRepository;
+  StreamSubscription<void>? _bookingUpdatesSubscription;
 
   HomeCubit(this._homeRepository, [this._bookingRepository])
     : super(const HomeState());
@@ -135,6 +138,7 @@ class HomeCubit extends Cubit<HomeState> {
           );
         },
       );
+      _startBookingUpdatesSubscription();
     } catch (e) {
       emit(
         state.copyWith(
@@ -144,6 +148,25 @@ class HomeCubit extends Cubit<HomeState> {
         ),
       );
     }
+  }
+
+  void _startBookingUpdatesSubscription() {
+    final bookingRepo = _bookingRepo;
+    if (bookingRepo == null || _bookingUpdatesSubscription != null) return;
+
+    _bookingUpdatesSubscription = bookingRepo
+        .subscribeToPassengerBookingUpdates()
+        .listen(
+          (_) => loadHomeData(isRefresh: true),
+          onError: (error, stackTrace) {},
+          cancelOnError: false,
+        );
+  }
+
+  @override
+  Future<void> close() {
+    _bookingUpdatesSubscription?.cancel();
+    return super.close();
   }
 
   /// Selects the trackable trip ID according to the active Cairo service window:

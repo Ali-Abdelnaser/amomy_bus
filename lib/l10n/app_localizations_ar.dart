@@ -1394,6 +1394,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bookingStatusCompleted => 'مكتملة';
 
   @override
+  String get bookingStatusFinished => 'تمت الرحلة';
+
+  @override
   String get bookingStatusNoShow => 'لم يحضر';
 
   @override

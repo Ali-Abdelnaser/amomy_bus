@@ -56,6 +56,27 @@ class FakeHistoryRepository implements TopUpRepository {
   }) async => const Success('path');
 
   @override
+  ResultFuture<TopUpCreatedResponse> submitNewTopUpRequest({
+    required int amount,
+    required String paymentMethod,
+    required String senderPhone,
+    String? transferReference,
+    DateTime? transferredAt,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async => const Success(
+    TopUpCreatedResponse(
+      requestId: 'req-1',
+      publicId: 'AMY-123456',
+      requestedPoints: 300,
+      expectedAmountEgp: 300,
+      receivingPhone: '01014045363',
+      conversionRate: 1.0,
+      status: TopUpStatus.pending,
+    ),
+  );
+
+  @override
   ResultFuture<List<TopUpRequest>> getMyTopUpRequests() async {
     if (failure != null) return Error(failure!);
     return Success(requests);

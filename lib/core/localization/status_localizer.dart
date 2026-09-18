@@ -27,6 +27,8 @@ class StatusLocalizer {
       case 'completed':
       case 'departed':
         return l10n.bookingStatusCompleted;
+      case 'finished':
+        return l10n.bookingStatusFinished;
       case 'noshow':
         return l10n.bookingStatusNoShow;
       case 'pending':

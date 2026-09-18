@@ -113,7 +113,7 @@ class HomeUpcomingTripCard extends StatelessWidget {
           ),
         ),
         AppSpacing.gapH12,
-        if (trip == null)
+        if (trip == null || trip.isFinished)
           _EmptyUpcomingTrip(
             isBookingAvailable: isBookingAvailable,
             hasLoadedAvailability: hasLoadedAvailability,
