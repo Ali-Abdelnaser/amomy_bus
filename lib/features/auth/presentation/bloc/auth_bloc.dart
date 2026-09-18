@@ -118,8 +118,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
 
   DeviceIdentityService? get _effectiveIdentityService {
     if (_deviceIdentityService != null) return _deviceIdentityService;
-    if (getIt.isRegistered<DeviceIdentityService>())
+    if (getIt.isRegistered<DeviceIdentityService>()) {
       return getIt<DeviceIdentityService>();
+    }
     return null;
   }
 
@@ -578,7 +579,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     Emitter<AuthState> emit,
   ) async {
     // ignore: avoid_print
-    print('DEBUG: _onSignOutRequested started! service=$_effectiveIdentityService');
+    print(
+      'DEBUG: _onSignOutRequested started! service=$_effectiveIdentityService',
+    );
     emit(const AuthLoading());
     _hasAttemptedSessionWelcomeGift = false;
     _hasRegisteredInstallation = false;
