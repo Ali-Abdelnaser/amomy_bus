@@ -29,7 +29,9 @@ class FakeWalletCubit extends Cubit<WalletState> implements WalletCubit {
   Future<void> loadMoreHistory() async {}
 }
 
-class FakeAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
+class FakeAuthBloc extends Bloc<AuthEvent, AuthState>
+    with WidgetsBindingObserver
+    implements AuthBloc {
   FakeAuthBloc(super.initialState);
 }
 

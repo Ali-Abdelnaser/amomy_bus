@@ -7,6 +7,7 @@ import 'package:amomy_bus/core/theme/app_theme.dart';
 import 'package:amomy_bus/core/typedefs/typedefs.dart';
 import 'package:amomy_bus/features/auth/domain/entities/app_role.dart';
 import 'package:amomy_bus/features/auth/domain/entities/app_user.dart';
+import 'package:amomy_bus/features/auth/domain/entities/user_access_status.dart';
 import 'package:amomy_bus/features/auth/domain/entities/wallet_preview.dart';
 import 'package:amomy_bus/features/auth/domain/repositories/auth_repository.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/complete_profile_usecase.dart';
@@ -140,6 +141,41 @@ class FakeAuthRepository implements AuthRepository {
   }) async {
     if (failure != null) return Error(failure!);
     return const Success(true);
+  }
+
+  @override
+  ResultFuture<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  }) async {
+    return const Success(DeviceAccessResult(allowed: true, isBlocked: false));
+  }
+
+  @override
+  ResultFuture<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  }) async {
+    return const Success(null);
+  }
+
+  @override
+  ResultFuture<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  }) async {
+    return const Success(
+      UserAccessStatus(allowed: true, accountStatus: 'active'),
+    );
+  }
+
+  @override
+  ResultFuture<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
+  }) async {
+    return const Success(null);
   }
 
   @override

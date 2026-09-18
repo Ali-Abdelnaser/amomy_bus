@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/app_user.dart';
-import '../../domain/entities/user_access_status.dart';
+
 import '../../domain/entities/wallet_preview.dart';
 import '../../../../core/services/device_identity_service.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -104,8 +104,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
-    if (lifecycleState == AppLifecycleState.resumed) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
       add(const AppResumedRequested());
     }
   }
@@ -118,7 +118,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
 
   DeviceIdentityService? get _effectiveIdentityService {
     if (_deviceIdentityService != null) return _deviceIdentityService;
-    if (getIt.isRegistered<DeviceIdentityService>()) return getIt<DeviceIdentityService>();
+    if (getIt.isRegistered<DeviceIdentityService>())
+      return getIt<DeviceIdentityService>();
     return null;
   }
 
@@ -142,19 +143,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     if (repo == null || deviceId == null || deviceId.isEmpty) return true;
 
     try {
-      final statusResult = await repo.getMyAccessStatus(deviceIdentifier: deviceId);
+      final statusResult = await repo.getMyAccessStatus(
+        deviceIdentifier: deviceId,
+      );
       if (statusResult.isSuccess) {
         final status = statusResult.dataOrNull!;
         if (!status.allowed) {
           if (status.isTemporaryBan) {
-            emit(AccessBlockedState(
-              type: AccessBlockedType.temporaryBan,
-              bannedUntil: status.bannedUntil,
-            ));
+            emit(
+              AccessBlockedState(
+                type: AccessBlockedType.temporaryBan,
+                bannedUntil: status.bannedUntil,
+              ),
+            );
           } else if (status.isPermanentBan) {
-            emit(const AccessBlockedState(type: AccessBlockedType.permanentBan));
+            emit(
+              const AccessBlockedState(type: AccessBlockedType.permanentBan),
+            );
           } else {
-            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+            emit(
+              const AccessBlockedState(type: AccessBlockedType.deviceBlocked),
+            );
           }
           return false;
         }
@@ -165,26 +174,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
         _hasRegisteredInstallation = true;
         final platform = kIsWeb
             ? 'web'
-            : (Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'mobile'));
-        unawaited(repo.registerUserInstallation(
-          deviceIdentifier: deviceId,
-          platform: platform,
-          deviceName: kIsWeb ? 'Web' : (Platform.isAndroid ? 'Android' : 'iOS'),
-          appVersion: '1.0.0',
-        ));
+            : (Platform.isAndroid
+                  ? 'android'
+                  : (Platform.isIOS ? 'ios' : 'mobile'));
+        unawaited(
+          repo.registerUserInstallation(
+            deviceIdentifier: deviceId,
+            platform: platform,
+            deviceName: kIsWeb
+                ? 'Web'
+                : (Platform.isAndroid ? 'Android' : 'iOS'),
+            appVersion: '1.0.0',
+          ),
+        );
       }
 
       // Operational activity tracking
       if (isColdStart) {
-        unawaited(repo.recordUserActivity(
-          eventType: 'session_start',
-          deviceIdentifier: deviceId,
-        ));
+        unawaited(
+          repo.recordUserActivity(
+            eventType: 'session_start',
+            deviceIdentifier: deviceId,
+          ),
+        );
       } else if (isLogin) {
-        unawaited(repo.recordUserActivity(
-          eventType: 'login_success',
-          deviceIdentifier: deviceId,
-        ));
+        unawaited(
+          repo.recordUserActivity(
+            eventType: 'login_success',
+            deviceIdentifier: deviceId,
+          ),
+        );
       }
 
       return true;
@@ -205,16 +224,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     final deviceId = await _getDeviceIdentifier();
     if (repo != null && deviceId != null && deviceId.isNotEmpty) {
       try {
-        final deviceResult = await repo.checkDeviceAccess(deviceIdentifier: deviceId);
+        final deviceResult = await repo.checkDeviceAccess(
+          deviceIdentifier: deviceId,
+        );
         if (deviceResult.isSuccess) {
           final deviceAccess = deviceResult.dataOrNull!;
           if (!deviceAccess.allowed || deviceAccess.isBlocked) {
-            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+            emit(
+              const AccessBlockedState(type: AccessBlockedType.deviceBlocked),
+            );
             return;
           }
         }
       } catch (e) {
-        developer.log('AuthBloc: Pre-auth device check error: $e', name: 'AUTH');
+        developer.log(
+          'AuthBloc: Pre-auth device check error: $e',
+          name: 'AUTH',
+        );
       }
     }
 
@@ -415,10 +441,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
       final updatedUser = result.dataOrNull!;
       final deviceId = await _getDeviceIdentifier();
       if (deviceId != null && deviceId.isNotEmpty) {
-        unawaited(_effectiveRepository?.recordUserActivity(
-          eventType: 'profile_updated',
-          deviceIdentifier: deviceId,
-        ));
+        unawaited(
+          _effectiveRepository?.recordUserActivity(
+            eventType: 'profile_updated',
+            deviceIdentifier: deviceId,
+          ),
+        );
       }
       // Silently attempt Welcome Gift claim immediately upon successful profile completion
       await _triggerSilentWelcomeGiftClaim(updatedUser);
@@ -481,30 +509,43 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     if (repo == null || deviceId == null || deviceId.isEmpty) return;
 
     try {
-      final statusResult = await repo.getMyAccessStatus(deviceIdentifier: deviceId);
+      final statusResult = await repo.getMyAccessStatus(
+        deviceIdentifier: deviceId,
+      );
       if (statusResult.isSuccess) {
         final status = statusResult.dataOrNull!;
         if (!status.allowed) {
           if (status.isTemporaryBan) {
-            emit(AccessBlockedState(
-              type: AccessBlockedType.temporaryBan,
-              bannedUntil: status.bannedUntil,
-            ));
+            emit(
+              AccessBlockedState(
+                type: AccessBlockedType.temporaryBan,
+                bannedUntil: status.bannedUntil,
+              ),
+            );
           } else if (status.isPermanentBan) {
-            emit(const AccessBlockedState(type: AccessBlockedType.permanentBan));
+            emit(
+              const AccessBlockedState(type: AccessBlockedType.permanentBan),
+            );
           } else {
-            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+            emit(
+              const AccessBlockedState(type: AccessBlockedType.deviceBlocked),
+            );
           }
           return;
         }
       }
 
-      unawaited(repo.recordUserActivity(
-        eventType: 'app_open',
-        deviceIdentifier: deviceId,
-      ));
+      unawaited(
+        repo.recordUserActivity(
+          eventType: 'app_open',
+          deviceIdentifier: deviceId,
+        ),
+      );
     } catch (e) {
-      developer.log('AuthBloc: App resumed access check error: $e', name: 'AUTH');
+      developer.log(
+        'AuthBloc: App resumed access check error: $e',
+        name: 'AUTH',
+      );
     }
   }
 
@@ -536,18 +577,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     SignOutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    // ignore: avoid_print
+    print('DEBUG: _onSignOutRequested started! service=$_effectiveIdentityService');
     emit(const AuthLoading());
     _hasAttemptedSessionWelcomeGift = false;
     _hasRegisteredInstallation = false;
 
-    final deviceId = await _getDeviceIdentifier();
-    if (deviceId != null && deviceId.isNotEmpty) {
-      try {
-        await _effectiveRepository?.recordUserActivity(
-          eventType: 'logout',
-          deviceIdentifier: deviceId,
-        );
-      } catch (_) {}
+    final service = _effectiveIdentityService;
+    if (service != null) {
+      final deviceId = await _getDeviceIdentifier();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        try {
+          await _effectiveRepository?.recordUserActivity(
+            eventType: 'logout',
+            deviceIdentifier: deviceId,
+          );
+        } catch (_) {}
+      }
     }
 
     if (getIt.isRegistered<NotificationService>()) {
@@ -572,7 +618,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
         );
         return;
       }
-      if (state is! Unauthenticated && state is! AuthInitial && state is! AccessBlockedState) {
+      if (state is! Unauthenticated &&
+          state is! AuthInitial &&
+          state is! AccessBlockedState) {
         emit(const Unauthenticated());
       }
     } else {

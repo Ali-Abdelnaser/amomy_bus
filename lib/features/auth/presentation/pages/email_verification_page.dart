@@ -119,6 +119,10 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   }
 
   void _onChangeEmailPressed(BuildContext context) {
+    // ignore: avoid_print
+    print(
+      'DEBUG: _onChangeEmailPressed called! _isSubmitting=$_isSubmitting, _isSuccess=$_isSuccess',
+    );
     if (_isSubmitting || _isSuccess) return;
 
     // 1. Cleanly reset pending verification/auth state and sign out pending session

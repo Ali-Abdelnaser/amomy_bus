@@ -6,6 +6,7 @@ import 'package:amomy_bus/core/widgets/app_button.dart';
 import 'package:amomy_bus/core/widgets/app_text_field.dart';
 import 'package:amomy_bus/features/auth/domain/entities/app_role.dart';
 import 'package:amomy_bus/features/auth/domain/entities/app_user.dart';
+import 'package:amomy_bus/features/auth/domain/entities/user_access_status.dart';
 import 'package:amomy_bus/features/auth/domain/entities/wallet_preview.dart';
 import 'package:amomy_bus/features/auth/domain/repositories/auth_repository.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/complete_profile_usecase.dart';
@@ -146,6 +147,33 @@ class _FakeAuthRepository implements AuthRepository {
   ResultFuture<bool> claimActiveWelcomeGift({
     required String deviceIdentifier,
   }) async => const Success(true);
+
+  @override
+  ResultFuture<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  }) async =>
+      const Success(DeviceAccessResult(allowed: true, isBlocked: false));
+
+  @override
+  ResultFuture<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  }) async => const Success(null);
+
+  @override
+  ResultFuture<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  }) async =>
+      const Success(UserAccessStatus(allowed: true, accountStatus: 'active'));
+
+  @override
+  ResultFuture<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
+  }) async => const Success(null);
 
   @override
   ResultFuture<void> signOut() async {
@@ -299,7 +327,9 @@ void main() {
         await tester.ensureVisible(changeEmailBtn);
         await tester.tap(changeEmailBtn);
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(milliseconds: 500));
 
         // Verify session/verification state reset
         expect(fakeRepo.calls, contains('signOut'));

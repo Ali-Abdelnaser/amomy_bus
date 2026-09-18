@@ -19,7 +19,9 @@ import 'package:amomy_bus/features/profile/presentation/pages/terms_and_conditio
 import 'package:amomy_bus/features/profile/presentation/widgets/profile_identity_header.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 
-class MockAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
+class MockAuthBloc extends Bloc<AuthEvent, AuthState>
+    with WidgetsBindingObserver
+    implements AuthBloc {
   final List<AuthEvent> dispatchedEvents = [];
 
   MockAuthBloc(super.initialState) {
@@ -102,7 +104,9 @@ void main() {
   }
 
   group('ProfileIdentityHeader Widget', () {
-    testWidgets('renders avatar initials fallback when avatarUrl is null', (tester) async {
+    testWidgets('renders avatar initials fallback when avatarUrl is null', (
+      tester,
+    ) async {
       final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
       final fakeRepo = FakeProfileRepository();
       final profileBloc = ProfileBloc(repository: fakeRepo);
@@ -122,63 +126,76 @@ void main() {
       expect(find.text('FH'), findsOneWidget);
       expect(find.text('Fatima Hassan'), findsOneWidget);
       expect(find.text('fatima@amomy.com'), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile_camera_badge')), findsOneWidget);
-    });
-
-    testWidgets('camera badge opens bottom sheet with options without Remove Photo when no avatar', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
-      final fakeRepo = FakeProfileRepository();
-      final profileBloc = ProfileBloc(repository: fakeRepo);
-
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          profileBloc: profileBloc,
-          child: Scaffold(
-            body: ProfileIdentityHeader(user: testUserWithoutAvatar),
-          ),
-        ),
+      expect(
+        find.byKey(const ValueKey('profile_camera_badge')),
+        findsOneWidget,
       );
-      await tester.pumpAndSettle();
-
-      // Tap camera badge
-      await tester.tap(find.byKey(const ValueKey('profile_camera_badge')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Take Photo'), findsOneWidget);
-      expect(find.text('Choose from Photos'), findsOneWidget);
-      // Remove photo must NOT be shown when no avatar exists
-      expect(find.text('Remove Photo'), findsNothing);
     });
 
-    testWidgets('camera badge bottom sheet includes Remove Photo when avatar exists', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithAvatar));
-      final fakeRepo = FakeProfileRepository();
-      final profileBloc = ProfileBloc(repository: fakeRepo);
+    testWidgets(
+      'camera badge opens bottom sheet with options without Remove Photo when no avatar',
+      (tester) async {
+        final authBloc = MockAuthBloc(
+          Authenticated(user: testUserWithoutAvatar),
+        );
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
 
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          profileBloc: profileBloc,
-          child: Scaffold(
-            body: ProfileIdentityHeader(user: testUserWithAvatar),
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: Scaffold(
+              body: ProfileIdentityHeader(user: testUserWithoutAvatar),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Tap camera badge
-      await tester.tap(find.byKey(const ValueKey('profile_camera_badge')));
-      await tester.pumpAndSettle();
+        // Tap camera badge
+        await tester.tap(find.byKey(const ValueKey('profile_camera_badge')));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Take Photo'), findsOneWidget);
-      expect(find.text('Choose from Photos'), findsOneWidget);
-      expect(find.text('Remove Photo'), findsOneWidget);
-    });
+        expect(find.text('Take Photo'), findsOneWidget);
+        expect(find.text('Choose from Photos'), findsOneWidget);
+        // Remove photo must NOT be shown when no avatar exists
+        expect(find.text('Remove Photo'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'camera badge bottom sheet includes Remove Photo when avatar exists',
+      (tester) async {
+        final authBloc = MockAuthBloc(Authenticated(user: testUserWithAvatar));
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
+
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: Scaffold(
+              body: ProfileIdentityHeader(user: testUserWithAvatar),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Tap camera badge
+        await tester.tap(find.byKey(const ValueKey('profile_camera_badge')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Take Photo'), findsOneWidget);
+        expect(find.text('Choose from Photos'), findsOneWidget);
+        expect(find.text('Remove Photo'), findsOneWidget);
+      },
+    );
   });
 
   group('ProfilePage hierarchy, sections and sign-out', () {
-    testWidgets('renders all four sections and all setting tiles', (tester) async {
+    testWidgets('renders all four sections and all setting tiles', (
+      tester,
+    ) async {
       final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
       final fakeRepo = FakeProfileRepository();
       final profileBloc = ProfileBloc(repository: fakeRepo);
@@ -215,44 +232,54 @@ void main() {
       expect(find.text('Sign Out'), findsOneWidget);
     });
 
-    testWidgets('tapping Sign Out shows confirmation sheet with AMOMY blue action', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
-      final fakeRepo = FakeProfileRepository();
-      final profileBloc = ProfileBloc(repository: fakeRepo);
+    testWidgets(
+      'tapping Sign Out shows confirmation sheet with AMOMY blue action',
+      (tester) async {
+        final authBloc = MockAuthBloc(
+          Authenticated(user: testUserWithoutAvatar),
+        );
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
 
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          profileBloc: profileBloc,
-          child: ProfilePage(profileBloc: profileBloc),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: ProfilePage(profileBloc: profileBloc),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Ensure Sign Out button is visible and tap it
-      await tester.ensureVisible(find.text('Sign Out'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign Out'));
-      await tester.pumpAndSettle();
+        // Ensure Sign Out button is visible and tap it
+        await tester.ensureVisible(find.text('Sign Out'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Sign Out'));
+        await tester.pumpAndSettle();
 
-      // Modal appears
-      expect(find.text('Sign out?'), findsOneWidget);
-      expect(find.text('Are you sure you want to sign out of your account?'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
+        // Modal appears
+        expect(find.text('Sign out?'), findsOneWidget);
+        expect(
+          find.text('Are you sure you want to sign out of your account?'),
+          findsOneWidget,
+        );
+        expect(find.text('Cancel'), findsOneWidget);
 
-      // Tap Sign Out confirmation in modal
-      final confirmButton = find.widgetWithText(ElevatedButton, 'Sign Out');
-      expect(confirmButton, findsOneWidget);
-      await tester.tap(confirmButton);
-      await tester.pumpAndSettle();
+        // Tap Sign Out confirmation in modal
+        final confirmButton = find.widgetWithText(ElevatedButton, 'Sign Out');
+        expect(confirmButton, findsOneWidget);
+        await tester.tap(confirmButton);
+        await tester.pumpAndSettle();
 
-      // Dispatches SignOutRequested
-      expect(authBloc.dispatchedEvents, contains(const SignOutRequested()));
-    });
+        // Dispatches SignOutRequested
+        expect(authBloc.dispatchedEvents, contains(const SignOutRequested()));
+      },
+    );
   });
 
   group('Language selection modal bottom sheet', () {
-    testWidgets('opens bottom sheet and shows Arabic and English options', (tester) async {
+    testWidgets('opens bottom sheet and shows Arabic and English options', (
+      tester,
+    ) async {
       final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
       final fakeRepo = FakeProfileRepository();
       final profileBloc = ProfileBloc(repository: fakeRepo);
@@ -277,14 +304,13 @@ void main() {
   });
 
   group('Dedicated Profile Sub-Pages', () {
-    testWidgets('SupportCenterPage renders contact channels and FAQ', (tester) async {
+    testWidgets('SupportCenterPage renders contact channels and FAQ', (
+      tester,
+    ) async {
       final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
 
       await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          child: const SupportCenterPage(),
-        ),
+        createTestWidget(authBloc: authBloc, child: const SupportCenterPage()),
       );
       await tester.pumpAndSettle();
 
@@ -298,56 +324,80 @@ void main() {
       expect(find.text('How do I book a seat on a bus?'), findsOneWidget);
     });
 
-    testWidgets('AboutAppPage renders app info and developer placeholder section', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
+    testWidgets(
+      'AboutAppPage renders app info and developer placeholder section',
+      (tester) async {
+        final authBloc = MockAuthBloc(
+          Authenticated(user: testUserWithoutAvatar),
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          child: const AboutAppPage(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(authBloc: authBloc, child: const AboutAppPage()),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('About AMOMY App'), findsOneWidget);
-      expect(find.text('AMOMY Bus'), findsOneWidget);
-      expect(find.text('DEVELOPER'), findsOneWidget);
-      expect(find.text(ProfilePlaceholderConfig.developer.developerName), findsOneWidget);
-      expect(find.text(ProfilePlaceholderConfig.developer.developerEmail), findsOneWidget);
-    });
+        expect(find.text('About AMOMY App'), findsOneWidget);
+        expect(find.text('AMOMY Bus'), findsOneWidget);
+        expect(find.text('DEVELOPER'), findsOneWidget);
+        expect(
+          find.text(ProfilePlaceholderConfig.developer.developerName),
+          findsOneWidget,
+        );
+        expect(
+          find.text(ProfilePlaceholderConfig.developer.developerEmail),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('PrivacyPolicyPage renders authoritative AMOMY policy sections', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
+    testWidgets(
+      'PrivacyPolicyPage renders authoritative AMOMY policy sections',
+      (tester) async {
+        final authBloc = MockAuthBloc(
+          Authenticated(user: testUserWithoutAvatar),
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          child: const PrivacyPolicyPage(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            child: const PrivacyPolicyPage(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Privacy Policy'), findsOneWidget);
-      expect(find.text('AMOMY Bus Privacy Policy'), findsOneWidget);
-      expect(find.text('1. Information You Provide'), findsOneWidget);
-      expect(find.text('4. Bus Tracking & Location Clarification'), findsOneWidget);
-    });
+        expect(find.text('Privacy Policy'), findsOneWidget);
+        expect(find.text('AMOMY Bus Privacy Policy'), findsOneWidget);
+        expect(find.text('1. Information You Provide'), findsOneWidget);
+        expect(
+          find.text('4. Bus Tracking & Location Clarification'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('TermsAndConditionsPage renders authoritative AMOMY terms sections', (tester) async {
-      final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
+    testWidgets(
+      'TermsAndConditionsPage renders authoritative AMOMY terms sections',
+      (tester) async {
+        final authBloc = MockAuthBloc(
+          Authenticated(user: testUserWithoutAvatar),
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          authBloc: authBloc,
-          child: const TermsAndConditionsPage(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            child: const TermsAndConditionsPage(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Terms & Conditions'), findsOneWidget);
-      expect(find.text('AMOMY Bus Terms & Conditions'), findsOneWidget);
-      expect(find.text('1. Service Description'), findsOneWidget);
-      expect(find.text('4. Points Wallet, Top-Ups & Refunds'), findsOneWidget);
-    });
+        expect(find.text('Terms & Conditions'), findsOneWidget);
+        expect(find.text('AMOMY Bus Terms & Conditions'), findsOneWidget);
+        expect(find.text('1. Service Description'), findsOneWidget);
+        expect(
+          find.text('4. Points Wallet, Top-Ups & Refunds'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }
