@@ -12,6 +12,7 @@ class RouteNames {
   static const String completeProfile = 'completeProfile';
   static const String forgotPassword = 'forgotPassword';
   static const String resetPassword = 'resetPassword';
+  static const String accessBlocked = 'accessBlocked';
   static const String home = 'home';
   static const String trips = 'trips';
   static const String bookTrip = 'bookTrip';

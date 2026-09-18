@@ -1436,4 +1436,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get digitalBoardingPass => 'تذكرة صعود رقمية';
+
+  @override
+  String get accessBlockedTitle => 'تم تقييد الوصول';
+
+  @override
+  String get deviceBlockedMessage => 'تم حظر هذا الجهاز من استخدام عمومي باص';
+
+  @override
+  String get accountSuspendedMessage => 'تم إيقاف هذا الحساب';
+
+  @override
+  String accountSuspendedUntilMessage(String date) {
+    return 'تم إيقاف حسابك مؤقتًا حتى $date';
+  }
+
+  @override
+  String get logout => 'تسجيل الخروج';
 }

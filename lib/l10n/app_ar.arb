@@ -512,5 +512,10 @@
   "viewTrip": "عرض الرحلة",
   "extraSeat": "مقعد إضافي",
   "addExtraSeat": "إضافة مقعد إضافي",
-  "digitalBoardingPass": "تذكرة صعود رقمية"
+  "digitalBoardingPass": "تذكرة صعود رقمية",
+  "accessBlockedTitle": "تم تقييد الوصول",
+  "deviceBlockedMessage": "تم حظر هذا الجهاز من استخدام عمومي باص",
+  "accountSuspendedMessage": "تم إيقاف هذا الحساب",
+  "accountSuspendedUntilMessage": "تم إيقاف حسابك مؤقتًا حتى {date}",
+  "logout": "تسجيل الخروج"
 }

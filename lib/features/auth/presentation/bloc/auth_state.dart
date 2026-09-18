@@ -107,3 +107,25 @@ final class PasswordResetEmailSent extends AuthState {
 final class PasswordUpdatedSuccessfully extends AuthState {
   const PasswordUpdatedSuccessfully();
 }
+
+enum AccessBlockedType {
+  deviceBlocked,
+  temporaryBan,
+  permanentBan,
+}
+
+final class AccessBlockedState extends AuthState {
+  final AccessBlockedType type;
+  final DateTime? bannedUntil;
+  final String? customMessage;
+
+  const AccessBlockedState({
+    required this.type,
+    this.bannedUntil,
+    this.customMessage,
+  });
+
+  @override
+  List<Object?> get props => [type, bannedUntil, customMessage];
+}
+

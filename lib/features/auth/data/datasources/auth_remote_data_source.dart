@@ -6,6 +6,7 @@ import 'package:injectable/injectable.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/auth_config.dart';
+import '../../domain/entities/user_access_status.dart';
 import '../models/app_user_model.dart';
 import '../models/wallet_preview_model.dart';
 
@@ -59,6 +60,27 @@ abstract class AuthRemoteDataSource {
 
   Future<Map<String, dynamic>?> claimActiveWelcomeGift({
     required String deviceIdentifier,
+  });
+
+  Future<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  });
+
+  Future<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  });
+
+  Future<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  });
+
+  Future<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
   });
 
   Future<void> signOut();
@@ -380,6 +402,77 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return Map<String, dynamic>.from(response);
     }
     return null;
+  }
+
+  @override
+  Future<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  }) async {
+    final response = await _supabase.rpc(
+      'check_device_access',
+      params: {
+        'p_device_identifier': deviceIdentifier.trim(),
+      },
+    );
+
+    if (response is Map) {
+      return DeviceAccessResult.fromJson(Map<String, dynamic>.from(response));
+    }
+    return const DeviceAccessResult(allowed: true, isBlocked: false);
+  }
+
+  @override
+  Future<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  }) async {
+    await _supabase.rpc(
+      'register_user_installation',
+      params: {
+        'p_device_identifier': deviceIdentifier.trim(),
+        'p_platform': platform.trim(),
+        if (deviceName != null && deviceName.trim().isNotEmpty)
+          'p_device_name': deviceName.trim(),
+        if (appVersion != null && appVersion.trim().isNotEmpty)
+          'p_app_version': appVersion.trim(),
+      },
+    );
+  }
+
+  @override
+  Future<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  }) async {
+    final response = await _supabase.rpc(
+      'get_my_access_status',
+      params: {
+        'p_device_identifier': deviceIdentifier.trim(),
+      },
+    );
+
+    if (response is Map) {
+      return UserAccessStatus.fromJson(Map<String, dynamic>.from(response));
+    }
+    return const UserAccessStatus(allowed: true, accountStatus: 'active');
+  }
+
+  @override
+  Future<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
+  }) async {
+    await _supabase.rpc(
+      'record_user_activity',
+      params: {
+        'p_event_type': eventType.trim(),
+        'p_device_identifier': deviceIdentifier.trim(),
+        if (metadata != null && metadata.isNotEmpty)
+          'p_metadata': metadata,
+      },
+    );
   }
 
   @override

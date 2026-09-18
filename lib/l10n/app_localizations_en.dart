@@ -1450,4 +1450,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get digitalBoardingPass => 'Digital Boarding Pass';
+
+  @override
+  String get accessBlockedTitle => 'Access Restricted';
+
+  @override
+  String get deviceBlockedMessage =>
+      'This device has been blocked from using AMOMY Bus';
+
+  @override
+  String get accountSuspendedMessage => 'This account has been suspended';
+
+  @override
+  String accountSuspendedUntilMessage(String date) {
+    return 'Your account is suspended until $date';
+  }
+
+  @override
+  String get logout => 'Sign Out';
 }

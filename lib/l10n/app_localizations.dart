@@ -2803,6 +2803,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Digital Boarding Pass'**
   String get digitalBoardingPass;
+
+  /// No description provided for @accessBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access Restricted'**
+  String get accessBlockedTitle;
+
+  /// No description provided for @deviceBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has been blocked from using AMOMY Bus'**
+  String get deviceBlockedMessage;
+
+  /// No description provided for @accountSuspendedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been suspended'**
+  String get accountSuspendedMessage;
+
+  /// No description provided for @accountSuspendedUntilMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is suspended until {date}'**
+  String accountSuspendedUntilMessage(String date);
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get logout;
 }
 
 class _AppLocalizationsDelegate

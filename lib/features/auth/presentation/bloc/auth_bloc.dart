@@ -1,13 +1,17 @@
 // ignore_for_file: prefer_initializing_formals
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/user_access_status.dart';
 import '../../domain/entities/wallet_preview.dart';
 import '../../../../core/services/device_identity_service.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/claim_welcome_gift_usecase.dart';
 import '../../domain/usecases/complete_profile_usecase.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
@@ -27,7 +31,7 @@ import '../../../notifications/presentation/services/notification_service.dart';
 import '../../../wallet/presentation/cubit/wallet_cubit.dart';
 
 @lazySingleton
-class AuthBloc extends Bloc<AuthEvent, AuthState> {
+class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final SignInWithEmailUseCase _signInWithEmailUseCase;
   final SignUpWithEmailUseCase _signUpWithEmailUseCase;
@@ -40,10 +44,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GetWalletPreviewUseCase _getWalletPreviewUseCase;
   final ClaimWelcomeGiftUseCase? _claimWelcomeGiftUseCase;
   final DeviceIdentityService? _deviceIdentityService;
+  final AuthRepository? _authRepository;
   final SignOutUseCase _signOutUseCase;
 
   StreamSubscription<AppUser?>? _userSubscription;
   bool _hasAttemptedSessionWelcomeGift = false;
+  bool _hasRegisteredInstallation = false;
 
   AuthBloc({
     required GetCurrentUserUseCase getCurrentUserUseCase,
@@ -58,6 +64,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required GetWalletPreviewUseCase getWalletPreviewUseCase,
     ClaimWelcomeGiftUseCase? claimWelcomeGiftUseCase,
     DeviceIdentityService? deviceIdentityService,
+    AuthRepository? authRepository,
     required SignOutUseCase signOutUseCase,
   }) : _getCurrentUserUseCase = getCurrentUserUseCase,
        _signInWithEmailUseCase = signInWithEmailUseCase,
@@ -71,6 +78,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _getWalletPreviewUseCase = getWalletPreviewUseCase,
        _claimWelcomeGiftUseCase = claimWelcomeGiftUseCase,
        _deviceIdentityService = deviceIdentityService,
+       _authRepository = authRepository,
        _signOutUseCase = signOutUseCase,
        super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
@@ -84,10 +92,106 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<UpdatePasswordRequested>(_onUpdatePasswordRequested);
     on<SignOutRequested>(_onSignOutRequested);
     on<AuthUserChangedInternal>(_onAuthUserChangedInternal);
+    on<AppResumedRequested>(_onAppResumedRequested);
 
     _userSubscription = _getCurrentUserUseCase.userStream.listen((user) {
       add(AuthUserChangedInternal(user));
     });
+
+    try {
+      WidgetsBinding.instance.addObserver(this);
+    } catch (_) {}
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      add(const AppResumedRequested());
+    }
+  }
+
+  AuthRepository? get _effectiveRepository {
+    if (_authRepository != null) return _authRepository;
+    if (getIt.isRegistered<AuthRepository>()) return getIt<AuthRepository>();
+    return null;
+  }
+
+  DeviceIdentityService? get _effectiveIdentityService {
+    if (_deviceIdentityService != null) return _deviceIdentityService;
+    if (getIt.isRegistered<DeviceIdentityService>()) return getIt<DeviceIdentityService>();
+    return null;
+  }
+
+  Future<String?> _getDeviceIdentifier() async {
+    try {
+      final service = _effectiveIdentityService;
+      if (service == null) return null;
+      return await service.getDeviceIdentifier();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _enforceAccountAccessAndRegister({
+    required Emitter<AuthState> emit,
+    bool isColdStart = false,
+    bool isLogin = false,
+  }) async {
+    final repo = _effectiveRepository;
+    final deviceId = await _getDeviceIdentifier();
+    if (repo == null || deviceId == null || deviceId.isEmpty) return true;
+
+    try {
+      final statusResult = await repo.getMyAccessStatus(deviceIdentifier: deviceId);
+      if (statusResult.isSuccess) {
+        final status = statusResult.dataOrNull!;
+        if (!status.allowed) {
+          if (status.isTemporaryBan) {
+            emit(AccessBlockedState(
+              type: AccessBlockedType.temporaryBan,
+              bannedUntil: status.bannedUntil,
+            ));
+          } else if (status.isPermanentBan) {
+            emit(const AccessBlockedState(type: AccessBlockedType.permanentBan));
+          } else {
+            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+          }
+          return false;
+        }
+      }
+
+      // Register installation once per session
+      if (!_hasRegisteredInstallation) {
+        _hasRegisteredInstallation = true;
+        final platform = kIsWeb
+            ? 'web'
+            : (Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'mobile'));
+        unawaited(repo.registerUserInstallation(
+          deviceIdentifier: deviceId,
+          platform: platform,
+          deviceName: kIsWeb ? 'Web' : (Platform.isAndroid ? 'Android' : 'iOS'),
+          appVersion: '1.0.0',
+        ));
+      }
+
+      // Operational activity tracking
+      if (isColdStart) {
+        unawaited(repo.recordUserActivity(
+          eventType: 'session_start',
+          deviceIdentifier: deviceId,
+        ));
+      } else if (isLogin) {
+        unawaited(repo.recordUserActivity(
+          eventType: 'login_success',
+          deviceIdentifier: deviceId,
+        ));
+      }
+
+      return true;
+    } catch (e) {
+      developer.log('AuthBloc: Access check error: $e', name: 'AUTH');
+      return true; // Fallback: allow progress on transient network check failure if session is valid
+    }
   }
 
   Future<void> _onAuthCheckRequested(
@@ -95,6 +199,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
+
+    // 1. Pre-auth device check (unauthenticated check)
+    final repo = _effectiveRepository;
+    final deviceId = await _getDeviceIdentifier();
+    if (repo != null && deviceId != null && deviceId.isNotEmpty) {
+      try {
+        final deviceResult = await repo.checkDeviceAccess(deviceIdentifier: deviceId);
+        if (deviceResult.isSuccess) {
+          final deviceAccess = deviceResult.dataOrNull!;
+          if (!deviceAccess.allowed || deviceAccess.isBlocked) {
+            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+            return;
+          }
+        }
+      } catch (e) {
+        developer.log('AuthBloc: Pre-auth device check error: $e', name: 'AUTH');
+      }
+    }
+
+    // 2. Retrieve user session
     final result = await _getCurrentUserUseCase();
     await result.fold(
       onError: (failure) async => emit(const Unauthenticated()),
@@ -102,6 +226,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (user == null) {
           emit(const Unauthenticated());
         } else {
+          final isAllowed = await _enforceAccountAccessAndRegister(
+            emit: emit,
+            isColdStart: true,
+          );
+          if (!isAllowed) return;
           await _routeUser(user, emit);
         }
       },
@@ -119,7 +248,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
     await result.fold(
       onError: (failure) async => emit(AuthFailureState(failure)),
-      onSuccess: (user) async => _routeUser(user, emit),
+      onSuccess: (user) async {
+        final isAllowed = await _enforceAccountAccessAndRegister(
+          emit: emit,
+          isLogin: true,
+        );
+        if (!isAllowed) return;
+        await _routeUser(user, emit);
+      },
     );
   }
 
@@ -147,6 +283,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             ),
           );
         } else {
+          final isAllowed = await _enforceAccountAccessAndRegister(
+            emit: emit,
+            isLogin: true,
+          );
+          if (!isAllowed) return;
           await _routeUser(user, emit);
         }
       },
@@ -165,6 +306,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (result.isError) {
       emit(AuthFailureState(result.failureOrNull!));
     } else {
+      final isAllowed = await _enforceAccountAccessAndRegister(
+        emit: emit,
+        isLogin: true,
+      );
+      if (!isAllowed) return;
       await _routeUser(result.dataOrNull!, emit);
     }
   }
@@ -201,7 +347,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           name: 'AUTH',
         );
         if (failure is AuthCancelledFailure) {
-          // User cancelled/closed Google account selector - return to Unauthenticated cleanly
           emit(const Unauthenticated());
         } else {
           emit(AuthFailureState(failure));
@@ -212,6 +357,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           'AuthBloc: Google Sign-In successful for user ${user.id} (${user.email})',
           name: 'AUTH',
         );
+        final isAllowed = await _enforceAccountAccessAndRegister(
+          emit: emit,
+          isLogin: true,
+        );
+        if (!isAllowed) return;
         await _routeUser(user, emit);
       },
     );
@@ -263,6 +413,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
     } else {
       final updatedUser = result.dataOrNull!;
+      final deviceId = await _getDeviceIdentifier();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        unawaited(_effectiveRepository?.recordUserActivity(
+          eventType: 'profile_updated',
+          deviceIdentifier: deviceId,
+        ));
+      }
       // Silently attempt Welcome Gift claim immediately upon successful profile completion
       await _triggerSilentWelcomeGiftClaim(updatedUser);
       await _routeUser(updatedUser, emit);
@@ -270,15 +427,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _triggerSilentWelcomeGiftClaim(AppUser user) async {
-    // Only claim if user is authenticated, has complete profile, and phone is present
     if (user.phone == null || user.phone!.trim().isEmpty) return;
 
     try {
-      final identityService =
-          _deviceIdentityService ??
-          (getIt.isRegistered<DeviceIdentityService>()
-              ? getIt<DeviceIdentityService>()
-              : null);
+      final identityService = _effectiveIdentityService;
       final claimUseCase =
           _claimWelcomeGiftUseCase ??
           (getIt.isRegistered<ClaimWelcomeGiftUseCase>()
@@ -300,17 +452,59 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           'AuthBloc: Welcome gift successfully claimed for user ${user.id}',
           name: 'AUTH',
         );
-        // Refresh active WalletCubit if loaded in the widget tree or registry
         if (getIt.isRegistered<WalletCubit>()) {
           unawaited(getIt<WalletCubit>().loadWalletSummary(user.id));
         }
       }
     } catch (e) {
-      // Must remain completely silent - never throw or block user flow
       developer.log(
         'AuthBloc: Silent welcome gift claim error: $e',
         name: 'AUTH',
       );
+    }
+  }
+
+  Future<void> _onAppResumedRequested(
+    AppResumedRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final currentUser = switch (state) {
+      Authenticated(:final user) => user,
+      ProfileCompletionRequired(:final user) => user,
+      _ => null,
+    };
+
+    if (currentUser == null) return;
+
+    final repo = _effectiveRepository;
+    final deviceId = await _getDeviceIdentifier();
+    if (repo == null || deviceId == null || deviceId.isEmpty) return;
+
+    try {
+      final statusResult = await repo.getMyAccessStatus(deviceIdentifier: deviceId);
+      if (statusResult.isSuccess) {
+        final status = statusResult.dataOrNull!;
+        if (!status.allowed) {
+          if (status.isTemporaryBan) {
+            emit(AccessBlockedState(
+              type: AccessBlockedType.temporaryBan,
+              bannedUntil: status.bannedUntil,
+            ));
+          } else if (status.isPermanentBan) {
+            emit(const AccessBlockedState(type: AccessBlockedType.permanentBan));
+          } else {
+            emit(const AccessBlockedState(type: AccessBlockedType.deviceBlocked));
+          }
+          return;
+        }
+      }
+
+      unawaited(repo.recordUserActivity(
+        eventType: 'app_open',
+        deviceIdentifier: deviceId,
+      ));
+    } catch (e) {
+      developer.log('AuthBloc: App resumed access check error: $e', name: 'AUTH');
     }
   }
 
@@ -344,6 +538,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     _hasAttemptedSessionWelcomeGift = false;
+    _hasRegisteredInstallation = false;
+
+    final deviceId = await _getDeviceIdentifier();
+    if (deviceId != null && deviceId.isNotEmpty) {
+      try {
+        await _effectiveRepository?.recordUserActivity(
+          eventType: 'logout',
+          deviceIdentifier: deviceId,
+        );
+      } catch (_) {}
+    }
+
     if (getIt.isRegistered<NotificationService>()) {
       try {
         await getIt<NotificationService>().deactivateCurrentToken();
@@ -359,7 +565,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final user = event.user;
     if (user == null) {
-      // If a login/auth operation or profile saving is actively loading, do NOT cancel it with Unauthenticated
       if (state is AuthLoading || state is ProfileSaving) {
         developer.log(
           'AuthBloc: Received null auth stream event while in AuthLoading/ProfileSaving - preserving active auth flow',
@@ -367,10 +572,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         return;
       }
-      if (state is! Unauthenticated && state is! AuthInitial) {
+      if (state is! Unauthenticated && state is! AuthInitial && state is! AccessBlockedState) {
         emit(const Unauthenticated());
       }
     } else {
+      if (state is AccessBlockedState) {
+        // Already blocked - do not override with Authenticated
+        return;
+      }
+      final isAllowed = await _enforceAccountAccessAndRegister(
+        emit: emit,
+        isColdStart: false,
+      );
+      if (!isAllowed) return;
       await _routeUser(user, emit);
     }
   }
@@ -381,8 +595,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    // Optional safety retry: once after authenticated app bootstrap / session restore
-    // if the profile is already complete and phone is present.
     if (!_hasAttemptedSessionWelcomeGift &&
         user.isProfileComplete &&
         user.phone != null &&
@@ -391,17 +603,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       unawaited(_triggerSilentWelcomeGiftClaim(user));
     }
 
-    // Profile completion is no longer a blocking startup state.
-    // Incomplete users enter Home directly, and profile completion is guarded before booking.
     WalletPreview? wallet;
     final walletResult = await _getWalletPreviewUseCase(user.id);
     wallet = walletResult.dataOrNull;
 
     emit(Authenticated(user: user, wallet: wallet));
 
-    // Push registration is a non-critical side effect.
-    // On iOS, token sync MUST NOT be initiated immediately after authentication
-    // before notification authorization and APNs readiness have occurred.
     if (defaultTargetPlatform != TargetPlatform.iOS) {
       if (getIt.isRegistered<NotificationService>()) {
         unawaited(getIt<NotificationService>().syncDeviceToken());
@@ -411,6 +618,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   @override
   Future<void> close() {
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (_) {}
     _userSubscription?.cancel();
     return super.close();
   }

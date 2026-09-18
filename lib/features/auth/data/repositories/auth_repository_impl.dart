@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/typedefs/typedefs.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/user_access_status.dart';
 import '../../domain/entities/wallet_preview.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -184,6 +185,72 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       final granted = result?['granted'] == true;
       return Success(granted);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  ResultFuture<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  }) async {
+    try {
+      final result = await _remoteDataSource.checkDeviceAccess(
+        deviceIdentifier: deviceIdentifier,
+      );
+      return Success(result);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  ResultFuture<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  }) async {
+    try {
+      await _remoteDataSource.registerUserInstallation(
+        deviceIdentifier: deviceIdentifier,
+        platform: platform,
+        deviceName: deviceName,
+        appVersion: appVersion,
+      );
+      return const Success(null);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  ResultFuture<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  }) async {
+    try {
+      final result = await _remoteDataSource.getMyAccessStatus(
+        deviceIdentifier: deviceIdentifier,
+      );
+      return Success(result);
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
+  ResultFuture<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      await _remoteDataSource.recordUserActivity(
+        eventType: eventType,
+        deviceIdentifier: deviceIdentifier,
+        metadata: metadata,
+      );
+      return const Success(null);
     } catch (e) {
       return Error(ErrorHandler.handle(e));
     }

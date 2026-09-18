@@ -12,6 +12,7 @@ class RoutePaths {
   static const String completeProfile = '/complete-profile';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
+  static const String accessBlocked = '/access-blocked';
   static const String home = '/home';
   static const String trips = '/trips';
   static const String bookTrip = '/book-trip';

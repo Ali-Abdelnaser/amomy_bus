@@ -1,5 +1,6 @@
 import '../../../../core/typedefs/typedefs.dart';
 import '../entities/app_user.dart';
+import '../entities/user_access_status.dart';
 import '../entities/wallet_preview.dart';
 
 abstract class AuthRepository {
@@ -63,6 +64,31 @@ abstract class AuthRepository {
   /// Silently attempt to claim active welcome gift campaign
   ResultFuture<bool> claimActiveWelcomeGift({
     required String deviceIdentifier,
+  });
+
+  /// Check pre-auth device access (works unauthenticated)
+  ResultFuture<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  });
+
+  /// Register installation after auth
+  ResultFuture<void> registerUserInstallation({
+    required String deviceIdentifier,
+    required String platform,
+    String? deviceName,
+    String? appVersion,
+  });
+
+  /// Get current user access status (banned/blocked check)
+  ResultFuture<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  });
+
+  /// Record user activity event
+  ResultFuture<void> recordUserActivity({
+    required String eventType,
+    required String deviceIdentifier,
+    Map<String, dynamic>? metadata,
   });
 
   /// Sign out current user session

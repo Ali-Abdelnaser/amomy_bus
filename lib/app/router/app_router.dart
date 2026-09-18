@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import '../../core/animations/app_page_transitions.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
+import '../../features/auth/presentation/pages/access_blocked_page.dart';
 import '../../features/auth/presentation/pages/complete_profile_page.dart';
 import '../../features/auth/presentation/pages/email_verification_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -170,6 +171,32 @@ class AppRouter {
           name: state.name,
           child: const ResetPasswordPage(),
         ),
+      ),
+
+      // Access Blocked (Device Block / Account Ban)
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutePaths.accessBlocked,
+        name: RouteNames.accessBlocked,
+        pageBuilder: (context, state) {
+          final authState = _authBloc.state;
+          if (authState is AccessBlockedState) {
+            return AppPageTransitions.fadePage(
+              key: state.pageKey,
+              name: state.name,
+              child: AccessBlockedPage(
+                type: authState.type,
+                bannedUntil: authState.bannedUntil,
+                customMessage: authState.customMessage,
+              ),
+            );
+          }
+          return AppPageTransitions.fadePage(
+            key: state.pageKey,
+            name: state.name,
+            child: const AccessBlockedPage(type: AccessBlockedType.deviceBlocked),
+          );
+        },
       ),
 
       // Passenger Navigation Shell (Persistent tabs: Home, Trips, Wallet, Profile)
@@ -445,6 +472,17 @@ class AppRouter {
 
     // Always permit design system preview in debug
     if (isDesignSystem) return null;
+
+    // If access is blocked (device blocked, temporary ban, permanent ban)
+    if (authState is AccessBlockedState) {
+      if (location == RoutePaths.accessBlocked) return null;
+      return RoutePaths.accessBlocked;
+    }
+
+    // Prevent staying on access blocked page if not blocked
+    if (location == RoutePaths.accessBlocked) {
+      return RoutePaths.splash;
+    }
 
     // Allow onboarding and splash on initial launch / unauthenticated
     if (authState is AuthInitial) {

@@ -131,3 +131,8 @@ final class AuthUserChangedInternal extends AuthEvent {
   @override
   List<Object?> get props => [user];
 }
+
+final class AppResumedRequested extends AuthEvent {
+  const AppResumedRequested();
+}
+
