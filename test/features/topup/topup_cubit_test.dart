@@ -11,7 +11,10 @@ import 'package:amomy_bus/features/topup/presentation/cubit/topup_cubit.dart';
 import 'package:amomy_bus/features/topup/presentation/cubit/topup_state.dart';
 
 class FakeTopUpRepository implements TopUpRepository {
-  PaymentConfig config = const PaymentConfig(minimumTopupPoints: 200, egpPerPoint: 1.0);
+  PaymentConfig config = const PaymentConfig(
+    minimumTopupPoints: 200,
+    egpPerPoint: 1.0,
+  );
   List<PaymentMethod> methods = [];
   List<TopUpRequest> requests = [];
   TopUpCreatedResponse createdResponse = const TopUpCreatedResponse(
@@ -19,7 +22,7 @@ class FakeTopUpRepository implements TopUpRepository {
     publicId: 'AMY-7K4F92',
     requestedPoints: 500,
     expectedAmountEgp: 500,
-    receivingPhone: '01000000000',
+    receivingPhone: '01014045363',
     conversionRate: 1.0,
     status: TopUpStatus.awaitingPayment,
   );
@@ -98,7 +101,7 @@ void main() {
     code: 'VODAFONE_CASH',
     nameAr: 'فودافون كاش',
     nameEn: 'Vodafone Cash',
-    accountIdentifier: '01000000000',
+    accountIdentifier: '01014045363',
     instructionsAr: 'قم بالتحويل لرقم فودافون كاش أعلاه',
     instructionsEn: 'Transfer to Vodafone Cash number above',
     iconKey: 'vodafone_cash',
@@ -131,16 +134,19 @@ void main() {
       expect(cubit.state.isAmountValid, isFalse);
     });
 
-    test('init populates config, methods, default amount and expected EGP', () async {
-      await cubit.init(availableBalance: 150);
-      expect(cubit.state.availableBalance, equals(150));
-      expect(cubit.state.amount, equals(200));
-      expect(cubit.state.expectedAmountEgp, equals(200.0));
-      expect(cubit.state.paymentMethods.length, equals(1));
-      expect(cubit.state.selectedMethod, equals(testMethod));
-      expect(cubit.state.isAmountValid, isTrue);
-      expect(cubit.state.canProceedFromAmount, isTrue);
-    });
+    test(
+      'init populates config, methods, default amount and expected EGP',
+      () async {
+        await cubit.init(availableBalance: 150);
+        expect(cubit.state.availableBalance, equals(150));
+        expect(cubit.state.amount, equals(200));
+        expect(cubit.state.expectedAmountEgp, equals(200.0));
+        expect(cubit.state.paymentMethods.length, equals(1));
+        expect(cubit.state.selectedMethod, equals(testMethod));
+        expect(cubit.state.isAmountValid, isTrue);
+        expect(cubit.state.canProceedFromAmount, isTrue);
+      },
+    );
 
     test('enforces minimum 200 points hard rule', () {
       cubit.setAmount(150);
@@ -157,7 +163,10 @@ void main() {
       cubit.setAmount(100);
       cubit.proceedToInstructions();
       expect(cubit.state.currentStep, equals(TopUpStep.amount));
-      expect(cubit.state.errorMessage, contains('Minimum top-up is 200 Points'));
+      expect(
+        cubit.state.errorMessage,
+        contains('Minimum top-up is 200 Points'),
+      );
 
       cubit.setAmount(250);
       cubit.proceedToInstructions();
@@ -165,18 +174,21 @@ void main() {
       expect(cubit.state.errorMessage, isNull);
     });
 
-    test('confirmTransferAndCreateRequest freezes request and moves to details', () async {
-      cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
+    test(
+      'confirmTransferAndCreateRequest freezes request and moves to details',
+      () async {
+        cubit.setAmount(500);
+        cubit.selectPaymentMethod(testMethod);
 
-      await cubit.confirmTransferAndCreateRequest();
+        await cubit.confirmTransferAndCreateRequest();
 
-      expect(cubit.state.currentStep, equals(TopUpStep.details));
-      expect(cubit.state.createdRequestId, equals('req-123'));
-      expect(cubit.state.createdPublicId, equals('AMY-7K4F92'));
-      expect(cubit.state.expectedAmountEgp, equals(500.0));
-      expect(cubit.state.receivingPhone, equals('01000000000'));
-    });
+        expect(cubit.state.currentStep, equals(TopUpStep.details));
+        expect(cubit.state.createdRequestId, equals('req-123'));
+        expect(cubit.state.createdPublicId, equals('AMY-7K4F92'));
+        expect(cubit.state.expectedAmountEgp, equals(500.0));
+        expect(cubit.state.receivingPhone, equals('01014045363'));
+      },
+    );
 
     test('sender phone validation strictly enforces Egyptian format', () {
       cubit.setSenderPhone('12345');
@@ -189,24 +201,31 @@ void main() {
       expect(cubit.state.isSenderPhoneValid, isTrue);
     });
 
-    test('submitPaymentProof submits proof and moves to pendingReview', () async {
-      cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
-      await cubit.confirmTransferAndCreateRequest();
+    test(
+      'submitPaymentProof submits proof and moves to pendingReview',
+      () async {
+        cubit.setAmount(500);
+        cubit.selectPaymentMethod(testMethod);
+        await cubit.confirmTransferAndCreateRequest();
 
-      cubit.setSenderPhone('01012345678');
-      cubit.setPaymentReference('REF_999');
-      cubit.setProofImage(bytes: [1, 2, 3], extension: 'jpg', fileName: 'proof.jpg');
+        cubit.setSenderPhone('01012345678');
+        cubit.setPaymentReference('REF_999');
+        cubit.setProofImage(
+          bytes: [1, 2, 3],
+          extension: 'jpg',
+          fileName: 'proof.jpg',
+        );
 
-      expect(cubit.state.canSubmitDetails, isTrue);
+        expect(cubit.state.canSubmitDetails, isTrue);
 
-      await cubit.submitPaymentProof();
+        await cubit.submitPaymentProof();
 
-      expect(cubit.state.isSubmitting, isFalse);
-      expect(cubit.state.isSuccess, isTrue);
-      expect(cubit.state.currentStep, equals(TopUpStep.pendingReview));
-      expect(cubit.state.submittedPublicId, equals('AMY-7K4F92'));
-    });
+        expect(cubit.state.isSubmitting, isFalse);
+        expect(cubit.state.isSuccess, isTrue);
+        expect(cubit.state.currentStep, equals(TopUpStep.pendingReview));
+        expect(cubit.state.submittedPublicId, equals('AMY-7K4F92'));
+      },
+    );
 
     test('previousStep navigates backwards cleanly', () async {
       cubit.setAmount(500);

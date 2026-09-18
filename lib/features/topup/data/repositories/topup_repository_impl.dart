@@ -49,7 +49,9 @@ class TopUpRepositoryImpl implements TopUpRepository {
   }) async {
     try {
       if (amount < 200) {
-        return const Error(ServerFailure(message: 'Minimum top-up is 200 Points.'));
+        return const Error(
+          ServerFailure(message: 'Minimum top-up is 200 Points.'),
+        );
       }
       final created = await _remoteDataSource.createTopUpRequest(
         amount: amount,
@@ -104,7 +106,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
   }) async {
     return submitTopUpPaymentProof(
       requestId: requestId,
-      senderPhone: '01000000000',
+      senderPhone: '01014045363',
       fileBytes: fileBytes,
       fileExtension: fileExtension,
     );
@@ -131,13 +133,17 @@ class TopUpRepositoryImpl implements TopUpRepository {
 
   Failure _mapPostgrestError(PostgrestException e) {
     final msg = e.message.toLowerCase();
-    if (msg.contains('minimum_topup_points') || msg.contains('minimum top-up')) {
+    if (msg.contains('minimum_topup_points') ||
+        msg.contains('minimum top-up')) {
       return const ServerFailure(message: 'Minimum top-up is 200 Points.');
     }
     if (msg.contains('invalid_egyptian_phone_number')) {
-      return const ServerFailure(message: 'Please enter a valid Egyptian mobile number (01XXXXXXXXX).');
+      return const ServerFailure(
+        message: 'Please enter a valid Egyptian mobile number (01XXXXXXXXX).',
+      );
     }
-    if (msg.contains('already active or approved') || msg.contains('duplicate')) {
+    if (msg.contains('already active or approved') ||
+        msg.contains('duplicate')) {
       return const DuplicatePaymentReferenceFailure();
     }
     if (msg.contains('greater than zero') || msg.contains('invalid amount')) {
@@ -149,7 +155,9 @@ class TopUpRepositoryImpl implements TopUpRepository {
     if (msg.contains('already') || msg.contains('already reviewed')) {
       return const RequestAlreadyReviewedFailure();
     }
-    if (e.code == 'PGRST301' || msg.contains('jwt') || msg.contains('authenticated')) {
+    if (e.code == 'PGRST301' ||
+        msg.contains('jwt') ||
+        msg.contains('authenticated')) {
       return const AuthenticationFailure();
     }
     return ServerFailure(message: e.message);

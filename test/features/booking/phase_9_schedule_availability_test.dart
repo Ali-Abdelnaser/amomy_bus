@@ -225,7 +225,7 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('X. All server isBookable false disables Home Book button', (
+    testWidgets('X. All server isBookable false keeps Home Book CTA enabled', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -239,13 +239,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('No more trips available today'), findsOneWidget);
+      expect(find.byKey(const Key('home-book-ride-cta')), findsOneWidget);
+      expect(find.text('Book Now'), findsOneWidget);
     });
 
     testWidgets(
-      'X2. All server isBookable false disables My Trips Book button',
+      'X2. All server isBookable false keeps My Trips Book entry CTA enabled',
       (tester) async {
-        var pushed = false;
         final state = PassengerTripsState(
           status: PassengerTripsStatus.loaded,
           todayTrips: [
@@ -264,13 +264,9 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 350));
 
-        expect(find.byTooltip('No trips available today'), findsOneWidget);
-        await tester.tap(find.text('Book'));
-        await tester.pump(const Duration(milliseconds: 100));
-
-        expect(pushed, isFalse);
-        expect(tester.takeException(), isNull);
-        expect(state.shouldDisableBookingEntry, isTrue);
+        expect(find.text('Book'), findsOneWidget);
+        expect(find.byTooltip('Book a New Trip'), findsOneWidget);
+        expect(find.byTooltip('No trips available today'), findsNothing);
 
         await cubit.close();
       },

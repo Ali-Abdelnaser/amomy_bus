@@ -361,7 +361,7 @@ void main() {
           user: AppUser(
             id: 'user-1',
             email: 'user@example.com',
-            phone: '01000000000',
+            phone: '01014045363',
             fullName: 'Test User',
           ),
         ),

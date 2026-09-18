@@ -42,7 +42,7 @@ VALUES
     'VODAFONE_CASH',
     'فودافون كاش',
     'Vodafone Cash',
-    '01000000000',
+    '01014045363',
     'قم بتحويل المبلغ المطلوب إلى رقم فودافون كاش أعلاه. بعد إتمام التحويل، احتفظ برقم العملية والتقط صورة لإيصال التحويل لإرفاقها.',
     'Transfer the required amount to the Vodafone Cash number above. After completing the transfer, keep the reference number and take a screenshot of the receipt to attach.',
     'vodafone_cash',

@@ -43,7 +43,7 @@ class PaymentConfig extends Equatable {
 
   const PaymentConfig({
     this.mobileCashEnabled = true,
-    this.mobileCashReceiverNumber = '01000000000',
+    this.mobileCashReceiverNumber = '01014045363',
     this.egpPerPoint = 1.0,
     this.minimumTopupPoints = 200,
   });

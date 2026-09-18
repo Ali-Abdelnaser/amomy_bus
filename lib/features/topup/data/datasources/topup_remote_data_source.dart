@@ -92,7 +92,7 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
         expectedAmountEgp:
             (map['expected_amount_egp'] as num?)?.toDouble() ??
             amount.toDouble(),
-        receivingPhone: map['receiving_phone'] as String? ?? '01000000000',
+        receivingPhone: map['receiving_phone'] as String? ?? '01014045363',
         conversionRate: (map['conversion_rate'] as num?)?.toDouble() ?? 1.0,
         status: TopUpStatus.fromString(map['status'] as String?),
       );
@@ -166,7 +166,7 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
   }) async {
     return submitTopUpPaymentProof(
       requestId: requestId,
-      senderPhone: '01000000000',
+      senderPhone: '01014045363',
       fileBytes: fileBytes,
       fileExtension: fileExtension,
     );
