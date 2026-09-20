@@ -232,20 +232,23 @@ void main() {
       expect(cubit.state.createdPublicId, isNull);
     });
 
-    test('3. Step 2 only navigates to Step 3 and preserves selected state locally', () {
-      cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
-      cubit.proceedToInstructions();
+    test(
+      '3. Step 2 only navigates to Step 3 and preserves selected state locally',
+      () {
+        cubit.setAmount(500);
+        cubit.selectPaymentMethod(testMethod);
+        cubit.proceedToInstructions();
 
-      cubit.proceedToDetails();
+        cubit.proceedToDetails();
 
-      expect(cubit.state.currentStep, equals(TopUpStep.details));
-      expect(cubit.state.amount, equals(500));
-      expect(cubit.state.selectedMethod, equals(testMethod));
-      expect(cubit.state.receivingPhone, equals('01014045363'));
-      expect(cubit.state.expectedAmountEgp, equals(500.0));
-      expect(cubit.state.createdRequestId, isNull);
-    });
+        expect(cubit.state.currentStep, equals(TopUpStep.details));
+        expect(cubit.state.amount, equals(500));
+        expect(cubit.state.selectedMethod, equals(testMethod));
+        expect(cubit.state.receivingPhone, equals('01014045363'));
+        expect(cubit.state.expectedAmountEgp, equals(500.0));
+        expect(cubit.state.createdRequestId, isNull);
+      },
+    );
 
     test('4. Screenshot upload happens only on final submit', () async {
       cubit.setAmount(500);
@@ -269,28 +272,31 @@ void main() {
       expect(repository.submitNewCallCount, equals(1));
     });
 
-    test('5. submit_new_topup_request called only after upload success', () async {
-      cubit.setAmount(500);
-      cubit.selectPaymentMethod(testMethod);
-      cubit.proceedToInstructions();
-      cubit.proceedToDetails();
+    test(
+      '5. submit_new_topup_request called only after upload success',
+      () async {
+        cubit.setAmount(500);
+        cubit.selectPaymentMethod(testMethod);
+        cubit.proceedToInstructions();
+        cubit.proceedToDetails();
 
-      cubit.setSenderPhone('01012345678');
-      cubit.setPaymentReference('REF_999');
-      cubit.setProofImage(
-        bytes: [1, 2, 3],
-        extension: 'jpg',
-        fileName: 'proof.jpg',
-      );
+        cubit.setSenderPhone('01012345678');
+        cubit.setPaymentReference('REF_999');
+        cubit.setProofImage(
+          bytes: [1, 2, 3],
+          extension: 'jpg',
+          fileName: 'proof.jpg',
+        );
 
-      await cubit.submitPaymentProof();
+        await cubit.submitPaymentProof();
 
-      expect(repository.submitNewCallCount, equals(1));
-      expect(repository.createCallCount, equals(0));
-      expect(cubit.state.isSuccess, isTrue);
-      expect(cubit.state.createdRequestId, equals('new-req-999'));
-      expect(cubit.state.submittedPublicId, equals('AMY-999'));
-    });
+        expect(repository.submitNewCallCount, equals(1));
+        expect(repository.createCallCount, equals(0));
+        expect(cubit.state.isSuccess, isTrue);
+        expect(cubit.state.createdRequestId, equals('new-req-999'));
+        expect(cubit.state.submittedPublicId, equals('AMY-999'));
+      },
+    );
 
     test('6. Failed upload creates no request', () async {
       repository.submitNewFailure = const ProofUploadFailedFailure(
@@ -408,7 +414,6 @@ void main() {
       cubit.setSenderPhone('201012345678');
       expect(cubit.state.isSenderPhoneValid, isTrue);
     });
-
 
     test('previousStep navigates backwards cleanly', () async {
       cubit.setAmount(500);

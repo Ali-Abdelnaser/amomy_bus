@@ -69,20 +69,76 @@ class TrackingState extends Equatable {
     return summary!.status;
   }
 
+  bool get isDeparted =>
+      summary?.tripStatus == 'departed' ||
+      summary?.startedAt != null ||
+      summary?.trackingEnabled == true;
+
+  TrackingPhase get trackingPhase {
+    final phase = summary?.trackingPhase ?? TrackingPhase.unknown;
+    if (isDeparted &&
+        (phase == TrackingPhase.waitingStart ||
+            phase == TrackingPhase.waitingAssignment ||
+            phase == TrackingPhase.unknown)) {
+      return latestTelemetry != null
+          ? TrackingPhase.gpsStale
+          : TrackingPhase.gpsOffline;
+    }
+    return phase;
+  }
+
+  bool get trackingEnabled {
+    if (summary == null) return false;
+    if (isDeparted) return true;
+    if (summary!.trackingPhase != TrackingPhase.unknown) {
+      return summary!.trackingEnabled;
+    }
+    return summary!.trackingEnabled ||
+        trackingStatus == LiveTrackingStatus.live ||
+        trackingStatus == LiveTrackingStatus.online ||
+        trackingStatus == LiveTrackingStatus.qaPreview ||
+        trackingStatus == LiveTrackingStatus.stale ||
+        trackingStatus == LiveTrackingStatus.progressionUnavailable;
+  }
+
+  bool get isWaitingAssignment =>
+      !isDeparted &&
+      (trackingPhase == TrackingPhase.waitingAssignment ||
+          trackingStatus == LiveTrackingStatus.assignmentPending);
+  bool get isWaitingStart =>
+      !isDeparted && trackingPhase == TrackingPhase.waitingStart;
+  bool get isReassignmentPending =>
+      trackingPhase == TrackingPhase.reassignmentPending;
+  bool get isGpsOffline => trackingPhase == TrackingPhase.gpsOffline;
+  bool get isGpsStale =>
+      trackingPhase == TrackingPhase.gpsStale ||
+      trackingStatus == LiveTrackingStatus.stale;
+  bool get isProgressionSyncing =>
+      trackingPhase == TrackingPhase.progressionSyncing ||
+      trackingStatus == LiveTrackingStatus.progressionUnavailable;
+  bool get isCompleted =>
+      trackingPhase == TrackingPhase.completed ||
+      summary?.tripStatus == 'completed';
+  bool get isCancelled =>
+      trackingPhase == TrackingPhase.cancelled ||
+      summary?.tripStatus == 'cancelled';
+  bool get isServiceDateEnded =>
+      trackingPhase == TrackingPhase.serviceDateEnded;
+
   bool get isOnline => trackingStatus == LiveTrackingStatus.online;
   bool get isLive =>
+      trackingPhase == TrackingPhase.live ||
       trackingStatus == LiveTrackingStatus.live ||
       trackingStatus == LiveTrackingStatus.online;
   bool get isBetweenRuns => trackingStatus == LiveTrackingStatus.betweenRuns;
-  bool get isStale => trackingStatus == LiveTrackingStatus.stale;
+  bool get isStale => isGpsStale;
   bool get isOffline =>
+      trackingPhase == TrackingPhase.gpsOffline ||
       trackingStatus == LiveTrackingStatus.offline ||
       trackingStatus == LiveTrackingStatus.tripNotActive ||
       trackingStatus == LiveTrackingStatus.outsideTrackingWindow;
-  bool get isAssignmentPending =>
-      trackingStatus == LiveTrackingStatus.assignmentPending;
-  bool get isProgressionUnavailable =>
-      trackingStatus == LiveTrackingStatus.progressionUnavailable;
+  bool get isAssignmentPending => isWaitingAssignment;
+  bool get isProgressionUnavailable => isProgressionSyncing;
   bool get isQaPreview => trackingStatus == LiveTrackingStatus.qaPreview;
 
   BusStopModel? get currentStop => summary?.currentStop;

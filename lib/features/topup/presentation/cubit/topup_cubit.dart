@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/error/app_error_mapper.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../wallet/domain/usecases/get_wallet_summary_usecase.dart';
@@ -353,7 +354,7 @@ class TopUpCubit extends Cubit<TopUpState> {
             state.copyWith(
               isSubmitting: false,
               proofStatus: ProofUploadStatus.failed,
-              errorMessage: () => failure.message,
+              errorMessage: () => AppErrorMapper.mapToString(failure),
             ),
           );
         },
@@ -405,7 +406,7 @@ class TopUpCubit extends Cubit<TopUpState> {
           state.copyWith(
             isSubmitting: false,
             proofStatus: ProofUploadStatus.failed,
-            errorMessage: () => failure.message,
+            errorMessage: () => AppErrorMapper.mapToString(failure),
           ),
         );
       },

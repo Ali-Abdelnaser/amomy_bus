@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 /// Semantic event types returned by public.get_my_wallet_history
 enum WalletSemanticType {
   tripBooking,
+  roundTripBooking,
   extraSeat,
   refund,
   pointsTopup,
@@ -20,6 +21,8 @@ enum WalletSemanticType {
     switch (normalized) {
       case 'trip_booking':
         return WalletSemanticType.tripBooking;
+      case 'round_trip_booking':
+        return WalletSemanticType.roundTripBooking;
       case 'extra_seat':
         return WalletSemanticType.extraSeat;
       case 'refund':
@@ -47,6 +50,8 @@ enum WalletSemanticType {
     switch (this) {
       case WalletSemanticType.tripBooking:
         return 'trip_booking';
+      case WalletSemanticType.roundTripBooking:
+        return 'round_trip_booking';
       case WalletSemanticType.extraSeat:
         return 'extra_seat';
       case WalletSemanticType.refund:
@@ -95,6 +100,23 @@ class WalletHistoryEvent extends Equatable {
   final String? alightingNameEn;
   final String? bookingKind;
 
+  // Optional round trip bundle metadata
+  final String? bundleId;
+  final String? outboundBookingId;
+  final String? returnBookingId;
+  final String? outboundTripId;
+  final String? returnTripId;
+  final DateTime? outboundDepartureAt;
+  final DateTime? returnDepartureAt;
+  final String? outboundSeatNumber;
+  final String? returnSeatNumber;
+  final num? outboundBaseFarePoints;
+  final num? returnBaseFarePoints;
+  final num? subtotalPoints;
+  final num? discountPercent;
+  final num? discountPoints;
+  final num? totalPaidPoints;
+
   const WalletHistoryEvent({
     required this.eventId,
     required this.semanticType,
@@ -115,6 +137,21 @@ class WalletHistoryEvent extends Equatable {
     this.alightingNameAr,
     this.alightingNameEn,
     this.bookingKind,
+    this.bundleId,
+    this.outboundBookingId,
+    this.returnBookingId,
+    this.outboundTripId,
+    this.returnTripId,
+    this.outboundDepartureAt,
+    this.returnDepartureAt,
+    this.outboundSeatNumber,
+    this.returnSeatNumber,
+    this.outboundBaseFarePoints,
+    this.returnBaseFarePoints,
+    this.subtotalPoints,
+    this.discountPercent,
+    this.discountPoints,
+    this.totalPaidPoints,
   });
 
   bool get isCredit => (signedAmount ?? 0) > 0;
@@ -128,6 +165,8 @@ class WalletHistoryEvent extends Equatable {
       return isArabic ? 'ذهاب' : 'Outbound';
     } else if (dir == 'return' || dir == 'coming') {
       return isArabic ? 'عودة' : 'Return';
+    } else if (dir == 'round_trip' || dir == 'roundtrip') {
+      return isArabic ? 'ذهاب وعودة' : 'Round Trip';
     }
     return tripDirection;
   }
@@ -165,6 +204,21 @@ class WalletHistoryEvent extends Equatable {
     alightingNameAr,
     alightingNameEn,
     bookingKind,
+    bundleId,
+    outboundBookingId,
+    returnBookingId,
+    outboundTripId,
+    returnTripId,
+    outboundDepartureAt,
+    returnDepartureAt,
+    outboundSeatNumber,
+    returnSeatNumber,
+    outboundBaseFarePoints,
+    returnBaseFarePoints,
+    subtotalPoints,
+    discountPercent,
+    discountPoints,
+    totalPaidPoints,
   ];
 }
 

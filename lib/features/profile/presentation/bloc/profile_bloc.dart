@@ -6,8 +6,7 @@ import 'profile_state.dart';
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ProfileRepository repository;
 
-  ProfileBloc({required this.repository})
-      : super(const ProfileInitial()) {
+  ProfileBloc({required this.repository}) : super(const ProfileInitial()) {
     on<ProfileAvatarUploadRequested>(_onAvatarUploadRequested);
     on<ProfileAvatarRemoveRequested>(_onAvatarRemoveRequested);
     on<ProfileResetState>((event, emit) => emit(const ProfileInitial()));
@@ -26,8 +25,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     );
 
     result.fold(
-      onError: (failure) => emit(ProfileAvatarFailure(message: failure.message)),
-      onSuccess: (url) => emit(ProfileAvatarSuccess(avatarUrl: url, isRemoved: false)),
+      onError: (failure) =>
+          emit(ProfileAvatarFailure(message: failure.message)),
+      onSuccess: (url) =>
+          emit(ProfileAvatarSuccess(avatarUrl: url, isRemoved: false)),
     );
   }
 
@@ -43,8 +44,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     );
 
     result.fold(
-      onError: (failure) => emit(ProfileAvatarFailure(message: failure.message)),
-      onSuccess: (_) => emit(const ProfileAvatarSuccess(avatarUrl: null, isRemoved: true)),
+      onError: (failure) =>
+          emit(ProfileAvatarFailure(message: failure.message)),
+      onSuccess: (_) =>
+          emit(const ProfileAvatarSuccess(avatarUrl: null, isRemoved: true)),
     );
   }
 }

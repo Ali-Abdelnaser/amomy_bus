@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/localization/app_time_formatter.dart';
+import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -145,7 +146,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
           onError: (failure) {
             if (silent) return;
             setState(() {
-              _error = failure.message;
+              _error = StatusLocalizer.localizeError(context, failure);
               _isLoading = false;
             });
           },
@@ -198,7 +199,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
             AmomyFloatingAlert.show(
               context,
               title: isAr ? 'فشل تأكيد المقعد الإضافي' : 'Confirmation failed',
-              message: failure.message,
+              message: StatusLocalizer.localizeError(context, failure),
               variant: AmomyAlertVariant.error,
             );
           },
@@ -209,7 +210,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
         AmomyFloatingAlert.show(
           context,
           title: isAr ? 'تعذر حجز المقعد الإضافي' : 'Hold failed',
-          message: failure.message,
+          message: StatusLocalizer.localizeError(context, failure),
           variant: AmomyAlertVariant.error,
         );
       },
@@ -388,10 +389,6 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
             ),
 
             AppSpacing.gapH10,
-
-            
-
-           
 
             // Seat Map Content
             Expanded(
@@ -583,4 +580,3 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
     );
   }
 }
-

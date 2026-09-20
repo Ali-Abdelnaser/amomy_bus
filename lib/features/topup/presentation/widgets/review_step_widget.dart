@@ -42,7 +42,9 @@ class ReviewStepWidget extends StatelessWidget {
         children: [
           Text(
             l10n.topUpReviewTitle,
-            style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            style: AppTextStyles.titleLarge.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           AppSpacing.gapH16,
 
@@ -79,7 +81,9 @@ class ReviewStepWidget extends StatelessWidget {
                   children: [
                     Text(
                       l10n.topUpPaymentProof,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
@@ -103,7 +107,9 @@ class ReviewStepWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.primaryLight.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +145,9 @@ class ReviewStepWidget extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: AppButton(
-                  label: isSubmitting ? l10n.topUpSubmitting : l10n.topUpSubmitButton,
+                  label: isSubmitting
+                      ? l10n.topUpSubmitting
+                      : l10n.topUpSubmitButton,
                   isLoading: isSubmitting,
                   onPressed: isSubmitting ? null : onSubmit,
                 ),
@@ -162,7 +170,9 @@ class ReviewStepWidget extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         Text(
           value,

@@ -538,6 +538,8 @@ void main() {
       (tester) async {
         final offlineSummary = activeSummary.copyWith(
           status: LiveTrackingStatus.offline,
+          trackingPhase: TrackingPhase.gpsOffline,
+          trackingEnabled: true,
           serviceState: 'offline',
           progressState: 'offline',
         );
@@ -558,10 +560,15 @@ void main() {
         );
         await pumpAndAdvance(tester);
 
-        expect(find.text('Tracking unavailable'), findsAtLeastNWidgets(1));
-        expect(find.text('Next Stop'), findsOneWidget);
-        expect(find.textContaining('8:00'), findsAtLeastNWidgets(1));
-        // No active ETA strings
+        expect(
+          find.text('Live location is temporarily unavailable'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('waiting for a new location update'),
+          findsOneWidget,
+        );
+        // No fake active ETA strings
         expect(find.textContaining('ETA 08:'), findsNothing);
 
         await cubit.close();

@@ -110,7 +110,9 @@ class NotificationTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isUnread ? AppColors.primary.withAlpha(50) : AppColors.border,
+              color: isUnread
+                  ? AppColors.primary.withAlpha(50)
+                  : AppColors.border,
               width: isUnread ? 1.5 : 1.0,
             ),
           ),
@@ -144,7 +146,9 @@ class NotificationTile extends StatelessWidget {
                           child: Text(
                             title,
                             style: AppTextStyles.titleSmall.copyWith(
-                              fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                              fontWeight: isUnread
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
                           ),
@@ -166,7 +170,9 @@ class NotificationTile extends StatelessWidget {
                     Text(
                       body,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isUnread ? AppColors.textPrimary : AppColors.textSecondary,
+                        color: isUnread
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                         height: 1.35,
                       ),
                     ),

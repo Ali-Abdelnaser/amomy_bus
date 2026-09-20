@@ -9,10 +9,7 @@ class FloatingNavItem {
   final NavSvgType svgType;
   final String label;
 
-  const FloatingNavItem({
-    required this.svgType,
-    required this.label,
-  });
+  const FloatingNavItem({required this.svgType, required this.label});
 }
 
 /// A compact, luxury floating glass bottom navigation bar with an animated sliding pill.
@@ -45,11 +42,7 @@ class FloatingBottomNavBar extends StatelessWidget {
     final bottomMargin = bottomPadding > 0 ? bottomPadding + 8 : 16.0;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: bottomMargin,
-      ),
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomMargin),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(33),
         child: BackdropFilter(
@@ -87,14 +80,17 @@ class FloatingBottomNavBar extends StatelessWidget {
                 // 35% width for active tab gives comfortable inner padding for longer words like "My Trips".
                 // Remaining 65% is split evenly among the other 3 inactive tabs (~21.67% each).
                 const activeRatio = 0.35;
-                final inactiveRatio =
-                    itemCount > 1 ? (1.0 - activeRatio) / (itemCount - 1) : 1.0;
+                final inactiveRatio = itemCount > 1
+                    ? (1.0 - activeRatio) / (itemCount - 1)
+                    : 1.0;
 
                 final activeWidth = totalWidth * activeRatio;
                 final inactiveWidth = totalWidth * inactiveRatio;
 
-                final clampedIndex =
-                    selectedIndex.clamp(0, itemCount > 0 ? itemCount - 1 : 0);
+                final clampedIndex = selectedIndex.clamp(
+                  0,
+                  itemCount > 0 ? itemCount - 1 : 0,
+                );
                 final pillStart = clampedIndex * inactiveWidth;
                 final pillWidth = (activeWidth - 4.0).clamp(0.0, totalWidth);
 
@@ -120,7 +116,9 @@ class FloatingBottomNavBar extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.38),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.38,
+                                ),
                                 blurRadius: 14,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 4),
@@ -139,8 +137,9 @@ class FloatingBottomNavBar extends StatelessWidget {
                     Row(
                       children: List.generate(itemCount, (index) {
                         final isSelected = selectedIndex == index;
-                        final itemWidth =
-                            isSelected ? activeWidth : inactiveWidth;
+                        final itemWidth = isSelected
+                            ? activeWidth
+                            : inactiveWidth;
 
                         return AnimatedContainer(
                           key: ValueKey('floating_nav_item_$index'),
@@ -197,10 +196,7 @@ class _FloatingNavItemTileState extends State<_FloatingNavItemTile>
       duration: const Duration(milliseconds: 380),
       value: widget.isSelected ? 1.0 : 0.0,
     );
-    _curve = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutCubic,
-    );
+    _curve = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
   }
 
   @override

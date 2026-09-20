@@ -8,11 +8,7 @@ class UpdatePasswordUseCase {
 
   const UpdatePasswordUseCase(this._repository);
 
-  ResultFuture<void> call({
-    required String newPassword,
-  }) {
-    return _repository.updatePassword(
-      newPassword: newPassword,
-    );
+  ResultFuture<void> call({required String newPassword}) {
+    return _repository.updatePassword(newPassword: newPassword);
   }
 }

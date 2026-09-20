@@ -76,4 +76,3 @@ abstract final class AppAssets {
   static const String vodafoneCashLogo = 'assets/vodafone_cash.webp';
   static const String instapayLogo = 'assets/instapay.webp';
 }
-

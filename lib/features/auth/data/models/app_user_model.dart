@@ -22,19 +22,21 @@ class AppUserModel extends AppUser {
   }) {
     final meta = user.userMetadata ?? {};
 
-    final fullName = (profileData?['full_name'] as String?)?.trim().isNotEmpty == true
+    final fullName =
+        (profileData?['full_name'] as String?)?.trim().isNotEmpty == true
         ? profileData!['full_name'] as String
         : (meta['full_name'] as String?) ??
-            (meta['name'] as String?) ??
-            user.email?.split('@').first ??
-            '';
+              (meta['name'] as String?) ??
+              user.email?.split('@').first ??
+              '';
 
-    final phone = (profileData?['phone'] as String?) ??
+    final phone =
+        (profileData?['phone'] as String?) ??
         (meta['phone'] as String?) ??
         user.phone;
 
-    final gender = (profileData?['gender'] as String?) ??
-        (meta['gender'] as String?);
+    final gender =
+        (profileData?['gender'] as String?) ?? (meta['gender'] as String?);
 
     DateTime? dob;
     final dobRaw = profileData?['date_of_birth'] ?? meta['date_of_birth'];
@@ -44,7 +46,8 @@ class AppUserModel extends AppUser {
       dob = dobRaw;
     }
 
-    final avatarUrl = (profileData?['avatar_url'] as String?) ??
+    final avatarUrl =
+        (profileData?['avatar_url'] as String?) ??
         (meta['avatar_url'] as String?) ??
         (meta['picture'] as String?);
 

@@ -42,8 +42,11 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
     final List list = response as List;
     return list
-        .map((item) =>
-            AnnouncementModel.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map(
+          (item) => AnnouncementModel.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
         .toList();
   }
 }

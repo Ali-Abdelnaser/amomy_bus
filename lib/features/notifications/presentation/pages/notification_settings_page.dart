@@ -5,6 +5,7 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../domain/entities/notification_preferences.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../cubit/notification_preferences_cubit.dart';
@@ -480,9 +481,7 @@ class _NotificationTestLabState extends State<_NotificationTestLab> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppSnackBar.showInfo(context, message);
   }
 
   @override

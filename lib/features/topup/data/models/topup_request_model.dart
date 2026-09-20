@@ -31,7 +31,8 @@ class TopUpRequestModel extends TopUpRequest {
       publicId: json['public_id'] as String?,
       userId: json['user_id'] as String? ?? '',
       requestedAmount: (json['requested_amount'] as num?)?.toInt() ?? 0,
-      expectedAmountEgp: (json['expected_amount_egp'] as num?)?.toDouble() ??
+      expectedAmountEgp:
+          (json['expected_amount_egp'] as num?)?.toDouble() ??
           ((json['requested_amount'] as num?)?.toDouble() ?? 0.0),
       conversionRate: (json['conversion_rate'] as num?)?.toDouble() ?? 1.0,
       receivingPhone: json['receiving_phone'] as String?,

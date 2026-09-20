@@ -9,9 +9,7 @@ class GetRouteStopsUseCase {
 
   const GetRouteStopsUseCase(this._repository);
 
-  ResultFuture<List<RouteStop>> call({
-    required BookingDirection direction,
-  }) =>
+  ResultFuture<List<RouteStop>> call({required BookingDirection direction}) =>
       _repository.getRouteStops(direction: direction);
 }
 
@@ -25,12 +23,11 @@ class GetAvailableTripsUseCase {
     required BookingDirection direction,
     DateTime? date,
     String? routeStopId,
-  }) =>
-      _repository.getAvailableTrips(
-        direction: direction,
-        date: date,
-        routeStopId: routeStopId,
-      );
+  }) => _repository.getAvailableTrips(
+    direction: direction,
+    date: date,
+    routeStopId: routeStopId,
+  );
 }
 
 @lazySingleton
@@ -54,13 +51,12 @@ class CreateBookingHoldUseCase {
     required String seatId,
     String? routeStopId,
     String? destinationRouteStopId,
-  }) =>
-      _repository.createBookingHold(
-        tripId: tripId,
-        seatId: seatId,
-        routeStopId: routeStopId,
-        destinationRouteStopId: destinationRouteStopId,
-      );
+  }) => _repository.createBookingHold(
+    tripId: tripId,
+    seatId: seatId,
+    routeStopId: routeStopId,
+    destinationRouteStopId: destinationRouteStopId,
+  );
 }
 
 @lazySingleton
@@ -102,11 +98,10 @@ class GetPassengerTodayTripsUseCase {
   ResultFuture<List<PassengerTodayTrip>> call({
     String? direction,
     String? originRouteStopId,
-  }) =>
-      _repository.getPassengerTodayTrips(
-        direction: direction,
-        originRouteStopId: originRouteStopId,
-      );
+  }) => _repository.getPassengerTodayTrips(
+    direction: direction,
+    originRouteStopId: originRouteStopId,
+  );
 }
 
 @lazySingleton
@@ -128,11 +123,10 @@ class SetMyTripPreferencesUseCase {
   ResultFuture<PassengerTripPreference> call({
     required String originStopId,
     required String destinationStopId,
-  }) =>
-      _repository.setMyTripPreferences(
-        originStopId: originStopId,
-        destinationStopId: destinationStopId,
-      );
+  }) => _repository.setMyTripPreferences(
+    originStopId: originStopId,
+    destinationStopId: destinationStopId,
+  );
 }
 
 @lazySingleton
@@ -155,10 +149,84 @@ class ChangeBookingSeatUseCase {
     required String bookingId,
     required String newSeatId,
   }) =>
-      _repository.changeBookingSeat(
-        bookingId: bookingId,
-        newSeatId: newSeatId,
-      );
+      _repository.changeBookingSeat(bookingId: bookingId, newSeatId: newSeatId);
 }
 
+@lazySingleton
+class GetRoundTripReturnOptionsUseCase {
+  final BookingRepository _repository;
 
+  const GetRoundTripReturnOptionsUseCase(this._repository);
+
+  ResultFuture<List<RoundTripReturnOption>> call({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  }) => _repository.getRoundTripReturnOptions(
+    outboundTripId: outboundTripId,
+    outboundRouteStopId: outboundRouteStopId,
+  );
+}
+
+@lazySingleton
+class CreateRoundTripBundleHoldUseCase {
+  final BookingRepository _repository;
+
+  const CreateRoundTripBundleHoldUseCase(this._repository);
+
+  ResultFuture<RoundTripBundleHold> call({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  }) => _repository.createRoundTripBundleHold(
+    outboundTripId: outboundTripId,
+    returnTripId: returnTripId,
+    outboundSeatId: outboundSeatId,
+    outboundRouteStopId: outboundRouteStopId,
+  );
+}
+
+@lazySingleton
+class SetRoundTripReturnSeatUseCase {
+  final BookingRepository _repository;
+
+  const SetRoundTripReturnSeatUseCase(this._repository);
+
+  ResultFuture<RoundTripBundleHold> call({
+    required String bundleHoldId,
+    required String returnSeatId,
+  }) => _repository.setRoundTripReturnSeat(
+    bundleHoldId: bundleHoldId,
+    returnSeatId: returnSeatId,
+  );
+}
+
+@lazySingleton
+class ReleaseRoundTripBundleHoldUseCase {
+  final BookingRepository _repository;
+
+  const ReleaseRoundTripBundleHoldUseCase(this._repository);
+
+  ResultFuture<void> call({required String bundleHoldId}) =>
+      _repository.releaseRoundTripBundleHold(bundleHoldId: bundleHoldId);
+}
+
+@lazySingleton
+class ConfirmRoundTripBundleUseCase {
+  final BookingRepository _repository;
+
+  const ConfirmRoundTripBundleUseCase(this._repository);
+
+  ResultFuture<RoundTripConfirmation> call({required String bundleHoldId}) =>
+      _repository.confirmRoundTripBundle(bundleHoldId: bundleHoldId);
+}
+
+@lazySingleton
+class GetRoundTripBundleContextUseCase {
+  final BookingRepository _repository;
+
+  const GetRoundTripBundleContextUseCase(this._repository);
+
+  ResultFuture<RoundTripBundleContext> call({required String bookingId}) =>
+      _repository.getRoundTripBundleContext(bookingId: bookingId);
+}

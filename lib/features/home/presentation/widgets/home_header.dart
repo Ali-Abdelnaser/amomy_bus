@@ -5,15 +5,13 @@ import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../auth/domain/entities/app_user.dart';
 
 class HomeHeader extends StatelessWidget {
   final AppUser user;
 
-  const HomeHeader({
-    super.key,
-    required this.user,
-  });
+  const HomeHeader({super.key, required this.user});
 
   String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
@@ -93,13 +91,7 @@ class HomeHeader extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.l10n.noData),
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              AppSnackBar.showInfo(context, context.l10n.noData);
             },
           ),
         ),

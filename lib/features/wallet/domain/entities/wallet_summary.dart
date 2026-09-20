@@ -16,14 +16,14 @@ class WalletSummary extends Equatable {
   });
 
   const WalletSummary.empty()
-      : totalAvailablePoints = 0,
-        cashPoints = 0,
-        subscriptionPoints = 0;
+    : totalAvailablePoints = 0,
+      cashPoints = 0,
+      subscriptionPoints = 0;
 
   @override
   List<Object?> get props => [
-        totalAvailablePoints,
-        cashPoints,
-        subscriptionPoints,
-      ];
+    totalAvailablePoints,
+    cashPoints,
+    subscriptionPoints,
+  ];
 }

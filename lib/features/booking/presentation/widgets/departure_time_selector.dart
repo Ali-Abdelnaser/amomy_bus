@@ -123,6 +123,7 @@ class DepartureTimeSelector extends StatelessWidget {
         else if (isTripLocked && selectedTrip != null)
           _DepartureTimeCard(
             trip: selectedTrip!,
+            direction: direction,
             isSelected: true,
             isLocked: true,
             isAr: isAr,
@@ -191,6 +192,7 @@ class DepartureTimeSelector extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _DepartureTimeCard(
                   trip: trip,
+                  direction: direction,
                   isSelected: isSelected,
                   isLocked: false,
                   isAr: isAr,
@@ -206,6 +208,7 @@ class DepartureTimeSelector extends StatelessWidget {
 
 class _DepartureTimeCard extends StatelessWidget {
   final TripOption trip;
+  final BookingDirection direction;
   final bool isSelected;
   final bool isLocked;
   final bool isAr;
@@ -213,6 +216,7 @@ class _DepartureTimeCard extends StatelessWidget {
 
   const _DepartureTimeCard({
     required this.trip,
+    required this.direction,
     required this.isSelected,
     required this.isLocked,
     required this.isAr,
@@ -225,6 +229,9 @@ class _DepartureTimeCard extends StatelessWidget {
     final isFull = !isClosed && trip.isFull;
     final isNotBookable = !trip.canBook;
     final isFewSeats = !isNotBookable && trip.availableSeatsCount <= 5;
+    final isReturn =
+        direction == BookingDirection.returnTrip ||
+        trip.direction == BookingDirection.returnTrip;
 
     final l10n = context.l10n;
 
@@ -284,71 +291,92 @@ class _DepartureTimeCard extends StatelessWidget {
 
               // 2. Departure Time & Secondary Status
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      AppTimeFormatter.formatTripOption(trip, isArabic: isAr),
-                      style: TextStyle(
-                        fontSize: 17.5,
-                        fontWeight: isSelected
-                            ? FontWeight.w900
-                            : FontWeight.w700,
-                        color: isSelected
-                            ? AppColors.primaryDark
-                            : (isFull
-                                  ? const Color(0xFF94A3B8)
-                                  : const Color(0xFF101828)),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.departureBusAtFirstStop(l10n.mitFadalaStopName),
-                      style: AppTextStyles.labelMedium.copyWith(
-                        fontSize: 12,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? const Color(0xFF0284C7)
-                            : (isFull
-                                  ? const Color(0xFF94A3B8)
-                                  : const Color(0xFF64748B)),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(
-                          AppIcons.location,
-                          size: 12,
+                child: isReturn
+                    ? Text(
+                        AppTimeFormatter.formatTripOption(trip, isArabic: isAr),
+                        style: TextStyle(
+                          fontSize: 17.5,
+                          fontWeight: isSelected
+                              ? FontWeight.w900
+                              : FontWeight.w700,
                           color: isSelected
-                              ? AppColors.primary
-                              : const Color(0xFF64748B),
+                              ? AppColors.primaryDark
+                              : (isFull
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF101828)),
+                          letterSpacing: -0.3,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '${l10n.firstStopLabel} · $statusText',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            AppTimeFormatter.formatTripOption(
+                              trip,
+                              isArabic: isAr,
+                            ),
+                            style: TextStyle(
+                              fontSize: 17.5,
+                              fontWeight: isSelected
+                                  ? FontWeight.w900
+                                  : FontWeight.w700,
                               color: isSelected
-                                  ? AppColors.primary
-                                  : const Color(0xFF64748B),
+                                  ? AppColors.primaryDark
+                                  : (isFull
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF101828)),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.departureBusAtFirstStop(
+                              l10n.mitFadalaStopName,
+                            ),
+                            style: AppTextStyles.labelMedium.copyWith(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF0284C7)
+                                  : (isFull
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B)),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(
+                                AppIcons.location,
+                                size: 12,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  '${l10n.firstStopLabel} · $statusText',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : const Color(0xFF64748B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
 
               // 3. Subtle Non-Intrusive Metadata Badge

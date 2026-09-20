@@ -50,7 +50,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthFailureState) {
-          AppSnackBar.showError(context, state.failure.message);
+          AppSnackBar.showError(context, state.failure);
         } else if (state is PasswordResetEmailSent) {
           AppSnackBar.showSuccess(context, l10n.resetEmailSentSuccess);
           context.pop();

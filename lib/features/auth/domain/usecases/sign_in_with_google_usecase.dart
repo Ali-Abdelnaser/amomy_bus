@@ -9,11 +9,7 @@ class SignInWithGoogleUseCase {
 
   const SignInWithGoogleUseCase(this._repository);
 
-  ResultFuture<AppUser> call({
-    String? webClientId,
-  }) {
-    return _repository.signInWithGoogle(
-      webClientId: webClientId,
-    );
+  ResultFuture<AppUser> call({String? webClientId}) {
+    return _repository.signInWithGoogle(webClientId: webClientId);
   }
 }

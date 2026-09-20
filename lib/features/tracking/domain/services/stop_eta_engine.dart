@@ -59,9 +59,7 @@ class StopEtaEngine {
   DateTime? _lastMovingTime;
   double? _lastSmoothedMovingSpeed;
 
-  StopEtaEngine({
-    this.fallbackSpeedKmh = defaultFallbackSpeedKmh,
-  });
+  StopEtaEngine({this.fallbackSpeedKmh = defaultFallbackSpeedKmh});
 
   /// Clear telemetry history (e.g. on new service run).
   void reset() {
@@ -90,15 +88,13 @@ class StopEtaEngine {
   /// Computes the effective smoothed moving speed in km/h.
   /// If the bus is temporarily stopped (speed <= 2 km/h) for under 3 minutes,
   /// recent moving speed is retained so ETAs do not blow up to infinity.
-  double getEffectiveSpeedKmh({
-    double? instantSpeedKmh,
-    DateTime? now,
-  }) {
+  double getEffectiveSpeedKmh({double? instantSpeedKmh, DateTime? now}) {
     final currentTime = now ?? DateTime.now().toUtc();
     final instant = instantSpeedKmh ?? 0.0;
 
     // If instant speed is a valid moving speed and not an extreme spike
-    if (instant >= minMovingSpeedThreshold && instant <= maxRealisticSpeedThreshold) {
+    if (instant >= minMovingSpeedThreshold &&
+        instant <= maxRealisticSpeedThreshold) {
       recordTelemetrySpeed(instant, currentTime);
       return _lastSmoothedMovingSpeed ?? instant;
     }
@@ -147,11 +143,17 @@ class StopEtaEngine {
   }) {
     if (targetStopOrder < nextStopOrder) return 0.0;
 
-    final stopsWithCoords = orderedStops.where((s) => s.hasCoordinates).toList();
+    final stopsWithCoords = orderedStops
+        .where((s) => s.hasCoordinates)
+        .toList();
     if (stopsWithCoords.isEmpty) return 0.0;
 
-    final nextStopIndex = stopsWithCoords.indexWhere((s) => s.stopOrder == nextStopOrder);
-    final targetStopIndex = stopsWithCoords.indexWhere((s) => s.stopOrder == targetStopOrder);
+    final nextStopIndex = stopsWithCoords.indexWhere(
+      (s) => s.stopOrder == nextStopOrder,
+    );
+    final targetStopIndex = stopsWithCoords.indexWhere(
+      (s) => s.stopOrder == targetStopOrder,
+    );
 
     if (nextStopIndex == -1 || targetStopIndex == -1) {
       return 0.0;
@@ -232,15 +234,21 @@ class StopEtaEngine {
     );
 
     final currentStopOrder = telemetry?.currentStopOrder ?? 1;
-    final nextStopOrder = telemetry?.nextStopOrder ??
-        (currentStopOrder < orderedStops.length ? currentStopOrder + 1 : currentStopOrder);
+    final nextStopOrder =
+        telemetry?.nextStopOrder ??
+        (currentStopOrder < orderedStops.length
+            ? currentStopOrder + 1
+            : currentStopOrder);
 
     final busLat = telemetry?.latitude;
     final busLng = telemetry?.longitude;
     final hasBusLocation = busLat != null && busLng != null;
 
     // First stop scheduled time
-    final scheduledDeparture = _parseRunDepartureTime(activeRunTime, currentTime);
+    final scheduledDeparture = _parseRunDepartureTime(
+      activeRunTime,
+      currentTime,
+    );
 
     for (int i = 0; i < orderedStops.length; i++) {
       final stop = orderedStops[i];
@@ -284,7 +292,10 @@ class StopEtaEngine {
 
         if (remainingDistMeters > 0 && effectiveSpeed > 0) {
           final travelHours = (remainingDistMeters / 1000.0) / effectiveSpeed;
-          final intermediateStopsCount = math.max(0, stop.stopOrder - nextStopOrder);
+          final intermediateStopsCount = math.max(
+            0,
+            stop.stopOrder - nextStopOrder,
+          );
           final dwellSeconds = intermediateStopsCount * stopDwellTimeSeconds;
           final totalSeconds = (travelHours * 3600).round() + dwellSeconds;
 
@@ -345,7 +356,11 @@ class StopEtaEngine {
   }
 
   /// Human-friendly countdown representation: "~6 min" or "6 min away"
-  static String formatRemainingMinutes(DateTime targetTime, String locale, {DateTime? now}) {
+  static String formatRemainingMinutes(
+    DateTime targetTime,
+    String locale, {
+    DateTime? now,
+  }) {
     final current = now?.toLocal() ?? DateTime.now();
     final diff = targetTime.toLocal().difference(current);
     final minutes = (diff.inSeconds / 60.0).round();
@@ -372,7 +387,8 @@ class StopEtaEngine {
     final dLat = (lat2 - lat1) * (math.pi / 180.0);
     final dLon = (lon2 - lon1) * (math.pi / 180.0);
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(lat1 * (math.pi / 180.0)) *
             math.cos(lat2 * (math.pi / 180.0)) *
             math.sin(dLon / 2) *

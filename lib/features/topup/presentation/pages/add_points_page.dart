@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../domain/entities/topup_entities.dart';
 import '../cubit/topup_cubit.dart';
 import '../cubit/topup_state.dart';
@@ -46,18 +47,7 @@ class AddPointsPage extends StatelessWidget {
       child: BlocConsumer<TopUpCubit, TopUpState>(
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  StatusLocalizer.localizeError(context, state.errorMessage),
-                ),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
+            AppSnackBar.showError(context, state.errorMessage);
           }
         },
         builder: (context, state) {

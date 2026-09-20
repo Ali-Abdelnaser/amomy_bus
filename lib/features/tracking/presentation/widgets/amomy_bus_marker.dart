@@ -70,8 +70,9 @@ class _AmomyBusMarkerState extends State<AmomyBusMarker>
     } else {
       if (!_pulseController.isAnimating) _pulseController.repeat(reverse: true);
       if (oldWidget.isAtStop != widget.isAtStop) {
-        _pulseController.duration =
-            Duration(milliseconds: widget.isAtStop ? 3800 : 2200);
+        _pulseController.duration = Duration(
+          milliseconds: widget.isAtStop ? 3800 : 2200,
+        );
       }
     }
   }
@@ -138,7 +139,9 @@ class _AmomyBusMarkerState extends State<AmomyBusMarker>
                           gradient: RadialGradient(
                             colors: [
                               haloColor.withValues(alpha: currentOpacity),
-                              haloColor.withValues(alpha: currentOpacity * 0.35),
+                              haloColor.withValues(
+                                alpha: currentOpacity * 0.35,
+                              ),
                               Colors.transparent,
                             ],
                             stops: const [0.25, 0.70, 1.0],
@@ -156,10 +159,7 @@ class _AmomyBusMarkerState extends State<AmomyBusMarker>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: surfaceColor,
-                  border: Border.all(
-                    color: borderColor,
-                    width: 2.4,
-                  ),
+                  border: Border.all(color: borderColor, width: 2.4),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.22),
@@ -188,7 +188,10 @@ class _AmomyBusMarkerState extends State<AmomyBusMarker>
                   bottom: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4.5,
+                      vertical: 1.5,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF6366F1),
                       borderRadius: BorderRadius.circular(5),

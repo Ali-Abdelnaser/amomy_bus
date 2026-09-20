@@ -15,9 +15,7 @@ import 'package:flutter/material.dart';
 class BusInteriorBasePainter extends CustomPainter {
   final String locale;
 
-  const BusInteriorBasePainter({
-    required this.locale,
-  });
+  const BusInteriorBasePainter({required this.locale});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -184,11 +182,27 @@ class BusInteriorBasePainter extends CustomPainter {
       ..color = const Color(0xFF5A738E).withValues(alpha: 0.8)
       ..strokeWidth = 1.0 * sx;
     // Front left & right panel seams
-    canvas.drawLine(Offset(22 * sx, 128 * sy), Offset(31 * sx, 128 * sy), panelSeamPaint);
-    canvas.drawLine(Offset(289 * sx, 128 * sy), Offset(298 * sx, 128 * sy), panelSeamPaint);
+    canvas.drawLine(
+      Offset(22 * sx, 128 * sy),
+      Offset(31 * sx, 128 * sy),
+      panelSeamPaint,
+    );
+    canvas.drawLine(
+      Offset(289 * sx, 128 * sy),
+      Offset(298 * sx, 128 * sy),
+      panelSeamPaint,
+    );
     // Rear left & right panel seams
-    canvas.drawLine(Offset(22 * sx, 614 * sy), Offset(30 * sx, 614 * sy), panelSeamPaint);
-    canvas.drawLine(Offset(290 * sx, 614 * sy), Offset(298 * sx, 614 * sy), panelSeamPaint);
+    canvas.drawLine(
+      Offset(22 * sx, 614 * sy),
+      Offset(30 * sx, 614 * sy),
+      panelSeamPaint,
+    );
+    canvas.drawLine(
+      Offset(290 * sx, 614 * sy),
+      Offset(298 * sx, 614 * sy),
+      panelSeamPaint,
+    );
 
     // Integrated front headlamp clusters (flush inside front bumper curvature)
     _drawIntegratedHeadlamps(canvas, sx, sy);
@@ -312,8 +326,7 @@ class BusInteriorBasePainter extends CustomPainter {
     );
 
     // Aisle floor subtly distinct from cabin base
-    final aislePaint = Paint()
-      ..color = const Color(0xFF192231);
+    final aislePaint = Paint()..color = const Color(0xFF192231);
     canvas.drawRRect(aisleRect, aislePaint);
 
     // Soft border defining the aisle edge without stark high-contrast lines
@@ -351,11 +364,7 @@ class BusInteriorBasePainter extends CustomPainter {
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          Color(0x3560A5FA),
-          Color(0x1838BDF8),
-          Color(0x080F172A),
-        ],
+        colors: [Color(0x3560A5FA), Color(0x1838BDF8), Color(0x080F172A)],
         stops: [0.0, 0.55, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, w, 90 * sy));
     final windshieldOutline = Paint()
@@ -412,10 +421,7 @@ class BusInteriorBasePainter extends CustomPainter {
       Rect.fromLTWH(50 * sx, 104 * sy, 40 * sx, 38 * sy),
       Radius.circular(7 * sx),
     );
-    canvas.drawRRect(
-      driverBase,
-      Paint()..color = const Color(0xFF283347),
-    );
+    canvas.drawRRect(driverBase, Paint()..color = const Color(0xFF283347));
     canvas.drawRRect(
       driverBase,
       Paint()
@@ -429,10 +435,7 @@ class BusInteriorBasePainter extends CustomPainter {
       Rect.fromLTWH(56 * sx, 98 * sy, 28 * sx, 8 * sy),
       Radius.circular(3.5 * sx),
     );
-    canvas.drawRRect(
-      driverHeadrest,
-      Paint()..color = const Color(0xFF3B4861),
-    );
+    canvas.drawRRect(driverHeadrest, Paint()..color = const Color(0xFF3B4861));
 
     // Steering Wheel Assembly (Offset at driver cockpit center)
     final steerCenter = Offset(70 * sx, 101 * sy);
@@ -481,20 +484,14 @@ class BusInteriorBasePainter extends CustomPainter {
       Rect.fromLTWH(288 * sx, 148 * sy, 6 * sx, 48 * sy),
       Radius.circular(2.5 * sx),
     );
-    canvas.drawRRect(
-      doorCutout,
-      Paint()..color = const Color(0xFF01589F),
-    );
+    canvas.drawRRect(doorCutout, Paint()..color = const Color(0xFF01589F));
 
     // Stairwell Recessed Cavity directly opposite the door opening
     final stairCavity = RRect.fromRectAndRadius(
       Rect.fromLTWH(228 * sx, 148 * sy, 58 * sx, 48 * sy),
       Radius.circular(5 * sx),
     );
-    canvas.drawRRect(
-      stairCavity,
-      Paint()..color = const Color(0xFF0B1120),
-    );
+    canvas.drawRRect(stairCavity, Paint()..color = const Color(0xFF0B1120));
     canvas.drawRRect(
       stairCavity,
       Paint()
@@ -514,13 +511,15 @@ class BusInteriorBasePainter extends CustomPainter {
         Rect.fromLTWH(stepLeft, stepTop, stepWidth, 11 * sy),
         Radius.circular(2 * sx),
       );
-      canvas.drawRRect(
-        stepRRect,
-        Paint()..color = const Color(0xFF1E293B),
-      );
+      canvas.drawRRect(stepRRect, Paint()..color = const Color(0xFF1E293B));
 
       // Subtle yellow safety warning strip on the edge
-      final edgeRect = Rect.fromLTWH(stepLeft, stepTop + 9 * sy, stepWidth, 2 * sy);
+      final edgeRect = Rect.fromLTWH(
+        stepLeft,
+        stepTop + 9 * sy,
+        stepWidth,
+        2 * sy,
+      );
       canvas.drawRect(
         edgeRect,
         Paint()..color = const Color(0xFFF59E0B).withValues(alpha: 0.8),
@@ -578,11 +577,7 @@ class BusInteriorBasePainter extends CustomPainter {
       ..strokeWidth = 1.4 * sx;
     for (int i = 0; i < 5; i++) {
       final vy = (634 + i * 4) * sy;
-      canvas.drawLine(
-        Offset(120 * sx, vy),
-        Offset(200 * sx, vy),
-        ventPaint,
-      );
+      canvas.drawLine(Offset(120 * sx, vy), Offset(200 * sx, vy), ventPaint);
     }
 
     // Rear Impact Bumper
@@ -590,10 +585,7 @@ class BusInteriorBasePainter extends CustomPainter {
       Rect.fromLTWH(70 * sx, 658 * sy, 180 * sx, 6 * sy),
       Radius.circular(3 * sx),
     );
-    canvas.drawRRect(
-      rearBumper,
-      Paint()..color = const Color(0xFF475569),
-    );
+    canvas.drawRRect(rearBumper, Paint()..color = const Color(0xFF475569));
   }
 
   /// Draws realistic LED headlamp clusters integrated directly into the front body shell corners

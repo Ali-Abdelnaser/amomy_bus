@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../domain/entities/topup_entities.dart';
 
 class PaymentMethodStepWidget extends StatelessWidget {
@@ -27,15 +28,7 @@ class PaymentMethodStepWidget extends StatelessWidget {
 
   void _copyIdentifier(BuildContext context, String identifier) {
     Clipboard.setData(ClipboardData(text: identifier));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.topUpCopiedToast),
-        backgroundColor: AppColors.primaryDark,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnackBar.showSuccess(context, context.l10n.topUpCopiedToast);
   }
 
   @override
@@ -65,7 +58,9 @@ class PaymentMethodStepWidget extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.3) : Colors.white,
+                  color: isSelected
+                      ? AppColors.primaryLight.withValues(alpha: 0.3)
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected ? AppColors.primary : AppColors.border,
@@ -78,7 +73,9 @@ class PaymentMethodStepWidget extends StatelessWidget {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : AppColors.surfaceSoft,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.surfaceSoft,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -96,7 +93,9 @@ class PaymentMethodStepWidget extends StatelessWidget {
                             method.localizedName(isArabic),
                             style: AppTextStyles.titleSmall.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                              color: isSelected
+                                  ? AppColors.primaryDark
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -116,7 +115,9 @@ class PaymentMethodStepWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.border,
                           width: isSelected ? 6 : 1.5,
                         ),
                       ),
@@ -142,17 +143,29 @@ class PaymentMethodStepWidget extends StatelessWidget {
                   children: [
                     Text(
                       l10n.topUpRecipientAccount,
-                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     InkWell(
-                      onTap: () => _copyIdentifier(context, selectedMethod!.accountIdentifier),
+                      onTap: () => _copyIdentifier(
+                        context,
+                        selectedMethod!.accountIdentifier,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(AppIcons.info, size: 14, color: AppColors.primary),
+                            const Icon(
+                              AppIcons.info,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
                             AppSpacing.gapW4,
                             Text(
                               l10n.topUpCopyAccount,

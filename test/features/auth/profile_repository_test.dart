@@ -72,43 +72,51 @@ void main() {
       expect(user.phone, equals('01012345678'));
     });
 
-    test('returns Error(ValidationFailure) on duplicate phone/email (code 23505)', () async {
-      fakeRemoteDataSource.exceptionToThrow = const PostgrestException(
-        message: 'duplicate key value violates unique constraint "idx_profiles_phone"',
-        code: '23505',
-      );
+    test(
+      'returns Error(ValidationFailure) on duplicate phone/email (code 23505)',
+      () async {
+        fakeRemoteDataSource.exceptionToThrow = const PostgrestException(
+          message:
+              'duplicate key value violates unique constraint "idx_profiles_phone"',
+          code: '23505',
+        );
 
-      final result = await repository.completeProfile(
-        userId: 'user-123',
-        fullName: 'Ali Abdelnaser',
-        phone: '01012345678',
-        gender: 'male',
-        dateOfBirth: DateTime(1995, 5, 20),
-      );
+        final result = await repository.completeProfile(
+          userId: 'user-123',
+          fullName: 'Ali Abdelnaser',
+          phone: '01012345678',
+          gender: 'male',
+          dateOfBirth: DateTime(1995, 5, 20),
+        );
 
-      expect(result, isA<Error<AppUser>>());
-      final failure = (result as Error<AppUser>).failure;
-      expect(failure, isA<ValidationFailure>());
-      expect(failure.statusCode, equals(409));
-    });
+        expect(result, isA<Error<AppUser>>());
+        final failure = (result as Error<AppUser>).failure;
+        expect(failure, isA<ValidationFailure>());
+        expect(failure.statusCode, equals(409));
+      },
+    );
 
-    test('returns Error(ServerFailure) on PostgrestException recursion error (code 42P17)', () async {
-      fakeRemoteDataSource.exceptionToThrow = const PostgrestException(
-        message: 'infinite recursion detected in policy for relation "profiles"',
-        code: '42P17',
-      );
+    test(
+      'returns Error(ServerFailure) on PostgrestException recursion error (code 42P17)',
+      () async {
+        fakeRemoteDataSource.exceptionToThrow = const PostgrestException(
+          message:
+              'infinite recursion detected in policy for relation "profiles"',
+          code: '42P17',
+        );
 
-      final result = await repository.completeProfile(
-        userId: 'user-123',
-        fullName: 'Ali Abdelnaser',
-        phone: '01012345678',
-        gender: 'male',
-        dateOfBirth: DateTime(1995, 5, 20),
-      );
+        final result = await repository.completeProfile(
+          userId: 'user-123',
+          fullName: 'Ali Abdelnaser',
+          phone: '01012345678',
+          gender: 'male',
+          dateOfBirth: DateTime(1995, 5, 20),
+        );
 
-      expect(result, isA<Error<AppUser>>());
-      final failure = (result as Error<AppUser>).failure;
-      expect(failure, isA<ServerFailure>());
-    });
+        expect(result, isA<Error<AppUser>>());
+        final failure = (result as Error<AppUser>).failure;
+        expect(failure, isA<ServerFailure>());
+      },
+    );
   });
 }

@@ -11,31 +11,43 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMessageHandler('flutter/assets', (ByteData? message) async {
-      if (message == null) return null;
-      final key = utf8.decode(message.buffer.asUint8List());
-      if (key == 'AssetManifest.bin') {
-        return const StandardMessageCodec().encodeMessage(<String, Object?>{
-          'google_fonts/Tajawal-Bold.ttf': <Object?>['google_fonts/Tajawal-Bold.ttf'],
-          'google_fonts/Tajawal-Medium.ttf': <Object?>['google_fonts/Tajawal-Medium.ttf'],
-          'google_fonts/Tajawal-Regular.ttf': <Object?>['google_fonts/Tajawal-Regular.ttf'],
-          'google_fonts/OpenSans-Bold.ttf': <Object?>['google_fonts/OpenSans-Bold.ttf'],
-          'google_fonts/OpenSans-SemiBold.ttf': <Object?>['google_fonts/OpenSans-SemiBold.ttf'],
-          'google_fonts/OpenSans-Medium.ttf': <Object?>['google_fonts/OpenSans-Medium.ttf'],
-          'google_fonts/OpenSans-Regular.ttf': <Object?>['google_fonts/OpenSans-Regular.ttf'],
+          if (message == null) return null;
+          final key = utf8.decode(message.buffer.asUint8List());
+          if (key == 'AssetManifest.bin') {
+            return const StandardMessageCodec().encodeMessage(<String, Object?>{
+              'google_fonts/Tajawal-Bold.ttf': <Object?>[
+                'google_fonts/Tajawal-Bold.ttf',
+              ],
+              'google_fonts/Tajawal-Medium.ttf': <Object?>[
+                'google_fonts/Tajawal-Medium.ttf',
+              ],
+              'google_fonts/Tajawal-Regular.ttf': <Object?>[
+                'google_fonts/Tajawal-Regular.ttf',
+              ],
+              'google_fonts/OpenSans-Bold.ttf': <Object?>[
+                'google_fonts/OpenSans-Bold.ttf',
+              ],
+              'google_fonts/OpenSans-SemiBold.ttf': <Object?>[
+                'google_fonts/OpenSans-SemiBold.ttf',
+              ],
+              'google_fonts/OpenSans-Medium.ttf': <Object?>[
+                'google_fonts/OpenSans-Medium.ttf',
+              ],
+              'google_fonts/OpenSans-Regular.ttf': <Object?>[
+                'google_fonts/OpenSans-Regular.ttf',
+              ],
+            });
+          }
+          if (key == 'AssetManifest.json') {
+            return ByteData.sublistView(
+              utf8.encode(jsonEncode(<String, dynamic>{})),
+            );
+          }
+          if (key == 'FontManifest.json') {
+            return ByteData.sublistView(utf8.encode(jsonEncode(<dynamic>[])));
+          }
+          return ByteData(0).buffer.asByteData();
         });
-      }
-      if (key == 'AssetManifest.json') {
-        return ByteData.sublistView(
-          utf8.encode(jsonEncode(<String, dynamic>{})),
-        );
-      }
-      if (key == 'FontManifest.json') {
-        return ByteData.sublistView(
-          utf8.encode(jsonEncode(<dynamic>[])),
-        );
-      }
-      return ByteData(0).buffer.asByteData();
-    });
   });
 
   test('AppTextStyles raw styles have valid weights', () {
@@ -47,21 +59,24 @@ void main() {
     expect(AppTextStyles.rawLabelSmall.fontWeight, FontWeight.w500);
   });
 
-  test('AppTextStyles.localized applies correct font family and maps w600 for Arabic', () {
-    final arStyle = AppTextStyles.localized(
-      const TextStyle(fontWeight: FontWeight.w600),
-      locale: const Locale('ar'),
-    );
-    expect(arStyle.fontFamily, contains('Tajawal'));
-    expect(arStyle.fontWeight, FontWeight.w700);
+  test(
+    'AppTextStyles.localized applies correct font family and maps w600 for Arabic',
+    () {
+      final arStyle = AppTextStyles.localized(
+        const TextStyle(fontWeight: FontWeight.w600),
+        locale: const Locale('ar'),
+      );
+      expect(arStyle.fontFamily, contains('Tajawal'));
+      expect(arStyle.fontWeight, FontWeight.w700);
 
-    final enStyle = AppTextStyles.localized(
-      const TextStyle(fontWeight: FontWeight.w600),
-      locale: const Locale('en'),
-    );
-    expect(enStyle.fontFamily, contains('OpenSans'));
-    expect(enStyle.fontWeight, FontWeight.w600);
-  });
+      final enStyle = AppTextStyles.localized(
+        const TextStyle(fontWeight: FontWeight.w600),
+        locale: const Locale('en'),
+      );
+      expect(enStyle.fontFamily, contains('OpenSans'));
+      expect(enStyle.fontWeight, FontWeight.w600);
+    },
+  );
 
   test('AppTextStyleExtension fluent methods work correctly', () {
     const base = TextStyle(fontSize: 14);

@@ -36,7 +36,8 @@ class MapTileConfig {
   static MapTileConfig productionStadia(String apiKey) {
     final query = apiKey.isNotEmpty ? '?api_key=$apiKey' : '';
     return MapTileConfig(
-      tileUrl: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png$query',
+      tileUrl:
+          'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png$query',
       attribution: '© Stadia Maps © OpenMapTiles © OpenStreetMap contributors',
       userAgentPackageName: 'com.amomy.bus',
       maxZoom: 20,

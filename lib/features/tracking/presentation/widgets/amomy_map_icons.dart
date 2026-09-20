@@ -5,13 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Visual status states for circular bus marker.
-enum BusMarkerVisualState {
-  live,
-  atStop,
-  reconnecting,
-  offline,
-  qa,
-}
+enum BusMarkerVisualState { live, atStop, reconnecting, offline, qa }
 
 /// Visual status states for stop pins.
 enum StopPinVisualState {
@@ -101,7 +95,8 @@ class AmomyMapIcons {
     }
 
     const center = Offset(logicalSize / 2, logicalSize / 2);
-    const radius = 15.0; // 30px visual diameter + 1.5px subtle border = ~33px footprint
+    const radius =
+        15.0; // 30px visual diameter + 1.5px subtle border = ~33px footprint
 
     // 1. Subtle, compact drop shadow (no oversized shadow)
     final shadowPaint = Paint()
@@ -194,7 +189,8 @@ class AmomyMapIcons {
     final key = 'pin_${state.name}';
     if (_cache.containsKey(key)) return _cache[key]!;
 
-    final isSelected = state == StopPinVisualState.selected ||
+    final isSelected =
+        state == StopPinVisualState.selected ||
         state == StopPinVisualState.selectedLast ||
         state == StopPinVisualState.selectedNext;
     final double logicalWidth = isSelected ? 32.0 : 28.0;
@@ -385,4 +381,3 @@ class AmomyMapIcons {
     return path;
   }
 }
-

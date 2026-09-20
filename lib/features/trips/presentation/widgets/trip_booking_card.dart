@@ -85,7 +85,7 @@ class TripBookingCard extends StatelessWidget {
                 child: Text(
                   StatusLocalizer.localizeBookingStatus(
                     context,
-                    isFinished ? 'finished' : booking.status,
+                    isFinished ? 'checkedin' : booking.status,
                   ),
                   style: AppTextStyles.labelSmall.copyWith(
                     fontWeight: FontWeight.bold,
@@ -203,13 +203,16 @@ class TripBookingCard extends StatelessWidget {
   }
 
   void _showTrackingModal(BuildContext context) {
-    context.push(RoutePaths.liveBusMap);
+    context.push(
+      RoutePaths.liveTracking.replaceFirst(':tripId', booking.tripId),
+    );
   }
 
   void _showQrModal(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
     QrTicketModal.show(
       context,
+      bookingId: booking.id,
       departureTime: AppTimeFormatter.formatPassengerBooking(
         booking,
         locale: locale,

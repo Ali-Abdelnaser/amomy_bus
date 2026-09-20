@@ -6,10 +6,7 @@ import '../cubit/topup_state.dart';
 class TopUpStepIndicator extends StatelessWidget {
   final TopUpStep currentStep;
 
-  const TopUpStepIndicator({
-    super.key,
-    required this.currentStep,
-  });
+  const TopUpStepIndicator({super.key, required this.currentStep});
 
   @override
   Widget build(BuildContext context) {
@@ -124,10 +121,14 @@ class _StepItem extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           style: TextStyle(
             fontSize: 11.5,
-            fontWeight: isActive ? FontWeight.w800 : (isCompleted ? FontWeight.w600 : FontWeight.w500),
+            fontWeight: isActive
+                ? FontWeight.w800
+                : (isCompleted ? FontWeight.w600 : FontWeight.w500),
             color: isActive
                 ? AppColors.primary
-                : (isCompleted ? AppColors.textPrimary : const Color(0xFF94A3B8)),
+                : (isCompleted
+                      ? AppColors.textPrimary
+                      : const Color(0xFF94A3B8)),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

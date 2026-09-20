@@ -39,18 +39,18 @@ class PointTransaction extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        userId,
-        walletId,
-        batchId,
-        transactionType,
-        amount,
-        balanceBefore,
-        balanceAfter,
-        referenceType,
-        referenceId,
-        description,
-        metadata,
-        createdAt,
-      ];
+    id,
+    userId,
+    walletId,
+    batchId,
+    transactionType,
+    amount,
+    balanceBefore,
+    balanceAfter,
+    referenceType,
+    referenceId,
+    description,
+    metadata,
+    createdAt,
+  ];
 }

@@ -1399,6 +1399,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackingEtaUnavailable => 'ETA unavailable';
 
   @override
+  String get trackingConfirmedTitle => 'Your trip is confirmed';
+
+  @override
+  String get trackingWaitingAssignmentSubtitle =>
+      'Live tracking will be available when your bus is assigned.';
+
+  @override
+  String get trackingReadyTitle => 'Ready for your trip';
+
+  @override
+  String get trackingWaitingStartSubtitle =>
+      'Live tracking will start when the driver starts the trip.';
+
+  @override
+  String get trackingUpdatingBusTitle => 'Updating your bus';
+
+  @override
+  String get trackingReassignmentPendingSubtitle =>
+      'Live tracking will resume shortly.';
+
+  @override
+  String get trackingGpsStaleTitle => 'Bus location is temporarily delayed';
+
+  @override
+  String get trackingGpsOfflineTitle =>
+      'Live location is temporarily unavailable';
+
+  @override
+  String get trackingGpsOfflineSubtitle =>
+      'The trip is active. We\'re waiting for a new location update.';
+
+  @override
+  String get trackingProgressionSyncing => 'Updating trip progress…';
+
+  @override
+  String get trackingLastKnownLocation => 'Last known location';
+
+  @override
+  String get trackingPendingPill => 'PENDING';
+
+  @override
+  String get trackingReadyPill => 'READY';
+
+  @override
+  String get trackingUpdatingPill => 'UPDATING';
+
+  @override
+  String get trackingDelayedPill => 'DELAYED';
+
+  @override
+  String get trackingSyncingPill => 'SYNCING';
+
+  @override
+  String get trackingCompletedPill => 'COMPLETED';
+
+  @override
+  String get trackingCancelledPill => 'CANCELLED';
+
+  @override
+  String get trackingEndedPill => 'ENDED';
+
+  @override
+  String get trackingLastUpdatedJustNow => 'Updated just now';
+
+  @override
+  String trackingLastUpdatedSeconds(int seconds) {
+    return 'Updated $seconds seconds ago';
+  }
+
+  @override
+  String trackingLastUpdatedMinutes(int minutes) {
+    return 'Last updated $minutes min ago';
+  }
+
+  @override
   String get trackingResumesMidday => 'Tracking resumes at 1:00 PM';
 
   @override
@@ -1471,4 +1546,230 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logout => 'Sign Out';
+
+  @override
+  String get singleTrip => 'One-way';
+
+  @override
+  String get roundTrip => 'Round Trip';
+
+  @override
+  String get roundTripDiscountBadge => '15% OFF';
+
+  @override
+  String get returnDepartureTimeTitle => 'Return Time';
+
+  @override
+  String get selectOutboundSeat => 'Select Outbound Seat';
+
+  @override
+  String get selectReturnSeat => 'Select Return Seat';
+
+  @override
+  String get proceedToReturnSeat => 'Continue to Return Seat';
+
+  @override
+  String get outboundFareLabel => 'Outbound Fare';
+
+  @override
+  String get returnFareLabel => 'Return Fare';
+
+  @override
+  String get subtotalFareLabel => 'Subtotal';
+
+  @override
+  String get roundTripDiscountLabel => 'Round Trip Discount 15%';
+
+  @override
+  String get totalAfterDiscountLabel => 'Total after discount';
+
+  @override
+  String get confirmRoundTripBooking => 'Confirm Round Trip Booking';
+
+  @override
+  String get roundTripSuccessTitle => 'Round Trip Booked Successfully';
+
+  @override
+  String get outboundTimeLabel => 'Outbound Time';
+
+  @override
+  String get outboundSeatLabel => 'Outbound Seat';
+
+  @override
+  String get returnTimeLabel => 'Return Time';
+
+  @override
+  String get returnSeatLabel => 'Return Seat';
+
+  @override
+  String savedPointsNotice(int points) {
+    return 'You saved $points points';
+  }
+
+  @override
+  String get cancelRoundTripTitle => 'Cancel Round Trip Booking';
+
+  @override
+  String get cancelRoundTripMessage =>
+      'This booking is part of a 15% discounted Round Trip bundle. Cancelling will cancel both Outbound and Return trips together.';
+
+  @override
+  String get cancelBothLegsCta => 'Cancel Both Trips & Refund';
+
+  @override
+  String get roundTripCancellationClosed =>
+      'Cancellation is closed after departure cutoff or if either trip has been used.';
+
+  @override
+  String get noReturnTripsAvailable => 'No return trips available today';
+
+  @override
+  String get errorRoundTripMustStartWithOutbound =>
+      'Round Trip booking is only available when starting from the Outbound direction.';
+
+  @override
+  String get errorInvalidRoundTripDirections =>
+      'Outbound and Return trips must be in opposite directions.';
+
+  @override
+  String get errorRoundTripSameDayRequired =>
+      'Outbound and Return trips must be on the same service day.';
+
+  @override
+  String get errorReturnMustBeAfterOutbound =>
+      'Return trip departure must be after Outbound departure.';
+
+  @override
+  String get errorRoundTripDiscountAlreadyUsedToday =>
+      'You have already used your daily round-trip discount.';
+
+  @override
+  String get errorRoundTripRequiresUnbookedTrips =>
+      'You already have a booking on one of the selected trips.';
+
+  @override
+  String get errorRoundTripHoldAlreadyActive =>
+      'You already have an active round-trip hold.';
+
+  @override
+  String get errorRoundTripHoldNotFound => 'Round-trip hold not found.';
+
+  @override
+  String get errorRoundTripHoldInvalid =>
+      'Round-trip hold is invalid or expired.';
+
+  @override
+  String get errorReturnSeatRequired => 'Please select a return seat first.';
+
+  @override
+  String get errorRoundTripCancellationWindowClosed =>
+      'Cancellation window for this round-trip bundle has closed.';
+
+  @override
+  String get errorRoundTripAlreadyUsed =>
+      'Cannot cancel after a trip in the bundle has been checked-in or completed.';
+
+  @override
+  String get errorRoundTripBundleNotCancellable =>
+      'This bundle is not cancellable.';
+
+  @override
+  String get errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get errorNoInternet =>
+      'No internet connection. Check your network and try again.';
+
+  @override
+  String get errorTimeout => 'The connection took too long. Please try again.';
+
+  @override
+  String get errorServerUnreachable =>
+      'We couldn\'t connect to the server right now. Please try again shortly.';
+
+  @override
+  String get errorNetworkProblem =>
+      'A network problem occurred. Please try again.';
+
+  @override
+  String get errorInvalidLogin => 'Incorrect email or password.';
+
+  @override
+  String get errorEmailNotConfirmed => 'Please confirm your email first.';
+
+  @override
+  String get errorUserAlreadyExists =>
+      'An account with this email already exists.';
+
+  @override
+  String get errorInvalidEmail => 'Please enter a valid email address.';
+
+  @override
+  String get errorWeakPassword =>
+      'Your password is too weak. Please choose a stronger password.';
+
+  @override
+  String get errorSessionExpired =>
+      'Your session has expired. Please sign in again.';
+
+  @override
+  String get errorNotAuthenticated => 'Please sign in to continue.';
+
+  @override
+  String get errorRateLimited => 'Too many attempts. Please try again shortly.';
+
+  @override
+  String get errorOtpInvalid => 'The verification code is incorrect.';
+
+  @override
+  String get errorOtpExpired =>
+      'The verification code has expired. Request a new one.';
+
+  @override
+  String get errorPasswordReset =>
+      'We couldn\'t send the password reset link. Please try again.';
+
+  @override
+  String get errorGoogleSignInCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get errorGoogleSignInFailed =>
+      'We couldn\'t sign you in with Google. Please try again.';
+
+  @override
+  String get errorAuthUnknown =>
+      'Something went wrong while signing in. Please try again.';
+
+  @override
+  String get errorTrackingAccessDenied =>
+      'You are not authorized to track this trip.';
+
+  @override
+  String get errorWalletNotFound => 'Wallet not found. Please contact support.';
+
+  @override
+  String get errorSeatAlreadyBooked =>
+      'The selected seat is no longer available. Please select another seat.';
+
+  @override
+  String get errorTripCancelled => 'This trip has been cancelled.';
+
+  @override
+  String get errorTripCompleted => 'This trip is already completed.';
+
+  @override
+  String get errorBookingNotBoardable =>
+      'Booking is not eligible for boarding now.';
+
+  @override
+  String get errorAlreadyCheckedIn => 'Already checked in.';
+
+  @override
+  String get errorTooEarly => 'Trip time is too early.';
+
+  @override
+  String get errorWrongTrip => 'Ticket is for another trip.';
+
+  @override
+  String get errorInvalidToken => 'Invalid ticket code.';
 }

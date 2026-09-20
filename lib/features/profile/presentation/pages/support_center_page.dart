@@ -36,10 +36,7 @@ class SupportCenterPage extends StatelessWidget {
     final contact = ProfilePlaceholderConfig.support;
 
     return AppScaffold(
-      appBar: AppAppBar(
-        title: l10n.supportCenter,
-        showBackButton: true,
-      ),
+      appBar: AppAppBar(title: l10n.supportCenter, showBackButton: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -91,29 +88,55 @@ class SupportCenterPage extends StatelessWidget {
                     title: l10n.emailSupport,
                     subtitle: contact.supportEmail,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, contact.supportEmail, l10n.emailSupport),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      contact.supportEmail,
+                      l10n.emailSupport,
+                    ),
                   ),
                   ProfileSettingTile(
                     icon: AppIcons.phone,
                     title: l10n.callUs,
                     subtitle: contact.supportPhone,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, contact.supportPhone, l10n.callUs),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      contact.supportPhone,
+                      l10n.callUs,
+                    ),
                   ),
                   ProfileSettingTile(
                     icon: AppIcons.messageCircle,
                     title: l10n.whatsApp,
                     subtitle: contact.whatsAppNumber,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, contact.whatsAppNumber, l10n.whatsApp),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      contact.whatsAppNumber,
+                      l10n.whatsApp,
+                    ),
                   ),
                   ProfileSettingTile(
                     icon: AppIcons.clock,
                     title: l10n.workingHours,
-                    subtitle: isAr ? contact.workingHoursAr : contact.workingHoursEn,
+                    subtitle: isAr
+                        ? contact.workingHoursAr
+                        : contact.workingHoursEn,
                     showChevron: false,
                   ),
                 ],
@@ -151,10 +174,7 @@ class _FaqTile extends StatelessWidget {
   final String question;
   final String answer;
 
-  const _FaqTile({
-    required this.question,
-    required this.answer,
-  });
+  const _FaqTile({required this.question, required this.answer});
 
   @override
   Widget build(BuildContext context) {

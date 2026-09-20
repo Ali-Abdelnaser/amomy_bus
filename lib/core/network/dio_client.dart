@@ -10,17 +10,17 @@ class DioClient {
   final Dio _dio;
 
   DioClient(AuthInterceptor authInterceptor)
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: AppConfig.instance.apiBaseUrl,
-            connectTimeout: AppConstants.connectTimeout,
-            receiveTimeout: AppConstants.receiveTimeout,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-          ),
-        ) {
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: AppConfig.instance.apiBaseUrl,
+          connectTimeout: AppConstants.connectTimeout,
+          receiveTimeout: AppConstants.receiveTimeout,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      ) {
     _dio.interceptors.add(authInterceptor);
 
     if (AppConfig.instance.enableLogging) {

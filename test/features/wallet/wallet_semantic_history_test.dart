@@ -262,6 +262,54 @@ void main() {
     );
 
     testWidgets(
+      'J. round_trip_booking renders "حجز ذهاب وعودة" in Arabic and signed amount',
+      (tester) async {
+        final json = {
+          'event_id': 'rt-evt-1',
+          'semantic_type': 'round_trip_booking',
+          'signed_amount': -34,
+          'created_at': '2026-09-21T13:24:43.308087+00:00',
+          'bundle_id': '020e0892-3bd5-4bf4-9059-ebd46b7a2e9d',
+          'outbound_departure_at': '2026-09-21T05:00:00+00:00',
+          'return_departure_at': '2026-09-21T13:00:00+00:00',
+          'outbound_seat_number': '2',
+          'return_seat_number': '2',
+          'total_paid_points': 34,
+        };
+        final event = WalletHistoryEventModel.fromJson(json);
+        expect(event.semanticType, WalletSemanticType.roundTripBooking);
+        expect(event.signedAmount, -34);
+        expect(event.bundleId, '020e0892-3bd5-4bf4-9059-ebd46b7a2e9d');
+
+        // Arabic
+        await tester.pumpWidget(
+          buildWidget(
+            WalletHistoryEventTile(event: event),
+            locale: const Locale('ar'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('حجز ذهاب وعودة'), findsOneWidget);
+        expect(find.text('تعديل رصيد'), findsNothing);
+        expect(find.text('-34 نقطة'), findsOneWidget);
+
+        // English
+        await tester.pumpWidget(
+          buildWidget(
+            WalletHistoryEventTile(event: event),
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Round Trip Booking'), findsOneWidget);
+        expect(find.text('Balance Adjustment'), findsNothing);
+        expect(find.text('-34 PTS'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'Phase 5C.1: invalid or missing created_at never displays a fabricated current timestamp and omits date/time',
       (tester) async {
         // Missing created_at

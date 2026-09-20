@@ -65,7 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthFailureState) {
-          AppSnackBar.showError(context, state.failure.message);
+          AppSnackBar.showError(context, state.failure);
         } else if (state is EmailVerificationRequired) {
           context.go('/verify-email', extra: state.email);
         } else if (state is Authenticated) {

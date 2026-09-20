@@ -14,13 +14,16 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/booking_entities.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../cubit/booking_cubit.dart';
 import 'app_qr_ticket_widget.dart';
 
-/// Boarding ticket shown after a confirmed booking with realistic printer dispensing animation.
 class BookingSuccessView extends StatefulWidget {
-  final PassengerBooking booking;
+  final PassengerBooking? booking;
+  final RoundTripConfirmation? bundleConfirmation;
 
-  const BookingSuccessView({super.key, required this.booking});
+  const BookingSuccessView({super.key, this.booking, this.bundleConfirmation})
+    : assert(booking != null || bundleConfirmation != null);
 
   @override
   State<BookingSuccessView> createState() => _BookingSuccessViewState();
@@ -89,10 +92,14 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isArabic = Localizations.localeOf(
       context,
     ).languageCode.startsWith('ar');
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    final isBundle = widget.bundleConfirmation != null;
+    final bundle = widget.bundleConfirmation;
 
     return Container(
       color: const Color(0xFFF8FAFC), // Crisp paper background contrast
@@ -109,12 +116,16 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Animated success check & 2. Localized title & 3. Subtitle
-              const _ConfirmationHeader(),
+              _ConfirmationHeader(
+                title: l10n.bookingSuccessTitle,
+                subtitle: l10n.bookingSuccessSubtitle,
+              ),
               AppSpacing.gapH20,
 
               // 4. Stylized printer slot & 5. Animated emerging ticket
               _TicketPrinterSection(
                 booking: widget.booking,
+                bundle: bundle,
                 isArabic: isArabic,
                 animation: _animation,
                 fadeAnimation: _fadeAnimation,
@@ -133,7 +144,11 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
 
 /// Redesigned bold confirmation badge with multi-layer pulsing rings and spring animation.
 class _ConfirmationHeader extends StatefulWidget {
-  const _ConfirmationHeader();
+  final String? title;
+  final String? subtitle;
+  final String? savingsBadge;
+
+  const _ConfirmationHeader({this.title, this.subtitle, this.savingsBadge});
 
   @override
   State<_ConfirmationHeader> createState() => _ConfirmationHeaderState();
@@ -300,7 +315,7 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
             child: Column(
               children: [
                 Text(
-                  l10n.bookingSuccessTitle,
+                  widget.title ?? l10n.bookingSuccessTitle,
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w800,
@@ -309,13 +324,42 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
                 ),
                 AppSpacing.gapH4,
                 Text(
-                  l10n.bookingSuccessSubtitle,
+                  widget.subtitle ?? l10n.bookingSuccessSubtitle,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    color: widget.savingsBadge != null
+                        ? const Color(0xFF15803D)
+                        : AppColors.textSecondary,
+                    fontWeight: widget.savingsBadge != null
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                if (widget.savingsBadge != null) ...[
+                  AppSpacing.gapH8,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF86EFAC),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      widget.savingsBadge!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -325,15 +369,208 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
   }
 }
 
+/// Round Trip compact 3-row summary for the ticket bottom area.
+class _RoundTripTicketSummary extends StatelessWidget {
+  final RoundTripConfirmation bundle;
+  final bool isArabic;
+
+  const _RoundTripTicketSummary({
+    required this.bundle,
+    required this.isArabic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final pointsUnit = l10n.pointsUnit;
+
+    // 1. Authoritative bundle values
+    final subtotal = bundle.subtotalPoints;
+    final discountPercent = bundle.discountPercent;
+    final discountPoints = bundle.discountPoints;
+
+    // 2. Authoritative leg fares
+    double outboundFare = 0;
+    double returnFare = 0;
+
+    try {
+      final bookingState = context.read<BookingCubit>().state;
+      final retOpt = bookingState.selectedReturnOption;
+      final hold = bookingState.bundleHold;
+
+      outboundFare = (retOpt != null && retOpt.outboundBaseFarePoints > 0)
+          ? retOpt.outboundBaseFarePoints.toDouble()
+          : ((hold != null && hold.outboundBaseFarePoints > 0)
+              ? hold.outboundBaseFarePoints
+              : (bookingState.selectedRouteStop?.farePoints ??
+                  bookingState.selectedTrip?.farePoints ??
+                  0));
+
+      returnFare = (retOpt != null && retOpt.returnBaseFarePoints > 0)
+          ? retOpt.returnBaseFarePoints.toDouble()
+          : ((hold != null && hold.returnBaseFarePoints > 0)
+              ? hold.returnBaseFarePoints
+              : 0);
+    } catch (_) {}
+
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // ROW 1: Outbound + Return Leg Fares
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: isArabic ? 'ذهاب ' : 'Outbound ',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    TextSpan(
+                      text: '${outboundFare.toInt()} $pointsUnit',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  '+',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: isArabic ? 'عودة ' : 'Return ',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    TextSpan(
+                      text: '${returnFare.toInt()} $pointsUnit',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // ROW 2: Subtotal
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isArabic ? 'الإجمالي' : 'Subtotal',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                Text(
+                  '${subtotal.toInt()} $pointsUnit',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ROW 3: Discount + Savings
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isArabic
+                      ? 'خصم ذهاب وعودة ${discountPercent.toInt()}%'
+                      : 'Round Trip Discount ${discountPercent.toInt()}%',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0284C7),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isArabic
+                        ? 'وفرت ${discountPoints.toInt()} نقاط'
+                        : 'Saved ${discountPoints.toInt()} pts',
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF15803D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Printer output area + ticket emerging downwards with realistic receipt animation.
 class _TicketPrinterSection extends StatelessWidget {
-  final PassengerBooking booking;
+  final PassengerBooking? booking;
+  final RoundTripConfirmation? bundle;
   final bool isArabic;
   final Animation<double> animation;
   final Animation<double> fadeAnimation;
 
   const _TicketPrinterSection({
-    required this.booking,
+    this.booking,
+    this.bundle,
     required this.isArabic,
     required this.animation,
     required this.fadeAnimation,
@@ -375,6 +612,7 @@ class _TicketPrinterSection extends StatelessWidget {
                         height: ticketHeight,
                         child: _BookingTicket(
                           booking: booking,
+                          bundle: bundle,
                           isArabic: isArabic,
                         ),
                       ),
@@ -511,19 +749,31 @@ class _PrinterSlot extends StatelessWidget {
 
 /// Official SVG Ticket Card displaying QR code on top and 3 meta columns at bottom with paper depth.
 class _BookingTicket extends StatelessWidget {
-  final PassengerBooking booking;
+  final PassengerBooking? booking;
+  final RoundTripConfirmation? bundle;
   final bool isArabic;
 
-  const _BookingTicket({required this.booking, required this.isArabic});
+  const _BookingTicket({
+    this.booking,
+    this.bundle,
+    required this.isArabic,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final departureTime = AppTimeFormatter.formatPassengerBooking(
-      booking,
-      isArabic: isArabic,
-    );
-    final fare = '${booking.farePoints.toInt()} ${l10n.pointsUnit}';
+    final isRoundTrip = bundle != null;
+
+    final departureTime = booking != null
+        ? AppTimeFormatter.formatPassengerBooking(
+            booking!,
+            isArabic: isArabic,
+          )
+        : '';
+    final fare = booking != null
+        ? '${booking!.farePoints.toInt()} ${l10n.pointsUnit}'
+        : '';
+    final qrData = booking?.qrToken ?? bundle?.bundleId ?? '';
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -572,32 +822,48 @@ class _BookingTicket extends StatelessWidget {
                   bottom: height * (175 / 633),
                   child: Center(
                     child: AppQrTicketWidget(
-                      data: booking.qrToken,
+                      data: qrData,
                       size: qrSize,
                     ),
                   ),
                 ),
 
-                // 3. Lower area: exactly 3 columns (TIME, SEAT, FEES)
-                Positioned(
-                  left: width * (20 / 444),
-                  right: width * (20 / 444),
-                  top: height * (490 / 633),
-                  bottom: height * (22 / 633),
-                  child: Row(
-                    children: [
-                      _TicketValue(
-                        label: l10n.bookingTicketTime,
-                        value: departureTime,
-                      ),
-                      _TicketValue(
-                        label: l10n.bookingTicketSeat,
-                        value: booking.seatNumber,
-                      ),
-                      _TicketValue(label: l10n.bookingTicketFees, value: fare),
-                    ],
+                // 3. Lower area below the QR
+                if (isRoundTrip)
+                  Positioned(
+                    left: width * (28 / 444),
+                    right: width * (28 / 444),
+                    top: height * (482 / 633),
+                    bottom: height * (18 / 633),
+                    child: _RoundTripTicketSummary(
+                      bundle: bundle!,
+                      isArabic: isArabic,
+                    ),
+                  )
+                else if (booking != null)
+                  // Single Trip UNCHANGED: exactly 3 columns (TIME, SEAT, FEES)
+                  Positioned(
+                    left: width * (20 / 444),
+                    right: width * (20 / 444),
+                    top: height * (490 / 633),
+                    bottom: height * (22 / 633),
+                    child: Row(
+                      children: [
+                        _TicketValue(
+                          label: l10n.bookingTicketTime,
+                          value: departureTime,
+                        ),
+                        _TicketValue(
+                          label: l10n.bookingTicketSeat,
+                          value: booking!.seatNumber,
+                        ),
+                        _TicketValue(
+                          label: l10n.bookingTicketFees,
+                          value: fare,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           );

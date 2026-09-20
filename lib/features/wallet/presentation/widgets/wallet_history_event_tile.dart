@@ -78,7 +78,7 @@ class WalletHistoryEventTile extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                       color: AppColors.textSecondary,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -120,6 +120,24 @@ class WalletHistoryEventTile extends StatelessWidget {
         : '';
 
     switch (event.semanticType) {
+      case WalletSemanticType.roundTripBooking:
+        final title = isArabic ? 'حجز ذهاب وعودة' : 'Round Trip Booking';
+        final subtitle = _buildRoundTripSubtitle(
+          event: event,
+          isArabic: isArabic,
+          dateFormat: dateFormat,
+          timeFormat: timeFormat,
+          fallbackDate: formattedCreatedAt,
+          l10n: l10n,
+        );
+        return (
+          title,
+          subtitle,
+          Icons.directions_bus_rounded,
+          const Color(0xFFE7F2FA),
+          AppColors.primary,
+        );
+
       case WalletSemanticType.tripBooking:
       case WalletSemanticType.extraSeat:
       case WalletSemanticType.refund:
@@ -211,6 +229,8 @@ class WalletHistoryEventTile extends StatelessWidget {
 
   String _resolveTripTitle(WalletSemanticType type, dynamic l10n) {
     switch (type) {
+      case WalletSemanticType.roundTripBooking:
+        return l10n.txTypeTrip;
       case WalletSemanticType.tripBooking:
         return l10n.txTypeTripBooking;
       case WalletSemanticType.extraSeat:
@@ -220,6 +240,53 @@ class WalletHistoryEventTile extends StatelessWidget {
       default:
         return l10n.txTypeTrip;
     }
+  }
+
+  String _buildRoundTripSubtitle({
+    required WalletHistoryEvent event,
+    required bool isArabic,
+    required DateFormat dateFormat,
+    required DateFormat timeFormat,
+    required String fallbackDate,
+    required dynamic l10n,
+  }) {
+    final outTime = event.outboundDepartureAt ?? event.departureAt;
+    final retTime = event.returnDepartureAt;
+    final outSeat = event.outboundSeatNumber ?? event.seatNumber;
+    final retSeat = event.returnSeatNumber;
+
+    if (outTime != null && retTime != null) {
+      final outTimeStr = timeFormat.format(outTime.toLocal());
+      final retTimeStr = timeFormat.format(retTime.toLocal());
+
+      final outSeatStr = outSeat != null && outSeat.trim().isNotEmpty
+          ? (isArabic ? 'مقعد ${outSeat.trim()}' : 'Seat ${outSeat.trim()}')
+          : null;
+      final retSeatStr = retSeat != null && retSeat.trim().isNotEmpty
+          ? (isArabic ? 'مقعد ${retSeat.trim()}' : 'Seat ${retSeat.trim()}')
+          : null;
+
+      final outPart = [
+        isArabic ? 'ذهاب $outTimeStr' : 'Outbound $outTimeStr',
+        if (outSeatStr != null) outSeatStr,
+      ].join(' • ');
+
+      final retPart = [
+        isArabic ? 'عودة $retTimeStr' : 'Return $retTimeStr',
+        if (retSeatStr != null) retSeatStr,
+      ].join(' • ');
+
+      return '$outPart\n$retPart';
+    }
+
+    return _buildTripSubtitle(
+      event: event,
+      isArabic: isArabic,
+      dateFormat: dateFormat,
+      timeFormat: timeFormat,
+      fallbackDate: fallbackDate,
+      l10n: l10n,
+    );
   }
 
   String _buildTripSubtitle({
@@ -261,6 +328,7 @@ class WalletHistoryEventTile extends StatelessWidget {
 
   (IconData, Color, Color) _resolveTripColors(WalletSemanticType type) {
     switch (type) {
+      case WalletSemanticType.roundTripBooking:
       case WalletSemanticType.tripBooking:
         return (
           Icons.directions_bus_rounded,

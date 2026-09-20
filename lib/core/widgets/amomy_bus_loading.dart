@@ -25,20 +25,14 @@ class AmomyBusLoading extends StatelessWidget {
     this.message,
   });
 
-  const AmomyBusLoading.small({
-    super.key,
-    this.message,
-  }) : size = AmomyLoadingSize.small;
+  const AmomyBusLoading.small({super.key, this.message})
+    : size = AmomyLoadingSize.small;
 
-  const AmomyBusLoading.medium({
-    super.key,
-    this.message,
-  }) : size = AmomyLoadingSize.medium;
+  const AmomyBusLoading.medium({super.key, this.message})
+    : size = AmomyLoadingSize.medium;
 
-  const AmomyBusLoading.large({
-    super.key,
-    this.message,
-  }) : size = AmomyLoadingSize.large;
+  const AmomyBusLoading.large({super.key, this.message})
+    : size = AmomyLoadingSize.large;
 
   @override
   Widget build(BuildContext context) {

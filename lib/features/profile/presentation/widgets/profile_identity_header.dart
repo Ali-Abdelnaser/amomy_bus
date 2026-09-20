@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
@@ -94,12 +95,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.avatarUpdateFailed),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                    AppSnackBar.showError(context, e);
                   }
                 }
               },
@@ -150,12 +146,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.avatarUpdateFailed),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                    AppSnackBar.showError(context, e);
                   }
                 }
               },

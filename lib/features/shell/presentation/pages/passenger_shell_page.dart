@@ -12,10 +12,7 @@ import '../widgets/nav_svg_icon.dart';
 class PassengerShellPage extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
-  const PassengerShellPage({
-    super.key,
-    required this.navigationShell,
-  });
+  const PassengerShellPage({super.key, required this.navigationShell});
 
   void _onTap(int index) {
     navigationShell.goBranch(
@@ -29,22 +26,10 @@ class PassengerShellPage extends StatelessWidget {
     final l10n = context.l10n;
 
     final navItems = [
-      FloatingNavItem(
-        svgType: NavSvgType.home,
-        label: l10n.navHome,
-      ),
-      FloatingNavItem(
-        svgType: NavSvgType.trip,
-        label: l10n.navMyTrips,
-      ),
-      FloatingNavItem(
-        svgType: NavSvgType.wallet,
-        label: l10n.navWallet,
-      ),
-      FloatingNavItem(
-        svgType: NavSvgType.profile,
-        label: l10n.navProfile,
-      ),
+      FloatingNavItem(svgType: NavSvgType.home, label: l10n.navHome),
+      FloatingNavItem(svgType: NavSvgType.trip, label: l10n.navMyTrips),
+      FloatingNavItem(svgType: NavSvgType.wallet, label: l10n.navWallet),
+      FloatingNavItem(svgType: NavSvgType.profile, label: l10n.navProfile),
     ];
 
     return BlocBuilder<AuthBloc, AuthState>(

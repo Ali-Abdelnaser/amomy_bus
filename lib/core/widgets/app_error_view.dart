@@ -29,15 +29,13 @@ class AppErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 52,
-              color: AppColors.error,
-            ),
+            Icon(icon, size: 52, color: AppColors.error),
             AppSpacing.gapH16,
             Text(
               effectiveMessage,
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[

@@ -16,16 +16,15 @@ abstract class DeviceIdentityService {
 @LazySingleton(as: DeviceIdentityService)
 class DeviceIdentityServiceImpl implements DeviceIdentityService {
   static const String _storageKey = 'amomy_device_identifier';
-  static const MethodChannel _platformChannel =
-      MethodChannel('com.aliabdelnaser.amomy/device_identity');
+  static const MethodChannel _platformChannel = MethodChannel(
+    'com.aliabdelnaser.amomy/device_identity',
+  );
 
   final SecureStorageService _secureStorage;
   final MethodChannel _channel;
 
-  DeviceIdentityServiceImpl(
-    this._secureStorage, [
-    MethodChannel? channel,
-  ]) : _channel = channel ?? _platformChannel;
+  DeviceIdentityServiceImpl(this._secureStorage, [MethodChannel? channel])
+    : _channel = channel ?? _platformChannel;
 
   @override
   Future<String> getDeviceIdentifier() async {

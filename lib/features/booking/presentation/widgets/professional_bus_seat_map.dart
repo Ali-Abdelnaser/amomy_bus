@@ -76,10 +76,11 @@ class ProfessionalBusSeatMap extends StatelessWidget {
                     seats: seats,
                   );
 
-                  SeatVisualState visualState = BusSeatLayoutConfig.resolveVisualState(
-                    seat: matchedSeat,
-                    selectedSeat: selectedSeat,
-                  );
+                  SeatVisualState visualState =
+                      BusSeatLayoutConfig.resolveVisualState(
+                        seat: matchedSeat,
+                        selectedSeat: selectedSeat,
+                      );
 
                   // STRICT SAFETY RULE:
                   // Only in DEBUG builds AND when preview is enabled:
@@ -95,7 +96,8 @@ class ProfessionalBusSeatMap extends StatelessWidget {
                   final left = slot.x * busWidth;
                   final top = slot.y * busHeight;
 
-                  final seatLabel = matchedSeat?.seatNumber ??
+                  final seatLabel =
+                      matchedSeat?.seatNumber ??
                       (isPreviewActive ? '${index + 1}' : '');
 
                   return Positioned(
@@ -109,7 +111,9 @@ class ProfessionalBusSeatMap extends StatelessWidget {
                       width: seatWidth,
                       height: seatHeight,
                       // CRITICAL RULE: Unbacked preview seats & supervisor reserved seats CANNOT book or hold!
-                      onTap: (matchedSeat != null && !matchedSeat.isSupervisorReserved)
+                      onTap:
+                          (matchedSeat != null &&
+                              !matchedSeat.isSupervisorReserved)
                           ? () => onSeatTap(matchedSeat)
                           : null,
                     ),

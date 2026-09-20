@@ -7,11 +7,7 @@ class AppQrTicketWidget extends StatelessWidget {
   final String data;
   final double size;
 
-  const AppQrTicketWidget({
-    super.key,
-    required this.data,
-    this.size = 180.0,
-  });
+  const AppQrTicketWidget({super.key, required this.data, this.size = 180.0});
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +22,7 @@ class AppQrTicketWidget extends StatelessWidget {
       ),
       child: data.trim().isEmpty
           ? const Center(
-              child: Icon(
-                Icons.qr_code_2,
-                size: 48,
-                color: Color(0xFF98A2B3),
-              ),
+              child: Icon(Icons.qr_code_2, size: 48, color: Color(0xFF98A2B3)),
             )
           : QrImageView(
               data: data,
@@ -51,4 +43,3 @@ class AppQrTicketWidget extends StatelessWidget {
     );
   }
 }
-

@@ -50,7 +50,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthFailureState) {
-          AppSnackBar.showError(context, state.failure.message);
+          AppSnackBar.showError(context, state.failure);
         } else if (state is PasswordUpdatedSuccessfully) {
           AppSnackBar.showSuccess(context, l10n.passwordUpdatedSuccess);
           context.go('/login');

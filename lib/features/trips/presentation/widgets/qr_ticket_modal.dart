@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -6,8 +7,11 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../booking/presentation/widgets/app_qr_ticket_widget.dart';
+import '../cubit/passenger_trips_cubit.dart';
+import '../cubit/passenger_trips_state.dart';
 
 class QrTicketModal extends StatelessWidget {
+  final String? bookingId;
   final String departureTime;
   final String originName;
   final String destinationName;
@@ -17,6 +21,7 @@ class QrTicketModal extends StatelessWidget {
 
   const QrTicketModal({
     super.key,
+    this.bookingId,
     required this.departureTime,
     required this.originName,
     required this.destinationName,
@@ -27,6 +32,7 @@ class QrTicketModal extends StatelessWidget {
 
   static void show(
     BuildContext context, {
+    String? bookingId,
     required String departureTime,
     required String originName,
     required String destinationName,
@@ -34,6 +40,11 @@ class QrTicketModal extends StatelessWidget {
     required double farePoints,
     required String qrToken,
   }) {
+    PassengerTripsCubit? tripsCubit;
+    try {
+      tripsCubit = context.read<PassengerTripsCubit>();
+    } catch (_) {}
+
     showModalBottomSheet(
       context: context,
       useSafeArea: false,
@@ -43,14 +54,47 @@ class QrTicketModal extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (modalContext) => QrTicketModal(
-        departureTime: departureTime,
-        originName: originName,
-        destinationName: destinationName,
-        seatNumber: seatNumber,
-        farePoints: farePoints,
-        qrToken: qrToken,
-      ),
+      builder: (modalContext) {
+        final content = QrTicketModal(
+          bookingId: bookingId,
+          departureTime: departureTime,
+          originName: originName,
+          destinationName: destinationName,
+          seatNumber: seatNumber,
+          farePoints: farePoints,
+          qrToken: qrToken,
+        );
+
+        if (tripsCubit != null && bookingId != null) {
+          return BlocProvider.value(
+            value: tripsCubit,
+            child: BlocListener<PassengerTripsCubit, PassengerTripsState>(
+              listenWhen: (prev, curr) {
+                final isHistoryCheckedIn = curr.historyTrips.any(
+                  (b) => b.id == bookingId && b.checkedInAt != null,
+                );
+                final isTodayCheckedIn = curr.todayTrips.any(
+                  (t) => t.bookingId == bookingId && t.isCheckedIn,
+                );
+                final isRemovedFromUpcoming = !curr.upcomingTrips.any(
+                  (b) => b.id == bookingId,
+                );
+                return isHistoryCheckedIn ||
+                    isTodayCheckedIn ||
+                    isRemovedFromUpcoming;
+              },
+              listener: (ctx, state) {
+                if (Navigator.of(modalContext).canPop()) {
+                  Navigator.of(modalContext).pop();
+                }
+              },
+              child: content,
+            ),
+          );
+        }
+
+        return content;
+      },
     );
   }
 

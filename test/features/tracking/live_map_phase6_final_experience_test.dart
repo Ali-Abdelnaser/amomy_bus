@@ -315,14 +315,15 @@ void main() {
     );
 
     testWidgets(
-      '11. HomeLiveTrackingCard renders without duplicate resume messages',
+      '11. HomeLiveTrackingCard renders calm card when waiting for start',
       (tester) async {
-        final offlineSummary = activeSummary.copyWith(
-          status: LiveTrackingStatus.offline,
+        final waitingSummary = activeSummary.copyWith(
+          status: LiveTrackingStatus.tripNotActive,
+          trackingPhase: TrackingPhase.waitingStart,
+          trackingEnabled: false,
           serviceState: 'offline',
-          nextWindowStartTime: '08:00 AM',
         );
-        final repo = MockTrackingRepository(summary: offlineSummary);
+        final repo = MockTrackingRepository(summary: waitingSummary);
         final cubit = TrackingCubit(repository: repo);
         await cubit.loadTrackingData(tripId: 'trip-test');
 
@@ -338,9 +339,13 @@ void main() {
         );
         await pumpAndAdvance(tester);
 
-        // Resume message appears only in the frosted bar on mini-map, not repeated in subtitle
-        expect(find.textContaining('resumes at 08:00 AM'), findsOneWidget);
-        expect(find.text('Tracking unavailable'), findsWidgets);
+        expect(find.text('Ready for your trip'), findsOneWidget);
+        expect(
+          find.text(
+            'Live tracking will start when the driver starts the trip.',
+          ),
+          findsOneWidget,
+        );
 
         await cubit.close();
       },

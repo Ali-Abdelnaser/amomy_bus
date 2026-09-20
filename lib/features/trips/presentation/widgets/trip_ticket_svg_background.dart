@@ -69,7 +69,7 @@ class _TripTicketPainter extends CustomPainter {
   static Path _getSvgPath() {
     if (_cachedSvgPath != null) return _cachedSvgPath!;
     final path = Path();
-path.moveTo(938.63, 28.4801);
+    path.moveTo(938.63, 28.4801);
     path.lineTo(938.63, 0.0);
     path.lineTo(240.5, 0.0);
     path.lineTo(240.5, 18.6101);
@@ -243,12 +243,7 @@ path.moveTo(938.63, 28.4801);
     final path = _getSvgPath();
 
     if (elevation > 0) {
-      canvas.drawShadow(
-        path,
-        shadowColor,
-        elevation,
-        true,
-      );
+      canvas.drawShadow(path, shadowColor, elevation, true);
     }
 
     final fillPaint = Paint()

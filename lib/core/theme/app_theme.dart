@@ -182,15 +182,11 @@ abstract final class AppTheme {
           vertical: AppSpacing.s16,
         ),
         hintStyle: AppTextStyles.localized(
-          AppTextStyles.rawBodyMedium.copyWith(
-            color: const Color(0xFF94A3B8),
-          ),
+          AppTextStyles.rawBodyMedium.copyWith(color: const Color(0xFF94A3B8)),
           locale: effectiveLocale,
         ),
         labelStyle: AppTextStyles.localized(
-          AppTextStyles.rawLabelMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
+          AppTextStyles.rawLabelMedium.copyWith(color: AppColors.textSecondary),
           locale: effectiveLocale,
         ),
         errorStyle: AppTextStyles.localized(
@@ -283,9 +279,7 @@ abstract final class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
         contentTextStyle: AppTextStyles.localized(
-          AppTextStyles.rawBodyMedium.copyWith(
-            color: Colors.white,
-          ),
+          AppTextStyles.rawBodyMedium.copyWith(color: Colors.white),
           locale: effectiveLocale,
         ),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.radiusMd),

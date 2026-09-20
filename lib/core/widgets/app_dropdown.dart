@@ -35,13 +35,18 @@ class AppDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveValue = value ?? selectedValue;
-    final effectiveItems = items ??
-        (rawItems?.map(
-              (item) => DropdownMenuItem<T>(
-                value: item,
-                child: Text(itemLabel != null ? itemLabel!(item) : item.toString()),
-              ),
-            ).toList() ??
+    final effectiveItems =
+        items ??
+        (rawItems
+                ?.map(
+                  (item) => DropdownMenuItem<T>(
+                    value: item,
+                    child: Text(
+                      itemLabel != null ? itemLabel!(item) : item.toString(),
+                    ),
+                  ),
+                )
+                .toList() ??
             []);
 
     return Column(
@@ -51,7 +56,9 @@ class AppDropdown<T> extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
           AppSpacing.gapH8,
         ],
@@ -60,8 +67,13 @@ class AppDropdown<T> extends StatelessWidget {
           items: effectiveItems,
           onChanged: enabled ? onChanged : null,
           validator: validator,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textPrimary,
+          ),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textSecondary,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: prefixIcon,

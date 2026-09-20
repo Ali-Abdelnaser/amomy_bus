@@ -131,12 +131,9 @@ class _QuickActionTile extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                      child: iconWidget ??
-                          Icon(
-                            icon,
-                            size: 20,
-                            color: iconColor ?? color,
-                          ),
+                      child:
+                          iconWidget ??
+                          Icon(icon, size: 20, color: iconColor ?? color),
                     ),
                   ),
                   AppSpacing.gapH8,

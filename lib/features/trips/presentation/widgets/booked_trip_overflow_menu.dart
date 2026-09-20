@@ -29,10 +29,29 @@ class BookedTripOverflowMenu extends StatelessWidget {
     return DateTime.now().isAfter(cutoffTime);
   }
 
-  void _showActionSheet(BuildContext context) {
+  Future<void> _showActionSheet(BuildContext context) async {
     final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
     final cubit = context.read<PassengerTripsCubit>();
     final isCutoff = _isCutoff;
+
+    // Authoritative rule:
+    // 1. If this trip itself is checked in -> Cancel hidden.
+    // 2. Else if it is a Round Trip bundle -> use ONLY bundleContext.cancellationEligible.
+    // 3. Otherwise (normal single booking) -> preserve normal cancellation rules.
+    bool isCancelHidden = trip.isCheckedIn;
+
+    if (!isCancelHidden && trip.bookingId != null) {
+      final bundleContext = await cubit.getRoundTripBundleContext(
+        trip.bookingId!,
+      );
+      if (bundleContext != null && bundleContext.isRoundTripBundle) {
+        if (!bundleContext.cancellationEligible) {
+          isCancelHidden = true;
+        }
+      }
+    }
+
+    if (!context.mounted) return;
 
     showModalBottomSheet<void>(
       context: context,
@@ -181,28 +200,29 @@ class BookedTripOverflowMenu extends StatelessWidget {
                     },
                   ),
 
-                  AppSpacing.gapH8,
-
-                  // 2. CANCEL BOOKING ACTION
-                  _ActionTile(
-                    icon: Icons.cancel_outlined,
-                    iconColor: AppColors.error,
-                    iconBg: AppColors.errorLight,
-                    title: isAr ? 'إلغاء الحجز' : 'Cancel Booking',
-                    subtitle: isCutoff
-                        ? (isAr
-                              ? 'غير متاح بعد موعد الإغلاق'
-                              : 'Unavailable after cutoff')
-                        : (isAr
-                              ? 'استرداد ${trip.farePoints.toInt()} نقطة إلى محفظتك'
-                              : 'Refund ${trip.farePoints.toInt()} points to your wallet'),
-                    enabled: !isCutoff,
-                    isDestructive: true,
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _confirmCancellation(context, cubit, isAr);
-                    },
-                  ),
+                  // 2. CANCEL BOOKING ACTION (Hidden if checked in or bundle is not cancellation eligible)
+                  if (!isCancelHidden) ...[
+                    AppSpacing.gapH8,
+                    _ActionTile(
+                      icon: Icons.cancel_outlined,
+                      iconColor: AppColors.error,
+                      iconBg: AppColors.errorLight,
+                      title: isAr ? 'إلغاء الحجز' : 'Cancel Booking',
+                      subtitle: isCutoff
+                          ? (isAr
+                                ? 'غير متاح بعد موعد الإغلاق'
+                                : 'Unavailable after cutoff')
+                          : (isAr
+                                ? 'استرداد ${trip.farePoints.toInt()} نقطة إلى محفظتك'
+                                : 'Refund ${trip.farePoints.toInt()} points to your wallet'),
+                      enabled: !isCutoff,
+                      isDestructive: true,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _confirmCancellation(context, cubit, isAr);
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -212,11 +232,76 @@ class BookedTripOverflowMenu extends StatelessWidget {
     );
   }
 
-  void _confirmCancellation(
+  Future<void> _confirmCancellation(
     BuildContext context,
     PassengerTripsCubit cubit,
     bool isAr,
-  ) {
+  ) async {
+    if (trip.bookingId == null || trip.isCheckedIn) return;
+
+    final bundleContext = await cubit.getRoundTripBundleContext(
+      trip.bookingId!,
+    );
+    if (!context.mounted) return;
+
+    if (bundleContext != null && bundleContext.isRoundTripBundle) {
+      if (!bundleContext.cancellationEligible) {
+        showErrorDialog(
+          context: context,
+          title: isAr ? 'تعذر إلغاء الحجز' : 'Cancellation Not Available',
+          message: bundleContext.cancellationReason != null
+              ? StatusLocalizer.localizeError(
+                  context,
+                  bundleContext.cancellationReason,
+                )
+              : (isAr
+                    ? 'لا يمكن إلغاء حجز الذهاب والعودة بعد تسجيل الحضور أو إغلاق نافذة الإلغاء.'
+                    : 'Round trip booking cannot be cancelled after check-in or cancellation cutoff.'),
+        );
+        return;
+      }
+
+      final refundPoints =
+          bundleContext.totalPaidPoints?.toInt() ?? trip.farePoints.toInt();
+
+      showConfirmDialog(
+        context: context,
+        title: isAr ? 'إلغاء حجز الذهاب والعودة' : 'Cancel Round Trip Booking',
+        message: isAr
+            ? 'هذا الحجز جزء من حجز ذهاب وعودة بخصم 15%.\nعند الإلغاء سيتم إلغاء رحلتي الذهاب والعودة معًا.\n\nسيتم استرداد $refundPoints نقطة بالكامل إلى محفظتك.'
+            : 'This booking is part of a round-trip bundle with a 15% discount.\nCancelling will cancel both outbound and return trips together.\n\n$refundPoints points will be fully refunded to your wallet.',
+        cancelText: isAr ? 'الاحتفاظ بالحجز' : 'Keep Booking',
+        confirmText: isAr ? 'إلغاء الرحلتين معًا' : 'Cancel Both Trips',
+        isDestructive: true,
+        variant: AppDialogVariant.destructive,
+        onConfirm: () async {
+          final success = await cubit.cancelBooking(trip.bookingId!);
+          if (!context.mounted) return;
+
+          if (success) {
+            AmomyFloatingAlert.show(
+              context,
+              title: isAr
+                  ? 'تم إلغاء رحلتي الذهاب والعودة واسترداد $refundPoints نقطة بنجاح'
+                  : 'Round trip cancelled and $refundPoints points refunded',
+              variant: AmomyAlertVariant.success,
+            );
+          } else {
+            AmomyFloatingAlert.show(
+              context,
+              title: StatusLocalizer.localizeError(
+                context,
+                cubit.state.errorMessage,
+              ),
+              variant: AmomyAlertVariant.error,
+            );
+          }
+        },
+      );
+      return;
+    }
+
+    // Normal Single Booking Cancellation
     showConfirmDialog(
       context: context,
       title: isAr ? 'تأكيد إلغاء الحجز' : 'Confirm Cancellation',
@@ -228,8 +313,6 @@ class BookedTripOverflowMenu extends StatelessWidget {
       isDestructive: true,
       variant: AppDialogVariant.destructive,
       onConfirm: () async {
-        if (trip.bookingId == null) return;
-
         final success = await cubit.cancelBooking(trip.bookingId!);
         if (!context.mounted) return;
 

@@ -106,8 +106,9 @@ void main() {
     });
 
     test('loadHomeData emits [loading, error] when summary fails', () async {
-      repository.summaryResult =
-          const Error(ServerFailure(message: 'Database connection failed'));
+      repository.summaryResult = const Error(
+        ServerFailure(message: 'Database connection failed'),
+      );
       repository.announcementsResult = Success(sampleAnnouncements);
 
       final expectedStates = [
@@ -124,26 +125,28 @@ void main() {
     });
 
     test(
-        'Resilience: Announcements failure does NOT break Home summary loaded state',
-        () async {
-      repository.summaryResult = Success(sampleSummary);
-      repository.announcementsResult =
-          const Error(ServerFailure(message: 'Announcements unavailable'));
+      'Resilience: Announcements failure does NOT break Home summary loaded state',
+      () async {
+        repository.summaryResult = Success(sampleSummary);
+        repository.announcementsResult = const Error(
+          ServerFailure(message: 'Announcements unavailable'),
+        );
 
-      final expectedStates = [
-        const HomeState(status: HomeStatus.loading),
-        HomeState(
-          status: HomeStatus.loaded,
-          summary: sampleSummary,
-          announcements: const [],
-          trackableTripId: sampleSummary.upcomingTrip?.tripId,
-        ),
-      ];
+        final expectedStates = [
+          const HomeState(status: HomeStatus.loading),
+          HomeState(
+            status: HomeStatus.loaded,
+            summary: sampleSummary,
+            announcements: const [],
+            trackableTripId: sampleSummary.upcomingTrip?.tripId,
+          ),
+        ];
 
-      expectLater(cubit.stream, emitsInOrder(expectedStates));
+        expectLater(cubit.stream, emitsInOrder(expectedStates));
 
-      await cubit.loadHomeData();
-    });
+        await cubit.loadHomeData();
+      },
+    );
   });
 
   group('Home Models Data Parsing Tests', () {
@@ -153,9 +156,7 @@ void main() {
           'full_name': 'Ali Abdelnaser',
           'avatar_url': 'https://amomy.com/avatar.jpg',
         },
-        'wallet': {
-          'available_points': 1500,
-        },
+        'wallet': {'available_points': 1500},
         'upcoming_trip': {
           'booking_id': 'b-99',
           'trip_id': 't-99',

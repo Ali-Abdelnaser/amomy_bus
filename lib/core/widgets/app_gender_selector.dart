@@ -40,7 +40,9 @@ class AppGenderSelector extends StatelessWidget {
             if (label != null) ...[
               Text(
                 label!,
-                style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary,
+                ),
               ),
               AppSpacing.gapH8,
             ],
@@ -113,7 +115,9 @@ class _GenderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSelected ? AppColors.primary : AppColors.border;
-    final backgroundColor = isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.surface;
+    final backgroundColor = isSelected
+        ? AppColors.primaryLight.withValues(alpha: 0.5)
+        : AppColors.surface;
     final textColor = isSelected ? AppColors.primary : AppColors.textPrimary;
 
     return Material(
@@ -151,11 +155,7 @@ class _GenderCard extends StatelessWidget {
               ),
               if (isSelected) ...[
                 AppSpacing.gapW6,
-                const Icon(
-                  AppIcons.check,
-                  size: 14,
-                  color: AppColors.primary,
-                ),
+                const Icon(AppIcons.check, size: 14, color: AppColors.primary),
               ],
             ],
           ),

@@ -2,6 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'injection.config.dart';
 
+import '../../features/booking/domain/repositories/booking_repository.dart';
+import '../../features/booking/domain/usecases/booking_usecases.dart';
 import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
 import '../../features/notifications/data/repositories/notification_repository_impl.dart';
 import '../../features/notifications/domain/repositories/notification_repository.dart';
@@ -100,5 +102,35 @@ Future<void> configureDependencies() async {
     getIt.registerFactory<ProfileBloc>(
       () => ProfileBloc(repository: getIt<ProfileRepository>()),
     );
+  }
+
+  // Register Round Trip booking dependencies
+  if (getIt.isRegistered<BookingRepository>()) {
+    final bookingRepo = getIt<BookingRepository>();
+    if (!getIt.isRegistered<CreateRoundTripBundleHoldUseCase>()) {
+      getIt.registerLazySingleton<CreateRoundTripBundleHoldUseCase>(
+        () => CreateRoundTripBundleHoldUseCase(bookingRepo),
+      );
+    }
+    if (!getIt.isRegistered<SetRoundTripReturnSeatUseCase>()) {
+      getIt.registerLazySingleton<SetRoundTripReturnSeatUseCase>(
+        () => SetRoundTripReturnSeatUseCase(bookingRepo),
+      );
+    }
+    if (!getIt.isRegistered<ReleaseRoundTripBundleHoldUseCase>()) {
+      getIt.registerLazySingleton<ReleaseRoundTripBundleHoldUseCase>(
+        () => ReleaseRoundTripBundleHoldUseCase(bookingRepo),
+      );
+    }
+    if (!getIt.isRegistered<ConfirmRoundTripBundleUseCase>()) {
+      getIt.registerLazySingleton<ConfirmRoundTripBundleUseCase>(
+        () => ConfirmRoundTripBundleUseCase(bookingRepo),
+      );
+    }
+    if (!getIt.isRegistered<GetRoundTripReturnOptionsUseCase>()) {
+      getIt.registerLazySingleton<GetRoundTripReturnOptionsUseCase>(
+        () => GetRoundTripReturnOptionsUseCase(bookingRepo),
+      );
+    }
   }
 }

@@ -1,12 +1,10 @@
-import 'package:amomy_bus/features/booking/presentation/widgets/departure_time_selector.dart';
-import 'package:amomy_bus/features/booking/presentation/widgets/direction_selector.dart';
-import 'package:amomy_bus/features/booking/presentation/widgets/route_stop_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -19,9 +17,15 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/booking_entities.dart';
 import '../cubit/booking_cubit.dart';
 import '../cubit/booking_state.dart';
+import '../widgets/booking_mode_toggle.dart';
 import '../widgets/booking_review_card.dart';
 import '../widgets/booking_success_view.dart';
 import '../widgets/bus_seat_map_widget.dart';
+import '../widgets/departure_time_selector.dart';
+import '../widgets/direction_selector.dart';
+import '../widgets/return_meeting_info_card.dart';
+import '../widgets/round_trip_return_time_selector.dart';
+import '../widgets/route_stop_selector.dart';
 
 class BookTripPage extends StatelessWidget {
   final BookingCubit? bookingCubit;
@@ -184,69 +188,43 @@ class _BookTripContentState extends State<_BookTripContent>
         }
 
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-          String displayMessage = state.errorMessage!;
-          if (displayMessage.contains('HOLD_EXPIRED') ||
-              displayMessage.contains('seat hold has expired')) {
-            displayMessage = l10n.holdExpiredNotice;
-          } else if (displayMessage.contains('SEAT_UNAVAILABLE') ||
-              displayMessage.contains('SEAT_ALREADY_BOOKED') ||
-              displayMessage.contains('SEAT_HELD_BY_ANOTHER_USER')) {
-            displayMessage = l10n.seatUnavailableNotice;
-          } else if (displayMessage.contains('INSUFFICIENT_POINTS') ||
-              displayMessage.contains('INSUFFICIENT_UNEXPIRED_POINTS')) {
-            displayMessage = l10n.insufficientPointsNotice;
-          } else if (displayMessage.contains('PROFILE_INCOMPLETE')) {
-            displayMessage = l10n.completeProfileToBook;
-          } else if (displayMessage.contains('TODAY_ONLY_BOOKING')) {
-            displayMessage = isAr
-                ? 'الحجز متاح لرحلات اليوم فقط'
-                : 'Booking is available for today only';
-          } else if (displayMessage.contains('BOOKING_CLOSED')) {
-            displayMessage = isAr
-                ? 'تم إغلاق الحجز لهذه الرحلة'
-                : 'Booking is closed for this trip';
-          } else if (displayMessage.contains('ALREADY_BOOKED_TRIP') ||
-              displayMessage.contains('already have an active booking') ||
-              displayMessage.contains('AlreadyBookedTripFailure')) {
-            displayMessage = isAr
-                ? 'لقد قمت بحجز هذه الرحلة بالفعل'
-                : 'You already have a booking for this trip';
-          } else if (displayMessage.contains('PostgrestException') ||
-              displayMessage.contains('Exception') ||
-              displayMessage.contains('code:') ||
-              displayMessage.contains('column') ||
-              displayMessage.contains('seat_hold_status')) {
-            displayMessage = l10n.errorOccurred;
-          }
-
           AmomyFloatingAlert.show(
             context,
-            title: displayMessage,
+            title: StatusLocalizer.localizeError(context, state.errorMessage),
             variant: AmomyAlertVariant.error,
           );
 
-          // Clear transient error so countdown timer ticks never re-trigger this alert
           cubit.clearError();
         }
       },
       builder: (context, state) {
         final cubit = context.read<BookingCubit>();
 
-        if (state.currentStep == BookingStep.success &&
-            state.confirmedBooking != null) {
-          return AppScaffold(
-            appBar: null,
-            body: SafeArea(
-              child: BookingSuccessView(booking: state.confirmedBooking!),
-            ),
-          );
+        if (state.currentStep == BookingStep.success) {
+          if (state.confirmedBundle != null) {
+            return AppScaffold(
+              appBar: null,
+              body: SafeArea(
+                child: BookingSuccessView(
+                  bundleConfirmation: state.confirmedBundle!,
+                ),
+              ),
+            );
+          } else if (state.confirmedBooking != null) {
+            return AppScaffold(
+              appBar: null,
+              body: SafeArea(
+                child: BookingSuccessView(booking: state.confirmedBooking!),
+              ),
+            );
+          }
         }
 
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppAppBar(
             titleWidget: Text(
-              _getTitleForStep(state.currentStep, l10n, isAr),
+              _getTitleForStep(state, l10n, isAr),
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -273,7 +251,13 @@ class _BookTripContentState extends State<_BookTripContent>
                           context.pop();
                           break;
                         case BookingStep.seatMap:
-                          cubit.backToSetup();
+                          if (state.isRoundTrip &&
+                              state.roundTripSeatStep ==
+                                  RoundTripSeatStep.returnSeat) {
+                            cubit.backToOutboundSeatMap();
+                          } else {
+                            cubit.backToSetup();
+                          }
                           break;
                         case BookingStep.review:
                           cubit.backToSeatMap();
@@ -292,8 +276,8 @@ class _BookTripContentState extends State<_BookTripContent>
                       height: 38,
                       child: Icon(
                         isAr
-                            ? Icons.arrow_forward_rounded
-                            : Icons.arrow_back_rounded,
+                            ? Icons.arrow_back_rounded
+                            : Icons.arrow_forward_rounded,
                         color: const Color(0xFF101828),
                         size: 20,
                       ),
@@ -306,14 +290,7 @@ class _BookTripContentState extends State<_BookTripContent>
           bottomNavigationBar: state.currentStep == BookingStep.seatMap
               ? AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
-                  child: state.activeHold != null && state.selectedSeat != null
-                      ? _SeatHoldBottomBanner(
-                          key: ValueKey(state.selectedSeat!.seatId),
-                          selectedSeat: state.selectedSeat!,
-                          secondsRemaining: state.holdSecondsRemaining,
-                          onProceed: cubit.proceedToReview,
-                        )
-                      : const SizedBox.shrink(),
+                  child: _buildSeatHoldBottomBanner(state, cubit, isAr),
                 )
               : null,
           body: SafeArea(
@@ -330,12 +307,19 @@ class _BookTripContentState extends State<_BookTripContent>
                       state.currentStep == BookingStep.departureTime) ...[
                     _SmartBookingSetupView(state: state, cubit: cubit),
                   ]
-                  // STEP 2: Seat Selection
+                  // STEP 2: Seat Selection (Outbound Seat or Return Seat)
                   else if (state.currentStep == BookingStep.seatMap) ...[
                     if (state.status == BookingStatus.loading)
                       const Padding(
                         padding: EdgeInsets.all(32),
                         child: AmomyBusLoading.medium(),
+                      )
+                    else if (state.isRoundTrip &&
+                        state.roundTripSeatStep == RoundTripSeatStep.returnSeat)
+                      BusSeatMapWidget(
+                        seats: state.returnSeats,
+                        selectedSeat: state.selectedReturnSeat,
+                        onSeatTap: (seat) => cubit.selectSeatAndHold(seat),
                       )
                     else
                       BusSeatMapWidget(
@@ -360,6 +344,9 @@ class _BookTripContentState extends State<_BookTripContent>
                           seat: state.selectedSeat!,
                           routeStop: state.selectedRouteStop,
                           destinationRouteStop: state.selectedDestinationStop,
+                          bundleHold: state.bundleHold,
+                          returnSeat: state.selectedReturnSeat,
+                          returnOption: state.selectedReturnOption,
                           userAvailablePoints: walletBalance,
                           isConfirming:
                               state.status == BookingStatus.confirming,
@@ -380,19 +367,70 @@ class _BookTripContentState extends State<_BookTripContent>
     );
   }
 
-  String _getTitleForStep(BookingStep step, dynamic l10n, bool isAr) {
-    switch (step) {
+  Widget _buildSeatHoldBottomBanner(
+    BookingState state,
+    BookingCubit cubit,
+    bool isAr,
+  ) {
+    if (state.isSingle) {
+      if (state.activeHold != null && state.selectedSeat != null) {
+        return _SeatHoldBottomBanner(
+          key: ValueKey('single_${state.selectedSeat!.seatId}'),
+          selectedSeat: state.selectedSeat!,
+          secondsRemaining: state.holdSecondsRemaining,
+          onProceed: cubit.proceedToReview,
+          buttonLabel: isAr ? 'متابعة' : 'Continue',
+        );
+      }
+      return const SizedBox.shrink();
+    } else {
+      // Round Trip
+      if (state.roundTripSeatStep == RoundTripSeatStep.outbound) {
+        if (state.bundleHold != null && state.selectedSeat != null) {
+          return _SeatHoldBottomBanner(
+            key: ValueKey('bundle_outbound_${state.selectedSeat!.seatId}'),
+            selectedSeat: state.selectedSeat!,
+            secondsRemaining: state.holdSecondsRemaining,
+            onProceed: cubit.proceedToReturnSeatMap,
+            buttonLabel: isAr ? 'مقعد العودة' : 'Return Seat',
+          );
+        }
+      } else {
+        // Return seat step
+        if (state.bundleHold != null && state.selectedReturnSeat != null) {
+          return _SeatHoldBottomBanner(
+            key: ValueKey('bundle_return_${state.selectedReturnSeat!.seatId}'),
+            selectedSeat: state.selectedReturnSeat!,
+            secondsRemaining: state.holdSecondsRemaining,
+            onProceed: cubit.proceedToReview,
+            buttonLabel: isAr ? 'مراجعة الحجز' : 'Review',
+          );
+        }
+      }
+      return const SizedBox.shrink();
+    }
+  }
+
+  String _getTitleForStep(BookingState state, dynamic l10n, bool isAr) {
+    switch (state.currentStep) {
       case BookingStep.setup:
       case BookingStep.direction:
       case BookingStep.boardingStop:
       case BookingStep.departureTime:
         return isAr ? 'احجز رحلتك' : 'Book a Ride';
       case BookingStep.seatMap:
+        if (state.isRoundTrip) {
+          return state.roundTripSeatStep == RoundTripSeatStep.returnSeat
+              ? (isAr ? 'اختر مقعد العودة' : 'Select Return Seat')
+              : (isAr ? 'اختر مقعد الذهاب' : 'Select Outbound Seat');
+        }
         return l10n.selectSeat;
       case BookingStep.review:
         return isAr ? 'مراجعة الحجز' : 'Review Booking';
       case BookingStep.success:
-        return l10n.bookingSuccessTitle;
+        return isAr && state.isRoundTrip
+            ? 'تم حجز الذهاب والعودة بنجاح'
+            : l10n.bookingSuccessTitle;
     }
   }
 }
@@ -407,13 +445,21 @@ class _SmartBookingSetupView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
 
-    final canContinue =
+    final isRoundTrip = state.isRoundTrip;
+    final canContinueSingle =
         state.selectedRouteStop != null &&
         state.selectedDestinationStop != null &&
         state.selectedTrip != null &&
         state.selectedTrip!.canBook &&
         (state.selectedDestinationStop!.stopOrder >
             state.selectedRouteStop!.stopOrder);
+
+    final canContinueRoundTrip =
+        canContinueSingle &&
+        state.selectedReturnOption != null &&
+        state.selectedReturnOption!.isBookable;
+
+    final canContinue = isRoundTrip ? canContinueRoundTrip : canContinueSingle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -423,6 +469,17 @@ class _SmartBookingSetupView extends StatelessWidget {
           selectedDirection: state.selectedDirection,
           onDirectionChanged: (dir) => cubit.setDirection(dir),
         ),
+
+        // 1.1 BOOKING MODE SELECTOR (Single / Round Trip - 15% discount)
+        // Offered ONLY when booking direction is Outbound
+        if (state.selectedDirection == BookingDirection.outbound) ...[
+          const SizedBox(height: 12),
+          BookingModeToggle(
+            mode: state.bookingMode,
+            onModeChanged: (mode) => cubit.setBookingMode(mode),
+          ),
+        ],
+
         const SizedBox(height: 22),
 
         // 2. YOUR ROUTE (Connected From / To Component)
@@ -461,6 +518,26 @@ class _SmartBookingSetupView extends StatelessWidget {
           onTripSelected: (t) => cubit.selectTrip(t),
         ),
 
+        // 3.0 RETURN MEETING INFO (In Single Return Mode)
+        if (state.selectedDirection == BookingDirection.returnTrip &&
+            state.availableTrips.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ReturnMeetingInfoCard(selectedTrip: state.selectedTrip),
+        ],
+
+        // 3.1 TODAY'S RETURN TRIPS (In Round Trip Mode)
+        if (isRoundTrip) ...[
+          const SizedBox(height: 22),
+          RoundTripReturnTimeSelector(
+            returnOptions: state.returnOptions,
+            selectedReturnOption: state.selectedReturnOption,
+            isLoading: state.isLoadingRoundTripReturnOptions,
+            errorMessage: state.roundTripReturnOptionsError,
+            onRetry: () => cubit.loadRoundTripReturnOptions(),
+            onOptionSelected: (o) => cubit.selectReturnOption(o),
+          ),
+        ],
+
         const SizedBox(height: 28),
 
         // 4. CONTINUE PRIMARY CTA
@@ -496,12 +573,18 @@ class _SmartBookingSetupView extends StatelessWidget {
           : 'Destination must be after the boarding stop';
     } else if (state.selectedTrip == null) {
       alertMsg = isAr
-          ? 'يرجى اختيار موعد الرحلة المناسب'
-          : 'Please select a departure time';
+          ? 'يرجى اختيار موعد رحلة الذهاب المناسب'
+          : 'Please select an outbound departure time';
     } else if (!state.selectedTrip!.canBook) {
       alertMsg = isAr
-          ? 'هذه الرحلة غير متاحة للحجز، يرجى اختيار موعد آخر'
-          : 'This trip is not available for booking. Please choose another time.';
+          ? 'رحلة الذهاب غير متاحة للحجز، يرجى اختيار موعد آخر'
+          : 'This outbound trip is not available. Please choose another time.';
+    } else if (state.isRoundTrip &&
+        (state.selectedReturnOption == null ||
+            !state.selectedReturnOption!.isBookable)) {
+      alertMsg = isAr
+          ? 'يرجى اختيار موعد رحلة العودة المناسب'
+          : 'Please select a return departure time';
     }
 
     if (alertMsg.isNotEmpty) {
@@ -591,12 +674,14 @@ class _SeatHoldBottomBanner extends StatelessWidget {
   final TripSeat selectedSeat;
   final int secondsRemaining;
   final VoidCallback onProceed;
+  final String? buttonLabel;
 
   const _SeatHoldBottomBanner({
     super.key,
     required this.selectedSeat,
     required this.secondsRemaining,
     required this.onProceed,
+    this.buttonLabel,
   });
 
   @override
@@ -708,7 +793,7 @@ class _SeatHoldBottomBanner extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isAr ? 'متابعة' : 'Continue',
+                      buttonLabel ?? (isAr ? 'متابعة' : 'Continue'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,

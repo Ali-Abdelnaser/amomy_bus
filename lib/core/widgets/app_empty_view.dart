@@ -39,11 +39,7 @@ class AppEmptyView extends StatelessWidget {
                 fit: BoxFit.contain,
               )
             else if (icon != null)
-              Icon(
-                icon,
-                size: 56,
-                color: AppColors.disabled,
-              ),
+              Icon(icon, size: 56, color: AppColors.disabled),
             AppSpacing.gapH16,
             Text(
               effectiveMessage,
@@ -52,10 +48,7 @@ class AppEmptyView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (action != null) ...[
-              AppSpacing.gapH24,
-              action!,
-            ],
+            if (action != null) ...[AppSpacing.gapH24, action!],
           ],
         ),
       ),

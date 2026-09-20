@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../localization/app_locale_controller.dart';
+import 'app_error_mapper.dart';
 import 'exceptions.dart';
 import 'failures.dart';
 
@@ -23,45 +24,11 @@ class ErrorHandler {
     }
 
     if (error is AuthException) {
-      final isAr = AppLocaleController.instance.isArabic;
-      final msg = error.message.toLowerCase();
       final status = int.tryParse(error.statusCode ?? '');
-
-      if (msg.contains('rate limit') || status == 429) {
-        return AuthenticationFailure(
-          message: isAr
-              ? 'يرجى الانتظار قليلاً قبل طلب رمز جديد.'
-              : 'Please wait before requesting another code.',
-          statusCode: 429,
-        );
-      }
-
-      // Supabase GoTrue returns "Token has expired or is invalid" (HTTP 403)
-      // for any incorrect, consumed, or invalid OTP code.
-      // Differentiate between "invalid" (including "expired or is invalid") and pure "expired".
-      if (msg.contains('token has expired or is invalid') ||
-          (msg.contains('invalid') &&
-              (msg.contains('token') ||
-                  msg.contains('otp') ||
-                  msg.contains('code')))) {
-        return AuthenticationFailure(
-          message: isAr
-              ? 'رمز التحقق غير صحيح.'
-              : 'The verification code is incorrect.',
-          statusCode: status,
-        );
-      }
-
-      if (msg.contains('expired')) {
-        return AuthenticationFailure(
-          message: isAr
-              ? 'انتهت صلاحية هذا الرمز. يرجى طلب رمز جديد.'
-              : 'This code has expired. Request a new one.',
-          statusCode: status,
-        );
-      }
-
-      return AuthenticationFailure(message: error.message, statusCode: status);
+      return AuthenticationFailure(
+        message: AppErrorMapper.mapToString(error),
+        statusCode: status,
+      );
     }
 
     if (error is PostgrestException) {
@@ -72,57 +39,23 @@ class ErrorHandler {
         return ValidationFailure(message: message, statusCode: 409);
       }
       return ServerFailure(
-        message: error.message,
+        message: AppErrorMapper.mapToString(error),
         statusCode: int.tryParse(error.code ?? ''),
       );
     }
 
     // GoogleSignInException specific handling
     if (error is GoogleSignInException) {
-      final desc = error.description ?? '';
-      final isError16 =
-          desc.contains('Account reauth failed') ||
-          desc.contains('[16]') ||
-          desc.contains('16');
-
-      if (isError16) {
-        final message = AppLocaleController.instance.isArabic
-            ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
-            : 'Google sign-in could not be completed. Please try again.';
-        return AuthenticationFailure(message: message);
-      }
-
       if (error.code == GoogleSignInExceptionCode.canceled) {
         return const AuthCancelledFailure();
       }
 
-      if (error.code == GoogleSignInExceptionCode.clientConfigurationError ||
-          desc.contains('DEVELOPER_ERROR') ||
-          desc.contains('10')) {
-        final message = AppLocaleController.instance.isArabic
-            ? 'خطأ في إعدادات تسجيل الدخول بواسطة Google.'
-            : 'Google Sign-In configuration error (DEVELOPER_ERROR/code 10).';
-        return ConfigurationFailure(message: message);
-      }
-
-      final message = AppLocaleController.instance.isArabic
-          ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
-          : 'Google sign-in could not be completed. Please try again.';
-      return AuthenticationFailure(message: message);
+      return AuthenticationFailure(
+        message: AppErrorMapper.mapToString(error),
+      );
     }
 
     final errorStr = error?.toString() ?? '';
-    final isGoogleError16 =
-        errorStr.contains('Account reauth failed') ||
-        (errorStr.contains('[16]') && errorStr.contains('GoogleSignIn'));
-
-    if (isGoogleError16) {
-      final message = AppLocaleController.instance.isArabic
-          ? 'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.'
-          : 'Google sign-in could not be completed. Please try again.';
-      return AuthenticationFailure(message: message);
-    }
-
     final isGoogleCancellation =
         errorStr.contains('sign_in_canceled') ||
         errorStr.contains('popup_closed_by_user') ||
@@ -133,27 +66,18 @@ class ErrorHandler {
       return const AuthCancelledFailure();
     }
 
-    if (errorStr.contains('AuthConfigurationException') ||
-        errorStr.contains('GOOGLE_WEB_CLIENT_ID') ||
-        errorStr.contains('GOOGLE_IOS_CLIENT_ID')) {
-      return ConfigurationFailure(
-        message: errorStr.replaceFirst('AuthConfigurationException: ', ''),
-      );
-    }
-
     if (error is SocketException ||
         errorStr.contains('SocketException') ||
         errorStr.contains('Failed host lookup') ||
         errorStr.contains('NetworkRequestFailed') ||
         errorStr.contains('ClientException')) {
-      final message = AppLocaleController.instance.isArabic
-          ? 'تعذر التحقق من الرمز. تحقق من اتصالك وحاول مرة أخرى.'
-          : 'Couldn\'t verify the code. Check your connection and try again.';
-      return NetworkFailure(message: message);
+      return NetworkFailure(
+        message: AppErrorMapper.mapToString(error),
+      );
     }
 
     return UnknownFailure(
-      message: error?.toString() ?? 'An unexpected error occurred.',
+      message: AppErrorMapper.mapToString(error),
     );
   }
 

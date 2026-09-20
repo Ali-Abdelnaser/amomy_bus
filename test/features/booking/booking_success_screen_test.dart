@@ -64,7 +64,6 @@ void main() {
         find.text('Your trip seat is successfully reserved.'),
         findsOneWidget,
       );
-      
     });
 
     testWidgets('shows only QR, time, seat, and fees in the ticket', (

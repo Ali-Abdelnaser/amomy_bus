@@ -227,8 +227,7 @@ abstract final class AppTextStyles {
     TextStyle style,
     FontWeight weight, {
     Locale? locale,
-  }) =>
-      localized(style.copyWith(fontWeight: weight), locale: locale);
+  }) => localized(style.copyWith(fontWeight: weight), locale: locale);
 
   /// Modifies color while preserving font family & weight bindings.
   static TextStyle withColor(TextStyle style, Color color) =>
@@ -246,8 +245,7 @@ extension AppTextStyleExtension on TextStyle {
       AppTextStyles.withWeight(this, weight, locale: locale);
 
   /// Returns this style in Bold (w700).
-  TextStyle bold({Locale? locale}) =>
-      AppTextStyles.bold(this, locale: locale);
+  TextStyle bold({Locale? locale}) => AppTextStyles.bold(this, locale: locale);
 
   /// Returns this style in SemiBold (w700 for Arabic Tajawal, w600 for English Open Sans).
   TextStyle semiBold({Locale? locale}) =>

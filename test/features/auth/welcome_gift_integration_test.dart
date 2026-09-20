@@ -32,22 +32,25 @@ class FakeSecureStorageService implements SecureStorageService {
 
 void main() {
   group('DeviceIdentityService Tests', () {
-    test('generates, persists, and reuses stable device identifier via fallback', () async {
-      final storage = FakeSecureStorageService();
-      final service = DeviceIdentityServiceImpl(storage);
+    test(
+      'generates, persists, and reuses stable device identifier via fallback',
+      () async {
+        final storage = FakeSecureStorageService();
+        final service = DeviceIdentityServiceImpl(storage);
 
-      final id1 = await service.getDeviceIdentifier();
-      expect(id1.isNotEmpty, isTrue);
+        final id1 = await service.getDeviceIdentifier();
+        expect(id1.isNotEmpty, isTrue);
 
-      // Re-invoking returns exact same identifier from storage
-      final id2 = await service.getDeviceIdentifier();
-      expect(id2, equals(id1));
+        // Re-invoking returns exact same identifier from storage
+        final id2 = await service.getDeviceIdentifier();
+        expect(id2, equals(id1));
 
-      // Simulate app restart with new service instance over same storage
-      final newService = DeviceIdentityServiceImpl(storage);
-      final id3 = await newService.getDeviceIdentifier();
-      expect(id3, equals(id1));
-    });
+        // Simulate app restart with new service instance over same storage
+        final newService = DeviceIdentityServiceImpl(storage);
+        final id3 = await newService.getDeviceIdentifier();
+        expect(id3, equals(id1));
+      },
+    );
 
     test('recovers from secure storage read exception gracefully', () async {
       final storage = FakeSecureStorageService();
@@ -68,34 +71,43 @@ void main() {
         WalletSemanticType.fromString('campaign_gift'),
         equals(WalletSemanticType.campaignGift),
       );
-      expect(WalletSemanticType.welcomeGift.toDbString(), equals('welcome_gift'));
-      expect(WalletSemanticType.campaignGift.toDbString(), equals('campaign_gift'));
+      expect(
+        WalletSemanticType.welcomeGift.toDbString(),
+        equals('welcome_gift'),
+      );
+      expect(
+        WalletSemanticType.campaignGift.toDbString(),
+        equals('campaign_gift'),
+      );
     });
 
-    testWidgets('renders Welcome Gift and dynamic signed points correctly in EN', (tester) async {
-      const event = WalletHistoryEvent(
-        eventId: 'evt-welcome-1',
-        semanticType: WalletSemanticType.welcomeGift,
-        signedAmount: 60,
-      );
+    testWidgets(
+      'renders Welcome Gift and dynamic signed points correctly in EN',
+      (tester) async {
+        const event = WalletHistoryEvent(
+          eventId: 'evt-welcome-1',
+          semanticType: WalletSemanticType.welcomeGift,
+          signedAmount: 60,
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('en'),
-          home: const Scaffold(
-            body: WalletHistoryEventTile(event: event),
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: const Scaffold(body: WalletHistoryEventTile(event: event)),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Welcome Gift'), findsOneWidget);
-      expect(find.text('+60 PTS'), findsOneWidget);
-    });
+        expect(find.text('Welcome Gift'), findsOneWidget);
+        expect(find.text('+60 PTS'), findsOneWidget);
+      },
+    );
 
-    testWidgets('renders Welcome Gift with custom backend amount (100) in AR', (tester) async {
+    testWidgets('renders Welcome Gift with custom backend amount (100) in AR', (
+      tester,
+    ) async {
       const event = WalletHistoryEvent(
         eventId: 'evt-welcome-2',
         semanticType: WalletSemanticType.welcomeGift,
@@ -107,9 +119,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('ar'),
-          home: const Scaffold(
-            body: WalletHistoryEventTile(event: event),
-          ),
+          home: const Scaffold(body: WalletHistoryEventTile(event: event)),
         ),
       );
       await tester.pumpAndSettle();
@@ -130,9 +140,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('ar'),
-          home: const Scaffold(
-            body: WalletHistoryEventTile(event: event),
-          ),
+          home: const Scaffold(body: WalletHistoryEventTile(event: event)),
         ),
       );
       await tester.pumpAndSettle();

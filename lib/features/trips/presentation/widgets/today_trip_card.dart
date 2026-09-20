@@ -41,11 +41,12 @@ class TodayTripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
     final isAr = locale.startsWith('ar');
-    final isBooked = trip.alreadyBooked;
-    final isAvailable = trip.isBookable;
+    final isCheckedIn = trip.isCheckedIn;
+    final isBooked = trip.alreadyBooked && !isCheckedIn;
+    final isAvailable = trip.isBookable && !isCheckedIn;
     final isFull =
         trip.availabilityStatus == TodayTripAvailabilityStatus.full ||
-        (!isBooked && trip.availableSeats <= 0);
+        (!isBooked && !isCheckedIn && trip.availableSeats <= 0);
     final isDeparted =
         trip.availabilityStatus == TodayTripAvailabilityStatus.departed;
     final isReturn = trip.direction == BookingDirection.returnTrip;
@@ -53,12 +54,12 @@ class TodayTripCard extends StatelessWidget {
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     // 1. Resolve stop names:
-    // - Booked trip: use passenger's actual booked boarding & destination stops
+    // - Booked/Checked-in trip: use passenger's actual booked boarding & destination stops
     // - Available trip: use preferred journey if set and non-empty, otherwise route endpoints
     String displayOrigin;
     String displayDest;
 
-    if (isBooked) {
+    if (isBooked || isCheckedIn) {
       displayOrigin = trip.originName(locale);
       displayDest = trip.destinationName(locale);
     } else if (preference != null &&
@@ -102,7 +103,13 @@ class TodayTripCard extends StatelessWidget {
     final Color shadowColor;
     final Color timeDotColor;
 
-    if (isBooked) {
+    if (isCheckedIn) {
+      cardBackground = const Color(0xFFF8F9FA);
+      cardBorder = const Color(0xFFE2E8F0);
+      accentColor = AppColors.textTertiary;
+      shadowColor = Colors.black.withValues(alpha: 0.02);
+      timeDotColor = const Color(0xFF94A3B8);
+    } else if (isBooked) {
       cardBackground = const Color(0xFFF4FDF7);
       cardBorder = AppColors.success.withValues(alpha: 0.40);
       accentColor = AppColors.success;
@@ -129,7 +136,7 @@ class TodayTripCard extends StatelessWidget {
       timeDotColor = AppColors.primary;
     }
 
-    final cardHeight = isDeparted ? 102.0 : 144.0;
+    final cardHeight = (isDeparted || isCheckedIn) ? 102.0 : 144.0;
 
     Widget cardContent = SizedBox(
       height: cardHeight,
@@ -183,6 +190,7 @@ class TodayTripCard extends StatelessWidget {
                           _buildCompactStatusBadge(
                             isAr: isAr,
                             isBooked: isBooked,
+                            isCheckedIn: isCheckedIn,
                             isFull: isFull,
                             isDeparted: isDeparted,
                             isReturn: isReturn,
@@ -844,6 +852,7 @@ class TodayTripCard extends StatelessWidget {
   Widget _buildCompactStatusBadge({
     required bool isAr,
     required bool isBooked,
+    bool isCheckedIn = false,
     required bool isFull,
     required bool isDeparted,
     required bool isReturn,
@@ -851,7 +860,27 @@ class TodayTripCard extends StatelessWidget {
     final String statusKey;
     final Widget badge;
 
-    if (isBooked) {
+    if (isCheckedIn) {
+      statusKey = 'checked_in';
+      badge = Container(
+        key: const ValueKey('badge_checked_in'),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Text(
+          isAr ? 'تم تسجيل الصعود' : 'Boarded',
+          style: AppTextStyles.labelSmall.copyWith(
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w700,
+            fontSize: 10,
+          ),
+          maxLines: 1,
+        ),
+      );
+    } else if (isBooked) {
       statusKey = 'booked';
       badge = Container(
         key: const ValueKey('badge_booked'),
@@ -975,6 +1004,7 @@ class TodayTripCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     QrTicketModal.show(
       context,
+      bookingId: trip.bookingId,
       departureTime: AppTimeFormatter.formatPassengerTodayTrip(
         trip,
         locale: locale,

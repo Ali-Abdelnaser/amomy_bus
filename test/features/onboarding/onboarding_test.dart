@@ -72,12 +72,16 @@ void main() {
 
   setUp(() {
     fakeStorageService = FakeStorageService();
-    onboardingLocalDataSource = OnboardingLocalDataSourceImpl(fakeStorageService);
+    onboardingLocalDataSource = OnboardingLocalDataSourceImpl(
+      fakeStorageService,
+    );
 
     if (getIt.isRegistered<OnboardingLocalDataSource>()) {
       getIt.unregister<OnboardingLocalDataSource>();
     }
-    getIt.registerSingleton<OnboardingLocalDataSource>(onboardingLocalDataSource);
+    getIt.registerSingleton<OnboardingLocalDataSource>(
+      onboardingLocalDataSource,
+    );
   });
 
   tearDown(() {
@@ -88,14 +92,19 @@ void main() {
 
   group('OnboardingLocalDataSource Unit Tests', () {
     test('initially returns false for isOnboardingCompleted', () async {
-      final isCompleted = await onboardingLocalDataSource.isOnboardingCompleted();
+      final isCompleted = await onboardingLocalDataSource
+          .isOnboardingCompleted();
       expect(isCompleted, isFalse);
     });
 
     test('setOnboardingCompleted persists true with correct key', () async {
       await onboardingLocalDataSource.setOnboardingCompleted();
-      expect(fakeStorageService.getBool(StorageKeys.onboardingCompleted), isTrue);
-      final isCompleted = await onboardingLocalDataSource.isOnboardingCompleted();
+      expect(
+        fakeStorageService.getBool(StorageKeys.onboardingCompleted),
+        isTrue,
+      );
+      final isCompleted = await onboardingLocalDataSource
+          .isOnboardingCompleted();
       expect(isCompleted, isTrue);
     });
 
@@ -105,13 +114,20 @@ void main() {
 
       await onboardingLocalDataSource.resetOnboarding();
       expect(await onboardingLocalDataSource.isOnboardingCompleted(), isFalse);
-      expect(fakeStorageService.getBool(StorageKeys.onboardingCompleted), isNull);
+      expect(
+        fakeStorageService.getBool(StorageKeys.onboardingCompleted),
+        isNull,
+      );
     });
   });
 
   group('Onboarding Page and Widgets UI Tests', () {
-    testWidgets('renders OnboardingPage with initial slide and indicator', (tester) async {
-      await tester.pumpWidget(createTestableWidget(child: const OnboardingPage()));
+    testWidgets('renders OnboardingPage with initial slide and indicator', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableWidget(child: const OnboardingPage()),
+      );
       await tester.pumpAndSettle();
 
       // Verify OnboardingContent is present
@@ -140,8 +156,12 @@ void main() {
       expect(find.text('Next'), findsOneWidget);
     });
 
-    testWidgets('tapping next advances through slides to last slide', (tester) async {
-      await tester.pumpWidget(createTestableWidget(child: const OnboardingPage()));
+    testWidgets('tapping next advances through slides to last slide', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableWidget(child: const OnboardingPage()),
+      );
       await tester.pumpAndSettle();
 
       // Page 1
@@ -165,7 +185,9 @@ void main() {
     });
 
     testWidgets('Skip button persists onboarding completion', (tester) async {
-      await tester.pumpWidget(createTestableWidget(child: const OnboardingPage()));
+      await tester.pumpWidget(
+        createTestableWidget(child: const OnboardingPage()),
+      );
       await tester.pumpAndSettle();
 
       expect(await onboardingLocalDataSource.isOnboardingCompleted(), isFalse);
@@ -176,8 +198,12 @@ void main() {
       expect(await onboardingLocalDataSource.isOnboardingCompleted(), isTrue);
     });
 
-    testWidgets('Get Started on last page persists onboarding completion', (tester) async {
-      await tester.pumpWidget(createTestableWidget(child: const OnboardingPage()));
+    testWidgets('Get Started on last page persists onboarding completion', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestableWidget(child: const OnboardingPage()),
+      );
       await tester.pumpAndSettle();
 
       // Go to page 2

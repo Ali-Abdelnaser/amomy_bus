@@ -34,11 +34,11 @@ class StopProgression extends Equatable {
 
   @override
   List<Object?> get props => [
-        currentStop,
-        nextStop,
-        status,
-        distanceToCurrentMeters,
-        distanceToNextMeters,
-        isCoordinatesPending,
-      ];
+    currentStop,
+    nextStop,
+    status,
+    distanceToCurrentMeters,
+    distanceToNextMeters,
+    isCoordinatesPending,
+  ];
 }

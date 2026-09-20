@@ -44,9 +44,9 @@ abstract final class AppColors {
 
   // Future Seat Status Colors
   static const Color seatAvailable = Color(0xFF01589F); // Blue
-  static const Color seatPending = Color(0xFFF79009);   // Orange
+  static const Color seatPending = Color(0xFFF79009); // Orange
   static const Color seatConfirmed = Color(0xFF12B76A); // Green
-  static const Color seatDisabled = Color(0xFFB8C1CC);  // Disabled Gray
+  static const Color seatDisabled = Color(0xFFB8C1CC); // Disabled Gray
 
   // Transparent / Shimmer Colors
   static const Color shimmerBase = Color(0xFFE4E7EC);

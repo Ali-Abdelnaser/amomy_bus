@@ -27,8 +27,9 @@ class _HomeAnnouncementsSectionState extends State<HomeAnnouncementsSection> {
   int _currentPage = 0;
   Timer? _autoScrollTimer;
 
-  List<String> get _activeBanners =>
-      widget.banners.isNotEmpty ? widget.banners : AppAssets.announcementBanners;
+  List<String> get _activeBanners => widget.banners.isNotEmpty
+      ? widget.banners
+      : AppAssets.announcementBanners;
 
   @override
   void initState() {
@@ -127,10 +128,7 @@ class _HomeAnnouncementsSectionState extends State<HomeAnnouncementsSection> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(21),
-                    child: Image.asset(
-                      bannerPath,
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.asset(bannerPath, fit: BoxFit.cover),
                   ),
                 );
               },
@@ -152,9 +150,7 @@ class _HomeAnnouncementsSectionState extends State<HomeAnnouncementsSection> {
                 width: isSelected ? 20 : 6,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.accentYellow
-                      : AppColors.border,
+                  color: isSelected ? AppColors.accentYellow : AppColors.border,
                   borderRadius: BorderRadius.circular(3),
                 ),
               );

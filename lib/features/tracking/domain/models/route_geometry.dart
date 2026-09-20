@@ -112,14 +112,21 @@ class RouteGeometryEngine {
     final dLat = (p2.latitude - p1.latitude) * math.pi / 180.0;
     final dLng = (p2.longitude - p1.longitude) * math.pi / 180.0;
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1) * math.cos(lat2) * math.sin(dLng / 2) * math.sin(dLng / 2);
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return _earthRadiusMeters * c;
   }
 
   /// Calculates shortest perpendicular or endpoint distance from a coordinate to a polyline.
-  static double shortestDistanceToPolyline(LatLng point, List<LatLng> polyline) {
+  static double shortestDistanceToPolyline(
+    LatLng point,
+    List<LatLng> polyline,
+  ) {
     if (polyline.isEmpty) return double.infinity;
     if (polyline.length == 1) return distanceMeters(point, polyline.first);
 
@@ -137,10 +144,11 @@ class RouteGeometryEngine {
     if (l2 == 0) return distanceMeters(p, v);
 
     // Project p onto line segment
-    final double t = (((p.latitude - v.latitude) * (w.latitude - v.latitude) +
-                (p.longitude - v.longitude) * (w.longitude - v.longitude)) /
-            l2)
-        .clamp(0.0, 1.0);
+    final double t =
+        (((p.latitude - v.latitude) * (w.latitude - v.latitude) +
+                    (p.longitude - v.longitude) * (w.longitude - v.longitude)) /
+                l2)
+            .clamp(0.0, 1.0);
 
     final projection = LatLng(
       v.latitude + t * (w.latitude - v.latitude),
@@ -176,12 +184,14 @@ class RouteGeometryEngine {
         quality = StopProximityQuality.reviewNeeded;
       }
 
-      reports.add(StopValidationReport(
-        stopId: (s['id'] ?? '') as String,
-        stopOrder: (s['stop_order'] as num?)?.toInt() ?? 0,
-        shortestDistanceMeters: dist,
-        quality: quality,
-      ));
+      reports.add(
+        StopValidationReport(
+          stopId: (s['id'] ?? '') as String,
+          stopOrder: (s['stop_order'] as num?)?.toInt() ?? 0,
+          shortestDistanceMeters: dist,
+          quality: quality,
+        ),
+      );
     }
     return reports;
   }
@@ -204,10 +214,12 @@ class RouteGeometryEngine {
       final l2 = _distSq(v, w);
       if (l2 == 0) continue;
 
-      final t = (((rawGps.latitude - v.latitude) * (w.latitude - v.latitude) +
-                  (rawGps.longitude - v.longitude) * (w.longitude - v.longitude)) /
-              l2)
-          .clamp(0.0, 1.0);
+      final t =
+          (((rawGps.latitude - v.latitude) * (w.latitude - v.latitude) +
+                      (rawGps.longitude - v.longitude) *
+                          (w.longitude - v.longitude)) /
+                  l2)
+              .clamp(0.0, 1.0);
 
       final projection = LatLng(
         v.latitude + t * (w.latitude - v.latitude),
@@ -247,10 +259,12 @@ class RouteGeometryEngine {
       final l2 = _distSq(v, w);
       if (l2 == 0) continue;
 
-      final t = (((busLocation.latitude - v.latitude) * (w.latitude - v.latitude) +
-                  (busLocation.longitude - v.longitude) * (w.longitude - v.longitude)) /
-              l2)
-          .clamp(0.0, 1.0);
+      final t =
+          (((busLocation.latitude - v.latitude) * (w.latitude - v.latitude) +
+                      (busLocation.longitude - v.longitude) *
+                          (w.longitude - v.longitude)) /
+                  l2)
+              .clamp(0.0, 1.0);
 
       final proj = LatLng(
         v.latitude + t * (w.latitude - v.latitude),
@@ -283,7 +297,10 @@ class RouteGeometryEngine {
     required List<LatLng> polyline,
     required LatLng fromPoint,
   }) {
-    final split = splitPolylineByBus(polyline: polyline, busLocation: fromPoint);
+    final split = splitPolylineByBus(
+      polyline: polyline,
+      busLocation: fromPoint,
+    );
     double dist = 0.0;
     for (int i = 0; i < split.upcoming.length - 1; i++) {
       dist += distanceMeters(split.upcoming[i], split.upcoming[i + 1]);

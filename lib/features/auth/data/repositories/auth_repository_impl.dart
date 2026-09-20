@@ -84,9 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultFuture<void> resendVerificationOtp({
-    required String email,
-  }) async {
+  ResultFuture<void> resendVerificationOtp({required String email}) async {
     try {
       await _remoteDataSource.resendVerificationOtp(email: email);
       return const Success(null);
@@ -96,9 +94,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultFuture<AppUser> signInWithGoogle({
-    String? webClientId,
-  }) async {
+  ResultFuture<AppUser> signInWithGoogle({String? webClientId}) async {
     try {
       final user = await _remoteDataSource.signInWithGoogle(
         webClientId: webClientId,
@@ -132,9 +128,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultFuture<void> sendPasswordResetEmail({
-    required String email,
-  }) async {
+  ResultFuture<void> sendPasswordResetEmail({required String email}) async {
     try {
       await _remoteDataSource.sendPasswordResetEmail(email: email);
       return const Success(null);
@@ -144,9 +138,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultFuture<void> updatePassword({
-    required String newPassword,
-  }) async {
+  ResultFuture<void> updatePassword({required String newPassword}) async {
     try {
       await _remoteDataSource.updatePassword(newPassword: newPassword);
       return const Success(null);

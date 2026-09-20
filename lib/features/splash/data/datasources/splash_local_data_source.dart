@@ -13,10 +13,7 @@ class SplashLocalDataSourceImpl implements SplashLocalDataSource {
   final StorageService _storageService;
   final SecureStorageService _secureStorageService;
 
-  SplashLocalDataSourceImpl(
-    this._storageService,
-    this._secureStorageService,
-  );
+  SplashLocalDataSourceImpl(this._storageService, this._secureStorageService);
 
   @override
   Future<bool> isAuthenticated() async {

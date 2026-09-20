@@ -7,32 +7,35 @@ import 'package:amomy_bus/features/booking/presentation/widgets/professional_bus
 
 void main() {
   group('BusSeatLayoutConfig — 28-Seat Physical Mapping', () {
-    test('all 28 authoritative physical seats (1..28) resolve cleanly to 28 slots', () {
-      final seats28 = List.generate(28, (i) {
-        final seatNum = '${i + 1}';
-        return TripSeat(
-          seatId: 'seat-$seatNum',
-          seatNumber: seatNum,
-          rowIndex: i,
-          columnIndex: 0,
-          seatType: 'standard',
-          status: SeatAvailabilityStatus.available,
-          isMine: false,
-        );
-      });
+    test(
+      'all 28 authoritative physical seats (1..28) resolve cleanly to 28 slots',
+      () {
+        final seats28 = List.generate(28, (i) {
+          final seatNum = '${i + 1}';
+          return TripSeat(
+            seatId: 'seat-$seatNum',
+            seatNumber: seatNum,
+            rowIndex: i,
+            columnIndex: 0,
+            seatType: 'standard',
+            status: SeatAvailabilityStatus.available,
+            isMine: false,
+          );
+        });
 
-      for (final slot in BusSeatLayoutConfig.slots28) {
-        final matched = BusSeatLayoutConfig.resolveSeatForSlot(
-          slot: slot,
-          seats: seats28,
-        );
-        expect(
-          matched,
-          isNotNull,
-          reason: 'Slot ${slot.slotKey} must match a real backend seat',
-        );
-      }
-    });
+        for (final slot in BusSeatLayoutConfig.slots28) {
+          final matched = BusSeatLayoutConfig.resolveSeatForSlot(
+            slot: slot,
+            seats: seats28,
+          );
+          expect(
+            matched,
+            isNotNull,
+            reason: 'Slot ${slot.slotKey} must match a real backend seat',
+          );
+        }
+      },
+    );
 
     test('exact 1..28 slot key mapping matches physical specification', () {
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['1'], 'front_single');
@@ -53,15 +56,30 @@ void main() {
 
       // Right side
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['14'], 'right_r1_aisle');
-      expect(BusSeatLayoutConfig.seatNumberToSlotKey28['15'], 'right_r1_window');
+      expect(
+        BusSeatLayoutConfig.seatNumberToSlotKey28['15'],
+        'right_r1_window',
+      );
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['16'], 'right_r2_aisle');
-      expect(BusSeatLayoutConfig.seatNumberToSlotKey28['17'], 'right_r2_window');
+      expect(
+        BusSeatLayoutConfig.seatNumberToSlotKey28['17'],
+        'right_r2_window',
+      );
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['18'], 'right_r3_aisle');
-      expect(BusSeatLayoutConfig.seatNumberToSlotKey28['19'], 'right_r3_window');
+      expect(
+        BusSeatLayoutConfig.seatNumberToSlotKey28['19'],
+        'right_r3_window',
+      );
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['20'], 'right_r4_aisle');
-      expect(BusSeatLayoutConfig.seatNumberToSlotKey28['21'], 'right_r4_window');
+      expect(
+        BusSeatLayoutConfig.seatNumberToSlotKey28['21'],
+        'right_r4_window',
+      );
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['22'], 'right_r5_aisle');
-      expect(BusSeatLayoutConfig.seatNumberToSlotKey28['23'], 'right_r5_window');
+      expect(
+        BusSeatLayoutConfig.seatNumberToSlotKey28['23'],
+        'right_r5_window',
+      );
 
       // Rear bench
       expect(BusSeatLayoutConfig.seatNumberToSlotKey28['24'], 'rear_1');
@@ -101,11 +119,17 @@ void main() {
       );
 
       expect(
-        BusSeatLayoutConfig.resolveSeatForSlot(slot: frontSlot, seats: legacySeats)?.seatNumber,
+        BusSeatLayoutConfig.resolveSeatForSlot(
+          slot: frontSlot,
+          seats: legacySeats,
+        )?.seatNumber,
         '1A',
       );
       expect(
-        BusSeatLayoutConfig.resolveSeatForSlot(slot: rear5Slot, seats: legacySeats)?.seatNumber,
+        BusSeatLayoutConfig.resolveSeatForSlot(
+          slot: rear5Slot,
+          seats: legacySeats,
+        )?.seatNumber,
         '4E',
       );
     });
@@ -147,59 +171,68 @@ void main() {
       expect(state, SeatVisualState.selected);
     });
 
-    test('Rule C: status == booked AND passenger_gender == male resolves to bookedMale', () {
-      const maleBooked = TripSeat(
-        seatId: 'seat-7',
-        seatNumber: '7',
-        rowIndex: 3,
-        columnIndex: 1,
-        seatType: 'standard',
-        status: SeatAvailabilityStatus.booked,
-        isMine: false,
-        passengerGender: 'male',
-      );
-      final state = BusSeatLayoutConfig.resolveVisualState(
-        seat: maleBooked,
-        selectedSeat: null,
-      );
-      expect(state, SeatVisualState.bookedMale);
-    });
+    test(
+      'Rule C: status == booked AND passenger_gender == male resolves to bookedMale',
+      () {
+        const maleBooked = TripSeat(
+          seatId: 'seat-7',
+          seatNumber: '7',
+          rowIndex: 3,
+          columnIndex: 1,
+          seatType: 'standard',
+          status: SeatAvailabilityStatus.booked,
+          isMine: false,
+          passengerGender: 'male',
+        );
+        final state = BusSeatLayoutConfig.resolveVisualState(
+          seat: maleBooked,
+          selectedSeat: null,
+        );
+        expect(state, SeatVisualState.bookedMale);
+      },
+    );
 
-    test('Rule D: status == booked AND passenger_gender == female resolves to bookedFemale', () {
-      const femaleBooked = TripSeat(
-        seatId: 'seat-7',
-        seatNumber: '7',
-        rowIndex: 3,
-        columnIndex: 1,
-        seatType: 'standard',
-        status: SeatAvailabilityStatus.booked,
-        isMine: false,
-        passengerGender: 'female',
-      );
-      final state = BusSeatLayoutConfig.resolveVisualState(
-        seat: femaleBooked,
-        selectedSeat: null,
-      );
-      expect(state, SeatVisualState.bookedFemale);
-    });
+    test(
+      'Rule D: status == booked AND passenger_gender == female resolves to bookedFemale',
+      () {
+        const femaleBooked = TripSeat(
+          seatId: 'seat-7',
+          seatNumber: '7',
+          rowIndex: 3,
+          columnIndex: 1,
+          seatType: 'standard',
+          status: SeatAvailabilityStatus.booked,
+          isMine: false,
+          passengerGender: 'female',
+        );
+        final state = BusSeatLayoutConfig.resolveVisualState(
+          seat: femaleBooked,
+          selectedSeat: null,
+        );
+        expect(state, SeatVisualState.bookedFemale);
+      },
+    );
 
-    test('Rule E: status == booked AND passenger_gender == null resolves to unavailable', () {
-      const unknownBooked = TripSeat(
-        seatId: 'seat-7',
-        seatNumber: '7',
-        rowIndex: 3,
-        columnIndex: 1,
-        seatType: 'standard',
-        status: SeatAvailabilityStatus.booked,
-        isMine: false,
-        passengerGender: null,
-      );
-      final state = BusSeatLayoutConfig.resolveVisualState(
-        seat: unknownBooked,
-        selectedSeat: null,
-      );
-      expect(state, SeatVisualState.unavailable);
-    });
+    test(
+      'Rule E: status == booked AND passenger_gender == null resolves to unavailable',
+      () {
+        const unknownBooked = TripSeat(
+          seatId: 'seat-7',
+          seatNumber: '7',
+          rowIndex: 3,
+          columnIndex: 1,
+          seatType: 'standard',
+          status: SeatAvailabilityStatus.booked,
+          isMine: false,
+          passengerGender: null,
+        );
+        final state = BusSeatLayoutConfig.resolveVisualState(
+          seat: unknownBooked,
+          selectedSeat: null,
+        );
+        expect(state, SeatVisualState.unavailable);
+      },
+    );
 
     test('Rule F: status == held AND is_mine == false resolves to held', () {
       const otherHeld = TripSeat(
@@ -230,32 +263,33 @@ void main() {
   group('BusSeatVisual Widget Tests', () {
     Widget buildFrame(Widget child) {
       return MaterialApp(
-        home: Scaffold(
-          body: Center(child: child),
-        ),
+        home: Scaffold(body: Center(child: child)),
       );
     }
 
-    testWidgets('renders available seat with correct semantics and responds to tap', (tester) async {
-      bool tapped = false;
-      await tester.pumpWidget(
-        buildFrame(
-          BusSeatVisual(
-            label: '7',
-            state: SeatVisualState.available,
-            width: 42,
-            height: 48,
-            onTap: () => tapped = true,
+    testWidgets(
+      'renders available seat with correct semantics and responds to tap',
+      (tester) async {
+        bool tapped = false;
+        await tester.pumpWidget(
+          buildFrame(
+            BusSeatVisual(
+              label: '7',
+              state: SeatVisualState.available,
+              width: 42,
+              height: 48,
+              onTap: () => tapped = true,
+            ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      expect(find.bySemanticsLabel('Seat 7'), findsOneWidget);
+        expect(find.bySemanticsLabel('Seat 7'), findsOneWidget);
 
-      await tester.tap(find.byType(BusSeatVisual));
-      expect(tapped, isTrue);
-    });
+        await tester.tap(find.byType(BusSeatVisual));
+        expect(tapped, isTrue);
+      },
+    );
 
     testWidgets('renders selected seat correctly', (tester) async {
       await tester.pumpWidget(
@@ -272,7 +306,10 @@ void main() {
 
       expect(
         find.byWidgetPredicate(
-          (w) => w is BusSeatVisual && w.state == SeatVisualState.selected && w.label == '1',
+          (w) =>
+              w is BusSeatVisual &&
+              w.state == SeatVisualState.selected &&
+              w.label == '1',
         ),
         findsOneWidget,
       );
@@ -331,7 +368,9 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('renders held seat with non-tappable semantics', (tester) async {
+    testWidgets('renders held seat with non-tappable semantics', (
+      tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         buildFrame(
@@ -358,7 +397,9 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('renders unavailable seat with null-gender correctly', (tester) async {
+    testWidgets('renders unavailable seat with null-gender correctly', (
+      tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         buildFrame(
@@ -386,7 +427,9 @@ void main() {
   });
 
   group('ProfessionalBusSeatMap Widget Tests', () {
-    testWidgets('renders all 28 real seats with labels 1 through 28', (tester) async {
+    testWidgets('renders all 28 real seats with labels 1 through 28', (
+      tester,
+    ) async {
       TripSeat? tappedSeat;
       final seats28 = List.generate(28, (i) {
         final seatNum = '${i + 1}';

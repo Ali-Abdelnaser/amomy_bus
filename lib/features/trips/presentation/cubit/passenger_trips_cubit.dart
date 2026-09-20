@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
+import '../../../../core/error/app_error_mapper.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/domain/usecases/booking_usecases.dart';
@@ -60,7 +61,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         repo.getPassengerTodayTrips().then((res) {
           res.fold(
             onSuccess: (trips) => todayTrips = trips,
-            onError: (err) => errorMsg ??= err.message,
+            onError: (err) => errorMsg ??= AppErrorMapper.mapToString(err),
           );
         }),
 
@@ -79,29 +80,41 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
           res.fold(
             onSuccess: (bookings) {
               final now = DateTime.now();
+              final todayStart = DateTime(now.year, now.month, now.day);
+
               upcomingTrips =
                   bookings
-                      .where(
-                        (b) =>
-                            b.status == 'confirmed' &&
-                            b.checkedInAt == null &&
-                            b.departureAt.isAfter(now),
-                      )
+                      .where((b) {
+                        if (b.status != 'confirmed' || b.checkedInAt != null) {
+                          return false;
+                        }
+                        final serviceDay = DateTime(
+                          b.serviceDate.year,
+                          b.serviceDate.month,
+                          b.serviceDate.day,
+                        );
+                        return !serviceDay.isBefore(todayStart);
+                      })
                       .toList()
                     ..sort((a, b) => a.departureAt.compareTo(b.departureAt));
 
               historyTrips =
                   bookings
-                      .where(
-                        (b) =>
-                            b.checkedInAt != null ||
-                            b.status != 'confirmed' ||
-                            !b.departureAt.isAfter(now),
-                      )
+                      .where((b) {
+                        if (b.checkedInAt != null || b.status != 'confirmed') {
+                          return true;
+                        }
+                        final serviceDay = DateTime(
+                          b.serviceDate.year,
+                          b.serviceDate.month,
+                          b.serviceDate.day,
+                        );
+                        return serviceDay.isBefore(todayStart);
+                      })
                       .toList()
                     ..sort((a, b) => b.departureAt.compareTo(a.departureAt));
             },
-            onError: (err) => errorMsg ??= err.message,
+            onError: (err) => errorMsg ??= AppErrorMapper.mapToString(err),
           );
         }),
 
@@ -169,7 +182,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (err) {
-        emit(state.copyWith(errorMessage: err.message));
+        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(err)));
         return false;
       },
     );
@@ -187,7 +200,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
+        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(failure)));
         return false;
       },
     );
@@ -211,10 +224,21 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
+        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(failure)));
         return false;
       },
     );
+  }
+
+  /// Gets the round trip bundle context for a booking if it is part of a bundle.
+  Future<RoundTripBundleContext?> getRoundTripBundleContext(
+    String bookingId,
+  ) async {
+    final repo = _repo;
+    if (repo == null) return null;
+
+    final result = await repo.getRoundTripBundleContext(bookingId: bookingId);
+    return result.fold(onSuccess: (context) => context, onError: (_) => null);
   }
 
   @override

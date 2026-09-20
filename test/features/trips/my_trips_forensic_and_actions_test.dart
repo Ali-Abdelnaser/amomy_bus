@@ -96,6 +96,46 @@ class FakeBookingRepository implements BookingRepository {
   @override
   Stream<void> subscribeToPassengerBookingUpdates() =>
       bookingUpdatesController.stream;
+
+  @override
+  ResultFuture<List<RoundTripReturnOption>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  }) async => const Success([]);
+
+  @override
+  ResultFuture<RoundTripBundleHold> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  }) => throw UnimplementedError();
+
+  @override
+  ResultFuture<RoundTripBundleHold> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  }) => throw UnimplementedError();
+
+  @override
+  ResultFuture<void> releaseRoundTripBundleHold({
+    required String bundleHoldId,
+  }) async => const Success(null);
+
+  @override
+  ResultFuture<RoundTripConfirmation> confirmRoundTripBundle({
+    required String bundleHoldId,
+  }) => throw UnimplementedError();
+
+  @override
+  ResultFuture<RoundTripBundleContext> getRoundTripBundleContext({
+    required String bookingId,
+  }) async => const Success(
+    RoundTripBundleContext(
+      isRoundTripBundle: false,
+      cancellationEligible: true,
+    ),
+  );
 }
 
 void main() {

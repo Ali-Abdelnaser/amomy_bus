@@ -62,10 +62,7 @@ class _BusSeatMapWidgetState extends State<BusSeatMapWidget>
     ]).animate(_entranceController);
 
     _opacityAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _entranceController,
-        curve: Curves.easeOut,
-      ),
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
     );
   }
 

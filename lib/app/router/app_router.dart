@@ -194,7 +194,9 @@ class AppRouter {
           return AppPageTransitions.fadePage(
             key: state.pageKey,
             name: state.name,
-            child: const AccessBlockedPage(type: AccessBlockedType.deviceBlocked),
+            child: const AccessBlockedPage(
+              type: AccessBlockedType.deviceBlocked,
+            ),
           );
         },
       ),

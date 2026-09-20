@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/error/app_error_mapper.dart';
 import '../../../../core/typedefs/typedefs.dart';
 import '../../domain/entities/topup_entities.dart';
 import '../../domain/repositories/topup_repository.dart';
@@ -23,7 +24,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(UnknownFailure(message: e.toString()));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -37,7 +38,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(UnknownFailure(message: e.toString()));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -64,7 +65,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(UnknownFailure(message: e.toString()));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -94,7 +95,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(ProofUploadFailedFailure(message: e.toString()));
+      return const Error(ProofUploadFailedFailure());
     }
   }
 
@@ -145,7 +146,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(UnknownFailure(message: e.toString()));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -159,7 +160,7 @@ class TopUpRepositoryImpl implements TopUpRepository {
     } on PostgrestException catch (e) {
       return Error(_mapPostgrestError(e));
     } catch (e) {
-      return Error(UnknownFailure(message: e.toString()));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -197,6 +198,6 @@ class TopUpRepositoryImpl implements TopUpRepository {
         msg.contains('authenticated')) {
       return const AuthenticationFailure();
     }
-    return ServerFailure(message: e.message);
+    return ServerFailure(message: AppErrorMapper.mapToString(e));
   }
 }

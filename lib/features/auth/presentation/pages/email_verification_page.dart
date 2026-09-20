@@ -143,7 +143,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
             _hasError = true;
             _isSubmitting = false;
           });
-          AppSnackBar.showError(context, state.failure.message);
+          AppSnackBar.showError(context, state.failure);
         } else if (state is EmailVerificationRequired &&
             state.infoMessage != null) {
           setState(() => _isSubmitting = false);

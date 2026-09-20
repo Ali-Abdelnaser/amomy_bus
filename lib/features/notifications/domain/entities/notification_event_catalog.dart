@@ -164,10 +164,7 @@ class NotificationEventCatalog {
     titleEn: 'Booking cancelled',
     bodyEn: 'Your trip booking has been cancelled and points returned.',
     destinationScreen: 'trips',
-    samplePayload: {
-      'screen': 'trips',
-      'booking_id': 'sample-booking-7',
-    },
+    samplePayload: {'screen': 'trips', 'booking_id': 'sample-booking-7'},
     dedupeStrategy: 'booking_id',
     icon: LucideIcons.xCircle,
   );
@@ -220,10 +217,7 @@ class NotificationEventCatalog {
     titleEn: 'Top-up not approved',
     bodyEn: 'Please review your top-up request or submit a valid receipt.',
     destinationScreen: 'wallet',
-    samplePayload: {
-      'screen': 'wallet',
-      'request_id': 'sample-topup-300',
-    },
+    samplePayload: {'screen': 'wallet', 'request_id': 'sample-topup-300'},
     dedupeStrategy: 'request_id',
     icon: LucideIcons.alertTriangle,
   );
@@ -237,10 +231,7 @@ class NotificationEventCatalog {
     titleEn: 'Points credited',
     bodyEn: '50 reward points were added to your balance.',
     destinationScreen: 'wallet',
-    samplePayload: {
-      'screen': 'wallet',
-      'points': '50',
-    },
+    samplePayload: {'screen': 'wallet', 'points': '50'},
     dedupeStrategy: 'none',
     icon: LucideIcons.coins,
   );
@@ -254,10 +245,7 @@ class NotificationEventCatalog {
     titleEn: 'Points refunded',
     bodyEn: '100 points were returned to your wallet.',
     destinationScreen: 'wallet',
-    samplePayload: {
-      'screen': 'wallet',
-      'points': '100',
-    },
+    samplePayload: {'screen': 'wallet', 'points': '100'},
     dedupeStrategy: 'none',
     icon: LucideIcons.rotateCcw,
   );
@@ -292,10 +280,7 @@ class NotificationEventCatalog {
     titleEn: 'Your bus has arrived',
     bodyEn: 'The bus has arrived at Ahmed Maher stop.',
     destinationScreen: 'live_map',
-    samplePayload: {
-      'screen': 'live_map',
-      'stop_name': 'Ahmed Maher',
-    },
+    samplePayload: {'screen': 'live_map', 'stop_name': 'Ahmed Maher'},
     dedupeStrategy: 'booking_run_arrival',
     icon: LucideIcons.mapPin,
   );
@@ -337,10 +322,7 @@ class NotificationEventCatalog {
     titleEn: 'Next stop',
     bodyEn: 'The next stop is Jihan.',
     destinationScreen: 'live_map',
-    samplePayload: {
-      'screen': 'live_map',
-      'next_stop': 'Jihan',
-    },
+    samplePayload: {'screen': 'live_map', 'next_stop': 'Jihan'},
     dedupeStrategy: 'none',
     icon: LucideIcons.arrowRightCircle,
     // Next stop update is available in Test Lab, but automatic production push

@@ -21,6 +21,21 @@ class WalletHistoryEventModel extends WalletHistoryEvent {
     super.alightingNameAr,
     super.alightingNameEn,
     super.bookingKind,
+    super.bundleId,
+    super.outboundBookingId,
+    super.returnBookingId,
+    super.outboundTripId,
+    super.returnTripId,
+    super.outboundDepartureAt,
+    super.returnDepartureAt,
+    super.outboundSeatNumber,
+    super.returnSeatNumber,
+    super.outboundBaseFarePoints,
+    super.returnBaseFarePoints,
+    super.subtotalPoints,
+    super.discountPercent,
+    super.discountPoints,
+    super.totalPaidPoints,
   });
 
   factory WalletHistoryEventModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +56,22 @@ class WalletHistoryEventModel extends WalletHistoryEvent {
     final departureAt = rawDepartureAt != null
         ? DateTime.tryParse(rawDepartureAt.toString())
         : null;
+
+    final rawOutboundDepartureAt = json['outbound_departure_at'];
+    final outboundDepartureAt = rawOutboundDepartureAt != null
+        ? DateTime.tryParse(rawOutboundDepartureAt.toString())
+        : null;
+
+    final rawReturnDepartureAt = json['return_departure_at'];
+    final returnDepartureAt = rawReturnDepartureAt != null
+        ? DateTime.tryParse(rawReturnDepartureAt.toString())
+        : null;
+
+    num? parseNum(dynamic val) {
+      if (val is num) return val;
+      if (val is String) return num.tryParse(val);
+      return null;
+    }
 
     return WalletHistoryEventModel(
       eventId: json['event_id']?.toString() ?? '',
@@ -64,6 +95,21 @@ class WalletHistoryEventModel extends WalletHistoryEvent {
       alightingNameAr: json['alighting_name_ar'] as String?,
       alightingNameEn: json['alighting_name_en'] as String?,
       bookingKind: json['booking_kind'] as String?,
+      bundleId: json['bundle_id'] as String?,
+      outboundBookingId: json['outbound_booking_id'] as String?,
+      returnBookingId: json['return_booking_id'] as String?,
+      outboundTripId: json['outbound_trip_id'] as String?,
+      returnTripId: json['return_trip_id'] as String?,
+      outboundDepartureAt: outboundDepartureAt,
+      returnDepartureAt: returnDepartureAt,
+      outboundSeatNumber: json['outbound_seat_number']?.toString(),
+      returnSeatNumber: json['return_seat_number']?.toString(),
+      outboundBaseFarePoints: parseNum(json['outbound_base_fare_points']),
+      returnBaseFarePoints: parseNum(json['return_base_fare_points']),
+      subtotalPoints: parseNum(json['subtotal_points']),
+      discountPercent: parseNum(json['discount_percent']),
+      discountPoints: parseNum(json['discount_points']),
+      totalPaidPoints: parseNum(json['total_paid_points']),
     );
   }
 
@@ -87,6 +133,21 @@ class WalletHistoryEventModel extends WalletHistoryEvent {
     'alighting_name_ar': alightingNameAr,
     'alighting_name_en': alightingNameEn,
     'booking_kind': bookingKind,
+    'bundle_id': bundleId,
+    'outbound_booking_id': outboundBookingId,
+    'return_booking_id': returnBookingId,
+    'outbound_trip_id': outboundTripId,
+    'return_trip_id': returnTripId,
+    'outbound_departure_at': outboundDepartureAt?.toIso8601String(),
+    'return_departure_at': returnDepartureAt?.toIso8601String(),
+    'outbound_seat_number': outboundSeatNumber,
+    'return_seat_number': returnSeatNumber,
+    'outbound_base_fare_points': outboundBaseFarePoints,
+    'return_base_fare_points': returnBaseFarePoints,
+    'subtotal_points': subtotalPoints,
+    'discount_percent': discountPercent,
+    'discount_points': discountPoints,
+    'total_paid_points': totalPaidPoints,
   };
 }
 

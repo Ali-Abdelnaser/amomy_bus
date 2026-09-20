@@ -128,7 +128,7 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
           onError: (failure) {
             if (silent) return;
             setState(() {
-              _error = failure.message;
+              _error = StatusLocalizer.localizeError(context, failure);
               _isLoading = false;
             });
           },
@@ -414,7 +414,6 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                     child: Column(
                       children: [
                         // Hint banner
-                        
 
                         // Physical 28-Seat Bus Interior Map
                         BusSeatMapWidget(
@@ -519,6 +518,3 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
     );
   }
 }
-
-
-

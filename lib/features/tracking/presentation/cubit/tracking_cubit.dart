@@ -6,6 +6,7 @@ import '../../domain/models/route_geometry.dart';
 import '../../domain/models/stop_progression.dart';
 import '../../domain/models/tracking_summary.dart';
 import '../../domain/repositories/tracking_repository.dart';
+import '../../../../core/error/app_error_mapper.dart';
 import 'tracking_state.dart';
 
 class TrackingCubit extends Cubit<TrackingState> {
@@ -84,14 +85,29 @@ class TrackingCubit extends Cubit<TrackingState> {
       final summary = await repository.getTripTracking(tripId: tripId);
       if (_trackedTripId != tripId) return;
 
-      final routeGeom = await _loadRouteGeometry(summary);
-      final telemetry =
+      final hasUsableTelemetry =
+          (summary.trackingEnabled &&
+              (summary.trackingPhase == TrackingPhase.live ||
+                  summary.trackingPhase == TrackingPhase.gpsStale ||
+                  summary.trackingPhase == TrackingPhase.progressionSyncing)) ||
           summary.status == LiveTrackingStatus.live ||
-              summary.status == LiveTrackingStatus.online ||
-              summary.status == LiveTrackingStatus.qaPreview ||
-              summary.status == LiveTrackingStatus.progressionUnavailable
+          summary.status == LiveTrackingStatus.online ||
+          summary.status == LiveTrackingStatus.qaPreview;
+
+      final isTelemetrySuppressed =
+          summary.trackingPhase == TrackingPhase.gpsOffline ||
+          summary.trackingPhase == TrackingPhase.reassignmentPending ||
+          summary.trackingPhase == TrackingPhase.waitingAssignment ||
+          summary.trackingPhase == TrackingPhase.waitingStart ||
+          summary.trackingPhase == TrackingPhase.completed ||
+          summary.trackingPhase == TrackingPhase.cancelled ||
+          summary.trackingPhase == TrackingPhase.serviceDateEnded;
+
+      final telemetry = (!isTelemetrySuppressed && hasUsableTelemetry)
           ? summary.busLocation
           : null;
+
+      final routeGeom = await _loadRouteGeometry(summary);
 
       emit(
         state.copyWith(
@@ -113,11 +129,12 @@ class TrackingCubit extends Cubit<TrackingState> {
 
       _checkApproachNotification(summary);
     } catch (e) {
+      final safeMessage = AppErrorMapper.mapToString(e);
       if (state.summary == null) {
         emit(
           state.copyWith(
             uiStatus: TrackingUiStatus.error,
-            errorMessage: e.toString(),
+            errorMessage: safeMessage,
             isRefreshingSnapshot: false,
           ),
         );
@@ -125,7 +142,7 @@ class TrackingCubit extends Cubit<TrackingState> {
         emit(
           state.copyWith(
             uiStatus: TrackingUiStatus.loaded,
-            errorMessage: e.toString(),
+            errorMessage: safeMessage,
             isRefreshingSnapshot: false,
           ),
         );

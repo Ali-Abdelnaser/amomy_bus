@@ -146,7 +146,7 @@ class _ChangeSeatModalState extends State<ChangeSeatModal> {
           onError: (failure) {
             if (silent) return;
             setState(() {
-              _error = failure.message;
+              _error = StatusLocalizer.localizeError(context, failure);
               _isLoading = false;
             });
           },

@@ -30,17 +30,25 @@ class MockDeviceIdentityService implements DeviceIdentityService {
 }
 
 class MockAuthRepository implements AuthRepository {
-  DeviceAccessResult deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
-  UserAccessStatus accessStatusResult = const UserAccessStatus(allowed: true, accountStatus: 'active');
-  
+  DeviceAccessResult deviceAccessResult = const DeviceAccessResult(
+    allowed: true,
+    isBlocked: false,
+  );
+  UserAccessStatus accessStatusResult = const UserAccessStatus(
+    allowed: true,
+    accountStatus: 'active',
+  );
+
   bool registerInstallationCalled = false;
   String? registeredDeviceId;
   String? registeredPlatform;
-  
+
   final List<String> recordedEvents = [];
 
   @override
-  ResultFuture<DeviceAccessResult> checkDeviceAccess({required String deviceIdentifier}) async {
+  ResultFuture<DeviceAccessResult> checkDeviceAccess({
+    required String deviceIdentifier,
+  }) async {
     return Success(deviceAccessResult);
   }
 
@@ -58,7 +66,9 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  ResultFuture<UserAccessStatus> getMyAccessStatus({required String deviceIdentifier}) async {
+  ResultFuture<UserAccessStatus> getMyAccessStatus({
+    required String deviceIdentifier,
+  }) async {
     return Success(accessStatusResult);
   }
 
@@ -92,7 +102,10 @@ class FakeSignInWithEmailUseCase implements SignInWithEmailUseCase {
   Failure? failureToReturn;
 
   @override
-  Future<Result<AppUser>> call({required String email, required String password}) async {
+  Future<Result<AppUser>> call({
+    required String email,
+    required String password,
+  }) async {
     if (failureToReturn != null) return Error(failureToReturn!);
     return Success(userToReturn!);
   }
@@ -135,7 +148,8 @@ class FakeUpdatePasswordUseCase implements UpdatePasswordUseCase {
 
 class FakeGetWalletPreviewUseCase implements GetWalletPreviewUseCase {
   @override
-  Future<Result<WalletPreview?>> call(String userId) async => const Success(null);
+  Future<Result<WalletPreview?>> call(String userId) async =>
+      const Success(null);
 }
 
 class FakeSignOutUseCase implements SignOutUseCase {
@@ -197,65 +211,96 @@ void main() {
   });
 
   group('Passenger Access Enforcement Tests', () {
-    test('Pre-auth device check blocks blocked device before loading user session', () async {
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: false, isBlocked: true);
-      mockGetCurrentUser.userToReturn = testUser;
+    test(
+      'Pre-auth device check blocks blocked device before loading user session',
+      () async {
+        mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+          allowed: false,
+          isBlocked: true,
+        );
+        mockGetCurrentUser.userToReturn = testUser;
 
-      final states = <AuthState>[];
-      final sub = authBloc.stream.listen(states.add);
+        final states = <AuthState>[];
+        final sub = authBloc.stream.listen(states.add);
 
-      authBloc.add(const AuthCheckRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
+        authBloc.add(const AuthCheckRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(states.any((s) => s is AccessBlockedState && s.type == AccessBlockedType.deviceBlocked), isTrue);
-      expect(states.any((s) => s is Authenticated), isFalse);
-      await sub.cancel();
-    });
+        expect(
+          states.any(
+            (s) =>
+                s is AccessBlockedState &&
+                s.type == AccessBlockedType.deviceBlocked,
+          ),
+          isTrue,
+        );
+        expect(states.any((s) => s is Authenticated), isFalse);
+        await sub.cancel();
+      },
+    );
 
-    test('Allowed device with active user session authenticates, registers installation and records session_start', () async {
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
-      mockAuthRepo.accessStatusResult = const UserAccessStatus(allowed: true, accountStatus: 'active');
-      mockGetCurrentUser.userToReturn = testUser;
+    test(
+      'Allowed device with active user session authenticates, registers installation and records session_start',
+      () async {
+        mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+          allowed: true,
+          isBlocked: false,
+        );
+        mockAuthRepo.accessStatusResult = const UserAccessStatus(
+          allowed: true,
+          accountStatus: 'active',
+        );
+        mockGetCurrentUser.userToReturn = testUser;
 
-      final states = <AuthState>[];
-      final sub = authBloc.stream.listen(states.add);
+        final states = <AuthState>[];
+        final sub = authBloc.stream.listen(states.add);
 
-      authBloc.add(const AuthCheckRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
+        authBloc.add(const AuthCheckRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(states.last is Authenticated, isTrue);
-      expect(mockAuthRepo.registerInstallationCalled, isTrue);
-      expect(mockAuthRepo.registeredDeviceId, 'test-device-uuid-123');
-      expect(mockAuthRepo.recordedEvents.contains('session_start'), isTrue);
-      await sub.cancel();
-    });
+        expect(states.last is Authenticated, isTrue);
+        expect(mockAuthRepo.registerInstallationCalled, isTrue);
+        expect(mockAuthRepo.registeredDeviceId, 'test-device-uuid-123');
+        expect(mockAuthRepo.recordedEvents.contains('session_start'), isTrue);
+        await sub.cancel();
+      },
+    );
 
-    test('Temporary ban blocks authenticated user session and returns bannedUntil timestamp', () async {
-      final banDate = DateTime(2026, 10, 15);
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
-      mockAuthRepo.accessStatusResult = UserAccessStatus(
-        allowed: false,
-        accountStatus: 'temporary_ban',
-        bannedUntil: banDate,
-      );
-      mockGetCurrentUser.userToReturn = testUser;
+    test(
+      'Temporary ban blocks authenticated user session and returns bannedUntil timestamp',
+      () async {
+        final banDate = DateTime(2026, 10, 15);
+        mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+          allowed: true,
+          isBlocked: false,
+        );
+        mockAuthRepo.accessStatusResult = UserAccessStatus(
+          allowed: false,
+          accountStatus: 'temporary_ban',
+          bannedUntil: banDate,
+        );
+        mockGetCurrentUser.userToReturn = testUser;
 
-      final states = <AuthState>[];
-      final sub = authBloc.stream.listen(states.add);
+        final states = <AuthState>[];
+        final sub = authBloc.stream.listen(states.add);
 
-      authBloc.add(const AuthCheckRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
+        authBloc.add(const AuthCheckRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      final blockedState = states.whereType<AccessBlockedState>().firstOrNull;
-      expect(blockedState, isNotNull);
-      expect(blockedState!.type, AccessBlockedType.temporaryBan);
-      expect(blockedState.bannedUntil, banDate);
-      expect(states.any((s) => s is Authenticated), isFalse);
-      await sub.cancel();
-    });
+        final blockedState = states.whereType<AccessBlockedState>().firstOrNull;
+        expect(blockedState, isNotNull);
+        expect(blockedState!.type, AccessBlockedType.temporaryBan);
+        expect(blockedState.bannedUntil, banDate);
+        expect(states.any((s) => s is Authenticated), isFalse);
+        await sub.cancel();
+      },
+    );
 
     test('Permanent ban blocks authenticated user session', () async {
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
+      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+        allowed: true,
+        isBlocked: false,
+      );
       mockAuthRepo.accessStatusResult = const UserAccessStatus(
         allowed: false,
         accountStatus: 'permanent_ban',
@@ -276,14 +321,25 @@ void main() {
     });
 
     test('Successful login checks access and records login_success', () async {
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
-      mockAuthRepo.accessStatusResult = const UserAccessStatus(allowed: true, accountStatus: 'active');
+      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+        allowed: true,
+        isBlocked: false,
+      );
+      mockAuthRepo.accessStatusResult = const UserAccessStatus(
+        allowed: true,
+        accountStatus: 'active',
+      );
       mockSignIn.userToReturn = testUser;
 
       final states = <AuthState>[];
       final sub = authBloc.stream.listen(states.add);
 
-      authBloc.add(const SignInWithEmailRequested(email: 'passenger@example.com', password: 'Password123!'));
+      authBloc.add(
+        const SignInWithEmailRequested(
+          email: 'passenger@example.com',
+          password: 'Password123!',
+        ),
+      );
       await Future.delayed(const Duration(milliseconds: 50));
 
       expect(states.last is Authenticated, isTrue);
@@ -291,30 +347,45 @@ void main() {
       await sub.cancel();
     });
 
-    test('App resume event re-checks access status and records app_open when active', () async {
-      mockAuthRepo.deviceAccessResult = const DeviceAccessResult(allowed: true, isBlocked: false);
-      mockAuthRepo.accessStatusResult = const UserAccessStatus(allowed: true, accountStatus: 'active');
-      mockGetCurrentUser.userToReturn = testUser;
+    test(
+      'App resume event re-checks access status and records app_open when active',
+      () async {
+        mockAuthRepo.deviceAccessResult = const DeviceAccessResult(
+          allowed: true,
+          isBlocked: false,
+        );
+        mockAuthRepo.accessStatusResult = const UserAccessStatus(
+          allowed: true,
+          accountStatus: 'active',
+        );
+        mockGetCurrentUser.userToReturn = testUser;
 
-      authBloc.add(const AuthCheckRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
-      expect(authBloc.state is Authenticated, isTrue);
+        authBloc.add(const AuthCheckRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
+        expect(authBloc.state is Authenticated, isTrue);
 
-      // Trigger app resume
-      authBloc.add(const AppResumedRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
+        // Trigger app resume
+        authBloc.add(const AppResumedRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(mockAuthRepo.recordedEvents.contains('app_open'), isTrue);
-      expect(authBloc.state is Authenticated, isTrue);
+        expect(mockAuthRepo.recordedEvents.contains('app_open'), isTrue);
+        expect(authBloc.state is Authenticated, isTrue);
 
-      // Now simulate ban while app was backgrounded
-      mockAuthRepo.accessStatusResult = const UserAccessStatus(allowed: false, accountStatus: 'permanent_ban');
-      authBloc.add(const AppResumedRequested());
-      await Future.delayed(const Duration(milliseconds: 50));
+        // Now simulate ban while app was backgrounded
+        mockAuthRepo.accessStatusResult = const UserAccessStatus(
+          allowed: false,
+          accountStatus: 'permanent_ban',
+        );
+        authBloc.add(const AppResumedRequested());
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(authBloc.state is AccessBlockedState, isTrue);
-      expect((authBloc.state as AccessBlockedState).type, AccessBlockedType.permanentBan);
-    });
+        expect(authBloc.state is AccessBlockedState, isTrue);
+        expect(
+          (authBloc.state as AccessBlockedState).type,
+          AccessBlockedType.permanentBan,
+        );
+      },
+    );
 
     test('SignOut records logout event with device identifier', () async {
       mockGetCurrentUser.userToReturn = testUser;

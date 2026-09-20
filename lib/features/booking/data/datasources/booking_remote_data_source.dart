@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/booking_entities.dart';
@@ -45,6 +46,33 @@ abstract class BookingRemoteDataSource {
   Future<void> changeBookingSeat({
     required String bookingId,
     required String newSeatId,
+  });
+
+  Future<List<RoundTripReturnOptionModel>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  });
+
+  Future<RoundTripBundleHoldModel> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  });
+
+  Future<RoundTripBundleHoldModel> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  });
+
+  Future<void> releaseRoundTripBundleHold({required String bundleHoldId});
+
+  Future<RoundTripConfirmationModel> confirmRoundTripBundle({
+    required String bundleHoldId,
+  });
+
+  Future<RoundTripBundleContextModel> getRoundTripBundleContext({
+    required String bookingId,
   });
 
   Stream<void> subscribeToTripSeatUpdates(String tripId);
@@ -282,6 +310,120 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     );
 
     return controller.stream;
+  }
+
+  @override
+  Future<List<RoundTripReturnOptionModel>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  }) async {
+    if (kDebugMode) {
+      debugPrint('ROUND_TRIP_DEBUG RPC request start');
+    }
+    final response = await _supabase.rpc(
+      'get_round_trip_return_options',
+      params: {
+        'p_outbound_trip_id': outboundTripId,
+        'p_outbound_route_stop_id': outboundRouteStopId,
+      },
+    );
+
+    if (kDebugMode) {
+      debugPrint('ROUND_TRIP_DEBUG raw RPC response $response');
+    }
+
+    final list = response as List<dynamic>;
+    final parsed = list
+        .map(
+          (e) => RoundTripReturnOptionModel.fromJson(e as Map<String, dynamic>),
+        )
+        .toList();
+
+    if (kDebugMode) {
+      debugPrint('ROUND_TRIP_DEBUG parsed row count ${parsed.length}');
+      debugPrint(
+        'ROUND_TRIP_DEBUG parsed departure times ${parsed.map((e) => e.departureTime).toList()}',
+      );
+      debugPrint(
+        'ROUND_TRIP_DEBUG parsed isBookable values ${parsed.map((e) => e.isBookable).toList()}',
+      );
+    }
+
+    return parsed;
+  }
+
+  @override
+  Future<RoundTripBundleHoldModel> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  }) async {
+    final response = await _supabase.rpc(
+      'create_round_trip_bundle_hold',
+      params: {
+        'p_outbound_trip_id': outboundTripId,
+        'p_return_trip_id': returnTripId,
+        'p_outbound_seat_id': outboundSeatId,
+        'p_outbound_route_stop_id': outboundRouteStopId,
+      },
+    );
+
+    return RoundTripBundleHoldModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<RoundTripBundleHoldModel> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  }) async {
+    final response = await _supabase.rpc(
+      'set_round_trip_return_seat',
+      params: {
+        'p_bundle_hold_id': bundleHoldId,
+        'p_return_seat_id': returnSeatId,
+      },
+    );
+
+    return RoundTripBundleHoldModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> releaseRoundTripBundleHold({
+    required String bundleHoldId,
+  }) async {
+    await _supabase.rpc(
+      'release_round_trip_bundle_hold',
+      params: {'p_bundle_hold_id': bundleHoldId},
+    );
+  }
+
+  @override
+  Future<RoundTripConfirmationModel> confirmRoundTripBundle({
+    required String bundleHoldId,
+  }) async {
+    final response = await _supabase.rpc(
+      'confirm_round_trip_bundle',
+      params: {'p_bundle_hold_id': bundleHoldId},
+    );
+
+    return RoundTripConfirmationModel.fromJson(
+      response as Map<String, dynamic>,
+    );
+  }
+
+  @override
+  Future<RoundTripBundleContextModel> getRoundTripBundleContext({
+    required String bookingId,
+  }) async {
+    final response = await _supabase.rpc(
+      'get_round_trip_bundle_context',
+      params: {'p_booking_id': bookingId},
+    );
+
+    return RoundTripBundleContextModel.fromJson(
+      response as Map<String, dynamic>,
+    );
   }
 
   @override

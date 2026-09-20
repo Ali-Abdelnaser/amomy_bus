@@ -9,13 +9,7 @@ class VerifyOtpUseCase {
 
   const VerifyOtpUseCase(this._repository);
 
-  ResultFuture<AppUser> call({
-    required String email,
-    required String token,
-  }) {
-    return _repository.verifyEmailOtp(
-      email: email,
-      token: token,
-    );
+  ResultFuture<AppUser> call({required String email, required String token}) {
+    return _repository.verifyEmailOtp(email: email, token: token);
   }
 }

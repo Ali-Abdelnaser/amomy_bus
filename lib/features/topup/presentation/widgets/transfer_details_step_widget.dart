@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_date_picker_modal.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 
 class TransferDetailsStepWidget extends StatefulWidget {
   final int points;
@@ -116,12 +117,7 @@ class _TransferDetailsStepWidgetState extends State<TransferDetailsStepWidget> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.errorOccurred),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) {

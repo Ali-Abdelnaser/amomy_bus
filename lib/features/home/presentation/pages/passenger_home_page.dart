@@ -344,20 +344,20 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                         HomeLiveTrackingCard(
                           onViewMapTap:
                               (state.trackableTripId?.isNotEmpty == true ||
-                                      summary.upcomingTrip?.tripId.isNotEmpty ==
-                                          true)
-                                  ? () {
-                                      final id =
-                                          state.trackableTripId ??
-                                          summary.upcomingTrip!.tripId;
-                                      context.push(
-                                        RoutePaths.liveTracking.replaceFirst(
-                                          ':tripId',
-                                          id,
-                                        ),
-                                      );
-                                    }
-                                  : null,
+                                  summary.upcomingTrip?.tripId.isNotEmpty ==
+                                      true)
+                              ? () {
+                                  final id =
+                                      state.trackableTripId ??
+                                      summary.upcomingTrip!.tripId;
+                                  context.push(
+                                    RoutePaths.liveTracking.replaceFirst(
+                                      ':tripId',
+                                      id,
+                                    ),
+                                  );
+                                }
+                              : null,
                         ),
                         AppSpacing.gapH24,
                         HomeUpcomingTripCard(

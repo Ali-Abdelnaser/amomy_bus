@@ -17,6 +17,8 @@ import '../../../booking/presentation/widgets/app_qr_ticket_widget.dart';
 import '../../../tracking/presentation/cubit/tracking_cubit.dart';
 import '../../../tracking/presentation/cubit/tracking_state.dart';
 import '../../domain/entities/home_summary.dart';
+import '../cubit/home_cubit.dart';
+import '../cubit/home_state.dart';
 
 /// The enriched mini travel ticket view of the upcoming booking on Home.
 class HomeUpcomingTripCard extends StatelessWidget {
@@ -48,44 +50,62 @@ class HomeUpcomingTripCard extends StatelessWidget {
     final isArabic = Localizations.localeOf(
       context,
     ).languageCode.startsWith('ar');
+    final homeCubit = context.read<HomeCubit>();
 
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => AmomySheetContainer(
-        hasBottomNav: true,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.qrTicketInstruction,
-              style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
+      builder: (sheetContext) => BlocProvider.value(
+        value: homeCubit,
+        child: BlocListener<HomeCubit, HomeState>(
+          listenWhen: (previous, current) {
+            final currentTrip = current.summary?.upcomingTrip;
+            return currentTrip == null ||
+                currentTrip.isFinished ||
+                currentTrip.checkedInAt != null ||
+                currentTrip.bookingId != trip.bookingId;
+          },
+          listener: (listenContext, state) {
+            if (Navigator.of(sheetContext).canPop()) {
+              Navigator.of(sheetContext).pop();
+            }
+          },
+          child: AmomySheetContainer(
+            hasBottomNav: true,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.qrTicketInstruction,
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                AppSpacing.gapH16,
+                AppQrTicketWidget(data: trip.qrToken, size: 180),
+                AppSpacing.gapH16,
+                Text(
+                  AppTimeFormatter.formatUpcomingTrip(trip, isArabic: isArabic),
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                AppSpacing.gapH16,
+                AppButton(
+                  label: l10n.dismiss,
+                  variant: AppButtonVariant.outline,
+                  isFullWidth: true,
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ],
             ),
-            AppSpacing.gapH16,
-            AppQrTicketWidget(data: trip.qrToken, size: 180),
-            AppSpacing.gapH16,
-            Text(
-              AppTimeFormatter.formatUpcomingTrip(trip, isArabic: isArabic),
-              style: AppTextStyles.titleMedium.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            AppSpacing.gapH16,
-            AppButton(
-              label: l10n.dismiss,
-              variant: AppButtonVariant.outline,
-              isFullWidth: true,
-              onPressed: () => Navigator.of(sheetContext).pop(),
-            ),
-          ],
+          ),
         ),
       ),
     );

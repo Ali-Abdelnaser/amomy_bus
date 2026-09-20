@@ -30,10 +30,7 @@ class AboutAppPage extends StatelessWidget {
     final developer = ProfilePlaceholderConfig.developer;
 
     return AppScaffold(
-      appBar: AppAppBar(
-        title: l10n.aboutAmomyApp,
-        showBackButton: true,
-      ),
+      appBar: AppAppBar(title: l10n.aboutAmomyApp, showBackButton: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -62,11 +59,12 @@ class AboutAppPage extends StatelessWidget {
                       child: Image.asset(
                         AppAssets.logoTransparent,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          AppIcons.bus,
-                          size: 40,
-                          color: AppColors.primary,
-                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              AppIcons.bus,
+                              size: 40,
+                              color: AppColors.primary,
+                            ),
                       ),
                     ),
                     AppSpacing.gapH12,
@@ -136,24 +134,48 @@ class AboutAppPage extends StatelessWidget {
                     title: l10n.developerEmailLabel,
                     subtitle: developer.developerEmail,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, developer.developerEmail, l10n.developerEmailLabel),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      developer.developerEmail,
+                      l10n.developerEmailLabel,
+                    ),
                   ),
                   ProfileSettingTile(
                     icon: AppIcons.globe,
                     title: l10n.developerWebsiteLabel,
                     subtitle: developer.developerWebsite,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, developer.developerWebsite, l10n.developerWebsiteLabel),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      developer.developerWebsite,
+                      l10n.developerWebsiteLabel,
+                    ),
                   ),
                   ProfileSettingTile(
                     icon: AppIcons.externalLink,
                     title: l10n.developerLinkedInLabel,
                     subtitle: developer.developerLinkedIn,
                     showChevron: false,
-                    trailingWidget: const Icon(AppIcons.copy, size: 16, color: AppColors.textTertiary),
-                    onTap: () => _copyToClipboard(context, developer.developerLinkedIn, l10n.developerLinkedInLabel),
+                    trailingWidget: const Icon(
+                      AppIcons.copy,
+                      size: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                    onTap: () => _copyToClipboard(
+                      context,
+                      developer.developerLinkedIn,
+                      l10n.developerLinkedInLabel,
+                    ),
                   ),
                 ],
               ),

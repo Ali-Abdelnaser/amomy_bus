@@ -47,11 +47,7 @@ class AppCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      card = InkWell(
-        onTap: onTap,
-        borderRadius: effectiveRadius,
-        child: card,
-      );
+      card = InkWell(onTap: onTap, borderRadius: effectiveRadius, child: card);
     }
 
     return card;
@@ -112,7 +108,10 @@ class AppBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: AppSpacing.s4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s8,
+        vertical: AppSpacing.s4,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(12),

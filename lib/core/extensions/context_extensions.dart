@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../widgets/app_snack_bar.dart';
 
 extension ContextExtensions on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this)!;
@@ -16,22 +17,17 @@ extension ContextExtensions on BuildContext {
   double get screenWidth => screenSize.width;
   double get screenHeight => screenSize.height;
 
-  bool get isDarkMode =>
-      Theme.of(this).brightness == Brightness.dark;
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 
   void showSnackBar(
     String message, {
     bool isError = false,
     Duration duration = const Duration(seconds: 3),
   }) {
-    ScaffoldMessenger.of(this).hideCurrentSnackBar();
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : null,
-        duration: duration,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (isError) {
+      AppSnackBar.showError(this, message);
+    } else {
+      AppSnackBar.showInfo(this, message);
+    }
   }
 }

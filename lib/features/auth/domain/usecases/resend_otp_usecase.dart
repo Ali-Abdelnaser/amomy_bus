@@ -8,11 +8,7 @@ class ResendOtpUseCase {
 
   const ResendOtpUseCase(this._repository);
 
-  ResultFuture<void> call({
-    required String email,
-  }) {
-    return _repository.resendVerificationOtp(
-      email: email,
-    );
+  ResultFuture<void> call({required String email}) {
+    return _repository.resendVerificationOtp(email: email);
   }
 }

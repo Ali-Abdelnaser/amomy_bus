@@ -30,10 +30,7 @@ final class EmailVerificationRequired extends AuthState {
   final String email;
   final String? infoMessage;
 
-  const EmailVerificationRequired({
-    required this.email,
-    this.infoMessage,
-  });
+  const EmailVerificationRequired({required this.email, this.infoMessage});
 
   @override
   List<Object?> get props => [email, infoMessage];
@@ -52,10 +49,7 @@ final class Authenticated extends AuthState {
   final AppUser user;
   final WalletPreview? wallet;
 
-  const Authenticated({
-    required this.user,
-    this.wallet,
-  });
+  const Authenticated({required this.user, this.wallet});
 
   bool get isProfileComplete => user.isProfileComplete;
   double get profileCompletionPercentage => user.profileCompletionPercentage;
@@ -67,10 +61,7 @@ final class Authenticated extends AuthState {
 }
 
 final class ProfileSaving extends Authenticated {
-  const ProfileSaving({
-    required super.user,
-    super.wallet,
-  });
+  const ProfileSaving({required super.user, super.wallet});
 }
 
 final class ProfileSaveFailure extends Authenticated {
@@ -108,11 +99,7 @@ final class PasswordUpdatedSuccessfully extends AuthState {
   const PasswordUpdatedSuccessfully();
 }
 
-enum AccessBlockedType {
-  deviceBlocked,
-  temporaryBan,
-  permanentBan,
-}
+enum AccessBlockedType { deviceBlocked, temporaryBan, permanentBan }
 
 final class AccessBlockedState extends AuthState {
   final AccessBlockedType type;
@@ -128,4 +115,3 @@ final class AccessBlockedState extends AuthState {
   @override
   List<Object?> get props => [type, bannedUntil, customMessage];
 }
-

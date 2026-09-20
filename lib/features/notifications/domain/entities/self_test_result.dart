@@ -32,10 +32,14 @@ class SelfTestResult extends Equatable {
     final totalDevices = (json['total_devices'] as num?)?.toInt() ?? 0;
     final delivered = (json['delivered'] as num?)?.toInt() ?? 0;
     final fcmSuccesses = (json['fcm_successes'] as num?)?.toInt() ?? delivered;
-    final fcmFailures = (json['fcm_failures'] as num?)?.toInt() ?? (totalDevices - delivered);
+    final fcmFailures =
+        (json['fcm_failures'] as num?)?.toInt() ?? (totalDevices - delivered);
     final fcmAttempted = json['fcm_send_attempted'] == true || totalDevices > 0;
-    final inboxInserted = json['notification_inbox_inserted'] == true || json['inbox_inserted'] == true;
-    final message = json['message']?.toString() ?? (success ? 'Push sent' : 'Push failed');
+    final inboxInserted =
+        json['notification_inbox_inserted'] == true ||
+        json['inbox_inserted'] == true;
+    final message =
+        json['message']?.toString() ?? (success ? 'Push sent' : 'Push failed');
     final error = json['error']?.toString();
 
     return SelfTestResult(
@@ -64,15 +68,15 @@ class SelfTestResult extends Equatable {
 
   @override
   List<Object?> get props => [
-        success,
-        requestAccepted,
-        totalDevices,
-        delivered,
-        fcmSendAttempted,
-        fcmSuccesses,
-        fcmFailures,
-        notificationInboxInserted,
-        message,
-        error,
-      ];
+    success,
+    requestAccepted,
+    totalDevices,
+    delivered,
+    fcmSendAttempted,
+    fcmSuccesses,
+    fcmFailures,
+    notificationInboxInserted,
+    message,
+    error,
+  ];
 }

@@ -1385,6 +1385,80 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trackingEtaUnavailable => 'وقت الوصول غير متاح';
 
   @override
+  String get trackingConfirmedTitle => 'تم تأكيد رحلتك';
+
+  @override
+  String get trackingWaitingAssignmentSubtitle =>
+      'سيظهر التتبع المباشر عند تجهيز الحافلة للرحلة.';
+
+  @override
+  String get trackingReadyTitle => 'رحلتك جاهزة';
+
+  @override
+  String get trackingWaitingStartSubtitle =>
+      'سيبدأ التتبع المباشر عند بدء السائق للرحلة.';
+
+  @override
+  String get trackingUpdatingBusTitle => 'جارٍ تحديث حافلة الرحلة';
+
+  @override
+  String get trackingReassignmentPendingSubtitle =>
+      'سيعود التتبع المباشر خلال لحظات.';
+
+  @override
+  String get trackingGpsStaleTitle => 'يوجد تأخير مؤقت في موقع الحافلة';
+
+  @override
+  String get trackingGpsOfflineTitle => 'الموقع المباشر غير متاح مؤقتًا';
+
+  @override
+  String get trackingGpsOfflineSubtitle =>
+      'الرحلة جارية، وننتظر تحديثًا جديدًا للموقع.';
+
+  @override
+  String get trackingProgressionSyncing => 'جارٍ تحديث تقدم الرحلة…';
+
+  @override
+  String get trackingLastKnownLocation => 'آخر موقع معروف';
+
+  @override
+  String get trackingPendingPill => 'قيد التعيين';
+
+  @override
+  String get trackingReadyPill => 'جاهز للرحلة';
+
+  @override
+  String get trackingUpdatingPill => 'جارٍ التحديث';
+
+  @override
+  String get trackingDelayedPill => 'مؤقتاً';
+
+  @override
+  String get trackingSyncingPill => 'جارٍ التحديث';
+
+  @override
+  String get trackingCompletedPill => 'مكتملة';
+
+  @override
+  String get trackingCancelledPill => 'ملغاة';
+
+  @override
+  String get trackingEndedPill => 'انتهت';
+
+  @override
+  String get trackingLastUpdatedJustNow => 'تم التحديث الآن';
+
+  @override
+  String trackingLastUpdatedSeconds(int seconds) {
+    return 'آخر تحديث منذ $seconds ثانية';
+  }
+
+  @override
+  String trackingLastUpdatedMinutes(int minutes) {
+    return 'آخر تحديث منذ $minutes دقيقة';
+  }
+
+  @override
   String get trackingResumesMidday => 'يستأنف التتبع الساعة 1:00 م';
 
   @override
@@ -1456,4 +1530,226 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logout => 'تسجيل الخروج';
+
+  @override
+  String get singleTrip => 'ذهاب فقط';
+
+  @override
+  String get roundTrip => 'ذهاب وعودة';
+
+  @override
+  String get roundTripDiscountBadge => 'خصم 15%';
+
+  @override
+  String get returnDepartureTimeTitle => 'ميعاد العودة';
+
+  @override
+  String get selectOutboundSeat => 'اختر مقعد الذهاب';
+
+  @override
+  String get selectReturnSeat => 'اختر مقعد العودة';
+
+  @override
+  String get proceedToReturnSeat => 'متابعة لاختيار مقعد العودة';
+
+  @override
+  String get outboundFareLabel => 'سعر الذهاب';
+
+  @override
+  String get returnFareLabel => 'سعر العودة';
+
+  @override
+  String get subtotalFareLabel => 'الإجمالي';
+
+  @override
+  String get roundTripDiscountLabel => 'خصم الذهاب والعودة 15%';
+
+  @override
+  String get totalAfterDiscountLabel => 'الإجمالي بعد الخصم';
+
+  @override
+  String get confirmRoundTripBooking => 'تأكيد حجز الذهاب والعودة';
+
+  @override
+  String get roundTripSuccessTitle => 'تم حجز الذهاب والعودة بنجاح';
+
+  @override
+  String get outboundTimeLabel => 'ميعاد الذهاب';
+
+  @override
+  String get outboundSeatLabel => 'مقعد الذهاب';
+
+  @override
+  String get returnTimeLabel => 'ميعاد العودة';
+
+  @override
+  String get returnSeatLabel => 'مقعد العودة';
+
+  @override
+  String savedPointsNotice(int points) {
+    return 'وفرت $points نقاط';
+  }
+
+  @override
+  String get cancelRoundTripTitle => 'إلغاء حجز الذهاب والعودة';
+
+  @override
+  String get cancelRoundTripMessage =>
+      'هذا الحجز جزء من حجز ذهاب وعودة بخصم 15%.\nعند الإلغاء سيتم إلغاء رحلتي الذهاب والعودة معًا.';
+
+  @override
+  String get cancelBothLegsCta => 'إلغاء الرحلتين واسترداد النقاط';
+
+  @override
+  String get roundTripCancellationClosed =>
+      'لا يمكن إلغاء الحجز بعد موعد الإغلاق أو بعد استخدام إحدى الرحلات';
+
+  @override
+  String get noReturnTripsAvailable => 'لا توجد رحلات عودة متاحة اليوم';
+
+  @override
+  String get errorRoundTripMustStartWithOutbound =>
+      'حجز الذهاب والعودة متاح فقط عند بدء الحجز من اتجاه الذهاب.';
+
+  @override
+  String get errorInvalidRoundTripDirections =>
+      'يجب أن تكون رحلتا الذهاب والعودة في اتجاهين متعاكسين.';
+
+  @override
+  String get errorRoundTripSameDayRequired =>
+      'يجب أن تكون رحلتا الذهاب والعودة في نفس اليوم.';
+
+  @override
+  String get errorReturnMustBeAfterOutbound =>
+      'يجب أن يكون موعد رحلة العودة بعد موعد رحلة الذهاب.';
+
+  @override
+  String get errorRoundTripDiscountAlreadyUsedToday =>
+      'لقد استفدت من خصم الذهاب والعودة لهذا اليوم بالفعل.';
+
+  @override
+  String get errorRoundTripRequiresUnbookedTrips =>
+      'لديك حجز مسبق على إحدى الرحلتين المختارتين.';
+
+  @override
+  String get errorRoundTripHoldAlreadyActive =>
+      'لديك حجز مؤقت نشط لرحلة ذهاب وعودة بالفعل.';
+
+  @override
+  String get errorRoundTripHoldNotFound => 'لم يتم العثور على الحجز المؤقت.';
+
+  @override
+  String get errorRoundTripHoldInvalid =>
+      'بيانات حجز الذهاب والعودة غير صحيحة.';
+
+  @override
+  String get errorReturnSeatRequired => 'يرجى اختيار مقعد رحلة العودة أولاً.';
+
+  @override
+  String get errorRoundTripCancellationWindowClosed =>
+      'تم إغلاق نافذة إلغاء حجز الذهاب والعودة.';
+
+  @override
+  String get errorRoundTripAlreadyUsed =>
+      'لا يمكن إلغاء الحجز بعد استخدام إحدى الرحلات أو تسجيل الحضور.';
+
+  @override
+  String get errorRoundTripBundleNotCancellable => 'لا يمكن إلغاء هذه الباقة.';
+
+  @override
+  String get errorGeneric => 'حدث خطأ غير متوقع. حاول مرة أخرى.';
+
+  @override
+  String get errorNoInternet =>
+      'لا يوجد اتصال بالإنترنت. تحقق من الشبكة وحاول مرة أخرى.';
+
+  @override
+  String get errorTimeout =>
+      'استغرق الاتصال وقتًا أطول من المتوقع. حاول مرة أخرى.';
+
+  @override
+  String get errorServerUnreachable =>
+      'تعذر الاتصال بالخادم حاليًا. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get errorNetworkProblem => 'حدثت مشكلة في الاتصال. حاول مرة أخرى.';
+
+  @override
+  String get errorInvalidLogin => 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+
+  @override
+  String get errorEmailNotConfirmed => 'يرجى تأكيد بريدك الإلكتروني أولًا.';
+
+  @override
+  String get errorUserAlreadyExists =>
+      'يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.';
+
+  @override
+  String get errorInvalidEmail => 'يرجى إدخال بريد إلكتروني صحيح.';
+
+  @override
+  String get errorWeakPassword => 'كلمة المرور ضعيفة. استخدم كلمة مرور أقوى.';
+
+  @override
+  String get errorSessionExpired => 'انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get errorNotAuthenticated => 'يرجى تسجيل الدخول للمتابعة.';
+
+  @override
+  String get errorRateLimited => 'عدد المحاولات كبير. حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get errorOtpInvalid => 'رمز التحقق غير صحيح.';
+
+  @override
+  String get errorOtpExpired => 'انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.';
+
+  @override
+  String get errorPasswordReset =>
+      'تعذر إرسال رابط إعادة تعيين كلمة المرور. حاول مرة أخرى.';
+
+  @override
+  String get errorGoogleSignInCancelled =>
+      'تم إلغاء تسجيل الدخول باستخدام Google.';
+
+  @override
+  String get errorGoogleSignInFailed =>
+      'تعذر تسجيل الدخول باستخدام Google. حاول مرة أخرى.';
+
+  @override
+  String get errorAuthUnknown => 'حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.';
+
+  @override
+  String get errorTrackingAccessDenied =>
+      'غير مصرح لك بالوصول لتتبع هذه الرحلة.';
+
+  @override
+  String get errorWalletNotFound =>
+      'لم يتم العثور على المحفظة. يرجى التواصل مع الدعم.';
+
+  @override
+  String get errorSeatAlreadyBooked =>
+      'المقعد المحدد لم يعد متاحاً. يرجى اختيار مقعد آخر.';
+
+  @override
+  String get errorTripCancelled => 'تم إلغاء هذه الرحلة.';
+
+  @override
+  String get errorTripCompleted => 'الرحلة مكتملة بالفعل.';
+
+  @override
+  String get errorBookingNotBoardable => 'الحجز غير متاح للصعود الآن.';
+
+  @override
+  String get errorAlreadyCheckedIn => 'تم تسجيل الصعود مسبقاً.';
+
+  @override
+  String get errorTooEarly => 'موعد الرحلة مبكر جداً.';
+
+  @override
+  String get errorWrongTrip => 'التذكرة غير مسجلة في هذه الرحلة.';
+
+  @override
+  String get errorInvalidToken => 'رمز التذكرة غير صالح.';
 }

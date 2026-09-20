@@ -15,7 +15,8 @@ class WalletPointsSummaryCard extends StatefulWidget {
   });
 
   @override
-  State<WalletPointsSummaryCard> createState() => _WalletPointsSummaryCardState();
+  State<WalletPointsSummaryCard> createState() =>
+      _WalletPointsSummaryCardState();
 }
 
 class _WalletPointsSummaryCardState extends State<WalletPointsSummaryCard> {
@@ -122,7 +123,10 @@ class _WalletPointsSummaryCardState extends State<WalletPointsSummaryCard> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF4F8FC),
                   borderRadius: BorderRadius.circular(19),
-                  border: Border.all(color: const Color(0xFFDCE7F3), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFFDCE7F3),
+                    width: 1.2,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

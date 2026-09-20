@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../error/app_error_mapper.dart';
 
 /// Centralized status and business error localizer for Passenger UI.
 class StatusLocalizer {
@@ -29,6 +30,11 @@ class StatusLocalizer {
         return l10n.bookingStatusCompleted;
       case 'finished':
         return l10n.bookingStatusFinished;
+      case 'checkedin':
+      case 'boarded':
+        return Localizations.localeOf(context).languageCode.startsWith('ar')
+            ? 'تم تسجيل الصعود'
+            : 'Boarded';
       case 'noshow':
         return l10n.bookingStatusNoShow;
       case 'pending':
@@ -159,57 +165,7 @@ class StatusLocalizer {
   }
 
   /// Maps known backend business error codes / exception messages to user-friendly localized text.
-  static String localizeError(BuildContext context, String? rawError) {
-    if (rawError == null || rawError.trim().isEmpty) {
-      return AppLocalizations.of(context)?.errorOccurred ??
-          'An error occurred.';
-    }
-    final l10n = AppLocalizations.of(context);
-    if (l10n == null) return rawError;
-
-    final errUpper = rawError.toUpperCase();
-
-    if (errUpper.contains('HOLD_EXPIRED') ||
-        errUpper.contains('HOLD EXPIRED')) {
-      return l10n.errorHoldExpired;
-    }
-    if (errUpper.contains('BOOKING_CLOSED') ||
-        errUpper.contains('BOOKING CLOSED')) {
-      return l10n.errorBookingClosed;
-    }
-    if (errUpper.contains('CANCELLATION_WINDOW_CLOSED') ||
-        errUpper.contains('CANCELLATION CLOSED')) {
-      return l10n.errorCancellationWindowClosed;
-    }
-    if (errUpper.contains('CHANGE_SEAT_WINDOW_CLOSED') ||
-        errUpper.contains('CHANGE SEAT CLOSED')) {
-      return l10n.errorChangeSeatWindowClosed;
-    }
-    if (errUpper.contains('SERVICE_DAY_OFF')) {
-      return l10n.errorServiceDayOff;
-    }
-    if (errUpper.contains('SEAT_UNAVAILABLE') ||
-        errUpper.contains('SEAT ALREADY HELD')) {
-      return l10n.seatUnavailableNotice;
-    }
-    if (errUpper.contains('INSUFFICIENT_POINTS')) {
-      return l10n.insufficientPointsNotice;
-    }
-    if (errUpper.contains('ALREADY_BOOKED_TRIP') ||
-        errUpper.contains('ALREADY_BOOKED')) {
-      return l10n.alreadyBookedTrip;
-    }
-
-    // Do NOT leak raw SQL, Postgres, RPC or snake_case errors
-    if (rawError.contains('PostgrestException') ||
-        rawError.contains('RPC') ||
-        rawError.contains('pg_') ||
-        rawError.contains('sql') ||
-        rawError.contains('DatabaseException') ||
-        rawError.contains('SocketException')) {
-      return l10n.errorOccurred;
-    }
-
-    return l10n.errorOccurred;
+  static String localizeError(BuildContext context, dynamic rawError) {
+    return AppErrorMapper.map(context, rawError);
   }
 }
