@@ -18,7 +18,8 @@ class TripHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => tripsCubit ??
+      create: (_) =>
+          tripsCubit ??
           (getIt.isRegistered<PassengerTripsCubit>()
               ? (getIt<PassengerTripsCubit>()..loadTripsHub())
               : PassengerTripsCubit.idle()),
@@ -58,7 +59,9 @@ class _TripHistoryView extends StatelessWidget {
                   width: 38,
                   height: 38,
                   child: Icon(
-                    isAr ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+                    isAr
+                        ? Icons.arrow_forward_rounded
+                        : Icons.arrow_back_rounded,
                     color: const Color(0xFF101828),
                     size: 20,
                   ),
@@ -78,10 +81,7 @@ class _TripHistoryView extends StatelessWidget {
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE2E8F0),
-            height: 1,
-          ),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: BlocBuilder<PassengerTripsCubit, PassengerTripsState>(
@@ -98,7 +98,10 @@ class _TripHistoryView extends StatelessWidget {
                   context.read<PassengerTripsCubit>().loadTripsHub(),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 48,
+                ),
                 children: [
                   Center(
                     child: Image.asset(
@@ -156,8 +159,7 @@ class _TripHistoryView extends StatelessWidget {
 
           return RefreshIndicator(
             color: AppColors.primary,
-            onRefresh: () =>
-                context.read<PassengerTripsCubit>().loadTripsHub(),
+            onRefresh: () => context.read<PassengerTripsCubit>().loadTripsHub(),
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(

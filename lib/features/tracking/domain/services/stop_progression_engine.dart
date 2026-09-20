@@ -24,8 +24,10 @@ class StopProgressionEngine {
     this.arrivalRadiusMeters = 80.0,
     this.departureRadiusMeters = 130.0,
     this.approachRadiusMeters = 500.0,
-  }) : assert(departureRadiusMeters > arrivalRadiusMeters,
-            'departureRadiusMeters must exceed arrivalRadiusMeters for hysteresis');
+  }) : assert(
+         departureRadiusMeters > arrivalRadiusMeters,
+         'departureRadiusMeters must exceed arrivalRadiusMeters for hysteresis',
+       );
 
   /// Reset the engine monotonic memory (called upon service run or route change).
   void reset() {
@@ -77,7 +79,9 @@ class StopProgressionEngine {
     }
 
     // Check if stops have coordinates
-    final stopsWithCoords = orderedStops.where((s) => s.hasCoordinates).toList();
+    final stopsWithCoords = orderedStops
+        .where((s) => s.hasCoordinates)
+        .toList();
     if (stopsWithCoords.isEmpty || telemetry == null) {
       // Graceful fallback when coordinates are pending
       final current = orderedStops.first;
@@ -105,11 +109,21 @@ class StopProgressionEngine {
     final nextStop = orderedStops[nextIndex];
 
     final distToCurrent = currentStop.hasCoordinates
-        ? haversineDistanceMeters(busLat, busLng, currentStop.latitude!, currentStop.longitude!)
+        ? haversineDistanceMeters(
+            busLat,
+            busLng,
+            currentStop.latitude!,
+            currentStop.longitude!,
+          )
         : null;
 
     final distToNext = nextStop.hasCoordinates
-        ? haversineDistanceMeters(busLat, busLng, nextStop.latitude!, nextStop.longitude!)
+        ? haversineDistanceMeters(
+            busLat,
+            busLng,
+            nextStop.latitude!,
+            nextStop.longitude!,
+          )
         : null;
 
     // State evaluation with hysteresis
@@ -125,8 +139,12 @@ class StopProgressionEngine {
         status: ApproachStatus.atStop,
         distanceToCurrentMeters: distToNext,
         distanceToNextMeters: orderedStops[newNextIndex].hasCoordinates
-            ? haversineDistanceMeters(busLat, busLng, orderedStops[newNextIndex].latitude!,
-                orderedStops[newNextIndex].longitude!)
+            ? haversineDistanceMeters(
+                busLat,
+                busLng,
+                orderedStops[newNextIndex].latitude!,
+                orderedStops[newNextIndex].longitude!,
+              )
             : null,
       );
     } else if (distToCurrent != null && distToCurrent <= arrivalRadiusMeters) {
@@ -164,7 +182,8 @@ class StopProgressionEngine {
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_toRadians(lat1)) *
             math.cos(_toRadians(lat2)) *
             math.sin(dLon / 2) *

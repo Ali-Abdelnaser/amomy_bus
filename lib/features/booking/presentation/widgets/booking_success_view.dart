@@ -16,11 +16,12 @@ import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/booking_entities.dart';
 import 'app_qr_ticket_widget.dart';
 
-/// Boarding ticket shown after a confirmed booking with realistic printer dispensing animation.
 class BookingSuccessView extends StatefulWidget {
-  final PassengerBooking booking;
+  final PassengerBooking? booking;
+  final RoundTripConfirmation? bundleConfirmation;
 
-  const BookingSuccessView({super.key, required this.booking});
+  const BookingSuccessView({super.key, this.booking, this.bundleConfirmation})
+    : assert(booking != null || bundleConfirmation != null);
 
   @override
   State<BookingSuccessView> createState() => _BookingSuccessViewState();
@@ -89,10 +90,14 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isArabic = Localizations.localeOf(
       context,
     ).languageCode.startsWith('ar');
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    final isBundle = widget.bundleConfirmation != null;
+    final bundle = widget.bundleConfirmation;
 
     return Container(
       color: const Color(0xFFF8FAFC), // Crisp paper background contrast
@@ -109,16 +114,38 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Animated success check & 2. Localized title & 3. Subtitle
-              const _ConfirmationHeader(),
+              _ConfirmationHeader(
+                title: isBundle
+                    ? (isArabic
+                          ? 'تم حجز الذهاب والعودة بنجاح'
+                          : 'Round Trip Booked Successfully')
+                    : l10n.bookingSuccessTitle,
+                subtitle: isBundle
+                    ? (isArabic
+                          ? 'وفرت ${bundle!.discountPoints.toInt()} نقاط'
+                          : 'Saved ${bundle!.discountPoints.toInt()} points')
+                    : l10n.bookingSuccessSubtitle,
+                savingsBadge: isBundle
+                    ? '${isArabic ? "وفرت" : "Saved"} ${bundle!.discountPoints.toInt()} ${l10n.pointsUnit}'
+                    : null,
+              ),
               AppSpacing.gapH20,
 
-              // 4. Stylized printer slot & 5. Animated emerging ticket
-              _TicketPrinterSection(
-                booking: widget.booking,
-                isArabic: isArabic,
-                animation: _animation,
-                fadeAnimation: _fadeAnimation,
-              ),
+              // 4. Stylized printer slot & 5. Animated emerging ticket(s)
+              if (isBundle)
+                _RoundTripSuccessSection(
+                  bundle: bundle!,
+                  isArabic: isArabic,
+                  animation: _animation,
+                  fadeAnimation: _fadeAnimation,
+                )
+              else
+                _TicketPrinterSection(
+                  booking: widget.booking!,
+                  isArabic: isArabic,
+                  animation: _animation,
+                  fadeAnimation: _fadeAnimation,
+                ),
               AppSpacing.gapH24,
 
               // 6. My Trips & 7. Go to Home
@@ -133,7 +160,11 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
 
 /// Redesigned bold confirmation badge with multi-layer pulsing rings and spring animation.
 class _ConfirmationHeader extends StatefulWidget {
-  const _ConfirmationHeader();
+  final String? title;
+  final String? subtitle;
+  final String? savingsBadge;
+
+  const _ConfirmationHeader({this.title, this.subtitle, this.savingsBadge});
 
   @override
   State<_ConfirmationHeader> createState() => _ConfirmationHeaderState();
@@ -300,7 +331,7 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
             child: Column(
               children: [
                 Text(
-                  l10n.bookingSuccessTitle,
+                  widget.title ?? l10n.bookingSuccessTitle,
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w800,
@@ -309,18 +340,216 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
                 ),
                 AppSpacing.gapH4,
                 Text(
-                  l10n.bookingSuccessSubtitle,
+                  widget.subtitle ?? l10n.bookingSuccessSubtitle,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    color: widget.savingsBadge != null
+                        ? const Color(0xFF15803D)
+                        : AppColors.textSecondary,
+                    fontWeight: widget.savingsBadge != null
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                if (widget.savingsBadge != null) ...[
+                  AppSpacing.gapH8,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF86EFAC),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      widget.savingsBadge!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Round Trip dual trip confirmation cards showing Outbound and Return confirmed details.
+class _RoundTripSuccessSection extends StatelessWidget {
+  final RoundTripConfirmation bundle;
+  final bool isArabic;
+  final Animation<double> animation;
+  final Animation<double> fadeAnimation;
+
+  const _RoundTripSuccessSection({
+    required this.bundle,
+    required this.isArabic,
+    required this.animation,
+    required this.fadeAnimation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: fadeAnimation.value,
+          child: Column(
+            children: [
+              // Outbound Booking Card
+              _ConfirmedLegCard(
+                directionLabel: l10n.directionOutbound,
+                isOutbound: true,
+                seatNumber: bundle.outboundSeatNumber,
+                isArabic: isArabic,
+              ),
+              const SizedBox(height: 12),
+              // Return Booking Card
+              _ConfirmedLegCard(
+                directionLabel: l10n.directionReturn,
+                isOutbound: false,
+                seatNumber: bundle.returnSeatNumber,
+                isArabic: isArabic,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ConfirmedLegCard extends StatelessWidget {
+  final String directionLabel;
+  final bool isOutbound;
+  final String seatNumber;
+  final bool isArabic;
+
+  const _ConfirmedLegCard({
+    required this.directionLabel,
+    required this.isOutbound,
+    required this.seatNumber,
+    required this.isArabic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isOutbound ? const Color(0xFFBAE6FD) : const Color(0xFFFDE68A),
+          width: 1.2,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x080F172A),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Direction Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: isOutbound
+                  ? const Color(0xFFE7F2FA)
+                  : const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isOutbound
+                      ? (isArabic
+                            ? Icons.arrow_back_rounded
+                            : Icons.arrow_forward_rounded)
+                      : (isArabic
+                            ? Icons.arrow_forward_rounded
+                            : Icons.arrow_back_rounded),
+                  size: 14,
+                  color: isOutbound
+                      ? AppColors.primary
+                      : const Color(0xFFB45309),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  directionLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: isOutbound
+                        ? AppColors.primary
+                        : const Color(0xFFB45309),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Confirmed Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isArabic ? 'تم تأكيد المقعد' : 'Seat Confirmed',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isArabic ? 'مقعد $seatNumber' : 'Seat $seatNumber',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF101828),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Checkmark
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              color: Color(0xFFDCFCE7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              size: 18,
+              color: Color(0xFF15803D),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

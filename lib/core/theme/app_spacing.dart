@@ -69,7 +69,9 @@ abstract final class AppSpacing {
 
   // Screen padding
   static const EdgeInsets screenPadding = EdgeInsets.all(s16);
-  static const EdgeInsets screenHorizontal = EdgeInsets.symmetric(horizontal: s16);
+  static const EdgeInsets screenHorizontal = EdgeInsets.symmetric(
+    horizontal: s16,
+  );
 
   // Width Gaps
   static const SizedBox gapW4 = SizedBox(width: s4);

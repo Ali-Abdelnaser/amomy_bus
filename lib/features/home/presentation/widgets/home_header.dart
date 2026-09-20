@@ -10,10 +10,7 @@ import '../../../auth/domain/entities/app_user.dart';
 class HomeHeader extends StatelessWidget {
   final AppUser user;
 
-  const HomeHeader({
-    super.key,
-    required this.user,
-  });
+  const HomeHeader({super.key, required this.user});
 
   String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;

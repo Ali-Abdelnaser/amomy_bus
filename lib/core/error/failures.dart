@@ -4,10 +4,7 @@ abstract class Failure extends Equatable {
   final String message;
   final int? statusCode;
 
-  const Failure({
-    required this.message,
-    this.statusCode,
-  });
+  const Failure({required this.message, this.statusCode});
 
   @override
   List<Object?> get props => [message, statusCode];
@@ -42,17 +39,11 @@ class AuthCancelledFailure extends Failure {
 }
 
 class ConfigurationFailure extends Failure {
-  const ConfigurationFailure({
-    required super.message,
-    super.statusCode,
-  });
+  const ConfigurationFailure({required super.message, super.statusCode});
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure({
-    required super.message,
-    super.statusCode,
-  });
+  const ValidationFailure({required super.message, super.statusCode});
 }
 
 class PermissionFailure extends Failure {
@@ -78,7 +69,8 @@ class InvalidAmountFailure extends Failure {
 
 class DuplicatePaymentReferenceFailure extends Failure {
   const DuplicatePaymentReferenceFailure({
-    super.message = 'A top-up request with this payment reference is already active or approved.',
+    super.message =
+        'A top-up request with this payment reference is already active or approved.',
     super.statusCode,
   });
 }

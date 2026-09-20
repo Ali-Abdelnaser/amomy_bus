@@ -291,6 +291,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     final canShowVehicle =
         widget.status == LiveTrackingStatus.live ||
         widget.status == LiveTrackingStatus.online ||
+        widget.status == LiveTrackingStatus.stale ||
         widget.status == LiveTrackingStatus.progressionUnavailable;
     final busCoord = canShowVehicle
         ? pos ??

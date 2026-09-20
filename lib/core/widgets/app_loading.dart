@@ -8,11 +8,7 @@ class AppLoading extends StatelessWidget {
   final String? message;
   final double size;
 
-  const AppLoading({
-    super.key,
-    this.message,
-    this.size = 28.0,
-  });
+  const AppLoading({super.key, this.message, this.size = 28.0});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +28,9 @@ class AppLoading extends StatelessWidget {
             AppSpacing.gapH12,
             Text(
               message!,
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -81,16 +79,18 @@ class AppLoadingOverlay extends StatelessWidget {
                       height: 36,
                       child: CircularProgressIndicator.adaptive(
                         strokeWidth: 3,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     ),
                     if (message != null) ...[
                       AppSpacing.gapH16,
                       Text(
                         message!,
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ],
@@ -128,16 +128,18 @@ class AppLoadingOverlay extends StatelessWidget {
                           height: 36,
                           child: CircularProgressIndicator.adaptive(
                             strokeWidth: 3,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
                           ),
                         ),
                         if (message != null) ...[
                           AppSpacing.gapH16,
                           Text(
                             message!,
-                            style: AppTextStyles.bodyMedium
-                                .copyWith(color: AppColors.textPrimary),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ],
                       ],

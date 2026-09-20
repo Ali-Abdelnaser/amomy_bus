@@ -32,10 +32,7 @@ class HomeBookingCta extends StatelessWidget {
           PositionedDirectional(
             end: -15,
             bottom: -15,
-            child: const AmomyBusIcon(
-              width: 130,
-              opacity: 0.12,
-            ),
+            child: const AmomyBusIcon(width: 130, opacity: 0.12),
           ),
           Padding(
             padding: AppSpacing.edgeInsetsA20,
@@ -44,7 +41,10 @@ class HomeBookingCta extends StatelessWidget {
               children: [
                 // Top Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -90,7 +90,11 @@ class HomeBookingCta extends StatelessWidget {
                 // CTA Button
                 ElevatedButton.icon(
                   onPressed: () => context.push('/book-trip'),
-                  icon: const Icon(AppIcons.ticket, size: 18, color: AppColors.primary),
+                  icon: const Icon(
+                    AppIcons.ticket,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
                   label: Text(
                     l10n.bookNow,
                     style: AppTextStyles.labelLarge.copyWith(
@@ -103,7 +107,10 @@ class HomeBookingCta extends StatelessWidget {
                     foregroundColor: AppColors.primary,
                     elevation: 0,
                     minimumSize: const Size(130, 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

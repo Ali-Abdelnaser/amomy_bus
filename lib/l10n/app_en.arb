@@ -519,6 +519,42 @@
   "trackingCurrentStop": "Current Stop",
   "trackingNextStop": "Next Stop",
   "trackingEtaUnavailable": "ETA unavailable",
+  "trackingConfirmedTitle": "Your trip is confirmed",
+  "trackingWaitingAssignmentSubtitle": "Live tracking will be available when your bus is assigned.",
+  "trackingReadyTitle": "Ready for your trip",
+  "trackingWaitingStartSubtitle": "Live tracking will start when the driver starts the trip.",
+  "trackingUpdatingBusTitle": "Updating your bus",
+  "trackingReassignmentPendingSubtitle": "Live tracking will resume shortly.",
+  "trackingGpsStaleTitle": "Bus location is temporarily delayed",
+  "trackingGpsOfflineTitle": "Live location is temporarily unavailable",
+  "trackingGpsOfflineSubtitle": "The trip is active. We're waiting for a new location update.",
+  "trackingProgressionSyncing": "Updating trip progress…",
+  "trackingLastKnownLocation": "Last known location",
+  "trackingPendingPill": "PENDING",
+  "trackingReadyPill": "READY",
+  "trackingUpdatingPill": "UPDATING",
+  "trackingDelayedPill": "DELAYED",
+  "trackingSyncingPill": "SYNCING",
+  "trackingCompletedPill": "COMPLETED",
+  "trackingCancelledPill": "CANCELLED",
+  "trackingEndedPill": "ENDED",
+  "trackingLastUpdatedJustNow": "Updated just now",
+  "trackingLastUpdatedSeconds": "Updated {seconds} seconds ago",
+  "@trackingLastUpdatedSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingLastUpdatedMinutes": "Last updated {minutes} min ago",
+  "@trackingLastUpdatedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "trackingResumesMidday": "Tracking resumes at 1:00 PM",
   "trackingResumesTomorrow": "Tracking resumes tomorrow at 8:00 AM",
   "bookingStatusCompleted": "Completed",
@@ -548,6 +584,50 @@
       }
     }
   },
-  "logout": "Sign Out"
+  "logout": "Sign Out",
+  "singleTrip": "One-way",
+  "roundTrip": "Round Trip",
+  "roundTripDiscountBadge": "15% OFF",
+  "returnDepartureTimeTitle": "Return Time",
+  "selectOutboundSeat": "Select Outbound Seat",
+  "selectReturnSeat": "Select Return Seat",
+  "proceedToReturnSeat": "Continue to Return Seat",
+  "outboundFareLabel": "Outbound Fare",
+  "returnFareLabel": "Return Fare",
+  "subtotalFareLabel": "Subtotal",
+  "roundTripDiscountLabel": "Round Trip Discount 15%",
+  "totalAfterDiscountLabel": "Total after discount",
+  "confirmRoundTripBooking": "Confirm Round Trip Booking",
+  "roundTripSuccessTitle": "Round Trip Booked Successfully",
+  "outboundTimeLabel": "Outbound Time",
+  "outboundSeatLabel": "Outbound Seat",
+  "returnTimeLabel": "Return Time",
+  "returnSeatLabel": "Return Seat",
+  "savedPointsNotice": "You saved {points} points",
+  "@savedPointsNotice": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelRoundTripTitle": "Cancel Round Trip Booking",
+  "cancelRoundTripMessage": "This booking is part of a 15% discounted Round Trip bundle. Cancelling will cancel both Outbound and Return trips together.",
+  "cancelBothLegsCta": "Cancel Both Trips & Refund",
+  "roundTripCancellationClosed": "Cancellation is closed after departure cutoff or if either trip has been used.",
+  "noReturnTripsAvailable": "No return trips available today",
+  "errorRoundTripMustStartWithOutbound": "Round Trip booking is only available when starting from the Outbound direction.",
+  "errorInvalidRoundTripDirections": "Outbound and Return trips must be in opposite directions.",
+  "errorRoundTripSameDayRequired": "Outbound and Return trips must be on the same service day.",
+  "errorReturnMustBeAfterOutbound": "Return trip departure must be after Outbound departure.",
+  "errorRoundTripDiscountAlreadyUsedToday": "You have already used your daily round-trip discount.",
+  "errorRoundTripRequiresUnbookedTrips": "You already have a booking on one of the selected trips.",
+  "errorRoundTripHoldAlreadyActive": "You already have an active round-trip hold.",
+  "errorRoundTripHoldNotFound": "Round-trip hold not found.",
+  "errorRoundTripHoldInvalid": "Round-trip hold is invalid or expired.",
+  "errorReturnSeatRequired": "Please select a return seat first.",
+  "errorRoundTripCancellationWindowClosed": "Cancellation window for this round-trip bundle has closed.",
+  "errorRoundTripAlreadyUsed": "Cannot cancel after a trip in the bundle has been checked-in or completed.",
+  "errorRoundTripBundleNotCancellable": "This bundle is not cancellable."
 }
 

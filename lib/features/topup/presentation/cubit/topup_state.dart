@@ -1,20 +1,9 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/topup_entities.dart';
 
-enum TopUpStep {
-  amount,
-  instructions,
-  details,
-  pendingReview,
-}
+enum TopUpStep { amount, instructions, details, pendingReview }
 
-enum ProofUploadStatus {
-  idle,
-  selected,
-  uploading,
-  uploaded,
-  failed,
-}
+enum ProofUploadStatus { idle, selected, uploading, uploaded, failed }
 
 class TopUpState extends Equatable {
   final TopUpStep currentStep;
@@ -102,7 +91,8 @@ class TopUpState extends Equatable {
     if (receivingPhone != null && receivingPhone!.isNotEmpty) {
       return receivingPhone!;
     }
-    if (selectedMethod != null && selectedMethod!.accountIdentifier.isNotEmpty) {
+    if (selectedMethod != null &&
+        selectedMethod!.accountIdentifier.isNotEmpty) {
       return selectedMethod!.accountIdentifier;
     }
     return paymentConfig.mobileCashReceiverNumber;
@@ -139,54 +129,72 @@ class TopUpState extends Equatable {
       isLoadingConfig: isLoadingConfig ?? this.isLoadingConfig,
       paymentConfig: paymentConfig ?? this.paymentConfig,
       paymentMethods: paymentMethods ?? this.paymentMethods,
-      selectedMethod: selectedMethod != null ? selectedMethod() : this.selectedMethod,
+      selectedMethod: selectedMethod != null
+          ? selectedMethod()
+          : this.selectedMethod,
       amount: amount ?? this.amount,
       availableBalance: availableBalance ?? this.availableBalance,
-      createdRequestId: createdRequestId != null ? createdRequestId() : this.createdRequestId,
-      createdPublicId: createdPublicId != null ? createdPublicId() : this.createdPublicId,
+      createdRequestId: createdRequestId != null
+          ? createdRequestId()
+          : this.createdRequestId,
+      createdPublicId: createdPublicId != null
+          ? createdPublicId()
+          : this.createdPublicId,
       expectedAmountEgp: expectedAmountEgp ?? this.expectedAmountEgp,
-      receivingPhone: receivingPhone != null ? receivingPhone() : this.receivingPhone,
+      receivingPhone: receivingPhone != null
+          ? receivingPhone()
+          : this.receivingPhone,
       senderPhone: senderPhone ?? this.senderPhone,
       paymentReference: paymentReference ?? this.paymentReference,
-      transferredAt: transferredAt != null ? transferredAt() : this.transferredAt,
+      transferredAt: transferredAt != null
+          ? transferredAt()
+          : this.transferredAt,
       proofBytes: proofBytes != null ? proofBytes() : this.proofBytes,
-      proofExtension: proofExtension != null ? proofExtension() : this.proofExtension,
-      proofFileName: proofFileName != null ? proofFileName() : this.proofFileName,
+      proofExtension: proofExtension != null
+          ? proofExtension()
+          : this.proofExtension,
+      proofFileName: proofFileName != null
+          ? proofFileName()
+          : this.proofFileName,
       proofStatus: proofStatus ?? this.proofStatus,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isSuccess: isSuccess ?? this.isSuccess,
-      submittedPublicId: submittedPublicId != null ? submittedPublicId() : this.submittedPublicId,
+      submittedPublicId: submittedPublicId != null
+          ? submittedPublicId()
+          : this.submittedPublicId,
       errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
       isResubmit: isResubmit ?? this.isResubmit,
-      rejectionReason: rejectionReason != null ? rejectionReason() : this.rejectionReason,
+      rejectionReason: rejectionReason != null
+          ? rejectionReason()
+          : this.rejectionReason,
     );
   }
 
   @override
   List<Object?> get props => [
-        currentStep,
-        isLoadingConfig,
-        paymentConfig,
-        paymentMethods,
-        selectedMethod,
-        amount,
-        availableBalance,
-        createdRequestId,
-        createdPublicId,
-        expectedAmountEgp,
-        receivingPhone,
-        senderPhone,
-        paymentReference,
-        transferredAt,
-        proofBytes,
-        proofExtension,
-        proofFileName,
-        proofStatus,
-        isSubmitting,
-        isSuccess,
-        submittedPublicId,
-        errorMessage,
-        isResubmit,
-        rejectionReason,
-      ];
+    currentStep,
+    isLoadingConfig,
+    paymentConfig,
+    paymentMethods,
+    selectedMethod,
+    amount,
+    availableBalance,
+    createdRequestId,
+    createdPublicId,
+    expectedAmountEgp,
+    receivingPhone,
+    senderPhone,
+    paymentReference,
+    transferredAt,
+    proofBytes,
+    proofExtension,
+    proofFileName,
+    proofStatus,
+    isSubmitting,
+    isSuccess,
+    submittedPublicId,
+    errorMessage,
+    isResubmit,
+    rejectionReason,
+  ];
 }

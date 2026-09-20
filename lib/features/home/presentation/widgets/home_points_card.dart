@@ -12,10 +12,7 @@ import '../../../../core/theme/app_text_styles.dart';
 class HomePointsCard extends StatelessWidget {
   final int points;
 
-  const HomePointsCard({
-    super.key,
-    required this.points,
-  });
+  const HomePointsCard({super.key, required this.points});
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +109,10 @@ class HomePointsCard extends StatelessWidget {
               onTap: () => context.push('/add-points'),
               borderRadius: BorderRadius.circular(20),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -11,10 +11,7 @@ import '../../domain/entities/announcement.dart';
 class AmomyAnnouncementCard extends StatelessWidget {
   final Announcement announcement;
 
-  const AmomyAnnouncementCard({
-    super.key,
-    required this.announcement,
-  });
+  const AmomyAnnouncementCard({super.key, required this.announcement});
 
   @override
   Widget build(BuildContext context) {
@@ -74,10 +71,7 @@ class AmomyAnnouncementCard extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primaryDarker,
-                    ],
+                    colors: [AppColors.primary, AppColors.primaryDarker],
                     begin: AlignmentDirectional.topStart,
                     end: AlignmentDirectional.bottomEnd,
                   ),
@@ -130,8 +124,10 @@ class AmomyAnnouncementCard extends StatelessWidget {
                 children: [
                   // Pill Badge (Offer or Announcement)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 3.5,
+                    ),
                     decoration: BoxDecoration(
                       color: isOffer
                           ? AppColors.accentYellow
@@ -217,10 +213,7 @@ class _RouteDot extends StatelessWidget {
     return Container(
       width: 5,
       height: 5,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

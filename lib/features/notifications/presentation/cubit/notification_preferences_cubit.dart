@@ -33,12 +33,14 @@ class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
       final osStatus = await _checkOsPermissionStatus();
       final isTester = await repository.isNotificationTester();
 
-      emit(NotificationPreferencesLoaded(
-        preferences: prefs,
-        isOsPermissionAuthorized: osStatus.$1,
-        isOsPermissionDenied: osStatus.$2,
-        isTester: isTester,
-      ));
+      emit(
+        NotificationPreferencesLoaded(
+          preferences: prefs,
+          isOsPermissionAuthorized: osStatus.$1,
+          isOsPermissionDenied: osStatus.$2,
+          isTester: isTester,
+        ),
+      );
     } catch (e) {
       emit(NotificationPreferencesError(e.toString()));
     }
@@ -51,7 +53,7 @@ class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
       final settings = await messaging.getNotificationSettings();
       final isAuthorized =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
-              settings.authorizationStatus == AuthorizationStatus.provisional;
+          settings.authorizationStatus == AuthorizationStatus.provisional;
       final isDenied =
           settings.authorizationStatus == AuthorizationStatus.denied;
       return (isAuthorized, isDenied);
@@ -65,10 +67,12 @@ class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
     if (currentState is! NotificationPreferencesLoaded) return;
 
     final osStatus = await _checkOsPermissionStatus();
-    emit(currentState.copyWith(
-      isOsPermissionAuthorized: osStatus.$1,
-      isOsPermissionDenied: osStatus.$2,
-    ));
+    emit(
+      currentState.copyWith(
+        isOsPermissionAuthorized: osStatus.$1,
+        isOsPermissionDenied: osStatus.$2,
+      ),
+    );
   }
 
   Future<void> toggleMaster(bool enabled) async {
@@ -99,13 +103,19 @@ class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
     NotificationPreferences updatedPrefs;
     switch (category) {
       case NotificationPreferenceCategory.serviceUpdates:
-        updatedPrefs = currentState.preferences.copyWith(serviceUpdates: enabled);
+        updatedPrefs = currentState.preferences.copyWith(
+          serviceUpdates: enabled,
+        );
         break;
       case NotificationPreferenceCategory.bookingUpdates:
-        updatedPrefs = currentState.preferences.copyWith(bookingUpdates: enabled);
+        updatedPrefs = currentState.preferences.copyWith(
+          bookingUpdates: enabled,
+        );
         break;
       case NotificationPreferenceCategory.walletUpdates:
-        updatedPrefs = currentState.preferences.copyWith(walletUpdates: enabled);
+        updatedPrefs = currentState.preferences.copyWith(
+          walletUpdates: enabled,
+        );
         break;
       case NotificationPreferenceCategory.tripUpdates:
         updatedPrefs = currentState.preferences.copyWith(tripUpdates: enabled);

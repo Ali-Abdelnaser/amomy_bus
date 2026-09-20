@@ -7,7 +7,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDataSource _remoteDataSource;
 
   ProfileRepositoryImpl({ProfileRemoteDataSource? remoteDataSource})
-      : _remoteDataSource = remoteDataSource ?? ProfileRemoteDataSourceImpl();
+    : _remoteDataSource = remoteDataSource ?? ProfileRemoteDataSourceImpl();
 
   @override
   ResultFuture<String> uploadAvatar({

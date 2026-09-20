@@ -16,10 +16,7 @@ final class SignInWithEmailRequested extends AuthEvent {
   final String email;
   final String password;
 
-  const SignInWithEmailRequested({
-    required this.email,
-    required this.password,
-  });
+  const SignInWithEmailRequested({required this.email, required this.password});
 
   @override
   List<Object?> get props => [email, password];
@@ -44,23 +41,20 @@ final class SignUpWithEmailRequested extends AuthEvent {
 
   @override
   List<Object?> get props => [
-        email,
-        password,
-        fullName,
-        phone,
-        gender,
-        dateOfBirth,
-      ];
+    email,
+    password,
+    fullName,
+    phone,
+    gender,
+    dateOfBirth,
+  ];
 }
 
 final class VerifyOtpRequested extends AuthEvent {
   final String email;
   final String token;
 
-  const VerifyOtpRequested({
-    required this.email,
-    required this.token,
-  });
+  const VerifyOtpRequested({required this.email, required this.token});
 
   @override
   List<Object?> get props => [email, token];
@@ -135,4 +129,3 @@ final class AuthUserChangedInternal extends AuthEvent {
 final class AppResumedRequested extends AuthEvent {
   const AppResumedRequested();
 }
-

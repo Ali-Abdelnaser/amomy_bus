@@ -38,10 +38,7 @@ class OnboardingContent extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: const Center(
-                      child: AmomyBusIcon(
-                        size: 80,
-                        color: AppColors.primary,
-                      ),
+                      child: AmomyBusIcon(size: 80, color: AppColors.primary),
                     ),
                   );
                 },

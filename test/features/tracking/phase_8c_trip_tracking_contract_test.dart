@@ -205,7 +205,8 @@ void main() {
 
       await cubit.loadTrackingData(tripId: 'trip-a', isRefresh: true);
       expect(cubit.state.trackingStatus, LiveTrackingStatus.stale);
-      expect(cubit.state.latestTelemetry, isNull);
+      expect(cubit.state.latestTelemetry, isNotNull);
+      expect(cubit.state.latestTelemetry!.isStale, isTrue);
 
       await cubit.loadTrackingData(tripId: 'trip-a', isRefresh: true);
       expect(cubit.state.trackingStatus, LiveTrackingStatus.offline);

@@ -7,8 +7,5 @@ class LocalizationHelper {
   static const Locale arabicLocale = Locale('ar');
   static const Locale englishLocale = Locale('en');
 
-  static const List<Locale> supportedLocales = [
-    arabicLocale,
-    englishLocale,
-  ];
+  static const List<Locale> supportedLocales = [arabicLocale, englishLocale];
 }

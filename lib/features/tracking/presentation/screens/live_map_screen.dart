@@ -51,15 +51,87 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
           }
         },
         builder: (context, state) {
-          final summary = state.summary;
-          final trackingStatus = state.trackingStatus;
-          final selectedStop = state.selectedStop;
-          final telemetry = state.latestTelemetry;
+          if (state.isLoading && state.summary == null) {
+            return const Scaffold(
+              backgroundColor: Color(0xFFF8FAFC),
+              body: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            );
+          }
 
+          final summary = state.summary;
           final directionLabel =
               summary?.activeDirection == TrackingDirection.returnDirection
               ? (locale == 'ar' ? 'رحلة العودة' : 'Return Trip')
               : (locale == 'ar' ? 'رحلة الذهاب' : 'Outbound Trip');
+
+          if (state.isError && summary == null) {
+            final isAr = locale.startsWith('ar');
+            return Scaffold(
+              backgroundColor: const Color(0xFFF8FAFC),
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(
+                    isAr
+                        ? Icons.arrow_forward_rounded
+                        : Icons.arrow_back_rounded,
+                    color: const Color(0xFF0F172A),
+                  ),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n?.errorOccurred ?? 'An error occurred',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (widget.tripId != null) {
+                            context.read<TrackingCubit>().loadTrackingData(
+                              tripId: widget.tripId!,
+                            );
+                          }
+                        },
+                        child: Text(l10n?.retry ?? 'Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Before tracking is enabled, show calm lifecycle card
+          if (summary != null && !state.trackingEnabled) {
+            return _buildPreTripLifecycleView(
+              context: context,
+              state: state,
+              locale: locale,
+              directionLabel: directionLabel,
+            );
+          }
+
+          final trackingStatus = state.trackingStatus;
+          final selectedStop = state.selectedStop;
+          final telemetry = state.latestTelemetry;
 
           // Dynamic bottom offset for the Center-on-Bus button so it is NEVER hidden
           final double centerButtonBottom;
@@ -89,6 +161,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     }
                   },
                   onBusTap: () {
+                    if (state.isGpsOffline) return;
                     setState(() {
                       _isBusSheetOpen = true;
                     });
@@ -118,64 +191,78 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     child: _buildTopFloatingHeader(
                       context: context,
                       directionLabel: directionLabel,
-                      status: trackingStatus,
-                      isAtStop: state.isAtStop,
+                      state: state,
                       locale: locale,
+                      isAtStop: state.isAtStop,
                     ),
                   ),
                 ),
               ),
 
-              // 3. Center-on-Bus / Follow Bus Button (Smoothly animated above any sheet)
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                right: 16,
-                bottom: centerButtonBottom,
-                child: Material(
-                  color: state.followBus ? AppColors.primary : Colors.white,
-                  borderRadius: BorderRadius.circular(
-                    state.followBus ? 28 : 20,
-                  ),
-                  elevation: 5,
-                  shadowColor: Colors.black26,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(
-                      state.followBus ? 28 : 20,
-                    ),
-                    onTap: () {
-                      context.read<TrackingCubit>().toggleFollowBus(true);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: state.followBus ? 12 : 14,
-                        vertical: 10,
+              // 2b. Warning Banner for GPS Stale / GPS Offline / Progression Syncing
+              if (state.isGpsOffline ||
+                  state.isGpsStale ||
+                  state.isProgressionSyncing)
+                Positioned(
+                  top: 86,
+                  left: 16,
+                  right: 16,
+                  child: SafeArea(
+                    top: false,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: state.isGpsOffline
+                            ? const Color(0xFFFEF2F2)
+                            : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: state.isGpsOffline
+                              ? const Color(0xFFFCA5A5)
+                              : const Color(0xFFFDE68A),
+                        ),
+                        boxShadow: AppShadows.sm,
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            state.followBus
-                                ? Icons.directions_bus_filled_rounded
-                                : Icons.near_me_rounded,
-                            color: state.followBus
-                                ? Colors.white
-                                : AppColors.primary,
-                            size: 19,
+                            state.isGpsOffline
+                                ? Icons.wifi_off_rounded
+                                : (state.isGpsStale
+                                      ? Icons.history_rounded
+                                      : Icons.sync_rounded),
+                            size: 16,
+                            color: state.isGpsOffline
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFFD97706),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            state.followBus
-                                ? (locale == 'ar' ? 'تتبع مفعل' : 'Following')
-                                : (locale == 'ar'
-                                      ? 'تتبع الحافلة'
-                                      : 'Follow Bus'),
-                            style: TextStyle(
-                              color: state.followBus
-                                  ? Colors.white
-                                  : AppColors.primary,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              state.isGpsOffline
+                                  ? (l10n?.trackingGpsOfflineTitle ??
+                                        (locale == 'ar'
+                                            ? 'الموقع المباشر غير متاح مؤقتًا'
+                                            : 'Live location is temporarily unavailable'))
+                                  : (state.isGpsStale
+                                        ? (l10n?.trackingGpsStaleTitle ??
+                                              (locale == 'ar'
+                                                  ? 'يوجد تأخير مؤقت في موقع الحافلة'
+                                                  : 'Bus location is temporarily delayed'))
+                                        : (l10n?.trackingProgressionSyncing ??
+                                              (locale == 'ar'
+                                                  ? 'جارٍ تحديث تقدم الرحلة…'
+                                                  : 'Updating trip progress…'))),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: state.isGpsOffline
+                                    ? const Color(0xFF991B1B)
+                                    : const Color(0xFF92400E),
+                              ),
                             ),
                           ),
                         ],
@@ -183,7 +270,66 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     ),
                   ),
                 ),
-              ),
+
+              // 3. Center-on-Bus / Follow Bus Button (Smoothly animated above any sheet)
+              if (!state.isGpsOffline)
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  right: 16,
+                  bottom: centerButtonBottom,
+                  child: Material(
+                    color: state.followBus ? AppColors.primary : Colors.white,
+                    borderRadius: BorderRadius.circular(
+                      state.followBus ? 28 : 20,
+                    ),
+                    elevation: 5,
+                    shadowColor: Colors.black26,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(
+                        state.followBus ? 28 : 20,
+                      ),
+                      onTap: () {
+                        context.read<TrackingCubit>().toggleFollowBus(true);
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: state.followBus ? 12 : 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              state.followBus
+                                  ? Icons.directions_bus_filled_rounded
+                                  : Icons.near_me_rounded,
+                              color: state.followBus
+                                  ? Colors.white
+                                  : AppColors.primary,
+                              size: 19,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              state.followBus
+                                  ? (locale == 'ar' ? 'تتبع مفعل' : 'Following')
+                                  : (locale == 'ar'
+                                        ? 'تتبع الحافلة'
+                                        : 'Follow Bus'),
+                              style: TextStyle(
+                                color: state.followBus
+                                    ? Colors.white
+                                    : AppColors.primary,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
               // 4. Compact Stop Detail Floating Card (Visible only when a stop is tapped)
               if (selectedStop != null)
@@ -202,7 +348,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 ),
 
               // 5. Bus Detail Bottom Sheet (Visible ONLY when Bus Marker is tapped)
-              if (_isBusSheetOpen)
+              if (_isBusSheetOpen && !state.isGpsOffline)
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 260),
                   curve: Curves.easeOutCubic,
@@ -244,11 +390,186 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
   }
 
+  /// Pre-trip / non-operational lifecycle view (Waiting Assignment, Waiting Start, Reassigning, Completed, Cancelled).
+  Widget _buildPreTripLifecycleView({
+    required BuildContext context,
+    required TrackingState state,
+    required String locale,
+    required String directionLabel,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final isAr = locale.startsWith('ar');
+
+    final String title;
+    final String subtitle;
+    final IconData icon;
+    final Color iconColor;
+    final Color iconBg;
+
+    switch (state.trackingPhase) {
+      case TrackingPhase.waitingAssignment:
+        title =
+            l10n?.trackingConfirmedTitle ??
+            (isAr ? 'تم تأكيد رحلتك' : 'Your trip is confirmed');
+        subtitle =
+            l10n?.trackingWaitingAssignmentSubtitle ??
+            (isAr
+                ? 'سيظهر التتبع المباشر عند تجهيز الحافلة للرحلة.'
+                : 'Live tracking will be available when your bus is assigned.');
+        icon = Icons.assignment_ind_outlined;
+        iconColor = AppColors.primary;
+        iconBg = AppColors.primary.withValues(alpha: 0.1);
+        break;
+      case TrackingPhase.waitingStart:
+        title =
+            l10n?.trackingReadyTitle ??
+            (isAr ? 'رحلتك جاهزة' : 'Ready for your trip');
+        subtitle =
+            l10n?.trackingWaitingStartSubtitle ??
+            (isAr
+                ? 'سيبدأ التتبع المباشر عند بدء الرحلة.'
+                : 'Live tracking will start when the trip starts.');
+        icon = Icons.directions_bus_filled_outlined;
+        iconColor = const Color(0xFF16A34A);
+        iconBg = const Color(0xFFE8F5E9);
+        break;
+      case TrackingPhase.reassignmentPending:
+        title =
+            l10n?.trackingUpdatingBusTitle ??
+            (isAr ? 'جارٍ تحديث حافلة الرحلة' : 'Updating your bus');
+        subtitle =
+            l10n?.trackingReassignmentPendingSubtitle ??
+            (isAr
+                ? 'سيعود التتبع المباشر خلال لحظات.'
+                : 'Live tracking will resume shortly.');
+        icon = Icons.sync_rounded;
+        iconColor = const Color(0xFFD97706);
+        iconBg = const Color(0xFFFEF3C7);
+        break;
+      case TrackingPhase.completed:
+        title =
+            l10n?.tripStatusCompleted ??
+            (isAr ? 'الرحلة مكتملة' : 'Trip completed');
+        subtitle = isAr
+            ? 'انتهت هذه الرحلة بنجاح.'
+            : 'This trip has been completed.';
+        icon = Icons.check_circle_outline_rounded;
+        iconColor = const Color(0xFF16A34A);
+        iconBg = const Color(0xFFE8F5E9);
+        break;
+      case TrackingPhase.cancelled:
+        title =
+            l10n?.tripStatusCancelled ??
+            (isAr ? 'تم إلغاء الرحلة' : 'Trip cancelled');
+        subtitle = isAr
+            ? 'تم إلغاء هذه الرحلة.'
+            : 'This trip has been cancelled.';
+        icon = Icons.cancel_outlined;
+        iconColor = AppColors.error;
+        iconBg = const Color(0xFFFEE2E2);
+        break;
+      default:
+        title =
+            l10n?.trackingTripNotActive ??
+            (isAr ? 'التتبع غير متاح حالياً' : 'Tracking not active');
+        subtitle =
+            l10n?.trackingLocationUnavailable ??
+            (isAr
+                ? 'الرحلة غير نشطة حالياً'
+                : 'Trip tracking is not currently active');
+        icon = Icons.info_outline_rounded;
+        iconColor = const Color(0xFF64748B);
+        iconBg = const Color(0xFFF1F5F9);
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            isAr ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+            color: const Color(0xFF0F172A),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n?.trackingLive ?? (isAr ? 'التتبع المباشر' : 'Live Tracking'),
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              directionLabel,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: AppShadows.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 32, color: iconColor),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: const Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// One premium floating white surface with blur/elevation, back button, title, and status pill.
   Widget _buildTopFloatingHeader({
     required BuildContext context,
     required String directionLabel,
-    required LiveTrackingStatus status,
+    required TrackingState state,
     required String locale,
     bool isAtStop = false,
   }) {
@@ -320,73 +641,154 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
           AppSpacing.gapW10,
 
           // Status Pill
-          _buildHeaderStatusPill(status, locale, isAtStop: isAtStop),
+          _buildHeaderStatusPill(
+            context: context,
+            state: state,
+            locale: locale,
+            isAtStop: isAtStop,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderStatusPill(
-    LiveTrackingStatus status,
-    String locale, {
+  Widget _buildHeaderStatusPill({
+    required BuildContext context,
+    required TrackingState state,
+    required String locale,
     bool isAtStop = false,
   }) {
+    final l10n = AppLocalizations.of(context);
     final Color bg;
     final Color dotColor;
     final String label;
 
-    if (isAtStop && status != LiveTrackingStatus.offline) {
+    final phase = state.trackingPhase;
+
+    if (isAtStop &&
+        phase != TrackingPhase.gpsOffline &&
+        state.trackingStatus != LiveTrackingStatus.offline) {
       bg = const Color(0xFFE0F2FE);
       dotColor = const Color(0xFF0284C7);
       label = locale == 'ar' ? 'بالمحطة' : 'AT STOP';
     } else {
-      switch (status) {
-        case LiveTrackingStatus.live:
-        case LiveTrackingStatus.online:
+      switch (phase) {
+        case TrackingPhase.live:
           bg = const Color(0xFFE8F5E9);
           dotColor = const Color(0xFF16A34A);
-          label = locale == 'ar' ? 'مباشر' : 'LIVE';
+          label = l10n?.trackingLive ?? (locale == 'ar' ? 'مباشر' : 'LIVE');
           break;
-        case LiveTrackingStatus.stale:
+        case TrackingPhase.gpsStale:
           bg = const Color(0xFFFEF3C7);
           dotColor = const Color(0xFFD97706);
-          label = locale == 'ar' ? 'مؤقتاً' : 'STALE';
+          label =
+              l10n?.trackingDelayedPill ??
+              (locale == 'ar' ? 'مؤقتاً' : 'DELAYED');
           break;
-        case LiveTrackingStatus.assignmentPending:
+        case TrackingPhase.gpsOffline:
           bg = const Color(0xFFF1F5F9);
           dotColor = const Color(0xFF64748B);
-          label = locale == 'ar' ? 'قيد التعيين' : 'PENDING';
+          label =
+              l10n?.trackingOffline ??
+              (locale == 'ar' ? 'غير متصل' : 'OFFLINE');
           break;
-        case LiveTrackingStatus.tripNotActive:
-          bg = const Color(0xFFF1F5F9);
-          dotColor = const Color(0xFF64748B);
-          label = locale == 'ar' ? 'غير نشط' : 'INACTIVE';
-          break;
-        case LiveTrackingStatus.outsideTrackingWindow:
-          bg = const Color(0xFFF1F5F9);
-          dotColor = const Color(0xFF64748B);
-          label = locale == 'ar' ? 'غير متاح' : 'OFFLINE';
-          break;
-        case LiveTrackingStatus.progressionUnavailable:
+        case TrackingPhase.progressionSyncing:
           bg = const Color(0xFFFEF3C7);
           dotColor = const Color(0xFFD97706);
-          label = locale == 'ar' ? 'المحطات غير متاحة' : 'NO STOPS';
+          label =
+              l10n?.trackingSyncingPill ??
+              (locale == 'ar' ? 'مزامنة' : 'SYNCING');
           break;
-        case LiveTrackingStatus.betweenRuns:
+        case TrackingPhase.waitingAssignment:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label =
+              l10n?.trackingPendingPill ??
+              (locale == 'ar' ? 'قيد التعيين' : 'PENDING');
+          break;
+        case TrackingPhase.waitingStart:
           bg = const Color(0xFFEEF2FF);
           dotColor = const Color(0xFF4F46E5);
-          label = locale == 'ar' ? 'بين الرحلات' : 'BETWEEN RUNS';
+          label =
+              l10n?.trackingReadyPill ??
+              (locale == 'ar' ? 'جاهز للبدء' : 'READY');
           break;
-        case LiveTrackingStatus.qaPreview:
-          bg = const Color(0xFFF3E8FF);
-          dotColor = const Color(0xFF9333EA);
-          label = locale == 'ar' ? 'معاينة تجريبية' : 'QA PREVIEW';
+        case TrackingPhase.reassignmentPending:
+          bg = const Color(0xFFFEF3C7);
+          dotColor = const Color(0xFFD97706);
+          label =
+              l10n?.trackingUpdatingPill ??
+              (locale == 'ar' ? 'تحديث الحافلة' : 'UPDATING');
           break;
-        case LiveTrackingStatus.offline:
+        case TrackingPhase.completed:
           bg = const Color(0xFFF1F5F9);
           dotColor = const Color(0xFF64748B);
-          label = locale == 'ar' ? 'غير متصل' : 'OFFLINE';
+          label =
+              l10n?.trackingCompletedPill ??
+              (locale == 'ar' ? 'مكتملة' : 'COMPLETED');
           break;
+        case TrackingPhase.cancelled:
+          bg = const Color(0xFFFEE2E2);
+          dotColor = const Color(0xFFDC2626);
+          label =
+              l10n?.trackingCancelledPill ??
+              (locale == 'ar' ? 'ملغية' : 'CANCELLED');
+          break;
+        case TrackingPhase.serviceDateEnded:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label =
+              l10n?.trackingEndedPill ?? (locale == 'ar' ? 'منتهية' : 'ENDED');
+          break;
+        case TrackingPhase.unknown:
+          switch (state.trackingStatus) {
+            case LiveTrackingStatus.live:
+            case LiveTrackingStatus.online:
+              bg = const Color(0xFFE8F5E9);
+              dotColor = const Color(0xFF16A34A);
+              label = locale == 'ar' ? 'مباشر' : 'LIVE';
+              break;
+            case LiveTrackingStatus.stale:
+              bg = const Color(0xFFFEF3C7);
+              dotColor = const Color(0xFFD97706);
+              label = locale == 'ar' ? 'مؤقتاً' : 'STALE';
+              break;
+            case LiveTrackingStatus.assignmentPending:
+              bg = const Color(0xFFF1F5F9);
+              dotColor = const Color(0xFF64748B);
+              label = locale == 'ar' ? 'قيد التعيين' : 'PENDING';
+              break;
+            case LiveTrackingStatus.tripNotActive:
+              bg = const Color(0xFFF1F5F9);
+              dotColor = const Color(0xFF64748B);
+              label = locale == 'ar' ? 'غير نشط' : 'INACTIVE';
+              break;
+            case LiveTrackingStatus.outsideTrackingWindow:
+              bg = const Color(0xFFF1F5F9);
+              dotColor = const Color(0xFF64748B);
+              label = locale == 'ar' ? 'غير متاح' : 'OFFLINE';
+              break;
+            case LiveTrackingStatus.progressionUnavailable:
+              bg = const Color(0xFFFEF3C7);
+              dotColor = const Color(0xFFD97706);
+              label = locale == 'ar' ? 'المحطات غير متاحة' : 'NO STOPS';
+              break;
+            case LiveTrackingStatus.betweenRuns:
+              bg = const Color(0xFFEEF2FF);
+              dotColor = const Color(0xFF4F46E5);
+              label = locale == 'ar' ? 'بين الرحلات' : 'BETWEEN RUNS';
+              break;
+            case LiveTrackingStatus.qaPreview:
+              bg = const Color(0xFFF3E8FF);
+              dotColor = const Color(0xFF9333EA);
+              label = locale == 'ar' ? 'معاينة تجريبية' : 'QA PREVIEW';
+              break;
+            case LiveTrackingStatus.offline:
+              bg = const Color(0xFFF1F5F9);
+              dotColor = const Color(0xFF64748B);
+              label = locale == 'ar' ? 'غير متصل' : 'OFFLINE';
+              break;
+          }
       }
     }
 
@@ -712,25 +1114,49 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     final nextEtaText = l10n?.trackingEtaUnavailable ?? 'ETA unavailable';
 
     // Freshness text
-    final freshnessText = switch (state.trackingStatus) {
-      LiveTrackingStatus.live || LiveTrackingStatus.online =>
-        telemetry == null
-            ? (l10n?.trackingUnavailable ?? 'Tracking unavailable')
-            : (locale == 'ar' ? 'تم التحديث الآن' : 'Updated just now'),
-      LiveTrackingStatus.assignmentPending =>
-        l10n?.trackingAssignmentPending ?? 'Bus assignment pending',
-      LiveTrackingStatus.stale =>
-        l10n?.trackingLocationUnavailable ?? 'Location temporarily unavailable',
-      LiveTrackingStatus.progressionUnavailable =>
-        l10n?.trackingProgressUnavailable ??
-            'Stop progress temporarily unavailable',
-      LiveTrackingStatus.tripNotActive =>
-        l10n?.trackingTripNotActive ?? 'Trip tracking is not active',
-      LiveTrackingStatus.offline || LiveTrackingStatus.outsideTrackingWindow =>
-        l10n?.trackingOffline ?? 'OFFLINE',
-      LiveTrackingStatus.betweenRuns || LiveTrackingStatus.qaPreview =>
-        l10n?.trackingUnavailable ?? 'Tracking unavailable',
-    };
+    final gpsRecAt = telemetry?.gpsRecordedAt;
+    final String freshnessText;
+    if (state.trackingPhase == TrackingPhase.live) {
+      freshnessText = telemetry == null
+          ? (l10n?.trackingUnavailable ?? 'Tracking unavailable')
+          : (l10n?.trackingLastUpdatedJustNow ??
+                (locale == 'ar' ? 'تم التحديث الآن' : 'Updated just now'));
+    } else if (state.trackingPhase == TrackingPhase.gpsStale) {
+      if (gpsRecAt != null) {
+        final diff = DateTime.now().difference(gpsRecAt);
+        if (diff.inMinutes > 0) {
+          freshnessText =
+              l10n?.trackingLastUpdatedMinutes(diff.inMinutes) ??
+              (locale == 'ar'
+                  ? 'آخر تحديث منذ ${diff.inMinutes} د'
+                  : 'Last updated ${diff.inMinutes}m ago');
+        } else {
+          freshnessText =
+              l10n?.trackingLastUpdatedSeconds(diff.inSeconds) ??
+              (locale == 'ar'
+                  ? 'آخر تحديث منذ ${diff.inSeconds} ث'
+                  : 'Last updated ${diff.inSeconds}s ago');
+        }
+      } else {
+        freshnessText = l10n?.trackingDelayedPill ?? 'Location delayed';
+      }
+    } else if (state.trackingPhase == TrackingPhase.gpsOffline) {
+      freshnessText = l10n?.trackingOffline ?? 'Location unavailable';
+    } else if (state.trackingPhase == TrackingPhase.progressionSyncing) {
+      freshnessText = l10n?.trackingSyncingPill ?? 'Syncing progress';
+    } else if (state.trackingPhase == TrackingPhase.waitingAssignment) {
+      freshnessText = l10n?.trackingPendingPill ?? 'Assignment pending';
+    } else if (state.trackingPhase == TrackingPhase.waitingStart) {
+      freshnessText = l10n?.trackingReadyPill ?? 'Ready for start';
+    } else if (state.trackingPhase == TrackingPhase.reassignmentPending) {
+      freshnessText = l10n?.trackingUpdatingPill ?? 'Updating bus';
+    } else if (state.trackingPhase == TrackingPhase.completed) {
+      freshnessText = l10n?.trackingCompletedPill ?? 'Trip completed';
+    } else if (state.trackingPhase == TrackingPhase.cancelled) {
+      freshnessText = l10n?.trackingCancelledPill ?? 'Trip cancelled';
+    } else {
+      freshnessText = l10n?.trackingUnavailable ?? 'Tracking unavailable';
+    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
@@ -786,8 +1212,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 ),
                 const SizedBox(width: 8),
                 _buildHeaderStatusPill(
-                  state.trackingStatus,
-                  locale,
+                  context: context,
+                  state: state,
+                  locale: locale,
                   isAtStop: state.isAtStop,
                 ),
                 const Spacer(),
@@ -811,135 +1238,172 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Current / Last Stop & Next Stop Cards
-            Row(
-              children: [
-                // Last Stop
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+            // Current / Last Stop & Next Stop Cards (or progression syncing banner)
+            if (state.isProgressionSyncing)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.sync_rounded,
+                      size: 20,
+                      color: Color(0xFFD97706),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: isCurrentStopVerified
-                                    ? AppColors.accentYellow
-                                    : const Color(0xFFCBD5E1),
-                                shape: BoxShape.circle,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n?.trackingProgressionSyncing ??
+                            (locale == 'ar'
+                                ? 'جارٍ تحديث تقدم الرحلة…'
+                                : 'Updating trip progress…'),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Row(
+                children: [
+                  // Last Stop
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isCurrentStopVerified
+                                      ? AppColors.accentYellow
+                                      : const Color(0xFFCBD5E1),
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              locale == 'ar' ? 'المحطة السابقة' : 'Last Stop',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w600,
+                              const SizedBox(width: 6),
+                              Text(
+                                locale == 'ar' ? 'المحطة السابقة' : 'Last Stop',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            currentStopName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          currentStopName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          currentReachedText,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 2),
+                          Text(
+                            currentReachedText,
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-                // Next Stop
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: isNextStopVerified
-                                    ? AppColors.primary
-                                    : const Color(0xFFCBD5E1),
-                                shape: BoxShape.circle,
+                  // Next Stop
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isNextStopVerified
+                                      ? AppColors.primary
+                                      : const Color(0xFFCBD5E1),
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              locale == 'ar' ? 'المحطة القادمة' : 'Next Stop',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isNextStopVerified
-                                    ? AppColors.primary
-                                    : const Color(0xFF64748B),
-                                fontWeight: FontWeight.w700,
+                              const SizedBox(width: 6),
+                              Text(
+                                locale == 'ar' ? 'المحطة القادمة' : 'Next Stop',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isNextStopVerified
+                                      ? AppColors.primary
+                                      : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            nextStopName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          nextStopName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          nextEtaText,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            color: isNextStopVerified
-                                ? AppColors.primaryDark
-                                : const Color(0xFF64748B),
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 2),
+                          Text(
+                            nextEtaText,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: isNextStopVerified
+                                  ? AppColors.primaryDark
+                                  : const Color(0xFF64748B),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             const SizedBox(height: 12),
 
             // Tracking state row: privacy-safe operational summary.

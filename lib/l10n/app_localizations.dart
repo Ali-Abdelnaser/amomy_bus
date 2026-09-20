@@ -2702,6 +2702,138 @@ abstract class AppLocalizations {
   /// **'ETA unavailable'**
   String get trackingEtaUnavailable;
 
+  /// No description provided for @trackingConfirmedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trip is confirmed'**
+  String get trackingConfirmedTitle;
+
+  /// No description provided for @trackingWaitingAssignmentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tracking will be available when your bus is assigned.'**
+  String get trackingWaitingAssignmentSubtitle;
+
+  /// No description provided for @trackingReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for your trip'**
+  String get trackingReadyTitle;
+
+  /// No description provided for @trackingWaitingStartSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tracking will start when the driver starts the trip.'**
+  String get trackingWaitingStartSubtitle;
+
+  /// No description provided for @trackingUpdatingBusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your bus'**
+  String get trackingUpdatingBusTitle;
+
+  /// No description provided for @trackingReassignmentPendingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tracking will resume shortly.'**
+  String get trackingReassignmentPendingSubtitle;
+
+  /// No description provided for @trackingGpsStaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus location is temporarily delayed'**
+  String get trackingGpsStaleTitle;
+
+  /// No description provided for @trackingGpsOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live location is temporarily unavailable'**
+  String get trackingGpsOfflineTitle;
+
+  /// No description provided for @trackingGpsOfflineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip is active. We\'re waiting for a new location update.'**
+  String get trackingGpsOfflineSubtitle;
+
+  /// No description provided for @trackingProgressionSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating trip progress…'**
+  String get trackingProgressionSyncing;
+
+  /// No description provided for @trackingLastKnownLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Last known location'**
+  String get trackingLastKnownLocation;
+
+  /// No description provided for @trackingPendingPill.
+  ///
+  /// In en, this message translates to:
+  /// **'PENDING'**
+  String get trackingPendingPill;
+
+  /// No description provided for @trackingReadyPill.
+  ///
+  /// In en, this message translates to:
+  /// **'READY'**
+  String get trackingReadyPill;
+
+  /// No description provided for @trackingUpdatingPill.
+  ///
+  /// In en, this message translates to:
+  /// **'UPDATING'**
+  String get trackingUpdatingPill;
+
+  /// No description provided for @trackingDelayedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'DELAYED'**
+  String get trackingDelayedPill;
+
+  /// No description provided for @trackingSyncingPill.
+  ///
+  /// In en, this message translates to:
+  /// **'SYNCING'**
+  String get trackingSyncingPill;
+
+  /// No description provided for @trackingCompletedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'COMPLETED'**
+  String get trackingCompletedPill;
+
+  /// No description provided for @trackingCancelledPill.
+  ///
+  /// In en, this message translates to:
+  /// **'CANCELLED'**
+  String get trackingCancelledPill;
+
+  /// No description provided for @trackingEndedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'ENDED'**
+  String get trackingEndedPill;
+
+  /// No description provided for @trackingLastUpdatedJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated just now'**
+  String get trackingLastUpdatedJustNow;
+
+  /// No description provided for @trackingLastUpdatedSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {seconds} seconds ago'**
+  String trackingLastUpdatedSeconds(int seconds);
+
+  /// No description provided for @trackingLastUpdatedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {minutes} min ago'**
+  String trackingLastUpdatedMinutes(int minutes);
+
   /// No description provided for @trackingResumesMidday.
   ///
   /// In en, this message translates to:
@@ -2839,6 +2971,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign Out'**
   String get logout;
+
+  /// No description provided for @singleTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'One-way'**
+  String get singleTrip;
+
+  /// No description provided for @roundTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Round Trip'**
+  String get roundTrip;
+
+  /// No description provided for @roundTripDiscountBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'15% OFF'**
+  String get roundTripDiscountBadge;
+
+  /// No description provided for @returnDepartureTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Time'**
+  String get returnDepartureTimeTitle;
+
+  /// No description provided for @selectOutboundSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Outbound Seat'**
+  String get selectOutboundSeat;
+
+  /// No description provided for @selectReturnSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Return Seat'**
+  String get selectReturnSeat;
+
+  /// No description provided for @proceedToReturnSeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Return Seat'**
+  String get proceedToReturnSeat;
+
+  /// No description provided for @outboundFareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound Fare'**
+  String get outboundFareLabel;
+
+  /// No description provided for @returnFareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Fare'**
+  String get returnFareLabel;
+
+  /// No description provided for @subtotalFareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get subtotalFareLabel;
+
+  /// No description provided for @roundTripDiscountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Round Trip Discount 15%'**
+  String get roundTripDiscountLabel;
+
+  /// No description provided for @totalAfterDiscountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total after discount'**
+  String get totalAfterDiscountLabel;
+
+  /// No description provided for @confirmRoundTripBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Round Trip Booking'**
+  String get confirmRoundTripBooking;
+
+  /// No description provided for @roundTripSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Round Trip Booked Successfully'**
+  String get roundTripSuccessTitle;
+
+  /// No description provided for @outboundTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound Time'**
+  String get outboundTimeLabel;
+
+  /// No description provided for @outboundSeatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound Seat'**
+  String get outboundSeatLabel;
+
+  /// No description provided for @returnTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Time'**
+  String get returnTimeLabel;
+
+  /// No description provided for @returnSeatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Return Seat'**
+  String get returnSeatLabel;
+
+  /// No description provided for @savedPointsNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'You saved {points} points'**
+  String savedPointsNotice(int points);
+
+  /// No description provided for @cancelRoundTripTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Round Trip Booking'**
+  String get cancelRoundTripTitle;
+
+  /// No description provided for @cancelRoundTripMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This booking is part of a 15% discounted Round Trip bundle. Cancelling will cancel both Outbound and Return trips together.'**
+  String get cancelRoundTripMessage;
+
+  /// No description provided for @cancelBothLegsCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Both Trips & Refund'**
+  String get cancelBothLegsCta;
+
+  /// No description provided for @roundTripCancellationClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation is closed after departure cutoff or if either trip has been used.'**
+  String get roundTripCancellationClosed;
+
+  /// No description provided for @noReturnTripsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No return trips available today'**
+  String get noReturnTripsAvailable;
+
+  /// No description provided for @errorRoundTripMustStartWithOutbound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round Trip booking is only available when starting from the Outbound direction.'**
+  String get errorRoundTripMustStartWithOutbound;
+
+  /// No description provided for @errorInvalidRoundTripDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound and Return trips must be in opposite directions.'**
+  String get errorInvalidRoundTripDirections;
+
+  /// No description provided for @errorRoundTripSameDayRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbound and Return trips must be on the same service day.'**
+  String get errorRoundTripSameDayRequired;
+
+  /// No description provided for @errorReturnMustBeAfterOutbound.
+  ///
+  /// In en, this message translates to:
+  /// **'Return trip departure must be after Outbound departure.'**
+  String get errorReturnMustBeAfterOutbound;
+
+  /// No description provided for @errorRoundTripDiscountAlreadyUsedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already used your daily round-trip discount.'**
+  String get errorRoundTripDiscountAlreadyUsedToday;
+
+  /// No description provided for @errorRoundTripRequiresUnbookedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a booking on one of the selected trips.'**
+  String get errorRoundTripRequiresUnbookedTrips;
+
+  /// No description provided for @errorRoundTripHoldAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an active round-trip hold.'**
+  String get errorRoundTripHoldAlreadyActive;
+
+  /// No description provided for @errorRoundTripHoldNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round-trip hold not found.'**
+  String get errorRoundTripHoldNotFound;
+
+  /// No description provided for @errorRoundTripHoldInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Round-trip hold is invalid or expired.'**
+  String get errorRoundTripHoldInvalid;
+
+  /// No description provided for @errorReturnSeatRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a return seat first.'**
+  String get errorReturnSeatRequired;
+
+  /// No description provided for @errorRoundTripCancellationWindowClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancellation window for this round-trip bundle has closed.'**
+  String get errorRoundTripCancellationWindowClosed;
+
+  /// No description provided for @errorRoundTripAlreadyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot cancel after a trip in the bundle has been checked-in or completed.'**
+  String get errorRoundTripAlreadyUsed;
+
+  /// No description provided for @errorRoundTripBundleNotCancellable.
+  ///
+  /// In en, this message translates to:
+  /// **'This bundle is not cancellable.'**
+  String get errorRoundTripBundleNotCancellable;
 }
 
 class _AppLocalizationsDelegate

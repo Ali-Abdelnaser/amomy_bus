@@ -496,6 +496,42 @@
   "trackingCurrentStop": "المحطة الحالية",
   "trackingNextStop": "المحطة التالية",
   "trackingEtaUnavailable": "وقت الوصول غير متاح",
+  "trackingConfirmedTitle": "تم تأكيد رحلتك",
+  "trackingWaitingAssignmentSubtitle": "سيظهر التتبع المباشر عند تجهيز الحافلة للرحلة.",
+  "trackingReadyTitle": "رحلتك جاهزة",
+  "trackingWaitingStartSubtitle": "سيبدأ التتبع المباشر عند بدء السائق للرحلة.",
+  "trackingUpdatingBusTitle": "جارٍ تحديث حافلة الرحلة",
+  "trackingReassignmentPendingSubtitle": "سيعود التتبع المباشر خلال لحظات.",
+  "trackingGpsStaleTitle": "يوجد تأخير مؤقت في موقع الحافلة",
+  "trackingGpsOfflineTitle": "الموقع المباشر غير متاح مؤقتًا",
+  "trackingGpsOfflineSubtitle": "الرحلة جارية، وننتظر تحديثًا جديدًا للموقع.",
+  "trackingProgressionSyncing": "جارٍ تحديث تقدم الرحلة…",
+  "trackingLastKnownLocation": "آخر موقع معروف",
+  "trackingPendingPill": "قيد التعيين",
+  "trackingReadyPill": "جاهز للرحلة",
+  "trackingUpdatingPill": "جارٍ التحديث",
+  "trackingDelayedPill": "مؤقتاً",
+  "trackingSyncingPill": "جارٍ التحديث",
+  "trackingCompletedPill": "مكتملة",
+  "trackingCancelledPill": "ملغاة",
+  "trackingEndedPill": "انتهت",
+  "trackingLastUpdatedJustNow": "تم التحديث الآن",
+  "trackingLastUpdatedSeconds": "آخر تحديث منذ {seconds} ثانية",
+  "@trackingLastUpdatedSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingLastUpdatedMinutes": "آخر تحديث منذ {minutes} دقيقة",
+  "@trackingLastUpdatedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "trackingResumesMidday": "يستأنف التتبع الساعة 1:00 م",
   "trackingResumesTomorrow": "يستأنف التتبع غداً الساعة 8:00 ص",
   "bookingStatusCompleted": "مكتملة",
@@ -518,5 +554,49 @@
   "deviceBlockedMessage": "تم حظر هذا الجهاز من استخدام عمومي باص",
   "accountSuspendedMessage": "تم إيقاف هذا الحساب",
   "accountSuspendedUntilMessage": "تم إيقاف حسابك مؤقتًا حتى {date}",
-  "logout": "تسجيل الخروج"
+  "logout": "تسجيل الخروج",
+  "singleTrip": "ذهاب فقط",
+  "roundTrip": "ذهاب وعودة",
+  "roundTripDiscountBadge": "خصم 15%",
+  "returnDepartureTimeTitle": "ميعاد العودة",
+  "selectOutboundSeat": "اختر مقعد الذهاب",
+  "selectReturnSeat": "اختر مقعد العودة",
+  "proceedToReturnSeat": "متابعة لاختيار مقعد العودة",
+  "outboundFareLabel": "سعر الذهاب",
+  "returnFareLabel": "سعر العودة",
+  "subtotalFareLabel": "الإجمالي",
+  "roundTripDiscountLabel": "خصم الذهاب والعودة 15%",
+  "totalAfterDiscountLabel": "الإجمالي بعد الخصم",
+  "confirmRoundTripBooking": "تأكيد حجز الذهاب والعودة",
+  "roundTripSuccessTitle": "تم حجز الذهاب والعودة بنجاح",
+  "outboundTimeLabel": "ميعاد الذهاب",
+  "outboundSeatLabel": "مقعد الذهاب",
+  "returnTimeLabel": "ميعاد العودة",
+  "returnSeatLabel": "مقعد العودة",
+  "savedPointsNotice": "وفرت {points} نقاط",
+  "@savedPointsNotice": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelRoundTripTitle": "إلغاء حجز الذهاب والعودة",
+  "cancelRoundTripMessage": "هذا الحجز جزء من حجز ذهاب وعودة بخصم 15%.\nعند الإلغاء سيتم إلغاء رحلتي الذهاب والعودة معًا.",
+  "cancelBothLegsCta": "إلغاء الرحلتين واسترداد النقاط",
+  "roundTripCancellationClosed": "لا يمكن إلغاء الحجز بعد موعد الإغلاق أو بعد استخدام إحدى الرحلات",
+  "noReturnTripsAvailable": "لا توجد رحلات عودة متاحة اليوم",
+  "errorRoundTripMustStartWithOutbound": "حجز الذهاب والعودة متاح فقط عند بدء الحجز من اتجاه الذهاب.",
+  "errorInvalidRoundTripDirections": "يجب أن تكون رحلتا الذهاب والعودة في اتجاهين متعاكسين.",
+  "errorRoundTripSameDayRequired": "يجب أن تكون رحلتا الذهاب والعودة في نفس اليوم.",
+  "errorReturnMustBeAfterOutbound": "يجب أن يكون موعد رحلة العودة بعد موعد رحلة الذهاب.",
+  "errorRoundTripDiscountAlreadyUsedToday": "لقد استفدت من خصم الذهاب والعودة لهذا اليوم بالفعل.",
+  "errorRoundTripRequiresUnbookedTrips": "لديك حجز مسبق على إحدى الرحلتين المختارتين.",
+  "errorRoundTripHoldAlreadyActive": "لديك حجز مؤقت نشط لرحلة ذهاب وعودة بالفعل.",
+  "errorRoundTripHoldNotFound": "لم يتم العثور على الحجز المؤقت.",
+  "errorRoundTripHoldInvalid": "بيانات حجز الذهاب والعودة غير صحيحة.",
+  "errorReturnSeatRequired": "يرجى اختيار مقعد رحلة العودة أولاً.",
+  "errorRoundTripCancellationWindowClosed": "تم إغلاق نافذة إلغاء حجز الذهاب والعودة.",
+  "errorRoundTripAlreadyUsed": "لا يمكن إلغاء الحجز بعد استخدام إحدى الرحلات أو تسجيل الحضور.",
+  "errorRoundTripBundleNotCancellable": "لا يمكن إلغاء هذه الباقة."
 }

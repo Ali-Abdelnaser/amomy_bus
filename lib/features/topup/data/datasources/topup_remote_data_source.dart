@@ -233,8 +233,8 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
         'p_sender_phone': senderPhone,
         'p_transfer_reference':
             (transferReference != null && transferReference.trim().isNotEmpty)
-                ? transferReference.trim()
-                : null,
+            ? transferReference.trim()
+            : null,
         'p_transferred_at': (transferredAt ?? DateTime.now()).toIso8601String(),
         'p_screenshot_path': storagePath,
       },
@@ -248,10 +248,12 @@ class TopUpRemoteDataSourceImpl implements TopUpRemoteDataSource {
       return TopUpCreatedResponse(
         requestId: reqId,
         publicId: pubId.isNotEmpty ? pubId : 'AMY-TOPUP',
-        requestedPoints: (map['requested_points'] as num?)?.toInt() ??
+        requestedPoints:
+            (map['requested_points'] as num?)?.toInt() ??
             (map['requested_amount'] as num?)?.toInt() ??
             amount,
-        expectedAmountEgp: (map['expected_amount_egp'] as num?)?.toDouble() ??
+        expectedAmountEgp:
+            (map['expected_amount_egp'] as num?)?.toDouble() ??
             amount.toDouble(),
         receivingPhone: map['receiving_phone'] as String? ?? '',
         conversionRate: (map['conversion_rate'] as num?)?.toDouble() ?? 1.0,

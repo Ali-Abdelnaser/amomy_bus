@@ -78,23 +78,25 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
     super.initState();
     if (widget.preference?.originStopId != null) {
       _originStop = widget.availableStops.cast<RouteStop?>().firstWhere(
-            (s) => s?.stopId == widget.preference!.originStopId,
-            orElse: () => null,
-          );
+        (s) => s?.stopId == widget.preference!.originStopId,
+        orElse: () => null,
+      );
     }
-    _originStop ??=
-        widget.availableStops.isNotEmpty ? widget.availableStops.first : null;
+    _originStop ??= widget.availableStops.isNotEmpty
+        ? widget.availableStops.first
+        : null;
 
     if (widget.preference?.destinationStopId != null) {
       _destStop = widget.availableStops.cast<RouteStop?>().firstWhere(
-            (s) =>
-                s?.stopId == widget.preference!.destinationStopId &&
-                (_originStop == null || s!.stopOrder > _originStop!.stopOrder),
-            orElse: () => null,
-          );
+        (s) =>
+            s?.stopId == widget.preference!.destinationStopId &&
+            (_originStop == null || s!.stopOrder > _originStop!.stopOrder),
+        orElse: () => null,
+      );
     }
-    _destStop ??=
-        widget.availableStops.length > 1 ? widget.availableStops.last : null;
+    _destStop ??= widget.availableStops.length > 1
+        ? widget.availableStops.last
+        : null;
   }
 
   List<RouteStop> get _validDestStops {
@@ -114,13 +116,13 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
     final hasCurrent = widget.preference != null;
     final currentOrigin = hasCurrent
         ? (isAr
-            ? widget.preference!.originNameAr
-            : widget.preference!.originNameEn)
+              ? widget.preference!.originNameAr
+              : widget.preference!.originNameEn)
         : null;
     final currentDest = hasCurrent
         ? (isAr
-            ? widget.preference!.destinationNameAr
-            : widget.preference!.destinationNameEn)
+              ? widget.preference!.destinationNameAr
+              : widget.preference!.destinationNameEn)
         : null;
 
     final bottomSafeArea = mediaQuery.padding.bottom;
@@ -192,11 +194,15 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
               ),
 
               // Current saved journey badge (if set)
-              if (hasCurrent && currentOrigin != null && currentDest != null) ...[
+              if (hasCurrent &&
+                  currentOrigin != null &&
+                  currentDest != null) ...[
                 AppSpacing.gapH10,
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
                     borderRadius: BorderRadius.circular(10),
@@ -307,8 +313,8 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                                 _originStop != null
                                     ? _originStop!.stopName(locale)
                                     : (isAr
-                                        ? 'اختر محطة الانطلاق'
-                                        : 'Select departure stop'),
+                                          ? 'اختر محطة الانطلاق'
+                                          : 'Select departure stop'),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: _originStop != null
@@ -402,12 +408,14 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                           width: 30,
                           height: 30,
                           decoration: BoxDecoration(
-                            color:
-                                const Color(0xFFFFC928).withValues(alpha: 0.18),
+                            color: const Color(
+                              0xFFFFC928,
+                            ).withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFD49B00)
-                                  .withValues(alpha: 0.30),
+                              color: const Color(
+                                0xFFD49B00,
+                              ).withValues(alpha: 0.30),
                               width: 1.2,
                             ),
                           ),
@@ -427,8 +435,8 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                                 _destStop != null
                                     ? _destStop!.stopName(locale)
                                     : (isAr
-                                        ? 'اختر محطة الوصول'
-                                        : 'Select destination stop'),
+                                          ? 'اختر محطة الوصول'
+                                          : 'Select destination stop'),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: _destStop != null
@@ -470,7 +478,8 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: (_originStop != null &&
+                  onPressed:
+                      (_originStop != null &&
                           _destStop != null &&
                           _originStop!.stopId != _destStop!.stopId &&
                           !_isSaving)
@@ -490,8 +499,9 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(
@@ -527,9 +537,7 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-        bottom: mediaQuery.viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
       child: sheetPanel,
     );
   }

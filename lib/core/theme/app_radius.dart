@@ -22,7 +22,9 @@ abstract final class AppRadius {
   static const BorderRadius radiusLg = BorderRadius.all(Radius.circular(r16));
   static const BorderRadius radiusXl = BorderRadius.all(Radius.circular(r20));
   static const BorderRadius radiusXxl = BorderRadius.all(Radius.circular(r24));
-  static const BorderRadius radiusCircular = BorderRadius.all(Radius.circular(circular));
+  static const BorderRadius radiusCircular = BorderRadius.all(
+    Radius.circular(circular),
+  );
 
   // Component radius aliases
   static const BorderRadius button = radiusMd;
@@ -30,8 +32,16 @@ abstract final class AppRadius {
   static const BorderRadius input = radiusMd;
 
   // Top rounded corners (e.g. bottom sheets, modals)
-  static const BorderRadius topMd = BorderRadius.vertical(top: Radius.circular(r12));
-  static const BorderRadius topLg = BorderRadius.vertical(top: Radius.circular(r16));
-  static const BorderRadius topXl = BorderRadius.vertical(top: Radius.circular(r20));
-  static const BorderRadius topXxl = BorderRadius.vertical(top: Radius.circular(r24));
+  static const BorderRadius topMd = BorderRadius.vertical(
+    top: Radius.circular(r12),
+  );
+  static const BorderRadius topLg = BorderRadius.vertical(
+    top: Radius.circular(r16),
+  );
+  static const BorderRadius topXl = BorderRadius.vertical(
+    top: Radius.circular(r20),
+  );
+  static const BorderRadius topXxl = BorderRadius.vertical(
+    top: Radius.circular(r24),
+  );
 }

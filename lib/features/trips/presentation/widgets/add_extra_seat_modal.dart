@@ -389,10 +389,6 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
 
             AppSpacing.gapH10,
 
-            
-
-           
-
             // Seat Map Content
             Expanded(
               child: _isLoading
@@ -583,4 +579,3 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
     );
   }
 }
-

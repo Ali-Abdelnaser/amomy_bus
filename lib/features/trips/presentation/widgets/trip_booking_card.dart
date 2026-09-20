@@ -203,7 +203,9 @@ class TripBookingCard extends StatelessWidget {
   }
 
   void _showTrackingModal(BuildContext context) {
-    context.push(RoutePaths.liveBusMap);
+    context.push(
+      RoutePaths.liveTracking.replaceFirst(':tripId', booking.tripId),
+    );
   }
 
   void _showQrModal(BuildContext context) {

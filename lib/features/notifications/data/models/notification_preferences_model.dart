@@ -33,7 +33,9 @@ class NotificationPreferencesModel extends NotificationPreferences {
     };
   }
 
-  factory NotificationPreferencesModel.fromEntity(NotificationPreferences entity) {
+  factory NotificationPreferencesModel.fromEntity(
+    NotificationPreferences entity,
+  ) {
     return NotificationPreferencesModel(
       allEnabled: entity.allEnabled,
       serviceUpdates: entity.serviceUpdates,

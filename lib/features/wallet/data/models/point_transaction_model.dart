@@ -18,7 +18,8 @@ class PointTransactionModel extends PointTransaction {
   });
 
   factory PointTransactionModel.fromJson(Map<String, dynamic> json) {
-    final rawType = (json['transaction_type'] as String?)?.toLowerCase() ?? 'debit';
+    final rawType =
+        (json['transaction_type'] as String?)?.toLowerCase() ?? 'debit';
     final txType = rawType == 'credit'
         ? PointTransactionType.credit
         : PointTransactionType.debit;
@@ -27,10 +28,14 @@ class PointTransactionModel extends PointTransaction {
     final int amount = (rawAmount is num) ? rawAmount.toInt() : 0;
 
     final rawBalanceBefore = json['balance_before'];
-    final int? balanceBefore = (rawBalanceBefore is num) ? rawBalanceBefore.toInt() : null;
+    final int? balanceBefore = (rawBalanceBefore is num)
+        ? rawBalanceBefore.toInt()
+        : null;
 
     final rawBalanceAfter = json['balance_after'];
-    final int? balanceAfter = (rawBalanceAfter is num) ? rawBalanceAfter.toInt() : null;
+    final int? balanceAfter = (rawBalanceAfter is num)
+        ? rawBalanceAfter.toInt()
+        : null;
 
     final rawDate = json['created_at'];
     final createdAt = rawDate != null

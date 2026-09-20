@@ -11,7 +11,7 @@ enum LiveTrackingStatus {
   /// In service window, but latest GPS update exceeds stale threshold (60-120s) or reconnecting.
   stale,
 
-  /// Outside operating hours (08:00-12:00, 13:00-17:00 Cairo time).
+  /// Outside operating hours or inactive.
   offline,
 
   /// Driver has not claimed an operational bus for this trip yet.
@@ -28,6 +28,69 @@ enum LiveTrackingStatus {
 
   /// Safe authorized preview outside operating hours for visual route verification.
   qaPreview,
+}
+
+/// Semantic Phase T2 tracking lifecycle phases driven by Staff Trip lifecycle.
+enum TrackingPhase {
+  waitingAssignment,
+  waitingStart,
+  reassignmentPending,
+  gpsOffline,
+  gpsStale,
+  progressionSyncing,
+  live,
+  completed,
+  cancelled,
+  serviceDateEnded,
+  unknown;
+
+  static TrackingPhase fromString(String? value) {
+    switch (value?.toLowerCase()) {
+      case 'waiting_assignment':
+      case 'assignment_pending':
+        return TrackingPhase.waitingAssignment;
+      case 'waiting_start':
+        return TrackingPhase.waitingStart;
+      case 'reassignment_pending':
+        return TrackingPhase.reassignmentPending;
+      case 'gps_offline':
+      case 'offline':
+        return TrackingPhase.gpsOffline;
+      case 'gps_stale':
+      case 'stale':
+        return TrackingPhase.gpsStale;
+      case 'progression_syncing':
+      case 'progression_unavailable':
+        return TrackingPhase.progressionSyncing;
+      case 'live':
+      case 'online':
+        return TrackingPhase.live;
+      case 'completed':
+        return TrackingPhase.completed;
+      case 'cancelled':
+        return TrackingPhase.cancelled;
+      case 'service_date_ended':
+        return TrackingPhase.serviceDateEnded;
+      default:
+        return TrackingPhase.unknown;
+    }
+  }
+
+  bool get isPreTrip =>
+      this == TrackingPhase.waitingAssignment ||
+      this == TrackingPhase.waitingStart;
+
+  bool get isPostTrip =>
+      this == TrackingPhase.completed ||
+      this == TrackingPhase.cancelled ||
+      this == TrackingPhase.serviceDateEnded;
+
+  bool get isOperational =>
+      this == TrackingPhase.live ||
+      this == TrackingPhase.gpsStale ||
+      this == TrackingPhase.gpsOffline ||
+      this == TrackingPhase.progressionSyncing ||
+      this == TrackingPhase.reassignmentPending;
 }
 
 enum TrackingStopSemanticState {

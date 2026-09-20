@@ -16,8 +16,7 @@ extension ContextExtensions on BuildContext {
   double get screenWidth => screenSize.width;
   double get screenHeight => screenSize.height;
 
-  bool get isDarkMode =>
-      Theme.of(this).brightness == Brightness.dark;
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 
   void showSnackBar(
     String message, {

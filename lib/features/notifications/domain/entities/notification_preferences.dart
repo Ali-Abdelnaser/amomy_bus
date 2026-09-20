@@ -26,7 +26,9 @@ enum NotificationPreferenceCategory {
   }
 
   /// Maps an event NotificationType to its associated push preference category.
-  static NotificationPreferenceCategory fromNotificationType(NotificationType type) {
+  static NotificationPreferenceCategory fromNotificationType(
+    NotificationType type,
+  ) {
     switch (type) {
       case NotificationType.system:
       case NotificationType.generalAnnouncement:
@@ -121,11 +123,11 @@ class NotificationPreferences extends Equatable {
 
   @override
   List<Object?> get props => [
-        allEnabled,
-        serviceUpdates,
-        bookingUpdates,
-        walletUpdates,
-        tripUpdates,
-        updatedAt,
-      ];
+    allEnabled,
+    serviceUpdates,
+    bookingUpdates,
+    walletUpdates,
+    tripUpdates,
+    updatedAt,
+  ];
 }

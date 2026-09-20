@@ -224,6 +224,120 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
+  ResultFuture<List<RoundTripReturnOption>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Error(NetworkFailure());
+    }
+
+    try {
+      final options = await _remoteDataSource.getRoundTripReturnOptions(
+        outboundTripId: outboundTripId,
+        outboundRouteStopId: outboundRouteStopId,
+      );
+      return Success(options);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  ResultFuture<RoundTripBundleHold> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Error(NetworkFailure());
+    }
+
+    try {
+      final hold = await _remoteDataSource.createRoundTripBundleHold(
+        outboundTripId: outboundTripId,
+        returnTripId: returnTripId,
+        outboundSeatId: outboundSeatId,
+        outboundRouteStopId: outboundRouteStopId,
+      );
+      return Success(hold);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  ResultFuture<RoundTripBundleHold> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Error(NetworkFailure());
+    }
+
+    try {
+      final hold = await _remoteDataSource.setRoundTripReturnSeat(
+        bundleHoldId: bundleHoldId,
+        returnSeatId: returnSeatId,
+      );
+      return Success(hold);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  ResultFuture<void> releaseRoundTripBundleHold({
+    required String bundleHoldId,
+  }) async {
+    try {
+      await _remoteDataSource.releaseRoundTripBundleHold(
+        bundleHoldId: bundleHoldId,
+      );
+      return const Success(null);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  ResultFuture<RoundTripConfirmation> confirmRoundTripBundle({
+    required String bundleHoldId,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Error(NetworkFailure());
+    }
+
+    try {
+      final confirmation = await _remoteDataSource.confirmRoundTripBundle(
+        bundleHoldId: bundleHoldId,
+      );
+      return Success(confirmation);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  ResultFuture<RoundTripBundleContext> getRoundTripBundleContext({
+    required String bookingId,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Error(NetworkFailure());
+    }
+
+    try {
+      final context = await _remoteDataSource.getRoundTripBundleContext(
+        bookingId: bookingId,
+      );
+      return Success(context);
+    } catch (e) {
+      return Error(_mapExceptionToFailure(e));
+    }
+  }
+
+  @override
   Stream<void> subscribeToTripSeatUpdates(String tripId) {
     return _remoteDataSource.subscribeToTripSeatUpdates(tripId);
   }
@@ -235,6 +349,48 @@ class BookingRepositoryImpl implements BookingRepository {
 
   Failure _mapExceptionToFailure(dynamic error) {
     final message = error.toString().toLowerCase();
+
+    // Round Trip specific errors
+    if (message.contains('round_trip_must_start_with_outbound')) {
+      return const RoundTripMustStartWithOutboundFailure();
+    }
+    if (message.contains('invalid_round_trip_directions')) {
+      return const InvalidRoundTripDirectionsFailure();
+    }
+    if (message.contains('round_trip_same_day_required')) {
+      return const RoundTripSameDayRequiredFailure();
+    }
+    if (message.contains('return_must_be_after_outbound')) {
+      return const ReturnMustBeAfterOutboundFailure();
+    }
+    if (message.contains('round_trip_discount_already_used_today')) {
+      return const RoundTripDiscountAlreadyUsedTodayFailure();
+    }
+    if (message.contains('round_trip_requires_unbooked_trips')) {
+      return const RoundTripRequiresUnbookedTripsFailure();
+    }
+    if (message.contains('round_trip_hold_already_active')) {
+      return const RoundTripHoldAlreadyActiveFailure();
+    }
+    if (message.contains('round_trip_hold_not_found')) {
+      return const RoundTripHoldNotFoundFailure();
+    }
+    if (message.contains('round_trip_hold_invalid')) {
+      return const RoundTripHoldInvalidFailure();
+    }
+    if (message.contains('return_seat_required')) {
+      return const ReturnSeatRequiredFailure();
+    }
+    if (message.contains('round_trip_cancellation_window_closed')) {
+      return const RoundTripCancellationWindowClosedFailure();
+    }
+    if (message.contains('round_trip_already_used')) {
+      return const RoundTripAlreadyUsedFailure();
+    }
+    if (message.contains('round_trip_bundle_not_cancellable')) {
+      return const RoundTripBundleNotCancellableFailure();
+    }
+
     if (message.contains('cancellation_window_closed')) {
       return const CancellationClosedFailure();
     }
@@ -274,6 +430,8 @@ class BookingRepositoryImpl implements BookingRepository {
       return const AlreadyBookedTripFailure();
     }
     if (message.contains('trip_unavailable') ||
+        message.contains('outbound_trip_unavailable') ||
+        message.contains('return_trip_unavailable') ||
         message.contains('trip_not_found') ||
         message.contains('trip_cancelled')) {
       return const TripUnavailableFailure();

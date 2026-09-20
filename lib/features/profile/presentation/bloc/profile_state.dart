@@ -24,10 +24,7 @@ final class ProfileAvatarSuccess extends ProfileState {
   final String? avatarUrl;
   final bool isRemoved;
 
-  const ProfileAvatarSuccess({
-    this.avatarUrl,
-    this.isRemoved = false,
-  });
+  const ProfileAvatarSuccess({this.avatarUrl, this.isRemoved = false});
 
   @override
   List<Object?> get props => [avatarUrl, isRemoved];

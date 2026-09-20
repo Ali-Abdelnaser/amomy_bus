@@ -39,10 +39,7 @@ void main() {
       ],
       supportedLocales: const [Locale('en'), Locale('ar')],
       home: MediaQuery(
-        data: MediaQueryData(
-          size: size,
-          padding: padding,
-        ),
+        data: MediaQueryData(size: size, padding: padding),
         child: Scaffold(
           body: const SizedBox.expand(),
           bottomNavigationBar: FloatingBottomNavBar(
@@ -56,7 +53,9 @@ void main() {
   }
 
   group('FloatingBottomNavBar Redesign Tests', () {
-    testWidgets('renders all 4 tabs and initial selected tab as active pill', (tester) async {
+    testWidgets('renders all 4 tabs and initial selected tab as active pill', (
+      tester,
+    ) async {
       int selected = 0;
       await tester.pumpWidget(
         buildTestableNavBar(
@@ -78,7 +77,9 @@ void main() {
       }
     });
 
-    testWidgets('switching tabs updates active pill and triggers callback', (tester) async {
+    testWidgets('switching tabs updates active pill and triggers callback', (
+      tester,
+    ) async {
       int selected = 0;
 
       await tester.pumpWidget(
@@ -119,34 +120,39 @@ void main() {
       expect(selected, 0);
     });
 
-    testWidgets('supports rapid tab switching without exceptions or state corruption', (tester) async {
-      int selected = 0;
+    testWidgets(
+      'supports rapid tab switching without exceptions or state corruption',
+      (tester) async {
+        int selected = 0;
 
-      await tester.pumpWidget(
-        StatefulBuilder(
-          builder: (context, setState) {
-            return buildTestableNavBar(
-              selectedIndex: selected,
-              onItemSelected: (idx) => setState(() => selected = idx),
-            );
-          },
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              return buildTestableNavBar(
+                selectedIndex: selected,
+                onItemSelected: (idx) => setState(() => selected = idx),
+              );
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Tap 1, then immediately 2, then 3 mid-animation
-      await tester.tap(find.byKey(const ValueKey('floating_nav_item_1')));
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(find.byKey(const ValueKey('floating_nav_item_2')));
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(find.byKey(const ValueKey('floating_nav_item_3')));
-      await tester.pumpAndSettle();
+        // Tap 1, then immediately 2, then 3 mid-animation
+        await tester.tap(find.byKey(const ValueKey('floating_nav_item_1')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const ValueKey('floating_nav_item_2')));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.byKey(const ValueKey('floating_nav_item_3')));
+        await tester.pumpAndSettle();
 
-      expect(selected, 3);
-      expect(tester.takeException(), isNull);
-    });
+        expect(selected, 3);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-    testWidgets('renders Arabic RTL seamlessly with localized labels', (tester) async {
+    testWidgets('renders Arabic RTL seamlessly with localized labels', (
+      tester,
+    ) async {
       int selected = 0;
       await tester.pumpWidget(
         buildTestableNavBar(
@@ -168,7 +174,9 @@ void main() {
       expect(selected, 1);
     });
 
-    testWidgets('fits small screen (320dp width) without overflow', (tester) async {
+    testWidgets('fits small screen (320dp width) without overflow', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableNavBar(
           selectedIndex: 0,
@@ -202,10 +210,7 @@ void main() {
 
     testWidgets('active pill uses AMOMY primary brand color', (tester) async {
       await tester.pumpWidget(
-        buildTestableNavBar(
-          selectedIndex: 0,
-          onItemSelected: (_) {},
-        ),
+        buildTestableNavBar(selectedIndex: 0, onItemSelected: (_) {}),
       );
       await tester.pumpAndSettle();
 

@@ -24,7 +24,8 @@ class WalletSummaryModel extends WalletSummary {
       );
     }
 
-    final total = (walletData['cached_available_balance'] as num?)?.toInt() ?? 0;
+    final total =
+        (walletData['cached_available_balance'] as num?)?.toInt() ?? 0;
     int cash = 0;
     int subscription = 0;
 

@@ -4,10 +4,7 @@ class DeviceAccessResult extends Equatable {
   final bool allowed;
   final bool isBlocked;
 
-  const DeviceAccessResult({
-    required this.allowed,
-    this.isBlocked = false,
-  });
+  const DeviceAccessResult({required this.allowed, this.isBlocked = false});
 
   factory DeviceAccessResult.fromJson(Map<String, dynamic> json) {
     return DeviceAccessResult(
@@ -51,5 +48,10 @@ class UserAccessStatus extends Equatable {
   }
 
   @override
-  List<Object?> get props => [allowed, accountStatus, bannedUntil, deviceBlocked];
+  List<Object?> get props => [
+    allowed,
+    accountStatus,
+    bannedUntil,
+    deviceBlocked,
+  ];
 }

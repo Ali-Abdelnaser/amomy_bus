@@ -30,16 +30,22 @@ void main() {
       expect(AppValidators.validatePhone('01512345678'), isNull);
     });
 
-    test('validatePassword requires at least 8 characters and alphanumeric', () {
-      expect(AppValidators.validatePassword(null), isNotNull);
-      expect(AppValidators.validatePassword('short'), isNotNull);
-      expect(AppValidators.validatePassword('onlyletters'), isNotNull);
-      expect(AppValidators.validatePassword('12345678'), isNotNull);
-      expect(AppValidators.validatePassword('Password123'), isNull);
-    });
+    test(
+      'validatePassword requires at least 8 characters and alphanumeric',
+      () {
+        expect(AppValidators.validatePassword(null), isNotNull);
+        expect(AppValidators.validatePassword('short'), isNotNull);
+        expect(AppValidators.validatePassword('onlyletters'), isNotNull);
+        expect(AppValidators.validatePassword('12345678'), isNotNull);
+        expect(AppValidators.validatePassword('Password123'), isNull);
+      },
+    );
 
     test('validateConfirmPassword ensures matching passwords', () {
-      expect(AppValidators.validateConfirmPassword('pass1', 'pass2'), isNotNull);
+      expect(
+        AppValidators.validateConfirmPassword('pass1', 'pass2'),
+        isNotNull,
+      );
       expect(AppValidators.validateConfirmPassword('pass1', 'pass1'), isNull);
     });
 
@@ -53,7 +59,12 @@ void main() {
 
     test('validateDateOfBirth requires valid past date', () {
       expect(AppValidators.validateDateOfBirth(null), isNotNull);
-      expect(AppValidators.validateDateOfBirth(DateTime.now().add(const Duration(days: 1))), isNotNull);
+      expect(
+        AppValidators.validateDateOfBirth(
+          DateTime.now().add(const Duration(days: 1)),
+        ),
+        isNotNull,
+      );
       expect(AppValidators.validateDateOfBirth(DateTime(2000, 1, 1)), isNull);
     });
 
@@ -67,70 +78,88 @@ void main() {
   });
 
   group('AppUser Entity and Profile Completion System', () {
-    test('isProfileComplete, percentage and missing fields with incomplete user', () {
-      const incompleteUser = AppUser(
-        id: 'u-1',
-        email: 'test@example.com',
-        fullName: 'Test User',
-        roles: [AppRole.passenger],
-        isEmailVerified: true,
-      );
-      // Only full_name and email are provided (2 of 5)
-      expect(incompleteUser.isProfileComplete, isFalse);
-      expect(incompleteUser.missingProfileFields, equals(['phone', 'gender', 'date_of_birth']));
-      expect(incompleteUser.profileCompletionPercentage, equals(2 / 5)); // 0.4
-      expect(incompleteUser.profileCompletionPercent, equals(40));
-      expect(BookingProfileGuard.canBook(incompleteUser), isFalse);
-    });
+    test(
+      'isProfileComplete, percentage and missing fields with incomplete user',
+      () {
+        const incompleteUser = AppUser(
+          id: 'u-1',
+          email: 'test@example.com',
+          fullName: 'Test User',
+          roles: [AppRole.passenger],
+          isEmailVerified: true,
+        );
+        // Only full_name and email are provided (2 of 5)
+        expect(incompleteUser.isProfileComplete, isFalse);
+        expect(
+          incompleteUser.missingProfileFields,
+          equals(['phone', 'gender', 'date_of_birth']),
+        );
+        expect(
+          incompleteUser.profileCompletionPercentage,
+          equals(2 / 5),
+        ); // 0.4
+        expect(incompleteUser.profileCompletionPercent, equals(40));
+        expect(BookingProfileGuard.canBook(incompleteUser), isFalse);
+      },
+    );
 
-    test('isProfileComplete, percentage and booking guard with complete user', () {
-      const incompleteUser = AppUser(
-        id: 'u-1',
-        email: 'test@example.com',
-        fullName: 'Test User',
-        roles: [AppRole.passenger],
-        isEmailVerified: true,
-      );
+    test(
+      'isProfileComplete, percentage and booking guard with complete user',
+      () {
+        const incompleteUser = AppUser(
+          id: 'u-1',
+          email: 'test@example.com',
+          fullName: 'Test User',
+          roles: [AppRole.passenger],
+          isEmailVerified: true,
+        );
 
-      final completeUser = incompleteUser.copyWith(
-        phone: '01012345678',
-        gender: 'male',
-        dateOfBirth: DateTime(1995, 5, 20),
-      );
-      expect(completeUser.isProfileComplete, isTrue);
-      expect(completeUser.missingProfileFields, isEmpty);
-      expect(completeUser.profileCompletionPercentage, equals(1.0));
-      expect(completeUser.profileCompletionPercent, equals(100));
-      expect(BookingProfileGuard.canBook(completeUser), isTrue);
-    });
+        final completeUser = incompleteUser.copyWith(
+          phone: '01012345678',
+          gender: 'male',
+          dateOfBirth: DateTime(1995, 5, 20),
+        );
+        expect(completeUser.isProfileComplete, isTrue);
+        expect(completeUser.missingProfileFields, isEmpty);
+        expect(completeUser.profileCompletionPercentage, equals(1.0));
+        expect(completeUser.profileCompletionPercent, equals(100));
+        expect(BookingProfileGuard.canBook(completeUser), isTrue);
+      },
+    );
 
-    test('avatar is optional and does not affect isProfileComplete or percentage', () {
-      final userWithoutAvatar = const AppUser(
-        id: 'u-1',
-        email: 'test@example.com',
-        fullName: 'Test User',
-        phone: '01012345678',
-        gender: 'female',
-        dateOfBirth: null,
-      );
-      // 4 out of 5 fields (missing date_of_birth)
-      expect(userWithoutAvatar.profileCompletionPercentage, equals(4 / 5)); // 0.8
-      expect(userWithoutAvatar.isProfileComplete, isFalse);
+    test(
+      'avatar is optional and does not affect isProfileComplete or percentage',
+      () {
+        final userWithoutAvatar = const AppUser(
+          id: 'u-1',
+          email: 'test@example.com',
+          fullName: 'Test User',
+          phone: '01012345678',
+          gender: 'female',
+          dateOfBirth: null,
+        );
+        // 4 out of 5 fields (missing date_of_birth)
+        expect(
+          userWithoutAvatar.profileCompletionPercentage,
+          equals(4 / 5),
+        ); // 0.8
+        expect(userWithoutAvatar.isProfileComplete, isFalse);
 
-      final userWithAvatar = userWithoutAvatar.copyWith(
-        avatarUrl: 'https://lh3.googleusercontent.com/a/photo.jpg',
-      );
-      // Adding avatar does NOT count towards the 5 required fields
-      expect(userWithAvatar.profileCompletionPercentage, equals(4 / 5));
-      expect(userWithAvatar.isProfileComplete, isFalse);
+        final userWithAvatar = userWithoutAvatar.copyWith(
+          avatarUrl: 'https://lh3.googleusercontent.com/a/photo.jpg',
+        );
+        // Adding avatar does NOT count towards the 5 required fields
+        expect(userWithAvatar.profileCompletionPercentage, equals(4 / 5));
+        expect(userWithAvatar.isProfileComplete, isFalse);
 
-      final fullyComplete = userWithAvatar.copyWith(
-        dateOfBirth: DateTime(1998, 2, 14),
-      );
-      expect(fullyComplete.isProfileComplete, isTrue);
-      expect(fullyComplete.profileCompletionPercentage, equals(1.0));
-      expect(BookingProfileGuard.canBook(fullyComplete), isTrue);
-    });
+        final fullyComplete = userWithAvatar.copyWith(
+          dateOfBirth: DateTime(1998, 2, 14),
+        );
+        expect(fullyComplete.isProfileComplete, isTrue);
+        expect(fullyComplete.profileCompletionPercentage, equals(1.0));
+        expect(BookingProfileGuard.canBook(fullyComplete), isTrue);
+      },
+    );
 
     test('AppRole helpers and permissions', () {
       expect(AppRole.fromString('passenger'), equals(AppRole.passenger));

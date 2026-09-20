@@ -414,7 +414,6 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                     child: Column(
                       children: [
                         // Hint banner
-                        
 
                         // Physical 28-Seat Bus Interior Map
                         BusSeatMapWidget(
@@ -519,6 +518,3 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
     );
   }
 }
-
-
-

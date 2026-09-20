@@ -370,3 +370,192 @@ class PassengerTripPreferenceModel extends PassengerTripPreference {
     );
   }
 }
+
+class RoundTripReturnOptionModel extends RoundTripReturnOption {
+  const RoundTripReturnOptionModel({
+    required super.returnTripId,
+    required super.departureTime,
+    required super.departureAt,
+    required super.availableSeats,
+    required super.outboundBaseFarePoints,
+    required super.returnBaseFarePoints,
+    required super.subtotalPoints,
+    required super.discountPercent,
+    required super.discountPoints,
+    required super.totalPoints,
+    required super.isBookable,
+  });
+
+  factory RoundTripReturnOptionModel.fromJson(Map<String, dynamic> json) {
+    DateTime departureDateTime;
+    if (json['departure_at'] != null) {
+      departureDateTime = DateTime.parse(json['departure_at'] as String);
+    } else if (json['service_date'] != null && json['departure_time'] != null) {
+      final sDate = json['service_date'] as String;
+      final dTime = (json['departure_time'] as String).padLeft(5, '0');
+      departureDateTime =
+          DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
+    } else {
+      departureDateTime = DateTime.now();
+    }
+
+    final availableSeats =
+        json['available_seats'] ?? json['available_seats_count'] ?? 0;
+    final isBookable = json['is_bookable'] is bool
+        ? json['is_bookable'] as bool
+        : (availableSeats as num).toInt() > 0;
+
+    return RoundTripReturnOptionModel(
+      returnTripId:
+          (json['return_trip_id'] ?? json['trip_id'] ?? json['id'] ?? '')
+              as String,
+      departureTime: json['departure_time'] as String? ?? '',
+      departureAt: departureDateTime,
+      availableSeats: (availableSeats as num).toInt(),
+      outboundBaseFarePoints: ((json['outbound_base_fare_points'] ?? 0) as num)
+          .toDouble(),
+      returnBaseFarePoints: ((json['return_base_fare_points'] ?? 0) as num)
+          .toDouble(),
+      subtotalPoints: ((json['subtotal_points'] ?? 0) as num).toDouble(),
+      discountPercent: ((json['discount_percent'] ?? 15) as num).toDouble(),
+      discountPoints: ((json['discount_points'] ?? 0) as num).toDouble(),
+      totalPoints: ((json['total_points'] ?? 0) as num).toDouble(),
+      isBookable: isBookable,
+    );
+  }
+}
+
+class RoundTripBundleHoldModel extends RoundTripBundleHold {
+  RoundTripBundleHoldModel({
+    required super.bundleHoldId,
+    required super.outboundHoldId,
+    required super.outboundSeatId,
+    required super.outboundSeatNumber,
+    super.returnSeatId,
+    super.returnSeatNumber,
+    required super.outboundTripId,
+    required super.returnTripId,
+    required super.outboundRouteStopId,
+    super.returnRouteStopId,
+    required super.outboundBaseFarePoints,
+    required super.returnBaseFarePoints,
+    required super.subtotalPoints,
+    required super.discountPercent,
+    required super.discountPoints,
+    required super.totalPoints,
+    required super.expiresAt,
+    required super.serverTime,
+    super.initialRemainingSeconds,
+    super.clientReceivedAt,
+  });
+
+  factory RoundTripBundleHoldModel.fromJson(Map<String, dynamic> json) {
+    final expiresAt = json['expires_at'] != null
+        ? DateTime.parse(json['expires_at'] as String)
+        : DateTime.now().add(const Duration(minutes: 5));
+    final serverTime = json['server_time'] != null
+        ? DateTime.parse(json['server_time'] as String)
+        : (json['server_now'] != null
+              ? DateTime.parse(json['server_now'] as String)
+              : DateTime.now());
+    final remainingSecs = json['remaining_seconds'] != null
+        ? (json['remaining_seconds'] as num).toInt()
+        : null;
+
+    return RoundTripBundleHoldModel(
+      bundleHoldId: (json['bundle_hold_id'] ?? json['id'] ?? '') as String,
+      outboundHoldId: (json['outbound_hold_id'] ?? '') as String,
+      outboundSeatId: (json['outbound_seat_id'] ?? '') as String,
+      outboundSeatNumber:
+          (json['outbound_seat_number'] ?? json['outbound_seat'] ?? '')
+              as String,
+      returnSeatId: json['return_seat_id'] as String?,
+      returnSeatNumber:
+          (json['return_seat_number'] ?? json['return_seat']) as String?,
+      outboundTripId: (json['outbound_trip_id'] ?? '') as String,
+      returnTripId: (json['return_trip_id'] ?? '') as String,
+      outboundRouteStopId:
+          (json['outbound_route_stop_id'] ?? json['route_stop_id'] ?? '')
+              as String,
+      returnRouteStopId: json['return_route_stop_id'] as String?,
+      outboundBaseFarePoints: ((json['outbound_base_fare_points'] ?? 0) as num)
+          .toDouble(),
+      returnBaseFarePoints: ((json['return_base_fare_points'] ?? 0) as num)
+          .toDouble(),
+      subtotalPoints: ((json['subtotal_points'] ?? 0) as num).toDouble(),
+      discountPercent: ((json['discount_percent'] ?? 15) as num).toDouble(),
+      discountPoints: ((json['discount_points'] ?? 0) as num).toDouble(),
+      totalPoints: ((json['total_points'] ?? 0) as num).toDouble(),
+      expiresAt: expiresAt,
+      serverTime: serverTime,
+      initialRemainingSeconds: remainingSecs,
+    );
+  }
+}
+
+class RoundTripConfirmationModel extends RoundTripConfirmation {
+  const RoundTripConfirmationModel({
+    required super.bundleId,
+    required super.outboundBookingId,
+    required super.returnBookingId,
+    required super.outboundTripId,
+    required super.returnTripId,
+    required super.outboundSeatNumber,
+    required super.returnSeatNumber,
+    required super.subtotalPoints,
+    required super.discountPercent,
+    required super.discountPoints,
+    required super.totalPaidPoints,
+    required super.status,
+  });
+
+  factory RoundTripConfirmationModel.fromJson(Map<String, dynamic> json) {
+    return RoundTripConfirmationModel(
+      bundleId: (json['bundle_id'] ?? json['id'] ?? '') as String,
+      outboundBookingId: (json['outbound_booking_id'] ?? '') as String,
+      returnBookingId: (json['return_booking_id'] ?? '') as String,
+      outboundTripId: (json['outbound_trip_id'] ?? '') as String,
+      returnTripId: (json['return_trip_id'] ?? '') as String,
+      outboundSeatNumber:
+          (json['outbound_seat_number'] ?? json['outbound_seat'] ?? '')
+              as String,
+      returnSeatNumber:
+          (json['return_seat_number'] ?? json['return_seat'] ?? '') as String,
+      subtotalPoints: ((json['subtotal_points'] ?? 0) as num).toDouble(),
+      discountPercent: ((json['discount_percent'] ?? 15) as num).toDouble(),
+      discountPoints: ((json['discount_points'] ?? 0) as num).toDouble(),
+      totalPaidPoints:
+          ((json['total_paid_points'] ?? json['total_points'] ?? 0) as num)
+              .toDouble(),
+      status: json['status'] as String? ?? 'confirmed',
+    );
+  }
+}
+
+class RoundTripBundleContextModel extends RoundTripBundleContext {
+  const RoundTripBundleContextModel({
+    required super.isRoundTripBundle,
+    super.bundleId,
+    super.outboundBookingId,
+    super.returnBookingId,
+    super.discountPoints,
+    super.totalPaidPoints,
+    required super.cancellationEligible,
+    super.cancellationReason,
+  });
+
+  factory RoundTripBundleContextModel.fromJson(Map<String, dynamic> json) {
+    return RoundTripBundleContextModel(
+      isRoundTripBundle: json['is_round_trip_bundle'] as bool? ?? false,
+      bundleId: json['bundle_id'] as String?,
+      outboundBookingId: json['outbound_booking_id'] as String?,
+      returnBookingId: json['return_booking_id'] as String?,
+      discountPoints: (json['discount_points'] as num?)?.toDouble(),
+      totalPaidPoints:
+          (json['total_paid_points'] as num?)?.toDouble() ??
+          (json['total_points'] as num?)?.toDouble(),
+      cancellationEligible: json['cancellation_eligible'] as bool? ?? true,
+      cancellationReason: json['cancellation_reason'] as String?,
+    );
+  }
+}

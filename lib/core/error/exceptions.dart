@@ -10,7 +10,8 @@ class AppException implements Exception {
   });
 
   @override
-  String toString() => 'AppException(message: $message, statusCode: $statusCode)';
+  String toString() =>
+      'AppException(message: $message, statusCode: $statusCode)';
 }
 
 class NetworkException extends AppException {

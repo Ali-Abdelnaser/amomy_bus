@@ -27,14 +27,10 @@ abstract class AuthRepository {
   });
 
   /// Resend verification OTP to email
-  ResultFuture<void> resendVerificationOtp({
-    required String email,
-  });
+  ResultFuture<void> resendVerificationOtp({required String email});
 
   /// Native Google Sign-In with Google ID Token exchange
-  ResultFuture<AppUser> signInWithGoogle({
-    String? webClientId,
-  });
+  ResultFuture<AppUser> signInWithGoogle({String? webClientId});
 
   /// Complete missing profile fields (for Google authenticated users)
   ResultFuture<AppUser> completeProfile({
@@ -46,14 +42,10 @@ abstract class AuthRepository {
   });
 
   /// Initiate password reset email
-  ResultFuture<void> sendPasswordResetEmail({
-    required String email,
-  });
+  ResultFuture<void> sendPasswordResetEmail({required String email});
 
   /// Update password (when in recovery session)
-  ResultFuture<void> updatePassword({
-    required String newPassword,
-  });
+  ResultFuture<void> updatePassword({required String newPassword});
 
   /// Retrieve current authenticated user with profile and roles
   ResultFuture<AppUser?> getCurrentUser();
@@ -62,9 +54,7 @@ abstract class AuthRepository {
   ResultFuture<WalletPreview?> getWalletPreview(String userId);
 
   /// Silently attempt to claim active welcome gift campaign
-  ResultFuture<bool> claimActiveWelcomeGift({
-    required String deviceIdentifier,
-  });
+  ResultFuture<bool> claimActiveWelcomeGift({required String deviceIdentifier});
 
   /// Check pre-auth device access (works unauthenticated)
   ResultFuture<DeviceAccessResult> checkDeviceAccess({

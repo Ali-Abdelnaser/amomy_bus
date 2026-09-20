@@ -169,42 +169,21 @@ class HomeCubit extends Cubit<HomeState> {
     return super.close();
   }
 
-  /// Selects the trackable trip ID according to the active Cairo service window:
-  /// - Morning window (08:00 <= now < 13:00 Cairo): today's confirmed outbound trip
-  /// - Afternoon window (13:00 <= now < 17:00 Cairo): today's confirmed return trip
-  /// - Outside active windows / fallback: nearest confirmed trip or summary trip
+  /// Selects the trackable trip ID strictly from the passenger's confirmed booking.
+  /// No clock-window gating (08:00/13:00) is applied.
   static String? _selectTrackableTrip({
     required List<PassengerTodayTrip> todayTrips,
     PassengerUpcomingTrip? summaryTrip,
   }) {
-    final nowUtc = DateTime.now().toUtc();
-    final cairoNow = nowUtc.add(const Duration(hours: 2));
-    final currentHour = cairoNow.hour;
+    if (summaryTrip?.tripId.isNotEmpty == true) {
+      return summaryTrip!.tripId;
+    }
 
     final bookedTrips = todayTrips.where((t) => t.alreadyBooked).toList();
-    if (bookedTrips.isEmpty) {
-      return summaryTrip?.tripId;
+    if (bookedTrips.isNotEmpty) {
+      return bookedTrips.first.tripId;
     }
 
-    if (currentHour >= 8 && currentHour < 13) {
-      // Morning window: prefer outbound confirmed trip
-      final outbound = bookedTrips.where(
-        (t) => t.direction == BookingDirection.outbound,
-      );
-      if (outbound.isNotEmpty) {
-        return outbound.first.tripId;
-      }
-    } else if (currentHour >= 13 && currentHour < 17) {
-      // Afternoon return window (including 16:00): prefer return confirmed trip
-      final returnTrip = bookedTrips.where(
-        (t) => t.direction == BookingDirection.returnTrip,
-      );
-      if (returnTrip.isNotEmpty) {
-        return returnTrip.first.tripId;
-      }
-    }
-
-    // Default fallback: return first booked trip or summary trip
-    return bookedTrips.first.tripId;
+    return null;
   }
 }

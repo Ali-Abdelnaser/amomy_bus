@@ -143,6 +143,116 @@ class FakeBookingRepository implements BookingRepository {
   }) async {
     return const Success(null);
   }
+
+  @override
+  ResultFuture<List<RoundTripReturnOption>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  }) async {
+    return const Success([]);
+  }
+
+  @override
+  ResultFuture<RoundTripBundleHold> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  }) async {
+    if (failure != null) return Error(failure!);
+    return Success(
+      RoundTripBundleHold(
+        bundleHoldId: 'bundle_1',
+        outboundHoldId: 'out_1',
+        outboundTripId: outboundTripId,
+        returnTripId: returnTripId,
+        outboundSeatId: outboundSeatId,
+        outboundSeatNumber: '1',
+        outboundRouteStopId: outboundRouteStopId,
+        returnRouteStopId: 'stop_ret_1',
+        outboundBaseFarePoints: 25,
+        returnBaseFarePoints: 25,
+        subtotalPoints: 50,
+        discountPercent: 15,
+        discountPoints: 7,
+        totalPoints: 43,
+        expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+        serverTime: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  ResultFuture<RoundTripBundleHold> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  }) async {
+    if (failure != null) return Error(failure!);
+    return Success(
+      RoundTripBundleHold(
+        bundleHoldId: bundleHoldId,
+        outboundHoldId: 'out_1',
+        outboundTripId: 'out_trip',
+        returnTripId: 'ret_trip',
+        outboundSeatId: 'seat_1',
+        returnSeatId: returnSeatId,
+        outboundSeatNumber: '1',
+        returnSeatNumber: '2',
+        outboundRouteStopId: 'stop_1',
+        returnRouteStopId: 'stop_ret_1',
+        outboundBaseFarePoints: 25,
+        returnBaseFarePoints: 25,
+        subtotalPoints: 50,
+        discountPercent: 15,
+        discountPoints: 7,
+        totalPoints: 43,
+        expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+        serverTime: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  ResultFuture<void> releaseRoundTripBundleHold({
+    required String bundleHoldId,
+  }) async {
+    return const Success(null);
+  }
+
+  @override
+  ResultFuture<RoundTripConfirmation> confirmRoundTripBundle({
+    required String bundleHoldId,
+  }) async {
+    if (failure != null) return Error(failure!);
+    return Success(
+      RoundTripConfirmation(
+        bundleId: 'bundle_1',
+        outboundBookingId: 'b_out_1',
+        returnBookingId: 'b_ret_1',
+        outboundTripId: 'out_trip',
+        returnTripId: 'ret_trip',
+        outboundSeatNumber: '1',
+        returnSeatNumber: '2',
+        subtotalPoints: 50,
+        discountPercent: 15,
+        discountPoints: 7,
+        totalPaidPoints: 43,
+        status: 'confirmed',
+      ),
+    );
+  }
+
+  @override
+  ResultFuture<RoundTripBundleContext> getRoundTripBundleContext({
+    required String bookingId,
+  }) async {
+    return const Success(
+      RoundTripBundleContext(
+        isRoundTripBundle: false,
+        cancellationEligible: true,
+      ),
+    );
+  }
 }
 
 class FakeTestStopwatch implements Stopwatch {

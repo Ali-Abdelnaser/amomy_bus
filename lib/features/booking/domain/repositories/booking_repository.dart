@@ -46,6 +46,33 @@ abstract class BookingRepository {
     required String newSeatId,
   });
 
+  ResultFuture<List<RoundTripReturnOption>> getRoundTripReturnOptions({
+    required String outboundTripId,
+    required String outboundRouteStopId,
+  });
+
+  ResultFuture<RoundTripBundleHold> createRoundTripBundleHold({
+    required String outboundTripId,
+    required String returnTripId,
+    required String outboundSeatId,
+    required String outboundRouteStopId,
+  });
+
+  ResultFuture<RoundTripBundleHold> setRoundTripReturnSeat({
+    required String bundleHoldId,
+    required String returnSeatId,
+  });
+
+  ResultFuture<void> releaseRoundTripBundleHold({required String bundleHoldId});
+
+  ResultFuture<RoundTripConfirmation> confirmRoundTripBundle({
+    required String bundleHoldId,
+  });
+
+  ResultFuture<RoundTripBundleContext> getRoundTripBundleContext({
+    required String bookingId,
+  });
+
   Stream<void> subscribeToTripSeatUpdates(String tripId);
 
   Stream<void> subscribeToPassengerBookingUpdates();

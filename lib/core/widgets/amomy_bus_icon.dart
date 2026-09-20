@@ -48,17 +48,12 @@ class AmomyBusIcon extends StatelessWidget {
       height: effHeight,
       child: CustomPaint(
         size: Size(effWidth, effHeight),
-        painter: _AmomyBusPainter(
-          color: color ?? originalColor,
-        ),
+        painter: _AmomyBusPainter(color: color ?? originalColor),
       ),
     );
 
     if (opacity < 1.0) {
-      content = Opacity(
-        opacity: opacity.clamp(0.0, 1.0),
-        child: content,
-      );
+      content = Opacity(opacity: opacity.clamp(0.0, 1.0), child: content);
     }
 
     return content;
@@ -1153,7 +1148,10 @@ class _AmomyBusPainter extends CustomPainter {
     const viewBoxWidth = 168.0;
     const viewBoxHeight = 123.0;
 
-    final scale = (size.width / viewBoxWidth).clamp(0.0, size.height / viewBoxHeight);
+    final scale = (size.width / viewBoxWidth).clamp(
+      0.0,
+      size.height / viewBoxHeight,
+    );
     final dx = (size.width - viewBoxWidth * scale) / 2.0;
     final dy = (size.height - viewBoxHeight * scale) / 2.0;
 

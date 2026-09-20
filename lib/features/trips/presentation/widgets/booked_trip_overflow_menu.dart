@@ -212,11 +212,76 @@ class BookedTripOverflowMenu extends StatelessWidget {
     );
   }
 
-  void _confirmCancellation(
+  Future<void> _confirmCancellation(
     BuildContext context,
     PassengerTripsCubit cubit,
     bool isAr,
-  ) {
+  ) async {
+    if (trip.bookingId == null) return;
+
+    final bundleContext = await cubit.getRoundTripBundleContext(
+      trip.bookingId!,
+    );
+    if (!context.mounted) return;
+
+    if (bundleContext != null && bundleContext.isRoundTripBundle) {
+      if (!bundleContext.cancellationEligible) {
+        showErrorDialog(
+          context: context,
+          title: isAr ? 'تعذر إلغاء الحجز' : 'Cancellation Not Available',
+          message: bundleContext.cancellationReason != null
+              ? StatusLocalizer.localizeError(
+                  context,
+                  bundleContext.cancellationReason,
+                )
+              : (isAr
+                    ? 'لا يمكن إلغاء حجز الذهاب والعودة بعد تسجيل الحضور أو إغلاق نافذة الإلغاء.'
+                    : 'Round trip booking cannot be cancelled after check-in or cancellation cutoff.'),
+        );
+        return;
+      }
+
+      final refundPoints =
+          bundleContext.totalPaidPoints?.toInt() ?? trip.farePoints.toInt();
+
+      showConfirmDialog(
+        context: context,
+        title: isAr ? 'إلغاء حجز الذهاب والعودة' : 'Cancel Round Trip Booking',
+        message: isAr
+            ? 'هذا الحجز جزء من حجز ذهاب وعودة بخصم 15%.\nعند الإلغاء سيتم إلغاء رحلتي الذهاب والعودة معًا.\n\nسيتم استرداد $refundPoints نقطة بالكامل إلى محفظتك.'
+            : 'This booking is part of a round-trip bundle with a 15% discount.\nCancelling will cancel both outbound and return trips together.\n\n$refundPoints points will be fully refunded to your wallet.',
+        cancelText: isAr ? 'الاحتفاظ بالحجز' : 'Keep Booking',
+        confirmText: isAr ? 'إلغاء الرحلتين معًا' : 'Cancel Both Trips',
+        isDestructive: true,
+        variant: AppDialogVariant.destructive,
+        onConfirm: () async {
+          final success = await cubit.cancelBooking(trip.bookingId!);
+          if (!context.mounted) return;
+
+          if (success) {
+            AmomyFloatingAlert.show(
+              context,
+              title: isAr
+                  ? 'تم إلغاء رحلتي الذهاب والعودة واسترداد $refundPoints نقطة بنجاح'
+                  : 'Round trip cancelled and $refundPoints points refunded',
+              variant: AmomyAlertVariant.success,
+            );
+          } else {
+            AmomyFloatingAlert.show(
+              context,
+              title: StatusLocalizer.localizeError(
+                context,
+                cubit.state.errorMessage,
+              ),
+              variant: AmomyAlertVariant.error,
+            );
+          }
+        },
+      );
+      return;
+    }
+
+    // Normal Single Booking Cancellation
     showConfirmDialog(
       context: context,
       title: isAr ? 'تأكيد إلغاء الحجز' : 'Confirm Cancellation',
@@ -228,8 +293,6 @@ class BookedTripOverflowMenu extends StatelessWidget {
       isDestructive: true,
       variant: AppDialogVariant.destructive,
       onConfirm: () async {
-        if (trip.bookingId == null) return;
-
         final success = await cubit.cancelBooking(trip.bookingId!);
         if (!context.mounted) return;
 

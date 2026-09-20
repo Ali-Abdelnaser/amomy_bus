@@ -24,10 +24,10 @@ class WalletPreview extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        userId,
-        cashPoints,
-        subscriptionPoints,
-        heldPoints,
-      ];
+    id,
+    userId,
+    cashPoints,
+    subscriptionPoints,
+    heldPoints,
+  ];
 }

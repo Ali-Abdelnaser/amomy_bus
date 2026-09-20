@@ -21,6 +21,22 @@ enum BookingDirection {
   }
 }
 
+enum BookingMode {
+  single,
+  roundTrip;
+
+  bool get isRoundTrip => this == BookingMode.roundTrip;
+  bool get isSingle => this == BookingMode.single;
+}
+
+enum RoundTripSeatStep {
+  outbound,
+  returnSeat;
+
+  bool get isOutbound => this == RoundTripSeatStep.outbound;
+  bool get isReturnSeat => this == RoundTripSeatStep.returnSeat;
+}
+
 enum SeatAvailabilityStatus { available, held, booked }
 
 class TripOption extends Equatable {
@@ -536,5 +552,267 @@ class PassengerTripPreference extends Equatable {
     destinationLocalityAr,
     destinationLocalityEn,
     updatedAt,
+  ];
+}
+
+class RoundTripReturnOption extends Equatable {
+  final String returnTripId;
+  final String departureTime;
+  final DateTime departureAt;
+  final int availableSeats;
+  final double outboundBaseFarePoints;
+  final double returnBaseFarePoints;
+  final double subtotalPoints;
+  final double discountPercent;
+  final double discountPoints;
+  final double totalPoints;
+  final bool isBookable;
+
+  const RoundTripReturnOption({
+    required this.returnTripId,
+    required this.departureTime,
+    required this.departureAt,
+    required this.availableSeats,
+    required this.outboundBaseFarePoints,
+    required this.returnBaseFarePoints,
+    required this.subtotalPoints,
+    required this.discountPercent,
+    required this.discountPoints,
+    required this.totalPoints,
+    required this.isBookable,
+  });
+
+  @override
+  List<Object?> get props => [
+    returnTripId,
+    departureTime,
+    departureAt,
+    availableSeats,
+    outboundBaseFarePoints,
+    returnBaseFarePoints,
+    subtotalPoints,
+    discountPercent,
+    discountPoints,
+    totalPoints,
+    isBookable,
+  ];
+}
+
+class RoundTripBundleHold extends Equatable {
+  final String bundleHoldId;
+  final String outboundHoldId;
+  final String outboundSeatId;
+  final String outboundSeatNumber;
+  final String? returnSeatId;
+  final String? returnSeatNumber;
+  final String outboundTripId;
+  final String returnTripId;
+  final String outboundRouteStopId;
+  final String? returnRouteStopId;
+  final double outboundBaseFarePoints;
+  final double returnBaseFarePoints;
+  final double subtotalPoints;
+  final double discountPercent;
+  final double discountPoints;
+  final double totalPoints;
+  final DateTime expiresAt;
+  final DateTime serverTime;
+  final int initialRemainingSeconds;
+  final DateTime clientReceivedAt;
+
+  RoundTripBundleHold({
+    required this.bundleHoldId,
+    required this.outboundHoldId,
+    required this.outboundSeatId,
+    required this.outboundSeatNumber,
+    this.returnSeatId,
+    this.returnSeatNumber,
+    required this.outboundTripId,
+    required this.returnTripId,
+    required this.outboundRouteStopId,
+    this.returnRouteStopId,
+    required this.outboundBaseFarePoints,
+    required this.returnBaseFarePoints,
+    required this.subtotalPoints,
+    required this.discountPercent,
+    required this.discountPoints,
+    required this.totalPoints,
+    required this.expiresAt,
+    required this.serverTime,
+    int? initialRemainingSeconds,
+    DateTime? clientReceivedAt,
+  }) : clientReceivedAt = clientReceivedAt ?? DateTime.now(),
+       initialRemainingSeconds =
+           initialRemainingSeconds ??
+           _calculateInitialRemaining(expiresAt, serverTime);
+
+  static int _calculateInitialRemaining(
+    DateTime expiresAt,
+    DateTime serverTime,
+  ) {
+    final diff = expiresAt.toUtc().difference(serverTime.toUtc()).inSeconds;
+    if (diff <= 0) return 0;
+    return diff > 300 ? 300 : diff;
+  }
+
+  int get remainingSeconds {
+    final elapsed = DateTime.now().difference(clientReceivedAt).inSeconds;
+    if (elapsed < 0) return initialRemainingSeconds;
+    final remaining = initialRemainingSeconds - elapsed;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  bool get isExpired => remainingSeconds <= 0;
+
+  RoundTripBundleHold copyWith({
+    String? bundleHoldId,
+    String? outboundHoldId,
+    String? outboundSeatId,
+    String? outboundSeatNumber,
+    String? returnSeatId,
+    String? returnSeatNumber,
+    String? outboundTripId,
+    String? returnTripId,
+    String? outboundRouteStopId,
+    String? returnRouteStopId,
+    double? outboundBaseFarePoints,
+    double? returnBaseFarePoints,
+    double? subtotalPoints,
+    double? discountPercent,
+    double? discountPoints,
+    double? totalPoints,
+    DateTime? expiresAt,
+    DateTime? serverTime,
+    int? initialRemainingSeconds,
+    DateTime? clientReceivedAt,
+  }) {
+    return RoundTripBundleHold(
+      bundleHoldId: bundleHoldId ?? this.bundleHoldId,
+      outboundHoldId: outboundHoldId ?? this.outboundHoldId,
+      outboundSeatId: outboundSeatId ?? this.outboundSeatId,
+      outboundSeatNumber: outboundSeatNumber ?? this.outboundSeatNumber,
+      returnSeatId: returnSeatId ?? this.returnSeatId,
+      returnSeatNumber: returnSeatNumber ?? this.returnSeatNumber,
+      outboundTripId: outboundTripId ?? this.outboundTripId,
+      returnTripId: returnTripId ?? this.returnTripId,
+      outboundRouteStopId: outboundRouteStopId ?? this.outboundRouteStopId,
+      returnRouteStopId: returnRouteStopId ?? this.returnRouteStopId,
+      outboundBaseFarePoints:
+          outboundBaseFarePoints ?? this.outboundBaseFarePoints,
+      returnBaseFarePoints: returnBaseFarePoints ?? this.returnBaseFarePoints,
+      subtotalPoints: subtotalPoints ?? this.subtotalPoints,
+      discountPercent: discountPercent ?? this.discountPercent,
+      discountPoints: discountPoints ?? this.discountPoints,
+      totalPoints: totalPoints ?? this.totalPoints,
+      expiresAt: expiresAt ?? this.expiresAt,
+      serverTime: serverTime ?? this.serverTime,
+      initialRemainingSeconds:
+          initialRemainingSeconds ?? this.initialRemainingSeconds,
+      clientReceivedAt: clientReceivedAt ?? this.clientReceivedAt,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    bundleHoldId,
+    outboundHoldId,
+    outboundSeatId,
+    outboundSeatNumber,
+    returnSeatId,
+    returnSeatNumber,
+    outboundTripId,
+    returnTripId,
+    outboundRouteStopId,
+    returnRouteStopId,
+    outboundBaseFarePoints,
+    returnBaseFarePoints,
+    subtotalPoints,
+    discountPercent,
+    discountPoints,
+    totalPoints,
+    expiresAt,
+    serverTime,
+    initialRemainingSeconds,
+    clientReceivedAt,
+  ];
+}
+
+class RoundTripConfirmation extends Equatable {
+  final String bundleId;
+  final String outboundBookingId;
+  final String returnBookingId;
+  final String outboundTripId;
+  final String returnTripId;
+  final String outboundSeatNumber;
+  final String returnSeatNumber;
+  final double subtotalPoints;
+  final double discountPercent;
+  final double discountPoints;
+  final double totalPaidPoints;
+  final String status;
+
+  const RoundTripConfirmation({
+    required this.bundleId,
+    required this.outboundBookingId,
+    required this.returnBookingId,
+    required this.outboundTripId,
+    required this.returnTripId,
+    required this.outboundSeatNumber,
+    required this.returnSeatNumber,
+    required this.subtotalPoints,
+    required this.discountPercent,
+    required this.discountPoints,
+    required this.totalPaidPoints,
+    required this.status,
+  });
+
+  @override
+  List<Object?> get props => [
+    bundleId,
+    outboundBookingId,
+    returnBookingId,
+    outboundTripId,
+    returnTripId,
+    outboundSeatNumber,
+    returnSeatNumber,
+    subtotalPoints,
+    discountPercent,
+    discountPoints,
+    totalPaidPoints,
+    status,
+  ];
+}
+
+class RoundTripBundleContext extends Equatable {
+  final bool isRoundTripBundle;
+  final String? bundleId;
+  final String? outboundBookingId;
+  final String? returnBookingId;
+  final double? discountPoints;
+  final double? totalPaidPoints;
+  final bool cancellationEligible;
+  final String? cancellationReason;
+
+  const RoundTripBundleContext({
+    required this.isRoundTripBundle,
+    this.bundleId,
+    this.outboundBookingId,
+    this.returnBookingId,
+    this.discountPoints,
+    this.totalPaidPoints,
+    required this.cancellationEligible,
+    this.cancellationReason,
+  });
+
+  @override
+  List<Object?> get props => [
+    isRoundTripBundle,
+    bundleId,
+    outboundBookingId,
+    returnBookingId,
+    discountPoints,
+    totalPaidPoints,
+    cancellationEligible,
+    cancellationReason,
   ];
 }

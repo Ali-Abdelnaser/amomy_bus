@@ -30,13 +30,9 @@ abstract class AuthRemoteDataSource {
     required String token,
   });
 
-  Future<void> resendVerificationOtp({
-    required String email,
-  });
+  Future<void> resendVerificationOtp({required String email});
 
-  Future<AppUserModel> signInWithGoogle({
-    String? webClientId,
-  });
+  Future<AppUserModel> signInWithGoogle({String? webClientId});
 
   Future<AppUserModel> completeProfile({
     required String userId,
@@ -46,13 +42,9 @@ abstract class AuthRemoteDataSource {
     required DateTime dateOfBirth,
   });
 
-  Future<void> sendPasswordResetEmail({
-    required String email,
-  });
+  Future<void> sendPasswordResetEmail({required String email});
 
-  Future<void> updatePassword({
-    required String newPassword,
-  });
+  Future<void> updatePassword({required String newPassword});
 
   Future<AppUserModel?> getCurrentUser();
 
@@ -95,10 +87,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   static const String redirectUrl = 'com.aliabdelnaser.amomy://login-callback';
 
-  AuthRemoteDataSourceImpl(
-    this._supabase,
-    this._googleSignIn,
-  );
+  AuthRemoteDataSourceImpl(this._supabase, this._googleSignIn);
 
   @override
   Stream<User?> get authStateChanges {
@@ -132,9 +121,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? gender,
     DateTime? dateOfBirth,
   }) async {
-    final Map<String, dynamic> metadata = {
-      'full_name': fullName.trim(),
-    };
+    final Map<String, dynamic> metadata = {'full_name': fullName.trim()};
     if (phone != null && phone.trim().isNotEmpty) {
       metadata['phone'] = phone.trim();
     }
@@ -180,9 +167,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> resendVerificationOtp({
-    required String email,
-  }) async {
+  Future<void> resendVerificationOtp({required String email}) async {
     await _supabase.auth.resend(
       type: OtpType.signup,
       email: email.trim(),
@@ -191,9 +176,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AppUserModel> signInWithGoogle({
-    String? webClientId,
-  }) async {
+  Future<AppUserModel> signInWithGoogle({String? webClientId}) async {
     final effectiveWebClientId = (webClientId != null && webClientId.isNotEmpty)
         ? webClientId
         : AuthConfig.googleWebClientId;
@@ -236,11 +219,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final idToken = googleAuth.idToken;
 
     if (idToken == null || idToken.isEmpty) {
-      developer.log('Failed to retrieve Google ID Token (idToken is null or empty)', name: 'AUTH');
+      developer.log(
+        'Failed to retrieve Google ID Token (idToken is null or empty)',
+        name: 'AUTH',
+      );
       throw const AuthException('Failed to retrieve Google ID Token.');
     }
 
-    developer.log('Exchanging Google ID token with Supabase (token length: ${idToken.length})...', name: 'AUTH');
+    developer.log(
+      'Exchanging Google ID token with Supabase (token length: ${idToken.length})...',
+      name: 'AUTH',
+    );
     final AuthResponse response;
     try {
       response = await _supabase.auth.signInWithIdToken(
@@ -259,11 +248,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     final user = response.user;
     if (user == null) {
-      developer.log('Supabase returned null user session after Google ID token exchange', name: 'AUTH');
-      throw const AuthException('Google Sign-In failed: no Supabase user session created.');
+      developer.log(
+        'Supabase returned null user session after Google ID token exchange',
+        name: 'AUTH',
+      );
+      throw const AuthException(
+        'Google Sign-In failed: no Supabase user session created.',
+      );
     }
 
-    developer.log('Supabase user session authenticated: ${user.id} (${user.email})', name: 'AUTH');
+    developer.log(
+      'Supabase user session authenticated: ${user.id} (${user.email})',
+      name: 'AUTH',
+    );
     return _fetchFullUserModel(user);
   }
 
@@ -278,12 +275,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final dobFormatted = DateFormat('yyyy-MM-dd').format(dateOfBirth);
 
     // Update public.profiles row
-    await _supabase.from('profiles').update({
-      'full_name': fullName.trim(),
-      'phone': phone.trim(),
-      'gender': gender.trim().toLowerCase(),
-      'date_of_birth': dobFormatted,
-    }).eq('id', userId);
+    await _supabase
+        .from('profiles')
+        .update({
+          'full_name': fullName.trim(),
+          'phone': phone.trim(),
+          'gender': gender.trim().toLowerCase(),
+          'date_of_birth': dobFormatted,
+        })
+        .eq('id', userId);
 
     // Also sync to auth user metadata
     try {
@@ -306,13 +306,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return _fetchFullUserModel(currentUser);
     }
 
-    throw const AuthException('Failed to refresh user after completing profile.');
+    throw const AuthException(
+      'Failed to refresh user after completing profile.',
+    );
   }
 
   @override
-  Future<void> sendPasswordResetEmail({
-    required String email,
-  }) async {
+  Future<void> sendPasswordResetEmail({required String email}) async {
     await _supabase.auth.resetPasswordForEmail(
       email.trim(),
       redirectTo: redirectUrl,
@@ -320,12 +320,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> updatePassword({
-    required String newPassword,
-  }) async {
-    await _supabase.auth.updateUser(
-      UserAttributes(password: newPassword),
-    );
+  Future<void> updatePassword({required String newPassword}) async {
+    await _supabase.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   @override
@@ -393,9 +389,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     final response = await _supabase.rpc(
       'claim_active_welcome_gift',
-      params: {
-        'p_device_identifier': deviceIdentifier.trim(),
-      },
+      params: {'p_device_identifier': deviceIdentifier.trim()},
     );
 
     if (response is Map) {
@@ -410,9 +404,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     final response = await _supabase.rpc(
       'check_device_access',
-      params: {
-        'p_device_identifier': deviceIdentifier.trim(),
-      },
+      params: {'p_device_identifier': deviceIdentifier.trim()},
     );
 
     if (response is Map) {
@@ -447,9 +439,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     final response = await _supabase.rpc(
       'get_my_access_status',
-      params: {
-        'p_device_identifier': deviceIdentifier.trim(),
-      },
+      params: {'p_device_identifier': deviceIdentifier.trim()},
     );
 
     if (response is Map) {
@@ -469,8 +459,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       params: {
         'p_event_type': eventType.trim(),
         'p_device_identifier': deviceIdentifier.trim(),
-        if (metadata != null && metadata.isNotEmpty)
-          'p_metadata': metadata,
+        if (metadata != null && metadata.isNotEmpty) 'p_metadata': metadata,
       },
     );
   }
@@ -521,11 +510,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
 
     // If profile row exists but has no avatar_url and user has an avatar from provider metadata, persist it
-    if (profileData != null && (profileData['avatar_url'] as String?) == null && model.avatarUrl != null) {
+    if (profileData != null &&
+        (profileData['avatar_url'] as String?) == null &&
+        model.avatarUrl != null) {
       try {
-        await _supabase.from('profiles').update({
-          'avatar_url': model.avatarUrl,
-        }).eq('id', user.id);
+        await _supabase
+            .from('profiles')
+            .update({'avatar_url': model.avatarUrl})
+            .eq('id', user.id);
       } catch (_) {
         // Non-critical background update
       }

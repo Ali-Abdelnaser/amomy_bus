@@ -54,13 +54,13 @@ class NotificationPreferencesLoaded extends NotificationPreferencesState {
 
   @override
   List<Object?> get props => [
-        preferences,
-        isSaving,
-        isOsPermissionAuthorized,
-        isOsPermissionDenied,
-        isTester,
-        errorMessage,
-      ];
+    preferences,
+    isSaving,
+    isOsPermissionAuthorized,
+    isOsPermissionDenied,
+    isTester,
+    errorMessage,
+  ];
 }
 
 class NotificationPreferencesError extends NotificationPreferencesState {

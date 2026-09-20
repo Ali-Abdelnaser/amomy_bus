@@ -4,12 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
-enum AmomyAlertVariant {
-  success,
-  info,
-  warning,
-  error,
-}
+enum AmomyAlertVariant { success, info, warning, error }
 
 class AmomyFloatingAlert extends StatelessWidget {
   final String title;
@@ -65,29 +60,29 @@ class AmomyFloatingAlert extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bgBase, borderColor, iconColor, iconData) = switch (variant) {
       AmomyAlertVariant.success => (
-          AppColors.successLight.withValues(alpha: 0.92),
-          AppColors.success.withValues(alpha: 0.3),
-          AppColors.success,
-          Icons.check_circle_rounded,
-        ),
+        AppColors.successLight.withValues(alpha: 0.92),
+        AppColors.success.withValues(alpha: 0.3),
+        AppColors.success,
+        Icons.check_circle_rounded,
+      ),
       AmomyAlertVariant.info => (
-          AppColors.infoLight.withValues(alpha: 0.92),
-          AppColors.primary.withValues(alpha: 0.3),
-          AppColors.primary,
-          Icons.info_rounded,
-        ),
+        AppColors.infoLight.withValues(alpha: 0.92),
+        AppColors.primary.withValues(alpha: 0.3),
+        AppColors.primary,
+        Icons.info_rounded,
+      ),
       AmomyAlertVariant.warning => (
-          AppColors.warningLight.withValues(alpha: 0.94),
-          AppColors.warning.withValues(alpha: 0.35),
-          AppColors.warning,
-          Icons.warning_amber_rounded,
-        ),
+        AppColors.warningLight.withValues(alpha: 0.94),
+        AppColors.warning.withValues(alpha: 0.35),
+        AppColors.warning,
+        Icons.warning_amber_rounded,
+      ),
       AmomyAlertVariant.error => (
-          AppColors.errorLight.withValues(alpha: 0.94),
-          AppColors.error.withValues(alpha: 0.35),
-          AppColors.error,
-          Icons.error_outline_rounded,
-        ),
+        AppColors.errorLight.withValues(alpha: 0.94),
+        AppColors.error.withValues(alpha: 0.35),
+        AppColors.error,
+        Icons.error_outline_rounded,
+      ),
     };
 
     return ClipRRect(
@@ -205,14 +200,14 @@ class _FloatingAlertHostState extends State<_FloatingAlertHost>
       duration: const Duration(milliseconds: 300),
     );
 
-    _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.4),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
+    _offsetAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,

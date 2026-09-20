@@ -29,11 +29,15 @@ class NotificationModel extends AppNotification {
       bodyEn: json['body_en'] as String? ?? '',
       data: json['data'] is Map<String, dynamic>
           ? json['data'] as Map<String, dynamic>
-          : (json['data'] is Map ? Map<String, dynamic>.from(json['data'] as Map) : {}),
+          : (json['data'] is Map
+                ? Map<String, dynamic>.from(json['data'] as Map)
+                : {}),
       entityType: json['entity_type'] as String?,
       entityId: json['entity_id'] as String?,
       dedupeKey: json['dedupe_key'] as String?,
-      readAt: json['read_at'] != null ? DateTime.tryParse(json['read_at'] as String) : null,
+      readAt: json['read_at'] != null
+          ? DateTime.tryParse(json['read_at'] as String)
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),

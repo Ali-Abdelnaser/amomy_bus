@@ -217,6 +217,17 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
     );
   }
 
+  /// Gets the round trip bundle context for a booking if it is part of a bundle.
+  Future<RoundTripBundleContext?> getRoundTripBundleContext(
+    String bookingId,
+  ) async {
+    final repo = _repo;
+    if (repo == null) return null;
+
+    final result = await repo.getRoundTripBundleContext(bookingId: bookingId);
+    return result.fold(onSuccess: (context) => context, onError: (_) => null);
+  }
+
   @override
   Future<void> close() {
     _bookingUpdatesSubscription?.cancel();

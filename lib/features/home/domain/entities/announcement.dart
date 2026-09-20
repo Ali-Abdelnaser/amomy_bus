@@ -34,7 +34,9 @@ class Announcement extends Equatable {
   }
 
   String localizedDescription(String locale) {
-    if (locale == 'en' && descriptionEn != null && descriptionEn!.trim().isNotEmpty) {
+    if (locale == 'en' &&
+        descriptionEn != null &&
+        descriptionEn!.trim().isNotEmpty) {
       return descriptionEn!;
     }
     return descriptionAr;
@@ -42,14 +44,14 @@ class Announcement extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        titleAr,
-        titleEn,
-        descriptionAr,
-        descriptionEn,
-        type,
-        sortOrder,
-        startsAt,
-        endsAt,
-      ];
+    id,
+    titleAr,
+    titleEn,
+    descriptionAr,
+    descriptionEn,
+    type,
+    sortOrder,
+    startsAt,
+    endsAt,
+  ];
 }

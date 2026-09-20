@@ -59,7 +59,10 @@ class NotificationTestEventResult extends Equatable {
     );
   }
 
-  factory NotificationTestEventResult.failure(String error, {String eventType = 'unknown'}) {
+  factory NotificationTestEventResult.failure(
+    String error, {
+    String eventType = 'unknown',
+  }) {
     return NotificationTestEventResult(
       success: false,
       eventType: eventType,
@@ -70,16 +73,16 @@ class NotificationTestEventResult extends Equatable {
 
   @override
   List<Object?> get props => [
-        success,
-        eventType,
-        category,
-        preferenceSuppressed,
-        forced,
-        totalDevices,
-        delivered,
-        fcmFailures,
-        inboxInserted,
-        message,
-        error,
-      ];
+    success,
+    eventType,
+    category,
+    preferenceSuppressed,
+    forced,
+    totalDevices,
+    delivered,
+    fcmFailures,
+    inboxInserted,
+    message,
+    error,
+  ];
 }

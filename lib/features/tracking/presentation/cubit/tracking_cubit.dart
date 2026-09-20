@@ -84,14 +84,29 @@ class TrackingCubit extends Cubit<TrackingState> {
       final summary = await repository.getTripTracking(tripId: tripId);
       if (_trackedTripId != tripId) return;
 
-      final routeGeom = await _loadRouteGeometry(summary);
-      final telemetry =
+      final hasUsableTelemetry =
+          (summary.trackingEnabled &&
+              (summary.trackingPhase == TrackingPhase.live ||
+                  summary.trackingPhase == TrackingPhase.gpsStale ||
+                  summary.trackingPhase == TrackingPhase.progressionSyncing)) ||
           summary.status == LiveTrackingStatus.live ||
-              summary.status == LiveTrackingStatus.online ||
-              summary.status == LiveTrackingStatus.qaPreview ||
-              summary.status == LiveTrackingStatus.progressionUnavailable
+          summary.status == LiveTrackingStatus.online ||
+          summary.status == LiveTrackingStatus.qaPreview;
+
+      final isTelemetrySuppressed =
+          summary.trackingPhase == TrackingPhase.gpsOffline ||
+          summary.trackingPhase == TrackingPhase.reassignmentPending ||
+          summary.trackingPhase == TrackingPhase.waitingAssignment ||
+          summary.trackingPhase == TrackingPhase.waitingStart ||
+          summary.trackingPhase == TrackingPhase.completed ||
+          summary.trackingPhase == TrackingPhase.cancelled ||
+          summary.trackingPhase == TrackingPhase.serviceDateEnded;
+
+      final telemetry = (!isTelemetrySuppressed && hasUsableTelemetry)
           ? summary.busLocation
           : null;
+
+      final routeGeom = await _loadRouteGeometry(summary);
 
       emit(
         state.copyWith(

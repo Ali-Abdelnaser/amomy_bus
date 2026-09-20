@@ -59,7 +59,9 @@ class PendingSuccessStepWidget extends StatelessWidget {
 
         // 2. Title & Subtitle
         Text(
-          isResubmit ? l10n.paymentResubmittedTitle : l10n.paymentSubmittedTitle,
+          isResubmit
+              ? l10n.paymentResubmittedTitle
+              : l10n.paymentSubmittedTitle,
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 22,
@@ -113,7 +115,9 @@ class PendingSuccessStepWidget extends StatelessWidget {
               const Divider(height: 20, color: Color(0xFFF1F5F9)),
               _buildRow(
                 context,
-                label: Localizations.localeOf(context).languageCode == 'ar' ? 'الحالة' : 'Status',
+                label: Localizations.localeOf(context).languageCode == 'ar'
+                    ? 'الحالة'
+                    : 'Status',
                 badgeText: l10n.statusPendingReview,
                 badgeBg: const Color(0xFFFEF3C7),
                 badgeFg: const Color(0xFFB45309),

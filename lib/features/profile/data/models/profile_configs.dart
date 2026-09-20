@@ -28,8 +28,10 @@ class DeveloperInfoData {
   const DeveloperInfoData({
     this.developerName = 'Ali Abdelnaser',
     this.developerEmail = 'alinaserhema60@gmail.com',
-    this.developerWebsite = 'https://portfolio-lp91a6vl1-ali-abdelnasers-projects.vercel.app/',
-    this.developerLinkedIn = 'https://www.linkedin.com/in/ali-abdelnaser-947230295/',
+    this.developerWebsite =
+        'https://portfolio-lp91a6vl1-ali-abdelnasers-projects.vercel.app/',
+    this.developerLinkedIn =
+        'https://www.linkedin.com/in/ali-abdelnaser-947230295/',
   });
 }
 

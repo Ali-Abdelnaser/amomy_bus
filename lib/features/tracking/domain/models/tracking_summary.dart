@@ -6,6 +6,12 @@ import 'live_tracking_status.dart';
 /// Complete tracking context and backend contract for AMOMY Live Bus.
 class TrackingSummary extends Equatable {
   final LiveTrackingStatus status;
+  final TrackingPhase trackingPhase;
+  final bool trackingEnabled;
+  final String? tripStatus;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final int? gpsAgeSeconds;
   final bool isInServiceWindow;
   final String serviceWindow; // 'morning' | 'afternoon' | 'offline'
   final String cairoTime;
@@ -52,6 +58,12 @@ class TrackingSummary extends Equatable {
 
   const TrackingSummary({
     required this.status,
+    this.trackingPhase = TrackingPhase.unknown,
+    this.trackingEnabled = false,
+    this.tripStatus,
+    this.startedAt,
+    this.completedAt,
+    this.gpsAgeSeconds,
     required this.isInServiceWindow,
     required this.serviceWindow,
     required this.cairoTime,
@@ -112,6 +124,12 @@ class TrackingSummary extends Equatable {
 
   TrackingSummary copyWith({
     LiveTrackingStatus? status,
+    TrackingPhase? trackingPhase,
+    bool? trackingEnabled,
+    String? tripStatus,
+    DateTime? startedAt,
+    DateTime? completedAt,
+    int? gpsAgeSeconds,
     bool? isInServiceWindow,
     String? serviceWindow,
     String? cairoTime,
@@ -149,6 +167,12 @@ class TrackingSummary extends Equatable {
   }) {
     return TrackingSummary(
       status: status ?? this.status,
+      trackingPhase: trackingPhase ?? this.trackingPhase,
+      trackingEnabled: trackingEnabled ?? this.trackingEnabled,
+      tripStatus: tripStatus ?? this.tripStatus,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
+      gpsAgeSeconds: gpsAgeSeconds ?? this.gpsAgeSeconds,
       isInServiceWindow: isInServiceWindow ?? this.isInServiceWindow,
       serviceWindow: serviceWindow ?? this.serviceWindow,
       cairoTime: cairoTime ?? this.cairoTime,
@@ -190,8 +214,40 @@ class TrackingSummary extends Equatable {
 
   factory TrackingSummary.fromJson(Map<String, dynamic> json) {
     final serviceStateStr = (json['service_state'] as String?)?.toLowerCase();
+    final phaseStr = (json['tracking_phase'] as String?)?.toLowerCase();
     final statusStr =
         (json['tracking_status'] as String?)?.toLowerCase() ?? 'offline';
+    final trackingPhase = phaseStr != null
+        ? TrackingPhase.fromString(phaseStr)
+        : (statusStr == 'live' || statusStr == 'online'
+              ? TrackingPhase.live
+              : (statusStr == 'stale'
+                    ? TrackingPhase.gpsStale
+                    : (statusStr == 'progression_unavailable'
+                          ? TrackingPhase.progressionSyncing
+                          : (statusStr == 'assignment_pending'
+                                ? TrackingPhase.waitingAssignment
+                                : (statusStr == 'trip_not_active'
+                                      ? TrackingPhase.waitingStart
+                                      : TrackingPhase.unknown)))));
+    final trackingEnabled =
+        (json['tracking_enabled'] as bool?) ??
+        (trackingPhase == TrackingPhase.live ||
+            trackingPhase == TrackingPhase.gpsStale ||
+            trackingPhase == TrackingPhase.gpsOffline ||
+            trackingPhase == TrackingPhase.progressionSyncing ||
+            statusStr == 'live' ||
+            statusStr == 'online' ||
+            statusStr == 'stale' ||
+            statusStr == 'progression_unavailable');
+    final startedAt = json['started_at'] != null
+        ? DateTime.tryParse(json['started_at'].toString())
+        : null;
+    final completedAt = json['completed_at'] != null
+        ? DateTime.tryParse(json['completed_at'].toString())
+        : null;
+    final gpsAgeSeconds = (json['gps_age_seconds'] as num?)?.toInt();
+    final tripStatus = json['trip_status'] as String?;
     final isQaPreview = (json['is_qa_preview_active'] as bool?) ?? false;
 
     final LiveTrackingStatus status;
@@ -226,7 +282,10 @@ class TrackingSummary extends Equatable {
                 'longitude': json['longitude'],
                 'heading': json['heading'],
                 'gps_recorded_at': json['gps_recorded_at'],
-                'is_stale': status == LiveTrackingStatus.stale,
+                'is_stale':
+                    trackingPhase == TrackingPhase.gpsStale ||
+                    status == LiveTrackingStatus.stale,
+                'age_seconds': gpsAgeSeconds ?? 0,
                 'active_trip_id': json['trip_id'],
                 'progress_state': json['progress_state'],
                 'current_stop_id': json['current_stop_id'],
@@ -262,9 +321,16 @@ class TrackingSummary extends Equatable {
 
     return TrackingSummary(
       status: status,
+      trackingPhase: trackingPhase,
+      trackingEnabled: trackingEnabled,
+      tripStatus: tripStatus,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      gpsAgeSeconds: gpsAgeSeconds,
       isInServiceWindow:
           (json['is_in_service_window'] as bool?) ??
-          status == LiveTrackingStatus.live ||
+          trackingEnabled ||
+              status == LiveTrackingStatus.live ||
               status == LiveTrackingStatus.online ||
               status == LiveTrackingStatus.stale,
       serviceWindow:
@@ -285,7 +351,10 @@ class TrackingSummary extends Equatable {
           json['trip_id'] as String? ?? json['active_trip_id'] as String?,
       serviceState:
           (json['service_state'] as String?) ??
-          (status == LiveTrackingStatus.live ? 'in_service' : statusStr),
+          (status == LiveTrackingStatus.live ||
+                  trackingPhase == TrackingPhase.live
+              ? 'in_service'
+              : statusStr),
       progressState: (json['progress_state'] as String?) ?? 'idle',
       currentStop: currentStop,
       nextStop: nextStop,
@@ -336,6 +405,12 @@ class TrackingSummary extends Equatable {
   @override
   List<Object?> get props => [
     status,
+    trackingPhase,
+    trackingEnabled,
+    tripStatus,
+    startedAt,
+    completedAt,
+    gpsAgeSeconds,
     isInServiceWindow,
     serviceWindow,
     cairoTime,
@@ -376,6 +451,9 @@ class TrackingSummary extends Equatable {
   String toString() {
     return 'TrackingSummary('
         'status: ${status.name}, '
+        'phase: ${trackingPhase.name}, '
+        'enabled: $trackingEnabled, '
+        'tripStatus: ${tripStatus ?? 'none'}, '
         'serviceState: $serviceState, '
         'progressState: $progressState, '
         'direction: ${activeDirection.name}, '

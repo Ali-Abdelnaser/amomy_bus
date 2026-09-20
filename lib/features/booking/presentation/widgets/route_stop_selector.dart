@@ -79,10 +79,7 @@ class RouteStopSelector extends StatelessWidget {
                   const _RouteDashedConnector(height: 18),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: Container(
-                      height: 1,
-                      color: const Color(0xFFF1F5F9),
-                    ),
+                    child: Container(height: 1, color: const Color(0xFFF1F5F9)),
                   ),
                 ],
               ),
@@ -315,10 +312,7 @@ class _RouteDashedConnector extends StatelessWidget {
     return SizedBox(
       width: 2,
       height: height,
-      child: CustomPaint(
-        size: Size(2, height),
-        painter: _RouteDashedPainter(),
-      ),
+      child: CustomPaint(size: Size(2, height), painter: _RouteDashedPainter()),
     );
   }
 }
@@ -433,16 +427,12 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
       padding: EdgeInsets.only(bottom: keyboardInset),
       child: Material(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         clipBehavior: Clip.antiAlias,
         elevation: 16,
         shadowColor: Colors.black.withValues(alpha: 0.20),
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: maxHeight,
-          ),
+          constraints: BoxConstraints(maxHeight: maxHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -597,7 +587,7 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                           final stop = _filteredStops[index];
                           final isSelected =
                               widget.selectedStop?.routeStopId ==
-                                  stop.routeStopId;
+                              stop.routeStopId;
 
                           return InkWell(
                             onTap: () {
@@ -624,8 +614,8 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: isSelected
-                                          ? AppColors.primary
-                                          : const Color(0xFFCBD5E1),
+                                            ? AppColors.primary
+                                            : const Color(0xFFCBD5E1),
                                         width: isSelected ? 1.8 : 1.0,
                                       ),
                                     ),
@@ -633,8 +623,8 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                       isSelected
                                           ? Icons.check_rounded
                                           : (widget.isOrigin
-                                              ? Icons.my_location_rounded
-                                              : Icons.location_on_rounded),
+                                                ? Icons.my_location_rounded
+                                                : Icons.location_on_rounded),
                                       size: 16,
                                       color: isSelected
                                           ? AppColors.primary
@@ -684,10 +674,10 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                     ),
                                   ),
 
-                                   // Boarding Stop Fare Badge (Origin only)
-                                   if (widget.showFare &&
-                                       widget.isOrigin &&
-                                       stop.farePoints > 0) ...[
+                                  // Boarding Stop Fare Badge (Origin only)
+                                  if (widget.showFare &&
+                                      widget.isOrigin &&
+                                      stop.farePoints > 0) ...[
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 10,
@@ -697,8 +687,7 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                         color: isSelected
                                             ? AppColors.primary
                                             : const Color(0xFFF1F5F9),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         isAr

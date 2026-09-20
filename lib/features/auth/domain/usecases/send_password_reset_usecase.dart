@@ -8,11 +8,7 @@ class SendPasswordResetUseCase {
 
   const SendPasswordResetUseCase(this._repository);
 
-  ResultFuture<void> call({
-    required String email,
-  }) {
-    return _repository.sendPasswordResetEmail(
-      email: email,
-    );
+  ResultFuture<void> call({required String email}) {
+    return _repository.sendPasswordResetEmail(email: email);
   }
 }
