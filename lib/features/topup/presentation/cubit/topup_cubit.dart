@@ -353,7 +353,7 @@ class TopUpCubit extends Cubit<TopUpState> {
             state.copyWith(
               isSubmitting: false,
               proofStatus: ProofUploadStatus.failed,
-              errorMessage: () => null,
+              errorMessage: () => failure.message,
               errorFailure: () => failure,
             ),
           );
@@ -406,7 +406,7 @@ class TopUpCubit extends Cubit<TopUpState> {
           state.copyWith(
             isSubmitting: false,
             proofStatus: ProofUploadStatus.failed,
-            errorMessage: () => null,
+            errorMessage: () => failure.message,
             errorFailure: () => failure,
           ),
         );

@@ -348,7 +348,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
         (state.isLive || isGpsStale || isGpsOffline || isProgressionSyncing);
     final isActionDisabled = !isLiveMapAvailable;
 
-    final lastStop = summary.lastPassedStop;
+    final lastStop = summary?.lastPassedStop;
     final nextStop = state.nextStop;
     final isLastStopVerified = lastStop?.hasCanonicalCoordinates ?? false;
     final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
@@ -376,15 +376,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
             ? l10n.trackingProgressionSyncing
             : l10n.trackingUnavailable);
     final nextStopTimingText = l10n.trackingEtaUnavailable;
-
-    final currentStopStatusText = actualArrival != null
-        ? currentStopTimingText
-        : (isProgressionSyncing
-              ? l10n.trackingProgressionSyncing
-              : l10n.trackingUnavailable);
-    final nextStopStatusText = isProgressionSyncing
-        ? l10n.trackingProgressionSyncing
-        : nextStopTimingText;
 
     final isTripDeparted =
         summary.tripStatus == 'departed' ||
@@ -611,11 +602,13 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        isTripDeparted
-                                            ? (locale == 'ar'
-                                                  ? 'بدأت الرحلة، لكن موقع الحافلة غير متاح حاليًا'
-                                                  : 'Trip started, but bus location is unavailable')
-                                            : l10n.trackingUnavailable,
+                                        isGpsOffline
+                                            ? l10n.trackingGpsOfflineTitle
+                                            : (isTripDeparted
+                                                  ? (locale == 'ar'
+                                                        ? 'بدأت الرحلة، لكن موقع الحافلة غير متاح حاليًا'
+                                                        : 'Trip started, but bus location is unavailable')
+                                                  : l10n.trackingUnavailable),
                                         style: AppTextStyles.titleSmall
                                             .copyWith(
                                               color: const Color(0xFF1E293B),
@@ -626,20 +619,22 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
-                                        isTripDeparted
-                                            ? (locale == 'ar'
-                                                  ? 'جاري محاولة استعادة الاتصال بموقع الحافلة...'
-                                                  : 'Attempting to reconnect bus location...')
-                                            : (summary.nextWindowIsTomorrow ==
-                                                      true
-                                                  ? l10n.trackingResumesTomorrow
-                                                  : (summary.nextWindowStartTime ==
-                                                            '13:00'
-                                                        ? l10n.trackingResumesMidday
-                                                        : summary
-                                                              .localizedNextWindowMessage(
-                                                                locale,
-                                                              ))),
+                                        isGpsOffline
+                                            ? l10n.trackingGpsOfflineSubtitle
+                                            : (isTripDeparted
+                                                  ? (locale == 'ar'
+                                                        ? 'جاري محاولة استعادة الاتصال بموقع الحافلة...'
+                                                        : 'Attempting to reconnect bus location...')
+                                                  : (summary.nextWindowIsTomorrow ==
+                                                            true
+                                                        ? l10n.trackingResumesTomorrow
+                                                        : (summary.nextWindowStartTime ==
+                                                                  '13:00'
+                                                              ? l10n.trackingResumesMidday
+                                                              : summary
+                                                                    .localizedNextWindowMessage(
+                                                                      locale,
+                                                                    )))),
                                         style: AppTextStyles.caption.copyWith(
                                           color: const Color(0xFF64748B),
                                           fontSize: 11,
@@ -701,6 +696,161 @@ class HomeLiveTrackingCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
+                ),
+
+                AppSpacing.gapH12,
+
+                // 3. Last Stop & Next Stop Information Cells
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      // Last Stop Cell
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: isLastStopVerified
+                                          ? AppColors.accentYellow
+                                          : const Color(0xFFCBD5E1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    currentStopLabel,
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontSize: 11,
+                                      color: isLastStopVerified
+                                          ? AppColors.textSecondary
+                                          : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AppSpacing.gapH4,
+                              Text(
+                                currentStopName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (currentStopTimingText.isNotEmpty) ...[
+                                AppSpacing.gapH2,
+                                Text(
+                                  currentStopTimingText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Next Stop Cell
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: isNextStopVerified
+                                          ? AppColors.primary
+                                          : const Color(0xFFCBD5E1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    nextStopLabel,
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontSize: 11,
+                                      color: isNextStopVerified
+                                          ? AppColors.primaryDark
+                                          : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AppSpacing.gapH4,
+                              Text(
+                                nextStopName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (nextStopTimingText.isNotEmpty) ...[
+                                AppSpacing.gapH2,
+                                Text(
+                                  nextStopTimingText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: isNextStopVerified
+                                        ? AppColors.primary
+                                        : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 

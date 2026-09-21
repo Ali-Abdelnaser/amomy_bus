@@ -268,12 +268,12 @@ class WalletHistoryEventTile extends StatelessWidget {
 
       final outPart = [
         isArabic ? 'ذهاب $outTimeStr' : 'Outbound $outTimeStr',
-        if (outSeatStr != null) outSeatStr,
+        ?outSeatStr,
       ].join(' • ');
 
       final retPart = [
         isArabic ? 'عودة $retTimeStr' : 'Return $retTimeStr',
-        if (retSeatStr != null) retSeatStr,
+        ?retSeatStr,
       ].join(' • ');
 
       return '$outPart\n$retPart';

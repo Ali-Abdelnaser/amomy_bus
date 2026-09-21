@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_loading.dart';
 import '../../../../core/widgets/app_scaffold.dart';

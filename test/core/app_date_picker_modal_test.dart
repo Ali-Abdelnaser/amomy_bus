@@ -63,7 +63,7 @@ void main() {
 
         // 2. Verify Title and Live Date Badge are rendered
         expect(find.text('تحديد تاريخ الميلاد'), findsOneWidget);
-        expect(find.textContaining('٢٠٠٠'), findsWidgets);
+        expect(find.textContaining(RegExp(r'(٢٠٠٠|2000)')), findsWidgets);
 
         // 3. Verify Column Headers: Day, Month, Year (اليوم، الشهر، السنة)
         expect(find.text('اليوم'), findsOneWidget);

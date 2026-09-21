@@ -256,12 +256,14 @@ class TrackingSummary extends Equatable {
           trackingPhase == TrackingPhase.waitingAssignment ||
           trackingPhase == TrackingPhase.unknown) {
         final hasCoords = json['latitude'] != null && json['longitude'] != null;
-        trackingPhase =
-            hasCoords ? TrackingPhase.gpsStale : TrackingPhase.gpsOffline;
+        trackingPhase = hasCoords
+            ? TrackingPhase.gpsStale
+            : TrackingPhase.gpsOffline;
       }
     }
 
-    final trackingEnabled = isDeparted ||
+    final trackingEnabled =
+        isDeparted ||
         (json['tracking_enabled'] as bool? ?? false) ||
         (trackingPhase == TrackingPhase.live ||
             trackingPhase == TrackingPhase.gpsStale ||
@@ -354,9 +356,9 @@ class TrackingSummary extends Equatable {
           isDeparted ||
           ((json['is_in_service_window'] as bool?) ??
               trackingEnabled ||
-              status == LiveTrackingStatus.live ||
-              status == LiveTrackingStatus.online ||
-              status == LiveTrackingStatus.stale),
+                  status == LiveTrackingStatus.live ||
+                  status == LiveTrackingStatus.online ||
+                  status == LiveTrackingStatus.stale),
       serviceWindow:
           (json['service_window'] as String?) ??
           trackingWindowRaw?['service_window'] as String? ??

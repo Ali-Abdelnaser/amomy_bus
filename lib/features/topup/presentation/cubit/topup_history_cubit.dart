@@ -38,7 +38,7 @@ class TopUpHistoryCubit extends Cubit<TopUpHistoryState> {
         emit(
           state.copyWith(
             status: TopUpHistoryStatus.failure,
-            errorMessage: () => null,
+            errorMessage: () => failure.message,
             errorFailure: () => failure,
           ),
         );

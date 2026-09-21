@@ -180,9 +180,9 @@ class AppErrorMapper {
 
     // OTP verification
     if (msg.contains('expired') &&
-        (msg.contains('otp') ||
-            msg.contains('token') ||
-            msg.contains('code')) ||
+            (msg.contains('otp') ||
+                msg.contains('token') ||
+                msg.contains('code')) ||
         code.contains('otp_expired')) {
       return l10n?.errorOtpExpired ??
           (isAr
@@ -256,7 +256,11 @@ class AppErrorMapper {
         }
         final data = dioEx.response?.data;
         if (data is Map && data['code'] != null) {
-          return _mapBackendCode(data['code'].toString(), l10n: l10n, isAr: isAr) ??
+          return _mapBackendCode(
+                data['code'].toString(),
+                l10n: l10n,
+                isAr: isAr,
+              ) ??
               (l10n?.errorGeneric ??
                   (isAr
                       ? 'حدث خطأ غير متوقع. حاول مرة أخرى.'
@@ -683,9 +687,7 @@ class AppErrorMapper {
     }
     if (code.contains('TRIP_CANCELLED') || code.contains('TRIP_CANCELED')) {
       return l10n?.errorTripCancelled ??
-          (isAr
-              ? 'تم إلغاء هذه الرحلة.'
-              : 'This trip has been cancelled.');
+          (isAr ? 'تم إلغاء هذه الرحلة.' : 'This trip has been cancelled.');
     }
     if (code.contains('TRIP_COMPLETED')) {
       return l10n?.errorTripCompleted ??
@@ -707,9 +709,7 @@ class AppErrorMapper {
     }
     if (code.contains('TOO_EARLY')) {
       return l10n?.errorTooEarly ??
-          (isAr
-              ? 'موعد الصعود لم يحن بعد.'
-              : 'It is too early for boarding.');
+          (isAr ? 'موعد الصعود لم يحن بعد.' : 'It is too early for boarding.');
     }
     if (code.contains('WRONG_TRIP')) {
       return l10n?.errorWrongTrip ??
@@ -758,9 +758,13 @@ class AppErrorMapper {
           safeDesc.contains('otp') ||
           safeDesc.contains('secret') ||
           safeDesc.contains('token')) {
-        debugPrint('[AppErrorMapper] Technical error caught ($safeType): [REDACTED_CREDENTIALS]');
+        debugPrint(
+          '[AppErrorMapper] Technical error caught ($safeType): [REDACTED_CREDENTIALS]',
+        );
       } else {
-        debugPrint('[AppErrorMapper] Technical error caught ($safeType): $safeDesc');
+        debugPrint(
+          '[AppErrorMapper] Technical error caught ($safeType): $safeDesc',
+        );
       }
     } catch (_) {}
   }

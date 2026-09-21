@@ -116,6 +116,7 @@ void main() {
         const HomeState(
           status: HomeStatus.error,
           errorMessage: 'Database connection failed',
+          errorFailure: ServerFailure(message: 'Database connection failed'),
         ),
       ];
 
