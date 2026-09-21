@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/announcement.dart';
 import '../../domain/entities/home_summary.dart';
 
@@ -9,6 +10,7 @@ class HomeState extends Equatable {
   final HomeSummary? summary;
   final List<Announcement> announcements;
   final String? errorMessage;
+  final Failure? errorFailure;
   final bool isRefreshing;
   final bool isBookingAvailable;
   final bool hasLoadedAvailability;
@@ -19,6 +21,7 @@ class HomeState extends Equatable {
     this.summary,
     this.announcements = const [],
     this.errorMessage,
+    this.errorFailure,
     this.isRefreshing = false,
     this.isBookingAvailable = true,
     this.hasLoadedAvailability = false,
@@ -35,6 +38,7 @@ class HomeState extends Equatable {
     HomeSummary? summary,
     List<Announcement>? announcements,
     String? errorMessage,
+    Failure? errorFailure,
     bool? isRefreshing,
     bool? isBookingAvailable,
     bool? hasLoadedAvailability,
@@ -46,6 +50,7 @@ class HomeState extends Equatable {
       summary: summary ?? this.summary,
       announcements: announcements ?? this.announcements,
       errorMessage: errorMessage,
+      errorFailure: errorFailure,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isBookingAvailable: isBookingAvailable ?? this.isBookingAvailable,
       hasLoadedAvailability:
@@ -62,6 +67,7 @@ class HomeState extends Equatable {
     summary,
     announcements,
     errorMessage,
+    errorFailure,
     isRefreshing,
     isBookingAvailable,
     hasLoadedAvailability,

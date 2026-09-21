@@ -179,6 +179,7 @@ class _BookingReviewCardState extends State<BookingReviewCard>
     final isAr = locale.startsWith('ar');
 
     final isBundle = widget.bundleHold != null;
+<<<<<<< HEAD
     final bundle = widget.bundleHold;
     final returnOption = widget.returnOption;
 
@@ -237,6 +238,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
 
     final totalFare = isBundle
         ? totalPoints
+=======
+    final totalFare = isBundle
+        ? widget.bundleHold!.totalPoints
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         : (widget.routeStop?.farePoints ?? widget.trip.farePoints);
 
     final hasEnoughPoints = widget.userAvailablePoints >= totalFare;
@@ -255,6 +260,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
     // 1. SURFACE A: JOURNEY CARD(S)
     Widget journeyCard;
     if (isBundle) {
+<<<<<<< HEAD
+=======
+      final bundle = widget.bundleHold!;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       final returnSeatNumber = widget.returnSeat?.seatNumber ?? '—';
       final returnDepartureTime = widget.returnOption != null
           ? AppTimeFormatter.formatDepartureTime(
@@ -286,7 +295,12 @@ class _BookingReviewCardState extends State<BookingReviewCard>
             destinationLocality: widget.destinationRouteStop?.locality(locale),
             seatNumber: widget.seat.seatNumber,
             seatLabel: l10n.tripDetailsSeat,
+<<<<<<< HEAD
             fareLabel: '${outboundFare.toInt()} ${l10n.pointsUnit}',
+=======
+            fareLabel:
+                '${bundle.outboundBaseFarePoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
             isAr: isAr,
           ),
           const SizedBox(height: 12),
@@ -307,7 +321,12 @@ class _BookingReviewCardState extends State<BookingReviewCard>
             destinationLocality: widget.routeStop?.locality(locale),
             seatNumber: returnSeatNumber,
             seatLabel: isAr ? 'مقعد العودة' : 'Return Seat',
+<<<<<<< HEAD
             fareLabel: '${returnFare.toInt()} ${l10n.pointsUnit}',
+=======
+            fareLabel:
+                '${bundle.returnBaseFarePoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
             isAr: isAr,
           ),
         ],
@@ -350,6 +369,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
     // 3. SURFACE B: FARE & WALLET BALANCE PANEL
     Widget farePanel;
     if (isBundle) {
+<<<<<<< HEAD
+=======
+      final bundle = widget.bundleHold!;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       farePanel = Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -380,7 +403,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   ),
                 ),
                 Text(
+<<<<<<< HEAD
                   '${outboundFare.toInt()} ${l10n.pointsUnit}',
+=======
+                  '${bundle.outboundBaseFarePoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -404,7 +431,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   ),
                 ),
                 Text(
+<<<<<<< HEAD
                   '${returnFare.toInt()} ${l10n.pointsUnit}',
+=======
+                  '${bundle.returnBaseFarePoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -428,7 +459,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   ),
                 ),
                 Text(
+<<<<<<< HEAD
                   '${subtotalPoints.toInt()} ${l10n.pointsUnit}',
+=======
+                  '${bundle.subtotalPoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -447,8 +482,13 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   children: [
                     Text(
                       isAr
+<<<<<<< HEAD
                           ? 'خصم الذهاب والعودة $discountPercent%'
                           : 'Round Trip Discount $discountPercent%',
+=======
+                          ? 'خصم الذهاب والعودة 15%'
+                          : 'Round Trip Discount 15%',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -458,7 +498,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   ],
                 ),
                 Text(
+<<<<<<< HEAD
                   '-${discountPoints.toInt()} ${l10n.pointsUnit}',
+=======
+                  '-${bundle.discountPoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -487,7 +531,11 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                   ),
                 ),
                 Text(
+<<<<<<< HEAD
                   '${totalPoints.toInt()} ${l10n.pointsUnit}',
+=======
+                  '${bundle.totalPoints.toInt()} ${l10n.pointsUnit}',
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,

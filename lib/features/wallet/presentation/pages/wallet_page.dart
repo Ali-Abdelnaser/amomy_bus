@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../app/router/route_paths.dart';
+import '../../../../core/error/app_error_mapper.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -196,7 +197,7 @@ class _WalletPageState extends State<WalletPage>
                                 isError &&
                                     walletState.summary.totalAvailablePoints ==
                                         0
-                                ? _buildErrorView(context, userId)
+                                ? _buildErrorView(context, userId, walletState)
                                 : RefreshIndicator(
                                     onRefresh: () async {
                                       if (userId.isNotEmpty) {
@@ -512,7 +513,16 @@ class _WalletPageState extends State<WalletPage>
     );
   }
 
-  Widget _buildErrorView(BuildContext context, String userId) {
+  Widget _buildErrorView(
+    BuildContext context,
+    String userId,
+    WalletState walletState,
+  ) {
+    final message = AppErrorMapper.map(
+      context,
+      walletState.errorFailure ?? walletState.errorMessage,
+    );
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -526,7 +536,7 @@ class _WalletPageState extends State<WalletPage>
             ),
             AppSpacing.gapH16,
             Text(
-              'Could not load wallet',
+              context.l10n.errorGeneric,
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -535,7 +545,7 @@ class _WalletPageState extends State<WalletPage>
             ),
             AppSpacing.gapH8,
             Text(
-              'Please check your network connection and try again.',
+              message,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),

@@ -1,5 +1,4 @@
 import '../../../../core/error/failures.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import '../../../../core/typedefs/typedefs.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
@@ -24,7 +23,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       );
       return Success(url);
     } catch (e) {
-      return Error(ServerFailure(message: AppErrorMapper.mapToString(e)));
+      return const Error(UnknownFailure());
     }
   }
 
@@ -40,7 +39,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       );
       return const Success(null);
     } catch (e) {
-      return Error(ServerFailure(message: AppErrorMapper.mapToString(e)));
+      return const Error(UnknownFailure());
     }
   }
 }

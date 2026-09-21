@@ -144,6 +144,10 @@ class AppErrorMapper {
     if (msg.contains('jwt expired') ||
         msg.contains('session expired') ||
         code.contains('session_expired') ||
+        code.contains('session_not_found') ||
+        code.contains('refresh_token_not_found') ||
+        msg.contains('session not found') ||
+        msg.contains('refresh token not found') ||
         msg.contains('token expired') ||
         msg.contains('invalid token')) {
       return l10n?.errorSessionExpired ??
@@ -175,7 +179,19 @@ class AppErrorMapper {
     }
 
     // OTP verification
+    if (msg.contains('expired') &&
+        (msg.contains('otp') ||
+            msg.contains('token') ||
+            msg.contains('code')) ||
+        code.contains('otp_expired')) {
+      return l10n?.errorOtpExpired ??
+          (isAr
+              ? 'انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.'
+              : 'The verification code has expired. Request a new one.');
+    }
+
     if (msg.contains('token has expired or is invalid') ||
+        code.contains('otp_invalid') ||
         (msg.contains('invalid') &&
             (msg.contains('otp') ||
                 msg.contains('token') ||
@@ -184,16 +200,6 @@ class AppErrorMapper {
           (isAr
               ? 'رمز التحقق غير صحيح.'
               : 'The verification code is incorrect.');
-    }
-
-    if (msg.contains('expired') &&
-        (msg.contains('otp') ||
-            msg.contains('token') ||
-            msg.contains('code'))) {
-      return l10n?.errorOtpExpired ??
-          (isAr
-              ? 'انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.'
-              : 'The verification code has expired. Request a new one.');
     }
 
     // Password reset
@@ -296,7 +302,12 @@ class AppErrorMapper {
     final errStr = error?.toString().toLowerCase() ?? '';
 
     if (errStr.contains('socketexception') ||
+        errStr.contains('clientexception') ||
         errStr.contains('failed host lookup') ||
+        errStr.contains('host lookup') ||
+        errStr.contains('dns') ||
+        errStr.contains('connection failed') ||
+        errStr.contains('network request failed') ||
         errStr.contains('network unreachable') ||
         errStr.contains('no address associated with hostname') ||
         errStr.contains('network_error') ||
@@ -372,9 +383,12 @@ class AppErrorMapper {
 
     // Check for network patterns in strings
     if (lower.contains('socketexception') ||
-        lower.contains('failed host lookup') ||
-        lower.contains('network request failed') ||
         lower.contains('clientexception') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('host lookup') ||
+        lower.contains('dns') ||
+        lower.contains('connection failed') ||
+        lower.contains('network request failed') ||
         lower.contains('network unreachable') ||
         lower.contains('no internet')) {
       return l10n?.errorNoInternet ??
@@ -391,7 +405,8 @@ class AppErrorMapper {
     }
 
     if (lower.contains('connection refused') ||
-        lower.contains('connection reset')) {
+        lower.contains('connection reset') ||
+        lower.contains('server unreachable')) {
       return l10n?.errorServerUnreachable ??
           (isAr
               ? 'تعذر الاتصال بالخادم حاليًا. حاول مرة أخرى بعد قليل.'
@@ -430,7 +445,77 @@ class AppErrorMapper {
               : 'Incorrect email or password.');
     }
 
-    if (lower.contains('jwt expired') || lower.contains('session expired')) {
+    if (lower.contains('email not confirmed') ||
+        lower.contains('email_not_confirmed')) {
+      return l10n?.errorEmailNotConfirmed ??
+          (isAr
+              ? 'يرجى تأكيد بريدك الإلكتروني أولًا.'
+              : 'Please confirm your email first.');
+    }
+
+    if (lower.contains('user already registered') ||
+        lower.contains('user_already_exists') ||
+        lower.contains('already registered')) {
+      return l10n?.errorUserAlreadyExists ??
+          (isAr
+              ? 'يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.'
+              : 'An account with this email already exists.');
+    }
+
+    if (lower.contains('invalid email') || lower.contains('invalid_email')) {
+      return l10n?.errorInvalidEmail ??
+          (isAr
+              ? 'يرجى إدخال بريد إلكتروني صحيح.'
+              : 'Please enter a valid email address.');
+    }
+
+    if (lower.contains('weak_password') ||
+        (lower.contains('password') &&
+            (lower.contains('weak') ||
+                lower.contains('least') ||
+                lower.contains('short')))) {
+      return l10n?.errorWeakPassword ??
+          (isAr
+              ? 'كلمة المرور ضعيفة. استخدم كلمة مرور أقوى.'
+              : 'Your password is too weak. Please choose a stronger password.');
+    }
+
+    if (lower.contains('over_request_rate_limit') ||
+        lower.contains('over_email_send_rate_limit') ||
+        lower.contains('too many requests') ||
+        lower.contains('rate limit')) {
+      return l10n?.errorRateLimited ??
+          (isAr
+              ? 'عدد المحاولات كبير. حاول مرة أخرى بعد قليل.'
+              : 'Too many attempts. Please try again shortly.');
+    }
+
+    if (lower.contains('otp_expired')) {
+      return l10n?.errorOtpExpired ??
+          (isAr
+              ? 'انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.'
+              : 'The verification code has expired. Request a new one.');
+    }
+
+    if (lower.contains('otp_invalid')) {
+      return l10n?.errorOtpInvalid ??
+          (isAr
+              ? 'رمز التحقق غير صحيح.'
+              : 'The verification code is incorrect.');
+    }
+
+    if (lower.contains('password reset') || lower.contains('recovery')) {
+      return l10n?.errorPasswordReset ??
+          (isAr
+              ? 'تعذر إرسال رابط إعادة تعيين كلمة المرور. حاول مرة أخرى.'
+              : 'We couldn\'t send the password reset link. Please try again.');
+    }
+
+    if (lower.contains('jwt expired') ||
+        lower.contains('session expired') ||
+        lower.contains('session_not_found') ||
+        lower.contains('refresh_token_not_found') ||
+        lower.contains('token expired')) {
       return l10n?.errorSessionExpired ??
           (isAr
               ? 'انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.'
@@ -455,6 +540,13 @@ class AppErrorMapper {
         raw.contains('Unhandled') ||
         raw.contains('StackTrace') ||
         raw.contains('null')) {
+      return l10n?.errorGeneric ??
+          (isAr
+              ? 'حدث خطأ غير متوقع. حاول مرة أخرى.'
+              : 'Something went wrong. Please try again.');
+    }
+
+    if (RegExp(r'^[A-Z][A-Z0-9_]+$').hasMatch(raw.trim())) {
       return l10n?.errorGeneric ??
           (isAr
               ? 'حدث خطأ غير متوقع. حاول مرة أخرى.'

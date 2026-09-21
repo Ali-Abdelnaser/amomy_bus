@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import '../../domain/entities/topup_entities.dart';
 import '../../domain/usecases/get_my_topup_requests_usecase.dart';
 import 'topup_history_state.dart';
@@ -39,7 +38,8 @@ class TopUpHistoryCubit extends Cubit<TopUpHistoryState> {
         emit(
           state.copyWith(
             status: TopUpHistoryStatus.failure,
-            errorMessage: () => AppErrorMapper.mapToString(failure),
+            errorMessage: () => null,
+            errorFailure: () => failure,
           ),
         );
       },

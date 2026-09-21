@@ -628,6 +628,7 @@
   "errorReturnSeatRequired": "Please select a return seat first.",
   "errorRoundTripCancellationWindowClosed": "Cancellation window for this round-trip bundle has closed.",
   "errorRoundTripAlreadyUsed": "Cannot cancel after a trip in the bundle has been checked-in or completed.",
+<<<<<<< HEAD
   "errorRoundTripBundleNotCancellable": "This bundle is not cancellable.",
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNoInternet": "No internet connection. Check your network and try again.",
@@ -658,5 +659,8 @@
   "errorTooEarly": "Trip time is too early.",
   "errorWrongTrip": "Ticket is for another trip.",
   "errorInvalidToken": "Invalid ticket code."
+=======
+  "errorRoundTripBundleNotCancellable": "This bundle is not cancellable."
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }
 

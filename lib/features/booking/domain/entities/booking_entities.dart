@@ -719,6 +719,7 @@ class RoundTripBundleHold extends Equatable {
     );
   }
 
+<<<<<<< HEAD
   /// Merges updated hold data (such as return seat hold from RPC) while preserving
   /// authoritative fields that the return seat RPC does not return.
   RoundTripBundleHold mergeWith(RoundTripBundleHold other) {
@@ -793,6 +794,8 @@ class RoundTripBundleHold extends Equatable {
     );
   }
 
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   @override
   List<Object?> get props => [
     bundleHoldId,

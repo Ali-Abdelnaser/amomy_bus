@@ -8,8 +8,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/amomy_bus_loading.dart';
-import '../../../../core/widgets/amomy_floating_alert.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/presentation/widgets/bus_seat_map_widget.dart';
@@ -157,21 +157,17 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
       final isAr = Localizations.localeOf(
         context,
       ).languageCode.startsWith('ar');
-      AmomyFloatingAlert.show(
+      AppSnackBar.showSuccess(
         context,
-        title: isAr
+        isAr
             ? 'تم تغيير المقعد بنجاح إلى مقعد ${_selectedNewSeat!.seatNumber}'
             : 'Seat successfully changed to Seat ${_selectedNewSeat!.seatNumber}',
-        variant: AmomyAlertVariant.success,
       );
     } else {
-      AmomyFloatingAlert.show(
+      AppSnackBar.showError(
         context,
-        title: StatusLocalizer.localizeError(
-          context,
-          widget.tripsCubit.state.errorMessage,
-        ),
-        variant: AmomyAlertVariant.error,
+        widget.tripsCubit.state.errorFailure ??
+            widget.tripsCubit.state.errorMessage,
       );
     }
   }
@@ -421,21 +417,19 @@ class _ChangeSeatPageState extends State<ChangeSeatPage> {
                           selectedSeat: _selectedNewSeat,
                           onSeatTap: (seat) {
                             if (seat.seatNumber == currentSeatNumber) {
-                              AmomyFloatingAlert.show(
+                              AppSnackBar.showInfo(
                                 context,
-                                title: l10n.seatStatusCurrent,
-                                variant: AmomyAlertVariant.info,
+                                l10n.seatStatusCurrent,
                               );
                               return;
                             }
 
                             if (!seat.isAvailable) {
-                              AmomyFloatingAlert.show(
+                              AppSnackBar.showWarning(
                                 context,
-                                title: isAr
+                                isAr
                                     ? 'هذا المقعد غير متاح للاختيار'
                                     : 'This seat is unavailable',
-                                variant: AmomyAlertVariant.warning,
                               );
                               return;
                             }

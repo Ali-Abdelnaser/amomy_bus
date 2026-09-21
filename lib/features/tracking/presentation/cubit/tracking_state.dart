@@ -69,6 +69,7 @@ class TrackingState extends Equatable {
     return summary!.status;
   }
 
+<<<<<<< HEAD
   bool get isDeparted =>
       summary?.tripStatus == 'departed' ||
       summary?.startedAt != null ||
@@ -90,6 +91,12 @@ class TrackingState extends Equatable {
   bool get trackingEnabled {
     if (summary == null) return false;
     if (isDeparted) return true;
+=======
+  TrackingPhase get trackingPhase =>
+      summary?.trackingPhase ?? TrackingPhase.unknown;
+  bool get trackingEnabled {
+    if (summary == null) return false;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     if (summary!.trackingPhase != TrackingPhase.unknown) {
       return summary!.trackingEnabled;
     }
@@ -102,11 +109,17 @@ class TrackingState extends Equatable {
   }
 
   bool get isWaitingAssignment =>
+<<<<<<< HEAD
       !isDeparted &&
       (trackingPhase == TrackingPhase.waitingAssignment ||
           trackingStatus == LiveTrackingStatus.assignmentPending);
   bool get isWaitingStart =>
       !isDeparted && trackingPhase == TrackingPhase.waitingStart;
+=======
+      trackingPhase == TrackingPhase.waitingAssignment ||
+      trackingStatus == LiveTrackingStatus.assignmentPending;
+  bool get isWaitingStart => trackingPhase == TrackingPhase.waitingStart;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   bool get isReassignmentPending =>
       trackingPhase == TrackingPhase.reassignmentPending;
   bool get isGpsOffline => trackingPhase == TrackingPhase.gpsOffline;

@@ -4,7 +4,6 @@ import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/self_test_result.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../services/notification_service.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import 'notification_state.dart';
 
 class NotificationCubit extends Cubit<NotificationState> {
@@ -50,7 +49,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       );
       _startRealtimeSubscription();
     } catch (e) {
-      emit(NotificationError(AppErrorMapper.mapToString(e)));
+      emit(const NotificationError('NOTIFICATION_LOAD_FAILED'));
     }
   }
 
@@ -125,7 +124,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
       return result;
     } catch (e) {
-      return SelfTestResult.failure(AppErrorMapper.mapToString(e));
+      return SelfTestResult.failure('NOTIFICATION_SELF_TEST_FAILED');
     }
   }
 

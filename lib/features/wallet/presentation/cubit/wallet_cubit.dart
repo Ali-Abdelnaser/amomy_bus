@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import '../../../topup/domain/entities/topup_entities.dart';
 import '../../../topup/domain/usecases/get_my_topup_requests_usecase.dart';
 import '../../domain/entities/point_transaction.dart';
@@ -55,7 +54,7 @@ class WalletCubit extends Cubit<WalletState> {
 
   Future<void> loadWalletSummary(String userId) async {
     if (_getWalletSummaryUseCase == null) return;
-    emit(state.copyWith(status: WalletStatus.loading));
+    emit(state.copyWith(status: WalletStatus.loading, clearError: true));
 
     final summaryFuture = _getWalletSummaryUseCase.call(userId);
     final historyFuture = _getWalletHistoryUseCase?.call(limit: 20);
@@ -108,7 +107,7 @@ class WalletCubit extends Cubit<WalletState> {
       onError: (failure) => emit(
         state.copyWith(
           status: WalletStatus.error,
-          errorMessage: AppErrorMapper.mapToString(failure),
+          errorFailure: failure,
         ),
       ),
     );

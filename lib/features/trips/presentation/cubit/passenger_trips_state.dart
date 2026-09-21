@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/error/failures.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/services/passenger_booking_availability.dart';
 
@@ -12,6 +13,7 @@ class PassengerTripsState extends Equatable {
   final List<PassengerBooking> upcomingTrips;
   final List<RouteStop> availableStops;
   final String? errorMessage;
+  final Failure? errorFailure;
 
   const PassengerTripsState({
     this.status = PassengerTripsStatus.initial,
@@ -21,6 +23,7 @@ class PassengerTripsState extends Equatable {
     this.upcomingTrips = const [],
     this.availableStops = const [],
     this.errorMessage,
+    this.errorFailure,
   });
 
   List<PassengerTodayTrip> get outboundTodayTrips => todayTrips
@@ -58,6 +61,7 @@ class PassengerTripsState extends Equatable {
     List<PassengerBooking>? upcomingTrips,
     List<RouteStop>? availableStops,
     String? errorMessage,
+    Failure? errorFailure,
     bool clearError = false,
   }) {
     return PassengerTripsState(
@@ -70,6 +74,7 @@ class PassengerTripsState extends Equatable {
       upcomingTrips: upcomingTrips ?? this.upcomingTrips,
       availableStops: availableStops ?? this.availableStops,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorFailure: clearError ? null : (errorFailure ?? this.errorFailure),
     );
   }
 
@@ -82,5 +87,6 @@ class PassengerTripsState extends Equatable {
     upcomingTrips,
     availableStops,
     errorMessage,
+    errorFailure,
   ];
 }

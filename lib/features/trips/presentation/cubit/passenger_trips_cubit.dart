@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../app/di/injection.dart';
-import '../../../../core/error/app_error_mapper.dart';
+import '../../../../core/error/failures.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/domain/usecases/booking_usecases.dart';
@@ -53,7 +53,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
     List<PassengerBooking> historyTrips = [];
     List<PassengerBooking> upcomingTrips = [];
     List<RouteStop> availableStops = [];
-    String? errorMsg;
+    Failure? errorFailure;
 
     await Future.wait([
       // 1. Today's Trips
@@ -61,7 +61,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         repo.getPassengerTodayTrips().then((res) {
           res.fold(
             onSuccess: (trips) => todayTrips = trips,
-            onError: (err) => errorMsg ??= AppErrorMapper.mapToString(err),
+            onError: (err) => errorFailure ??= err,
           );
         }),
 
@@ -114,7 +114,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
                       .toList()
                     ..sort((a, b) => b.departureAt.compareTo(a.departureAt));
             },
-            onError: (err) => errorMsg ??= AppErrorMapper.mapToString(err),
+            onError: (err) => errorFailure ??= err,
           );
         }),
 
@@ -130,7 +130,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
 
     emit(
       state.copyWith(
-        status: errorMsg != null && todayTrips.isEmpty && historyTrips.isEmpty
+        status: errorFailure != null && todayTrips.isEmpty && historyTrips.isEmpty
             ? PassengerTripsStatus.error
             : PassengerTripsStatus.loaded,
         todayTrips: todayTrips,
@@ -138,7 +138,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         historyTrips: historyTrips,
         upcomingTrips: upcomingTrips,
         availableStops: availableStops,
-        errorMessage: errorMsg,
+        errorFailure: errorFailure,
       ),
     );
 
@@ -182,7 +182,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (err) {
-        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(err)));
+        emit(state.copyWith(errorFailure: err));
         return false;
       },
     );
@@ -200,7 +200,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(failure)));
+        emit(state.copyWith(errorFailure: failure));
         return false;
       },
     );
@@ -224,7 +224,7 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorMessage: AppErrorMapper.mapToString(failure)));
+        emit(state.copyWith(errorFailure: failure));
         return false;
       },
     );

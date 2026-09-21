@@ -317,9 +317,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     required String outboundTripId,
     required String outboundRouteStopId,
   }) async {
+<<<<<<< HEAD
     if (kDebugMode) {
       debugPrint('ROUND_TRIP_DEBUG RPC request start');
     }
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     final response = await _supabase.rpc(
       'get_round_trip_return_options',
       params: {
@@ -328,16 +331,22 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       },
     );
 
+<<<<<<< HEAD
     if (kDebugMode) {
       debugPrint('ROUND_TRIP_DEBUG raw RPC response $response');
     }
 
     final list = response as List<dynamic>;
     final parsed = list
+=======
+    final list = response as List<dynamic>;
+    return list
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         .map(
           (e) => RoundTripReturnOptionModel.fromJson(e as Map<String, dynamic>),
         )
         .toList();
+<<<<<<< HEAD
 
     if (kDebugMode) {
       debugPrint('ROUND_TRIP_DEBUG parsed row count ${parsed.length}');
@@ -350,6 +359,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     }
 
     return parsed;
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   }
 
   @override

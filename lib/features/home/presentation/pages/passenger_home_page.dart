@@ -207,7 +207,7 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                         Text(
                           StatusLocalizer.localizeError(
                             context,
-                            state.errorMessage,
+                            state.errorFailure ?? state.errorMessage,
                           ),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textSecondary,

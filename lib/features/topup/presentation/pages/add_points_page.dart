@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
-import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -45,9 +44,13 @@ class AddPointsPage extends StatelessWidget {
         return cubit;
       },
       child: BlocConsumer<TopUpCubit, TopUpState>(
+        listenWhen: (previous, current) =>
+            previous.errorFailure != current.errorFailure ||
+            previous.errorMessage != current.errorMessage,
         listener: (context, state) {
-          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-            AppSnackBar.showError(context, state.errorMessage);
+          final error = state.errorFailure ?? state.errorMessage;
+          if (error != null) {
+            AppSnackBar.showError(context, error);
           }
         },
         builder: (context, state) {

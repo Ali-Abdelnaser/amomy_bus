@@ -165,7 +165,110 @@ class StatusLocalizer {
   }
 
   /// Maps known backend business error codes / exception messages to user-friendly localized text.
+<<<<<<< HEAD
   static String localizeError(BuildContext context, dynamic rawError) {
     return AppErrorMapper.map(context, rawError);
+=======
+  static String localizeError(BuildContext context, String? rawError) {
+    if (rawError == null || rawError.trim().isEmpty) {
+      return AppLocalizations.of(context)?.errorOccurred ??
+          'An error occurred.';
+    }
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return rawError;
+
+    final errUpper = rawError.toUpperCase();
+
+    if (errUpper.contains('ROUND_TRIP_MUST_START_WITH_OUTBOUND')) {
+      return l10n.errorRoundTripMustStartWithOutbound;
+    }
+    if (errUpper.contains('INVALID_ROUND_TRIP_DIRECTIONS')) {
+      return l10n.errorInvalidRoundTripDirections;
+    }
+    if (errUpper.contains('ROUND_TRIP_SAME_DAY_REQUIRED')) {
+      return l10n.errorRoundTripSameDayRequired;
+    }
+    if (errUpper.contains('RETURN_MUST_BE_AFTER_OUTBOUND')) {
+      return l10n.errorReturnMustBeAfterOutbound;
+    }
+    if (errUpper.contains('ROUND_TRIP_DISCOUNT_ALREADY_USED_TODAY')) {
+      return l10n.errorRoundTripDiscountAlreadyUsedToday;
+    }
+    if (errUpper.contains('ROUND_TRIP_REQUIRES_UNBOOKED_TRIPS')) {
+      return l10n.errorRoundTripRequiresUnbookedTrips;
+    }
+    if (errUpper.contains('ROUND_TRIP_HOLD_ALREADY_ACTIVE')) {
+      return l10n.errorRoundTripHoldAlreadyActive;
+    }
+    if (errUpper.contains('ROUND_TRIP_HOLD_NOT_FOUND')) {
+      return l10n.errorRoundTripHoldNotFound;
+    }
+    if (errUpper.contains('ROUND_TRIP_HOLD_INVALID')) {
+      return l10n.errorRoundTripHoldInvalid;
+    }
+    if (errUpper.contains('RETURN_SEAT_REQUIRED')) {
+      return l10n.errorReturnSeatRequired;
+    }
+    if (errUpper.contains('ROUND_TRIP_CANCELLATION_WINDOW_CLOSED')) {
+      return l10n.errorRoundTripCancellationWindowClosed;
+    }
+    if (errUpper.contains('ROUND_TRIP_ALREADY_USED')) {
+      return l10n.errorRoundTripAlreadyUsed;
+    }
+    if (errUpper.contains('ROUND_TRIP_BUNDLE_NOT_CANCELLABLE')) {
+      return l10n.errorRoundTripBundleNotCancellable;
+    }
+
+    if (errUpper.contains('HOLD_EXPIRED') ||
+        errUpper.contains('HOLD EXPIRED')) {
+      return l10n.errorHoldExpired;
+    }
+    if (errUpper.contains('BOOKING_CLOSED') ||
+        errUpper.contains('BOOKING CLOSED')) {
+      return l10n.errorBookingClosed;
+    }
+    if (errUpper.contains('CANCELLATION_WINDOW_CLOSED') ||
+        errUpper.contains('CANCELLATION CLOSED')) {
+      return l10n.errorCancellationWindowClosed;
+    }
+    if (errUpper.contains('CHANGE_SEAT_WINDOW_CLOSED') ||
+        errUpper.contains('CHANGE SEAT CLOSED')) {
+      return l10n.errorChangeSeatWindowClosed;
+    }
+    if (errUpper.contains('SERVICE_DAY_OFF')) {
+      return l10n.errorServiceDayOff;
+    }
+    if (errUpper.contains('SEAT_UNAVAILABLE') ||
+        errUpper.contains('SEAT ALREADY HELD') ||
+        errUpper.contains('SEAT_ALREADY_BOOKED') ||
+        errUpper.contains('SEAT_HELD')) {
+      return l10n.seatUnavailableNotice;
+    }
+    if (errUpper.contains('INSUFFICIENT_POINTS') ||
+        errUpper.contains('INSUFFICIENT_BALANCE')) {
+      return l10n.insufficientPointsNotice;
+    }
+    if (errUpper.contains('ALREADY_BOOKED_TRIP') ||
+        errUpper.contains('ALREADY_BOOKED')) {
+      return l10n.alreadyBookedTrip;
+    }
+    if (errUpper.contains('OUTBOUND_TRIP_UNAVAILABLE') ||
+        errUpper.contains('RETURN_TRIP_UNAVAILABLE') ||
+        errUpper.contains('TRIP_UNAVAILABLE')) {
+      return l10n.errorBookingClosed;
+    }
+
+    // Do NOT leak raw SQL, Postgres, RPC or snake_case errors
+    if (rawError.contains('PostgrestException') ||
+        rawError.contains('RPC') ||
+        rawError.contains('pg_') ||
+        rawError.contains('sql') ||
+        rawError.contains('DatabaseException') ||
+        rawError.contains('SocketException')) {
+      return l10n.errorOccurred;
+    }
+
+    return l10n.errorOccurred;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   }
 }

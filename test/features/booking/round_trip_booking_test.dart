@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+<<<<<<< HEAD
 import 'package:amomy_bus/core/error/failures.dart';
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 import 'package:amomy_bus/core/typedefs/typedefs.dart';
 import 'package:amomy_bus/features/booking/domain/entities/booking_entities.dart';
 import 'package:amomy_bus/features/booking/domain/repositories/booking_repository.dart';
 import 'package:amomy_bus/features/booking/domain/usecases/booking_usecases.dart';
 import 'package:amomy_bus/features/booking/presentation/cubit/booking_cubit.dart';
+<<<<<<< HEAD
 import 'package:amomy_bus/features/booking/presentation/cubit/booking_state.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/booking_mode_toggle.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/booking_review_card.dart';
@@ -16,6 +20,11 @@ import 'package:amomy_bus/features/booking/presentation/widgets/professional_bus
 import 'package:amomy_bus/features/booking/presentation/widgets/bus_seat_visual.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/departure_time_selector.dart';
 import 'package:amomy_bus/features/booking/presentation/widgets/return_meeting_info_card.dart';
+=======
+import 'package:amomy_bus/features/booking/presentation/widgets/booking_mode_toggle.dart';
+import 'package:amomy_bus/features/booking/presentation/widgets/booking_review_card.dart';
+import 'package:amomy_bus/features/booking/presentation/widgets/booking_success_view.dart';
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 import 'package:amomy_bus/features/booking/presentation/widgets/round_trip_return_time_selector.dart';
 import 'package:amomy_bus/features/trips/presentation/cubit/passenger_trips_cubit.dart';
 import 'package:amomy_bus/features/trips/presentation/widgets/booked_trip_overflow_menu.dart';
@@ -25,18 +34,27 @@ import 'package:amomy_bus/l10n/app_localizations.dart';
 class MockRoundTripBookingRepository implements BookingRepository {
   List<RouteStop> routeStops = [];
   List<TripOption> trips = [];
+<<<<<<< HEAD
   List<TripOption> returnTrips = [];
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   List<TripSeat> seats = [];
   List<TripSeat> returnTripSeats = [];
   List<RoundTripReturnOption> returnOptions = [];
   BookingHold? singleHold;
   RoundTripBundleHold? bundleHold;
+<<<<<<< HEAD
   RoundTripBundleHold? returnSeatHold;
   RoundTripConfirmation? bundleConfirmation;
   PassengerBooking? singleConfirmation;
   RoundTripBundleContext? bundleContext;
   Failure? returnOptionsFailure;
   Failure? bundleHoldFailure;
+=======
+  RoundTripConfirmation? bundleConfirmation;
+  PassengerBooking? singleConfirmation;
+  RoundTripBundleContext? bundleContext;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
   int getReturnOptionsCallCount = 0;
   int createBundleHoldCallCount = 0;
@@ -64,6 +82,7 @@ class MockRoundTripBookingRepository implements BookingRepository {
     required BookingDirection direction,
     DateTime? date,
     String? routeStopId,
+<<<<<<< HEAD
   }) async {
     if (direction == BookingDirection.returnTrip) {
       if (returnTrips.isNotEmpty) return Success(returnTrips);
@@ -73,6 +92,9 @@ class MockRoundTripBookingRepository implements BookingRepository {
     }
     return Success(trips);
   }
+=======
+  }) async => Success(trips);
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
   @override
   ResultFuture<List<TripSeat>> getTripSeatMap({required String tripId}) async {
@@ -182,9 +204,12 @@ class MockRoundTripBookingRepository implements BookingRepository {
     getReturnOptionsCallCount++;
     lastOutboundTripId = outboundTripId;
     lastOutboundRouteStopId = outboundRouteStopId;
+<<<<<<< HEAD
     if (returnOptionsFailure != null) {
       return Error(returnOptionsFailure!);
     }
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     return Success(returnOptions);
   }
 
@@ -201,10 +226,13 @@ class MockRoundTripBookingRepository implements BookingRepository {
     lastOutboundSeatId = outboundSeatId;
     lastOutboundRouteStopId = outboundRouteStopId;
 
+<<<<<<< HEAD
     if (bundleHoldFailure != null) {
       return Error(bundleHoldFailure!);
     }
 
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     return Success(
       bundleHold ??
           RoundTripBundleHold(
@@ -236,10 +264,13 @@ class MockRoundTripBookingRepository implements BookingRepository {
     setReturnSeatCallCount++;
     lastReturnSeatId = returnSeatId;
 
+<<<<<<< HEAD
     if (returnSeatHold != null) {
       return Success(returnSeatHold!);
     }
 
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     return Success(
       RoundTripBundleHold(
         bundleHoldId: bundleHoldId,
@@ -470,11 +501,19 @@ void main() {
       '4. Return times are loaded from backend get_round_trip_return_options RPC',
       () async {
         cubit.setBookingMode(BookingMode.roundTrip);
+<<<<<<< HEAD
         await cubit.selectOriginStop(sampleOutboundStop);
         cubit.selectTrip(sampleOutboundTrip);
         await cubit.loadRoundTripReturnOptions();
 
         expect(repo.getReturnOptionsCallCount, greaterThanOrEqualTo(1));
+=======
+        cubit.selectOriginStop(sampleOutboundStop);
+        cubit.selectTrip(sampleOutboundTrip);
+        await cubit.loadRoundTripReturnOptions();
+
+        expect(repo.getReturnOptionsCallCount, equals(1));
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         expect(repo.lastOutboundTripId, equals(sampleOutboundTrip.tripId));
         expect(
           repo.lastOutboundRouteStopId,
@@ -599,7 +638,11 @@ void main() {
       '8. Outbound seat selection uses create_round_trip_bundle_hold RPC',
       () async {
         cubit.setBookingMode(BookingMode.roundTrip);
+<<<<<<< HEAD
         await cubit.selectOriginStop(sampleOutboundStop);
+=======
+        cubit.selectOriginStop(sampleOutboundStop);
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         cubit.selectTrip(sampleOutboundTrip);
         cubit.selectReturnOption(sampleReturnOption1);
 
@@ -960,6 +1003,7 @@ void main() {
       },
     );
   });
+<<<<<<< HEAD
 
   group('PHASE RT2.1 — ROUND TRIP RETURN OPTIONS & MEETING POINT FIX TESTS', () {
     final sampleOutbound0800 = TripOption(
@@ -2911,4 +2955,6 @@ void main() {
       );
     });
   });
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }

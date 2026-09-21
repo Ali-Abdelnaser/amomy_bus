@@ -3193,6 +3193,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This bundle is not cancellable.'**
   String get errorRoundTripBundleNotCancellable;
+<<<<<<< HEAD
 
   /// No description provided for @errorGeneric.
   ///
@@ -3367,6 +3368,8 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid ticket code.'**
   String get errorInvalidToken;
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }
 
 class _AppLocalizationsDelegate

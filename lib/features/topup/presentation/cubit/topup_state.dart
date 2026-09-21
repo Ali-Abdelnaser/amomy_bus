@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/topup_entities.dart';
 
 enum TopUpStep { amount, instructions, details, pendingReview }
@@ -33,6 +34,7 @@ class TopUpState extends Equatable {
   final bool isSuccess;
   final String? submittedPublicId;
   final String? errorMessage;
+  final Failure? errorFailure;
   final bool isResubmit;
   final String? rejectionReason;
 
@@ -59,6 +61,7 @@ class TopUpState extends Equatable {
     this.isSuccess = false,
     this.submittedPublicId,
     this.errorMessage,
+    this.errorFailure,
     this.isResubmit = false,
     this.rejectionReason,
   });
@@ -121,9 +124,17 @@ class TopUpState extends Equatable {
     bool? isSuccess,
     String? Function()? submittedPublicId,
     String? Function()? errorMessage,
+    Failure? Function()? errorFailure,
     bool? isResubmit,
     String? Function()? rejectionReason,
   }) {
+    final nextErrorMessage = errorMessage != null
+        ? errorMessage()
+        : this.errorMessage;
+    final nextErrorFailure = errorFailure != null
+        ? errorFailure()
+        : (errorMessage != null ? null : this.errorFailure);
+
     return TopUpState(
       currentStep: currentStep ?? this.currentStep,
       isLoadingConfig: isLoadingConfig ?? this.isLoadingConfig,
@@ -162,7 +173,8 @@ class TopUpState extends Equatable {
       submittedPublicId: submittedPublicId != null
           ? submittedPublicId()
           : this.submittedPublicId,
-      errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
+      errorMessage: nextErrorMessage,
+      errorFailure: nextErrorFailure,
       isResubmit: isResubmit ?? this.isResubmit,
       rejectionReason: rejectionReason != null
           ? rejectionReason()
@@ -194,6 +206,7 @@ class TopUpState extends Equatable {
     isSuccess,
     submittedPublicId,
     errorMessage,
+    errorFailure,
     isResubmit,
     rejectionReason,
   ];

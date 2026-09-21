@@ -3,12 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/localization/app_time_formatter.dart';
-import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/amomy_bus_loading.dart';
-import '../../../../core/widgets/amomy_floating_alert.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/domain/repositories/booking_repository.dart';
 import '../../../booking/presentation/widgets/professional_bus_seat_map.dart';
@@ -183,35 +182,27 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
           onSuccess: (booking) {
             Navigator.of(context).pop();
             widget.tripsCubit.loadTripsHub();
-            AmomyFloatingAlert.show(
+            AppSnackBar.showSuccess(
               context,
-              title: isAr
+              isAr
                   ? 'تم حجز المقعد (${_selectedExtraSeat!.seatNumber}) بنجاح!'
                   : 'Seat (${_selectedExtraSeat!.seatNumber}) booked successfully!',
-              message: isAr
-                  ? 'تمت إضافة المقعد إلى حجزك الحالي على هذه الرحلة.'
-                  : 'Extra seat added to your booking for this trip.',
-              variant: AmomyAlertVariant.success,
             );
           },
           onError: (failure) {
             setState(() => _isSubmitting = false);
-            AmomyFloatingAlert.show(
+            AppSnackBar.showError(
               context,
-              title: isAr ? 'فشل تأكيد المقعد الإضافي' : 'Confirmation failed',
-              message: StatusLocalizer.localizeError(context, failure),
-              variant: AmomyAlertVariant.error,
+              failure,
             );
           },
         );
       },
       onError: (failure) {
         setState(() => _isSubmitting = false);
-        AmomyFloatingAlert.show(
+        AppSnackBar.showError(
           context,
-          title: isAr ? 'تعذر حجز المقعد الإضافي' : 'Hold failed',
-          message: StatusLocalizer.localizeError(context, failure),
-          variant: AmomyAlertVariant.error,
+          failure,
         );
       },
     );
@@ -459,25 +450,20 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
                         selectedSeat: _selectedExtraSeat,
                         onSeatTap: (seat) {
                           if (currentSeats.contains(seat.seatNumber)) {
-                            AmomyFloatingAlert.show(
+                            AppSnackBar.showInfo(
                               context,
-                              title: isAr
+                              isAr
                                   ? 'هذا مقعدك الحالي بالفعل'
                                   : 'Already your seat',
-                              message: isAr
-                                  ? 'المقعد (${seat.seatNumber}) محجوز لك مسبقًا.'
-                                  : 'Seat (${seat.seatNumber}) is already booked by you.',
-                              variant: AmomyAlertVariant.info,
                             );
                             return;
                           }
                           if (!seat.isAvailable) {
-                            AmomyFloatingAlert.show(
+                            AppSnackBar.showWarning(
                               context,
-                              title: isAr
+                              isAr
                                   ? 'المقعد غير متاح'
                                   : 'Seat unavailable',
-                              variant: AmomyAlertVariant.warning,
                             );
                             return;
                           }

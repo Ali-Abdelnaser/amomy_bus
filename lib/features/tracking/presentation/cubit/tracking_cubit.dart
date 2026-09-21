@@ -6,7 +6,6 @@ import '../../domain/models/route_geometry.dart';
 import '../../domain/models/stop_progression.dart';
 import '../../domain/models/tracking_summary.dart';
 import '../../domain/repositories/tracking_repository.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import 'tracking_state.dart';
 
 class TrackingCubit extends Cubit<TrackingState> {
@@ -129,12 +128,11 @@ class TrackingCubit extends Cubit<TrackingState> {
 
       _checkApproachNotification(summary);
     } catch (e) {
-      final safeMessage = AppErrorMapper.mapToString(e);
       if (state.summary == null) {
         emit(
           state.copyWith(
             uiStatus: TrackingUiStatus.error,
-            errorMessage: safeMessage,
+            errorMessage: 'TRACKING_LOAD_FAILED',
             isRefreshingSnapshot: false,
           ),
         );
@@ -142,7 +140,7 @@ class TrackingCubit extends Cubit<TrackingState> {
         emit(
           state.copyWith(
             uiStatus: TrackingUiStatus.loaded,
-            errorMessage: safeMessage,
+            errorMessage: 'TRACKING_LOAD_FAILED',
             isRefreshingSnapshot: false,
           ),
         );

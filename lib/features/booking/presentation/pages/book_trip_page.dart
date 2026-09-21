@@ -4,14 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
-import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/amomy_bus_loading.dart';
-import '../../../../core/widgets/amomy_floating_alert.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/booking_entities.dart';
@@ -23,7 +22,10 @@ import '../widgets/booking_success_view.dart';
 import '../widgets/bus_seat_map_widget.dart';
 import '../widgets/departure_time_selector.dart';
 import '../widgets/direction_selector.dart';
+<<<<<<< HEAD
 import '../widgets/return_meeting_info_card.dart';
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 import '../widgets/round_trip_return_time_selector.dart';
 import '../widgets/route_stop_selector.dart';
 
@@ -180,18 +182,16 @@ class _BookTripContentState extends State<_BookTripContent>
         final cubit = context.read<BookingCubit>();
 
         if (state.autoTripAlert != null && state.autoTripAlert!.isNotEmpty) {
-          AmomyFloatingAlert.show(
+          AppSnackBar.showInfo(
             context,
-            title: state.autoTripAlert!,
-            variant: AmomyAlertVariant.info,
+            state.autoTripAlert!,
           );
         }
 
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-          AmomyFloatingAlert.show(
+          AppSnackBar.showError(
             context,
-            title: StatusLocalizer.localizeError(context, state.errorMessage),
-            variant: AmomyAlertVariant.error,
+            state.errorMessage,
           );
 
           cubit.clearError();
@@ -508,7 +508,7 @@ class _SmartBookingSetupView extends StatelessWidget {
         ),
         const SizedBox(height: 22),
 
-        // 3. TODAY'S TRIPS / DEPARTURE TIME
+        // 3. TODAY'S OUTBOUND TRIPS / DEPARTURE TIME
         DepartureTimeSelector(
           trips: state.availableTrips,
           selectedTrip: state.selectedTrip,
@@ -518,6 +518,7 @@ class _SmartBookingSetupView extends StatelessWidget {
           onTripSelected: (t) => cubit.selectTrip(t),
         ),
 
+<<<<<<< HEAD
         // 3.0 RETURN MEETING INFO (In Single Return Mode)
         if (state.selectedDirection == BookingDirection.returnTrip &&
             state.availableTrips.isNotEmpty) ...[
@@ -525,15 +526,20 @@ class _SmartBookingSetupView extends StatelessWidget {
           ReturnMeetingInfoCard(selectedTrip: state.selectedTrip),
         ],
 
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         // 3.1 TODAY'S RETURN TRIPS (In Round Trip Mode)
         if (isRoundTrip) ...[
           const SizedBox(height: 22),
           RoundTripReturnTimeSelector(
             returnOptions: state.returnOptions,
             selectedReturnOption: state.selectedReturnOption,
+<<<<<<< HEAD
             isLoading: state.isLoadingRoundTripReturnOptions,
             errorMessage: state.roundTripReturnOptionsError,
             onRetry: () => cubit.loadRoundTripReturnOptions(),
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
             onOptionSelected: (o) => cubit.selectReturnOption(o),
           ),
         ],
@@ -588,10 +594,9 @@ class _SmartBookingSetupView extends StatelessWidget {
     }
 
     if (alertMsg.isNotEmpty) {
-      AmomyFloatingAlert.show(
+      AppSnackBar.showWarning(
         context,
-        title: alertMsg,
-        variant: AmomyAlertVariant.warning,
+        alertMsg,
       );
     }
   }

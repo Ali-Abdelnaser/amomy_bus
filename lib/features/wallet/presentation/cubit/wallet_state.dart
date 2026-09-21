@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/error/failures.dart';
 import '../../../topup/domain/entities/topup_entities.dart';
 import '../../domain/entities/point_transaction.dart';
 import '../../domain/entities/wallet_history_event.dart';
@@ -16,6 +17,7 @@ class WalletState extends Equatable {
   final bool isLoadingMoreHistory;
   final List<TopUpRequest> topUpRequests;
   final String? errorMessage;
+  final Failure? errorFailure;
 
   const WalletState({
     this.status = WalletStatus.initial,
@@ -27,6 +29,7 @@ class WalletState extends Equatable {
     this.isLoadingMoreHistory = false,
     this.topUpRequests = const [],
     this.errorMessage,
+    this.errorFailure,
   });
 
   WalletState copyWith({
@@ -39,6 +42,8 @@ class WalletState extends Equatable {
     bool? isLoadingMoreHistory,
     List<TopUpRequest>? topUpRequests,
     String? errorMessage,
+    Failure? errorFailure,
+    bool clearError = false,
   }) {
     return WalletState(
       status: status ?? this.status,
@@ -49,7 +54,8 @@ class WalletState extends Equatable {
       nextCursor: nextCursor != null ? nextCursor() : this.nextCursor,
       isLoadingMoreHistory: isLoadingMoreHistory ?? this.isLoadingMoreHistory,
       topUpRequests: topUpRequests ?? this.topUpRequests,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorFailure: clearError ? null : (errorFailure ?? this.errorFailure),
     );
   }
 
@@ -64,5 +70,6 @@ class WalletState extends Equatable {
     isLoadingMoreHistory,
     topUpRequests,
     errorMessage,
+    errorFailure,
   ];
 }

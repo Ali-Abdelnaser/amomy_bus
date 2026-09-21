@@ -7,8 +7,8 @@ import '../../../../core/localization/status_localizer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/amomy_floating_alert.dart';
 import '../../../../core/widgets/app_dialog.dart';
+import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
 import '../cubit/passenger_trips_cubit.dart';
 
@@ -237,7 +237,11 @@ class BookedTripOverflowMenu extends StatelessWidget {
     PassengerTripsCubit cubit,
     bool isAr,
   ) async {
+<<<<<<< HEAD
     if (trip.bookingId == null || trip.isCheckedIn) return;
+=======
+    if (trip.bookingId == null) return;
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
     final bundleContext = await cubit.getRoundTripBundleContext(
       trip.bookingId!,
@@ -279,21 +283,16 @@ class BookedTripOverflowMenu extends StatelessWidget {
           if (!context.mounted) return;
 
           if (success) {
-            AmomyFloatingAlert.show(
+            AppSnackBar.showSuccess(
               context,
-              title: isAr
+              isAr
                   ? 'تم إلغاء رحلتي الذهاب والعودة واسترداد $refundPoints نقطة بنجاح'
                   : 'Round trip cancelled and $refundPoints points refunded',
-              variant: AmomyAlertVariant.success,
             );
           } else {
-            AmomyFloatingAlert.show(
+            AppSnackBar.showError(
               context,
-              title: StatusLocalizer.localizeError(
-                context,
-                cubit.state.errorMessage,
-              ),
-              variant: AmomyAlertVariant.error,
+              cubit.state.errorFailure ?? cubit.state.errorMessage,
             );
           }
         },
@@ -317,21 +316,16 @@ class BookedTripOverflowMenu extends StatelessWidget {
         if (!context.mounted) return;
 
         if (success) {
-          AmomyFloatingAlert.show(
+          AppSnackBar.showSuccess(
             context,
-            title: isAr
+            isAr
                 ? 'تم إلغاء الحجز واسترداد ${trip.farePoints.toInt()} نقطة بنجاح'
                 : 'Booking cancelled and ${trip.farePoints.toInt()} points refunded',
-            variant: AmomyAlertVariant.success,
           );
         } else {
-          AmomyFloatingAlert.show(
+          AppSnackBar.showError(
             context,
-            title: StatusLocalizer.localizeError(
-              context,
-              cubit.state.errorMessage,
-            ),
-            variant: AmomyAlertVariant.error,
+            cubit.state.errorFailure ?? cubit.state.errorMessage,
           );
         }
       },

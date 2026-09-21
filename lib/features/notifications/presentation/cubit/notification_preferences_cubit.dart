@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/notification_preferences.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../services/notification_service.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import 'notification_preferences_state.dart';
 
 class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
@@ -43,7 +42,11 @@ class NotificationPreferencesCubit extends Cubit<NotificationPreferencesState> {
         ),
       );
     } catch (e) {
-      emit(NotificationPreferencesError(AppErrorMapper.mapToString(e)));
+      emit(
+        const NotificationPreferencesError(
+          'NOTIFICATION_PREFERENCES_LOAD_FAILED',
+        ),
+      );
     }
   }
 

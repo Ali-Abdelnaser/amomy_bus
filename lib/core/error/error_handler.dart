@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../localization/app_locale_controller.dart';
-import 'app_error_mapper.dart';
 import 'exceptions.dart';
 import 'failures.dart';
 
@@ -26,20 +24,20 @@ class ErrorHandler {
     if (error is AuthException) {
       final status = int.tryParse(error.statusCode ?? '');
       return AuthenticationFailure(
-        message: AppErrorMapper.mapToString(error),
+        message: error.code ?? error.message,
         statusCode: status,
       );
     }
 
     if (error is PostgrestException) {
       if (error.code == '23505') {
-        final message = AppLocaleController.instance.isArabic
-            ? 'البيانات المدخلة (رقم الهاتف أو البريد) مسجلة مسبقاً لحساب آخر.'
-            : 'The entered details (phone or email) are already in use by another account.';
-        return ValidationFailure(message: message, statusCode: 409);
+        return const ValidationFailure(
+          message: 'user_already_exists',
+          statusCode: 409,
+        );
       }
       return ServerFailure(
-        message: AppErrorMapper.mapToString(error),
+        message: error.code ?? error.message,
         statusCode: int.tryParse(error.code ?? ''),
       );
     }
@@ -51,7 +49,7 @@ class ErrorHandler {
       }
 
       return AuthenticationFailure(
-        message: AppErrorMapper.mapToString(error),
+        message: 'google sign-in failed',
       );
     }
 
@@ -71,14 +69,10 @@ class ErrorHandler {
         errorStr.contains('Failed host lookup') ||
         errorStr.contains('NetworkRequestFailed') ||
         errorStr.contains('ClientException')) {
-      return NetworkFailure(
-        message: AppErrorMapper.mapToString(error),
-      );
+      return const NetworkFailure();
     }
 
-    return UnknownFailure(
-      message: AppErrorMapper.mapToString(error),
-    );
+    return const UnknownFailure();
   }
 
   static Failure _mapAppException(AppException exception) {

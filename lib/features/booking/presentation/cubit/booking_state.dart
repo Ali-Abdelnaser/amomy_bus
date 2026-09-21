@@ -37,8 +37,11 @@ class BookingState extends Equatable {
   final List<TripOption> availableTrips;
   final TripOption? selectedTrip;
   final bool isTripLocked;
+<<<<<<< HEAD
   final bool isLoadingRoundTripReturnOptions;
   final String? roundTripReturnOptionsError;
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   final List<RoundTripReturnOption> returnOptions;
   final RoundTripReturnOption? selectedReturnOption;
   final List<TripSeat> seats;
@@ -65,8 +68,11 @@ class BookingState extends Equatable {
     this.availableTrips = const [],
     this.selectedTrip,
     this.isTripLocked = false,
+<<<<<<< HEAD
     this.isLoadingRoundTripReturnOptions = false,
     this.roundTripReturnOptionsError,
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     this.returnOptions = const [],
     this.selectedReturnOption,
     this.seats = const [],
@@ -112,8 +118,11 @@ class BookingState extends Equatable {
     List<TripOption>? availableTrips,
     TripOption? selectedTrip,
     bool? isTripLocked,
+<<<<<<< HEAD
     bool? isLoadingRoundTripReturnOptions,
     String? roundTripReturnOptionsError,
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     List<RoundTripReturnOption>? returnOptions,
     RoundTripReturnOption? selectedReturnOption,
     List<TripSeat>? seats,
@@ -132,7 +141,10 @@ class BookingState extends Equatable {
     bool clearSelectedTrip = false,
     bool clearSelectedReturnOption = false,
     bool clearReturnOptions = false,
+<<<<<<< HEAD
     bool clearRoundTripReturnOptionsError = false,
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     bool clearSelectedSeat = false,
     bool clearSelectedReturnSeat = false,
     bool clearActiveHold = false,
@@ -161,12 +173,15 @@ class BookingState extends Equatable {
           ? null
           : (selectedTrip ?? this.selectedTrip),
       isTripLocked: isTripLocked ?? this.isTripLocked,
+<<<<<<< HEAD
       isLoadingRoundTripReturnOptions:
           isLoadingRoundTripReturnOptions ??
           this.isLoadingRoundTripReturnOptions,
       roundTripReturnOptionsError: clearRoundTripReturnOptionsError
           ? null
           : (roundTripReturnOptionsError ?? this.roundTripReturnOptionsError),
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       returnOptions: clearReturnOptions
           ? const []
           : (returnOptions ?? this.returnOptions),
@@ -206,8 +221,11 @@ class BookingState extends Equatable {
     availableTrips,
     selectedTrip,
     isTripLocked,
+<<<<<<< HEAD
     isLoadingRoundTripReturnOptions,
     roundTripReturnOptionsError,
+=======
+>>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     returnOptions,
     selectedReturnOption,
     seats,

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/error/app_error_mapper.dart';
 import '../../../../core/typedefs/typedefs.dart';
 import '../../domain/entities/topup_entities.dart';
 import '../../domain/repositories/topup_repository.dart';
@@ -198,6 +197,6 @@ class TopUpRepositoryImpl implements TopUpRepository {
         msg.contains('authenticated')) {
       return const AuthenticationFailure();
     }
-    return ServerFailure(message: AppErrorMapper.mapToString(e));
+    return ServerFailure(message: e.code ?? e.message);
   }
 }
