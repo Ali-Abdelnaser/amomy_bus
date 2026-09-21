@@ -83,35 +83,31 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
               final todayStart = DateTime(now.year, now.month, now.day);
 
               upcomingTrips =
-                  bookings
-                      .where((b) {
-                        if (b.status != 'confirmed' || b.checkedInAt != null) {
-                          return false;
-                        }
-                        final serviceDay = DateTime(
-                          b.serviceDate.year,
-                          b.serviceDate.month,
-                          b.serviceDate.day,
-                        );
-                        return !serviceDay.isBefore(todayStart);
-                      })
-                      .toList()
+                  bookings.where((b) {
+                      if (b.status != 'confirmed' || b.checkedInAt != null) {
+                        return false;
+                      }
+                      final serviceDay = DateTime(
+                        b.serviceDate.year,
+                        b.serviceDate.month,
+                        b.serviceDate.day,
+                      );
+                      return !serviceDay.isBefore(todayStart);
+                    }).toList()
                     ..sort((a, b) => a.departureAt.compareTo(b.departureAt));
 
               historyTrips =
-                  bookings
-                      .where((b) {
-                        if (b.checkedInAt != null || b.status != 'confirmed') {
-                          return true;
-                        }
-                        final serviceDay = DateTime(
-                          b.serviceDate.year,
-                          b.serviceDate.month,
-                          b.serviceDate.day,
-                        );
-                        return serviceDay.isBefore(todayStart);
-                      })
-                      .toList()
+                  bookings.where((b) {
+                      if (b.checkedInAt != null || b.status != 'confirmed') {
+                        return true;
+                      }
+                      final serviceDay = DateTime(
+                        b.serviceDate.year,
+                        b.serviceDate.month,
+                        b.serviceDate.day,
+                      );
+                      return serviceDay.isBefore(todayStart);
+                    }).toList()
                     ..sort((a, b) => b.departureAt.compareTo(a.departureAt));
             },
             onError: (err) => errorFailure ??= err,
@@ -130,7 +126,8 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
 
     emit(
       state.copyWith(
-        status: errorFailure != null && todayTrips.isEmpty && historyTrips.isEmpty
+        status:
+            errorFailure != null && todayTrips.isEmpty && historyTrips.isEmpty
             ? PassengerTripsStatus.error
             : PassengerTripsStatus.loaded,
         todayTrips: todayTrips,
@@ -200,10 +197,9 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(
-          errorFailure: failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(errorFailure: failure, errorMessage: failure.message),
+        );
         return false;
       },
     );
@@ -227,10 +223,9 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(
-          errorFailure: failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(errorFailure: failure, errorMessage: failure.message),
+        );
         return false;
       },
     );

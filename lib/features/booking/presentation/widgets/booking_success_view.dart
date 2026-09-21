@@ -385,10 +385,7 @@ class _RoundTripTicketSummary extends StatelessWidget {
   final RoundTripConfirmation bundle;
   final bool isArabic;
 
-  const _RoundTripTicketSummary({
-    required this.bundle,
-    required this.isArabic,
-  });
+  const _RoundTripTicketSummary({required this.bundle, required this.isArabic});
 
   @override
   Widget build(BuildContext context) {
@@ -412,16 +409,16 @@ class _RoundTripTicketSummary extends StatelessWidget {
       outboundFare = (retOpt != null && retOpt.outboundBaseFarePoints > 0)
           ? retOpt.outboundBaseFarePoints.toDouble()
           : ((hold != null && hold.outboundBaseFarePoints > 0)
-              ? hold.outboundBaseFarePoints
-              : (bookingState.selectedRouteStop?.farePoints ??
-                  bookingState.selectedTrip?.farePoints ??
-                  0));
+                ? hold.outboundBaseFarePoints
+                : (bookingState.selectedRouteStop?.farePoints ??
+                      bookingState.selectedTrip?.farePoints ??
+                      0));
 
       returnFare = (retOpt != null && retOpt.returnBaseFarePoints > 0)
           ? retOpt.returnBaseFarePoints.toDouble()
           : ((hold != null && hold.returnBaseFarePoints > 0)
-              ? hold.returnBaseFarePoints
-              : 0);
+                ? hold.returnBaseFarePoints
+                : 0);
     } catch (_) {}
 
     return Directionality(
@@ -764,11 +761,7 @@ class _BookingTicket extends StatelessWidget {
   final RoundTripConfirmation? bundle;
   final bool isArabic;
 
-  const _BookingTicket({
-    this.booking,
-    this.bundle,
-    required this.isArabic,
-  });
+  const _BookingTicket({this.booking, this.bundle, required this.isArabic});
 
   @override
   Widget build(BuildContext context) {
@@ -776,10 +769,7 @@ class _BookingTicket extends StatelessWidget {
     final isRoundTrip = bundle != null;
 
     final departureTime = booking != null
-        ? AppTimeFormatter.formatPassengerBooking(
-            booking!,
-            isArabic: isArabic,
-          )
+        ? AppTimeFormatter.formatPassengerBooking(booking!, isArabic: isArabic)
         : '';
     final fare = booking != null
         ? '${booking!.farePoints.toInt()} ${l10n.pointsUnit}'
@@ -832,10 +822,7 @@ class _BookingTicket extends StatelessWidget {
                   right: 0,
                   bottom: height * (175 / 633),
                   child: Center(
-                    child: AppQrTicketWidget(
-                      data: qrData,
-                      size: qrSize,
-                    ),
+                    child: AppQrTicketWidget(data: qrData, size: qrSize),
                   ),
                 ),
 

@@ -43,7 +43,8 @@ class TodayTripCard extends StatelessWidget {
     final isAr = locale.startsWith('ar');
     final isCheckedIn = trip.isCheckedIn;
     final isCompleted = trip.status == 'completed';
-    final isDeparted = isCompleted ||
+    final isDeparted =
+        isCompleted ||
         trip.availabilityStatus == TodayTripAvailabilityStatus.departed;
     final isBooked =
         trip.alreadyBooked && !isCheckedIn && !isCompleted && !isDeparted;
@@ -143,8 +144,9 @@ class TodayTripCard extends StatelessWidget {
       timeDotColor = AppColors.primary;
     }
 
-    final cardHeight =
-        (isDeparted || isCheckedIn || isCompleted) ? 102.0 : 144.0;
+    final cardHeight = (isDeparted || isCheckedIn || isCompleted)
+        ? 102.0
+        : 144.0;
 
     Widget cardContent = SizedBox(
       height: cardHeight,

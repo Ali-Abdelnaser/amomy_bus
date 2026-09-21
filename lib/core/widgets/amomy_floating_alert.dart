@@ -157,14 +157,12 @@ class AmomyFloatingAlert extends StatelessWidget {
 
 class _FloatingAlertHost extends StatefulWidget {
   final String title;
-  final String? message;
   final AmomyAlertVariant variant;
   final Duration duration;
   final VoidCallback onDismiss;
 
   const _FloatingAlertHost({
     required this.title,
-    this.message,
     required this.variant,
     required this.duration,
     required this.onDismiss,
@@ -241,7 +239,6 @@ class _FloatingAlertHostState extends State<_FloatingAlertHost>
               color: Colors.transparent,
               child: AmomyFloatingAlert(
                 title: widget.title,
-                message: widget.message,
                 variant: widget.variant,
                 onDismiss: _dismiss,
               ),

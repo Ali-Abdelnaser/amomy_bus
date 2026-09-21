@@ -7,12 +7,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// Supported types for AppSnackBar
-enum AppSnackbarType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum AppSnackbarType { success, error, warning, info }
 
 /// Centralized SnackBar manager for Amomy Bus following brand guidelines.
 abstract final class AppSnackBar {
@@ -112,4 +107,3 @@ void showAppSnackBar(
 }) {
   AppSnackBar.show(context, message: message, type: type);
 }
-

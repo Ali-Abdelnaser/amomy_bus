@@ -179,17 +179,11 @@ class _BookTripContentState extends State<_BookTripContent>
         final cubit = context.read<BookingCubit>();
 
         if (state.autoTripAlert != null && state.autoTripAlert!.isNotEmpty) {
-          AppSnackBar.showInfo(
-            context,
-            state.autoTripAlert!,
-          );
+          AppSnackBar.showInfo(context, state.autoTripAlert!);
         }
 
         if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
-          AppSnackBar.showError(
-            context,
-            state.errorMessage,
-          );
+          AppSnackBar.showError(context, state.errorMessage);
 
           cubit.clearError();
         }
@@ -585,10 +579,7 @@ class _SmartBookingSetupView extends StatelessWidget {
     }
 
     if (alertMsg.isNotEmpty) {
-      AppSnackBar.showWarning(
-        context,
-        alertMsg,
-      );
+      AppSnackBar.showWarning(context, alertMsg);
     }
   }
 }

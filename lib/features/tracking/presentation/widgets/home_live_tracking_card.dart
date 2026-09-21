@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
@@ -347,44 +346,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
     final isLiveMapAvailable =
         (state.isLive || isGpsStale || isGpsOffline || isProgressionSyncing);
     final isActionDisabled = !isLiveMapAvailable;
-
-    final lastStop = summary.lastPassedStop;
-    final nextStop = state.nextStop;
-    final isLastStopVerified = lastStop?.hasCanonicalCoordinates ?? false;
-    final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
-
-    final currentStopLabel = l10n.trackingLastStop;
-    final currentStopName =
-        lastStop?.localizedName(locale) ??
-        (isProgressionSyncing
-            ? l10n.trackingProgressionSyncing
-            : l10n.trackingUnavailable);
-    final actualArrival = lastStop?.actualArrivalTime;
-    final currentStopTimingText = actualArrival == null
-        ? ''
-        : l10n.trackingReached(
-            AppTimeFormatter.formatDepartureTime(
-              departureAt: actualArrival,
-              locale: locale,
-            ),
-          );
-
-    final nextStopLabel = l10n.trackingNextStop;
-    final nextStopName =
-        nextStop?.localizedName(locale) ??
-        (isProgressionSyncing
-            ? l10n.trackingProgressionSyncing
-            : l10n.trackingUnavailable);
-    final nextStopTimingText = l10n.trackingEtaUnavailable;
-
-    final currentStopStatusText = actualArrival != null
-        ? currentStopTimingText
-        : (isProgressionSyncing
-              ? l10n.trackingProgressionSyncing
-              : l10n.trackingUnavailable);
-    final nextStopStatusText = isProgressionSyncing
-        ? l10n.trackingProgressionSyncing
-        : nextStopTimingText;
 
     final isTripDeparted =
         summary.tripStatus == 'departed' ||

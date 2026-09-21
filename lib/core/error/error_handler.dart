@@ -48,9 +48,7 @@ class ErrorHandler {
         return const AuthCancelledFailure();
       }
 
-      return AuthenticationFailure(
-        message: 'google sign-in failed',
-      );
+      return AuthenticationFailure(message: 'google sign-in failed');
     }
 
     final errorStr = error?.toString() ?? '';

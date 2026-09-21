@@ -105,10 +105,7 @@ class WalletCubit extends Cubit<WalletState> {
         _startListeningToTopUps(userId);
       },
       onError: (failure) => emit(
-        state.copyWith(
-          status: WalletStatus.error,
-          errorFailure: failure,
-        ),
+        state.copyWith(status: WalletStatus.error, errorFailure: failure),
       ),
     );
   }

@@ -192,19 +192,13 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
           },
           onError: (failure) {
             setState(() => _isSubmitting = false);
-            AppSnackBar.showError(
-              context,
-              failure,
-            );
+            AppSnackBar.showError(context, failure);
           },
         );
       },
       onError: (failure) {
         setState(() => _isSubmitting = false);
-        AppSnackBar.showError(
-          context,
-          failure,
-        );
+        AppSnackBar.showError(context, failure);
       },
     );
   }
@@ -462,9 +456,7 @@ class _AddExtraSeatModalState extends State<AddExtraSeatModal> {
                           if (!seat.isAvailable) {
                             AppSnackBar.showWarning(
                               context,
-                              isAr
-                                  ? 'المقعد غير متاح'
-                                  : 'Seat unavailable',
+                              isAr ? 'المقعد غير متاح' : 'Seat unavailable',
                             );
                             return;
                           }

@@ -300,7 +300,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     ),
                   ),
 
-
                   // Follow bus button
                   if (!state.isGpsOffline)
                     AnimatedPositioned(
@@ -405,7 +404,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
   }
 
- 
   Widget _buildPreTripLifecycleView({
     required BuildContext context,
     required TrackingState state,
