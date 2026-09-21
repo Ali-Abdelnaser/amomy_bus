@@ -57,7 +57,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
             ? (locale == 'ar' ? 'رحلة العودة' : 'Return Trip')
             : (locale == 'ar' ? 'رحلة الذهاب' : 'Outbound Trip');
 
-<<<<<<< HEAD
         final isTripDeparted =
             summary.tripStatus == 'departed' ||
             summary.startedAt != null ||
@@ -69,12 +68,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
             (phase == TrackingPhase.waitingAssignment ||
                 (phase == TrackingPhase.unknown &&
                     state.trackingStatus == LiveTrackingStatus.assignmentPending))) {
-=======
-        // B. Confirmed booking + waiting_assignment
-        if (phase == TrackingPhase.waitingAssignment ||
-            (phase == TrackingPhase.unknown &&
-                state.trackingStatus == LiveTrackingStatus.assignmentPending)) {
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
           return _buildPreTripCard(
             context: context,
             icon: Icons.check_circle_outline_rounded,
@@ -86,13 +79,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
           );
         }
 
-<<<<<<< HEAD
         // C. Confirmed booking + waiting_start (bus assigned, waiting for start - pre-trip only)
         if (!isTripDeparted && phase == TrackingPhase.waitingStart) {
-=======
-        // C. Confirmed booking + waiting_start (bus assigned, waiting for start)
-        if (phase == TrackingPhase.waitingStart) {
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
           return _buildPreTripCard(
             context: context,
             icon: Icons.directions_bus_filled_outlined,
@@ -340,15 +328,12 @@ class HomeLiveTrackingCard extends StatelessWidget {
         ? l10n.trackingProgressionSyncing
         : nextStopTimingText;
 
-<<<<<<< HEAD
     final isTripDeparted =
         summary.tripStatus == 'departed' ||
         summary.startedAt != null ||
         summary.trackingEnabled == true ||
         state.isDeparted;
 
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     // Subtitle text for status
     final String lastUpdatedText;
     if (isGpsStale) {
@@ -357,7 +342,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
         telemetry?.ageSeconds ?? 90,
         locale,
       );
-<<<<<<< HEAD
       final warning = locale == 'ar'
           ? 'تحديث موقع الحافلة متأخر'
           : l10n.trackingGpsStaleTitle;
@@ -372,20 +356,12 @@ class HomeLiveTrackingCard extends StatelessWidget {
       lastUpdatedText = locale == 'ar'
           ? 'جاري مزامنة تقدم الرحلة'
           : l10n.trackingProgressionSyncing;
-=======
-      lastUpdatedText = '${l10n.trackingGpsStaleTitle} · $relative';
-    } else if (isGpsOffline) {
-      lastUpdatedText = l10n.trackingGpsOfflineTitle;
-    } else if (isProgressionSyncing) {
-      lastUpdatedText = l10n.trackingProgressionSyncing;
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     } else if (state.isLive && telemetry != null) {
       lastUpdatedText = _formatRelativeTime(
         context,
         telemetry.ageSeconds,
         locale,
       );
-<<<<<<< HEAD
     } else if (!isTripDeparted &&
         (state.trackingStatus == LiveTrackingStatus.offline ||
             summary.status == LiveTrackingStatus.offline ||
@@ -395,8 +371,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
           : (summary.nextWindowStartTime == '13:00'
                 ? l10n.trackingResumesMidday
                 : summary.localizedNextWindowMessage(locale));
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     } else {
       lastUpdatedText = l10n.trackingLive;
     }
@@ -450,7 +424,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-<<<<<<< HEAD
                               isTripDeparted
                                   ? (locale == 'ar'
                                       ? 'بدأت الرحلة'
@@ -458,9 +431,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                   : (locale == 'ar'
                                       ? 'تتبع الحافلة'
                                       : 'Bus Tracking'),
-=======
-                              locale == 'ar' ? 'تتبع الحافلة' : 'Bus Tracking',
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                               style: AppTextStyles.titleMedium.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -539,7 +509,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                               routeGeometry: state.routeGeometry,
                             ),
                           ],
-<<<<<<< HEAD
                           if ((isGpsOffline && telemetry == null) ||
                               (!isTripDeparted &&
                                   (state.trackingStatus ==
@@ -549,11 +518,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       summary.isInServiceWindow == false))) ...[
                             Container(
                               color: Colors.white.withValues(alpha: 0.85),
-=======
-                          if (isGpsOffline) ...[
-                            Container(
-                              color: Colors.white.withValues(alpha: 0.75),
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                             ),
                             Center(
                               child: Padding(
@@ -591,15 +555,11 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-<<<<<<< HEAD
                                         isTripDeparted
                                             ? (locale == 'ar'
                                                 ? 'بدأت الرحلة، لكن موقع الحافلة غير متاح حاليًا'
                                                 : 'Trip started, but bus location is unavailable')
                                             : l10n.trackingUnavailable,
-=======
-                                        l10n.trackingGpsOfflineTitle,
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                                         style: AppTextStyles.titleSmall
                                             .copyWith(
                                               color: const Color(0xFF1E293B),
@@ -610,7 +570,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
-<<<<<<< HEAD
                                         isTripDeparted
                                             ? (locale == 'ar'
                                                 ? 'جاري محاولة استعادة الاتصال بموقع الحافلة...'
@@ -625,9 +584,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                                               .localizedNextWindowMessage(
                                                                 locale,
                                                               ))),
-=======
-                                        l10n.trackingGpsOfflineSubtitle,
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                                         style: AppTextStyles.caption.copyWith(
                                           color: const Color(0xFF64748B),
                                           fontSize: 11,

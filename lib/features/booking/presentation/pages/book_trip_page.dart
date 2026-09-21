@@ -22,10 +22,7 @@ import '../widgets/booking_success_view.dart';
 import '../widgets/bus_seat_map_widget.dart';
 import '../widgets/departure_time_selector.dart';
 import '../widgets/direction_selector.dart';
-<<<<<<< HEAD
 import '../widgets/return_meeting_info_card.dart';
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 import '../widgets/round_trip_return_time_selector.dart';
 import '../widgets/route_stop_selector.dart';
 
@@ -518,7 +515,6 @@ class _SmartBookingSetupView extends StatelessWidget {
           onTripSelected: (t) => cubit.selectTrip(t),
         ),
 
-<<<<<<< HEAD
         // 3.0 RETURN MEETING INFO (In Single Return Mode)
         if (state.selectedDirection == BookingDirection.returnTrip &&
             state.availableTrips.isNotEmpty) ...[
@@ -526,20 +522,15 @@ class _SmartBookingSetupView extends StatelessWidget {
           ReturnMeetingInfoCard(selectedTrip: state.selectedTrip),
         ],
 
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         // 3.1 TODAY'S RETURN TRIPS (In Round Trip Mode)
         if (isRoundTrip) ...[
           const SizedBox(height: 22),
           RoundTripReturnTimeSelector(
             returnOptions: state.returnOptions,
             selectedReturnOption: state.selectedReturnOption,
-<<<<<<< HEAD
             isLoading: state.isLoadingRoundTripReturnOptions,
             errorMessage: state.roundTripReturnOptionsError,
             onRetry: () => cubit.loadRoundTripReturnOptions(),
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
             onOptionSelected: (o) => cubit.selectReturnOption(o),
           ),
         ],

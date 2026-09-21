@@ -1672,7 +1672,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorRoundTripBundleNotCancellable =>
       'This bundle is not cancellable.';
-<<<<<<< HEAD
 
   @override
   String get errorGeneric => 'Something went wrong. Please try again.';
@@ -1773,6 +1772,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorInvalidToken => 'Invalid ticket code.';
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }

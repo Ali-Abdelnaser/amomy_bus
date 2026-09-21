@@ -1,51 +1,36 @@
-<<<<<<< HEAD
 import 'package:flutter/foundation.dart';
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../domain/entities/booking_entities.dart';
-<<<<<<< HEAD
 import 'return_meeting_info_card.dart';
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
 /// Departure time selector for the RETURN leg in Round Trip booking.
 class RoundTripReturnTimeSelector extends StatelessWidget {
   final List<RoundTripReturnOption> returnOptions;
   final RoundTripReturnOption? selectedReturnOption;
-<<<<<<< HEAD
   final bool isLoading;
   final String? errorMessage;
   final VoidCallback? onRetry;
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   final ValueChanged<RoundTripReturnOption> onOptionSelected;
 
   const RoundTripReturnTimeSelector({
     super.key,
     required this.returnOptions,
     required this.selectedReturnOption,
-<<<<<<< HEAD
     this.isLoading = false,
     this.errorMessage,
     this.onRetry,
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     required this.onOptionSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     if (kDebugMode) {
       debugPrint(
         'ROUND_TRIP_DEBUG selector received options count ${returnOptions.length}',
       );
     }
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     final l10n = context.l10n;
     final isAr = context.isArabic;
 
@@ -96,7 +81,7 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-<<<<<<< HEAD
+        // 1. Loading State: Skeleton Placeholders (when no options are loaded yet)
         // 1. Loading State: Skeleton Placeholders (when no options are loaded yet)
         if (isLoading && returnOptions.isEmpty)
           Column(
@@ -217,10 +202,6 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
             ),
           )
         else if (!isLoading && returnOptions.isEmpty)
-=======
-        // Empty state if no return options
-        if (returnOptions.isEmpty)
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -252,7 +233,6 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
               ],
             ),
           )
-<<<<<<< HEAD
         // 4. Return options list + Meeting Info Card
         else if (returnOptions.isNotEmpty) ...[
           if (errorMessage != null) ...[
@@ -313,9 +293,6 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
               ),
             ),
           ],
-=======
-        else
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
           Column(
             children: returnOptions.map((option) {
               final isSelected =
@@ -327,24 +304,17 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
                   option: option,
                   isSelected: isSelected,
                   isAr: isAr,
-<<<<<<< HEAD
                   isLoading: isLoading,
                   onTap: (!isLoading && option.isBookable)
-=======
-                  onTap: option.isBookable
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                       ? () => onOptionSelected(option)
                       : null,
                 ),
               );
             }).toList(),
           ),
-<<<<<<< HEAD
           const SizedBox(height: 12),
           ReturnMeetingInfoCard(selectedReturnOption: selectedReturnOption),
         ],
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       ],
     );
   }
@@ -354,30 +324,21 @@ class _ReturnOptionCard extends StatelessWidget {
   final RoundTripReturnOption option;
   final bool isSelected;
   final bool isAr;
-<<<<<<< HEAD
   final bool isLoading;
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   final VoidCallback? onTap;
 
   const _ReturnOptionCard({
     required this.option,
     required this.isSelected,
     required this.isAr,
-<<<<<<< HEAD
     this.isLoading = false,
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isNotBookable = !option.isBookable;
-<<<<<<< HEAD
-=======
     final isFewSeats = !isNotBookable && option.availableSeats <= 5;
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
     final formattedTime = AppTimeFormatter.formatDepartureTime(
       departureAt: option.departureAt,
@@ -428,22 +389,6 @@ class _ReturnOptionCard extends StatelessWidget {
 
               const SizedBox(width: 14),
 
-<<<<<<< HEAD
-              // Time only (no subtitle/helper text inside card)
-              Expanded(
-                child: Text(
-                  formattedTime,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                    color: isSelected
-                        ? const Color(0xFF92400E)
-                        : (isNotBookable
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF101828)),
-                    letterSpacing: -0.3,
-                  ),
-=======
               // Time & Info
               Expanded(
                 child: Column(
@@ -485,7 +430,6 @@ class _ReturnOptionCard extends StatelessWidget {
                       ),
                     ),
                   ],
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                 ),
               ),
 
@@ -496,7 +440,7 @@ class _ReturnOptionCard extends StatelessWidget {
                   size: 18,
                   color: Color(0xFFD97706),
                 )
-<<<<<<< HEAD
+              else if (isLoading)
               else if (isLoading)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -516,8 +460,6 @@ class _ReturnOptionCard extends StatelessWidget {
                     ),
                   ),
                 )
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
               else if (isNotBookable)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -529,11 +471,7 @@ class _ReturnOptionCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-<<<<<<< HEAD
                     isAr ? 'غير متاح ضمن حجز ذهاب وعودة' : 'Unavailable',
-=======
-                    isAr ? 'مغلق' : 'Closed',
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

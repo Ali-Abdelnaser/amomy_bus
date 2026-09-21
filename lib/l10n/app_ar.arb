@@ -598,7 +598,6 @@
   "errorReturnSeatRequired": "يرجى اختيار مقعد رحلة العودة أولاً.",
   "errorRoundTripCancellationWindowClosed": "تم إغلاق نافذة إلغاء حجز الذهاب والعودة.",
   "errorRoundTripAlreadyUsed": "لا يمكن إلغاء الحجز بعد استخدام إحدى الرحلات أو تسجيل الحضور.",
-<<<<<<< HEAD
   "errorRoundTripBundleNotCancellable": "لا يمكن إلغاء هذه الباقة.",
   "errorGeneric": "حدث خطأ غير متوقع. حاول مرة أخرى.",
   "errorNoInternet": "لا يوجد اتصال بالإنترنت. تحقق من الشبكة وحاول مرة أخرى.",
@@ -629,7 +628,4 @@
   "errorTooEarly": "موعد الرحلة مبكر جداً.",
   "errorWrongTrip": "التذكرة غير مسجلة في هذه الرحلة.",
   "errorInvalidToken": "رمز التذكرة غير صالح."
-=======
-  "errorRoundTripBundleNotCancellable": "لا يمكن إلغاء هذه الباقة."
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }

@@ -117,21 +117,6 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
             children: [
               // 1. Animated success check & 2. Localized title & 3. Subtitle
               _ConfirmationHeader(
-<<<<<<< HEAD
-                title: l10n.bookingSuccessTitle,
-                subtitle: l10n.bookingSuccessSubtitle,
-              ),
-              AppSpacing.gapH20,
-
-              // 4. Stylized printer slot & 5. Animated emerging ticket
-              _TicketPrinterSection(
-                booking: widget.booking,
-                bundle: bundle,
-                isArabic: isArabic,
-                animation: _animation,
-                fadeAnimation: _fadeAnimation,
-              ),
-=======
                 title: isBundle
                     ? (isArabic
                           ? 'تم حجز الذهاب والعودة بنجاح'
@@ -148,22 +133,14 @@ class _BookingSuccessViewState extends State<BookingSuccessView>
               ),
               AppSpacing.gapH20,
 
-              // 4. Stylized printer slot & 5. Animated emerging ticket(s)
-              if (isBundle)
-                _RoundTripSuccessSection(
-                  bundle: bundle!,
-                  isArabic: isArabic,
-                  animation: _animation,
-                  fadeAnimation: _fadeAnimation,
-                )
-              else
-                _TicketPrinterSection(
-                  booking: widget.booking!,
-                  isArabic: isArabic,
-                  animation: _animation,
-                  fadeAnimation: _fadeAnimation,
-                ),
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
+              // 4. Stylized printer slot & 5. Animated emerging ticket
+              _TicketPrinterSection(
+                booking: widget.booking,
+                bundle: bundle,
+                isArabic: isArabic,
+                animation: _animation,
+                fadeAnimation: _fadeAnimation,
+              ),
               AppSpacing.gapH24,
 
               // 6. My Trips & 7. Go to Home
@@ -403,7 +380,6 @@ class _ConfirmationHeaderState extends State<_ConfirmationHeader>
   }
 }
 
-<<<<<<< HEAD
 /// Round Trip compact 3-row summary for the ticket bottom area.
 class _RoundTripTicketSummary extends StatelessWidget {
   final RoundTripConfirmation bundle;
@@ -412,26 +388,11 @@ class _RoundTripTicketSummary extends StatelessWidget {
   const _RoundTripTicketSummary({
     required this.bundle,
     required this.isArabic,
-=======
-/// Round Trip dual trip confirmation cards showing Outbound and Return confirmed details.
-class _RoundTripSuccessSection extends StatelessWidget {
-  final RoundTripConfirmation bundle;
-  final bool isArabic;
-  final Animation<double> animation;
-  final Animation<double> fadeAnimation;
-
-  const _RoundTripSuccessSection({
-    required this.bundle,
-    required this.isArabic,
-    required this.animation,
-    required this.fadeAnimation,
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-<<<<<<< HEAD
     final pointsUnit = l10n.pointsUnit;
 
     // 1. Authoritative bundle values
@@ -545,128 +506,11 @@ class _RoundTripSuccessSection extends StatelessWidget {
                   isArabic ? 'الإجمالي' : 'Subtotal',
                   style: const TextStyle(
                     fontFamily: 'Cairo',
-=======
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: fadeAnimation.value,
-          child: Column(
-            children: [
-              // Outbound Booking Card
-              _ConfirmedLegCard(
-                directionLabel: l10n.directionOutbound,
-                isOutbound: true,
-                seatNumber: bundle.outboundSeatNumber,
-                isArabic: isArabic,
-              ),
-              const SizedBox(height: 12),
-              // Return Booking Card
-              _ConfirmedLegCard(
-                directionLabel: l10n.directionReturn,
-                isOutbound: false,
-                seatNumber: bundle.returnSeatNumber,
-                isArabic: isArabic,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ConfirmedLegCard extends StatelessWidget {
-  final String directionLabel;
-  final bool isOutbound;
-  final String seatNumber;
-  final bool isArabic;
-
-  const _ConfirmedLegCard({
-    required this.directionLabel,
-    required this.isOutbound,
-    required this.seatNumber,
-    required this.isArabic,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isOutbound ? const Color(0xFFBAE6FD) : const Color(0xFFFDE68A),
-          width: 1.2,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x080F172A),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Direction Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: isOutbound
-                  ? const Color(0xFFE7F2FA)
-                  : const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isOutbound
-                      ? (isArabic
-                            ? Icons.arrow_back_rounded
-                            : Icons.arrow_forward_rounded)
-                      : (isArabic
-                            ? Icons.arrow_forward_rounded
-                            : Icons.arrow_back_rounded),
-                  size: 14,
-                  color: isOutbound
-                      ? AppColors.primary
-                      : const Color(0xFFB45309),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  directionLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: isOutbound
-                        ? AppColors.primary
-                        : const Color(0xFFB45309),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // Confirmed Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isArabic ? 'تم تأكيد المقعد' : 'Seat Confirmed',
-                  style: const TextStyle(
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF64748B),
                   ),
                 ),
-<<<<<<< HEAD
                 Text(
                   '${subtotal.toInt()} $pointsUnit',
                   style: const TextStyle(
@@ -674,22 +518,12 @@ class _ConfirmedLegCard extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
-=======
-                const SizedBox(height: 2),
-                Text(
-                  isArabic ? 'مقعد $seatNumber' : 'Seat $seatNumber',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF101828),
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
                   ),
                 ),
               ],
             ),
           ),
 
-<<<<<<< HEAD
           // ROW 3: Discount + Savings
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -729,20 +563,6 @@ class _ConfirmedLegCard extends StatelessWidget {
                   ),
                 ),
               ],
-=======
-          // Checkmark
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFFDCFCE7),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              size: 18,
-              color: Color(0xFF15803D),
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
             ),
           ),
         ],

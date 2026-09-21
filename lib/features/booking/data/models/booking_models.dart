@@ -393,7 +393,6 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
   factory RoundTripReturnOptionModel.fromJson(Map<String, dynamic> json) {
     DateTime departureDateTime;
     if (json['departure_at'] != null) {
-<<<<<<< HEAD
       if (json['departure_at'] is DateTime) {
         departureDateTime = json['departure_at'] as DateTime;
       } else {
@@ -404,19 +403,12 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
     } else if (json['service_date'] != null && json['departure_time'] != null) {
       final sDate = json['service_date'].toString();
       final dTime = json['departure_time'].toString().padLeft(5, '0');
-=======
-      departureDateTime = DateTime.parse(json['departure_at'] as String);
-    } else if (json['service_date'] != null && json['departure_time'] != null) {
-      final sDate = json['service_date'] as String;
-      final dTime = (json['departure_time'] as String).padLeft(5, '0');
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       departureDateTime =
           DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
     } else {
       departureDateTime = DateTime.now();
     }
 
-<<<<<<< HEAD
     final rawSeats =
         json['available_seats'] ?? json['available_seats_count'] ?? 0;
     final int availableSeats = rawSeats is num
@@ -451,29 +443,6 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
       discountPercent: toDouble(json['discount_percent'], 15.0),
       discountPoints: toDouble(json['discount_points']),
       totalPoints: toDouble(json['total_points']),
-=======
-    final availableSeats =
-        json['available_seats'] ?? json['available_seats_count'] ?? 0;
-    final isBookable = json['is_bookable'] is bool
-        ? json['is_bookable'] as bool
-        : (availableSeats as num).toInt() > 0;
-
-    return RoundTripReturnOptionModel(
-      returnTripId:
-          (json['return_trip_id'] ?? json['trip_id'] ?? json['id'] ?? '')
-              as String,
-      departureTime: json['departure_time'] as String? ?? '',
-      departureAt: departureDateTime,
-      availableSeats: (availableSeats as num).toInt(),
-      outboundBaseFarePoints: ((json['outbound_base_fare_points'] ?? 0) as num)
-          .toDouble(),
-      returnBaseFarePoints: ((json['return_base_fare_points'] ?? 0) as num)
-          .toDouble(),
-      subtotalPoints: ((json['subtotal_points'] ?? 0) as num).toDouble(),
-      discountPercent: ((json['discount_percent'] ?? 15) as num).toDouble(),
-      discountPoints: ((json['discount_points'] ?? 0) as num).toDouble(),
-      totalPoints: ((json['total_points'] ?? 0) as num).toDouble(),
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
       isBookable: isBookable,
     );
   }

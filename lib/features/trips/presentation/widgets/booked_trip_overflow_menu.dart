@@ -237,11 +237,7 @@ class BookedTripOverflowMenu extends StatelessWidget {
     PassengerTripsCubit cubit,
     bool isAr,
   ) async {
-<<<<<<< HEAD
     if (trip.bookingId == null || trip.isCheckedIn) return;
-=======
-    if (trip.bookingId == null) return;
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 
     final bundleContext = await cubit.getRoundTripBundleContext(
       trip.bookingId!,

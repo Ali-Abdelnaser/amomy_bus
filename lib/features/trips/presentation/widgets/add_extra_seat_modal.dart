@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:amomy_bus/core/localization/status_localizer.dart';
 import 'package:flutter/material.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/localization/app_time_formatter.dart';

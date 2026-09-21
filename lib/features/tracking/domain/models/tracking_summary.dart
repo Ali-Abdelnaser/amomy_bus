@@ -217,7 +217,6 @@ class TrackingSummary extends Equatable {
     final phaseStr = (json['tracking_phase'] as String?)?.toLowerCase();
     final statusStr =
         (json['tracking_status'] as String?)?.toLowerCase() ?? 'offline';
-<<<<<<< HEAD
     final startedAt = json['started_at'] != null
         ? DateTime.tryParse(json['started_at'].toString())
         : null;
@@ -264,23 +263,6 @@ class TrackingSummary extends Equatable {
 
     final trackingEnabled = isDeparted ||
         (json['tracking_enabled'] as bool? ?? false) ||
-=======
-    final trackingPhase = phaseStr != null
-        ? TrackingPhase.fromString(phaseStr)
-        : (statusStr == 'live' || statusStr == 'online'
-              ? TrackingPhase.live
-              : (statusStr == 'stale'
-                    ? TrackingPhase.gpsStale
-                    : (statusStr == 'progression_unavailable'
-                          ? TrackingPhase.progressionSyncing
-                          : (statusStr == 'assignment_pending'
-                                ? TrackingPhase.waitingAssignment
-                                : (statusStr == 'trip_not_active'
-                                      ? TrackingPhase.waitingStart
-                                      : TrackingPhase.unknown)))));
-    final trackingEnabled =
-        (json['tracking_enabled'] as bool?) ??
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
         (trackingPhase == TrackingPhase.live ||
             trackingPhase == TrackingPhase.gpsStale ||
             trackingPhase == TrackingPhase.gpsOffline ||
@@ -289,17 +271,6 @@ class TrackingSummary extends Equatable {
             statusStr == 'online' ||
             statusStr == 'stale' ||
             statusStr == 'progression_unavailable');
-<<<<<<< HEAD
-=======
-    final startedAt = json['started_at'] != null
-        ? DateTime.tryParse(json['started_at'].toString())
-        : null;
-    final completedAt = json['completed_at'] != null
-        ? DateTime.tryParse(json['completed_at'].toString())
-        : null;
-    final gpsAgeSeconds = (json['gps_age_seconds'] as num?)?.toInt();
-    final tripStatus = json['trip_status'] as String?;
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
     final isQaPreview = (json['is_qa_preview_active'] as bool?) ?? false;
 
     final LiveTrackingStatus status;
@@ -380,14 +351,9 @@ class TrackingSummary extends Equatable {
       completedAt: completedAt,
       gpsAgeSeconds: gpsAgeSeconds,
       isInServiceWindow:
-<<<<<<< HEAD
           isDeparted ||
           ((json['is_in_service_window'] as bool?) ??
               trackingEnabled ||
-=======
-          (json['is_in_service_window'] as bool?) ??
-          trackingEnabled ||
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
               status == LiveTrackingStatus.live ||
               status == LiveTrackingStatus.online ||
               status == LiveTrackingStatus.stale),

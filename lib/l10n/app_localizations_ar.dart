@@ -1655,7 +1655,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errorRoundTripBundleNotCancellable => 'لا يمكن إلغاء هذه الباقة.';
-<<<<<<< HEAD
 
   @override
   String get errorGeneric => 'حدث خطأ غير متوقع. حاول مرة أخرى.';
@@ -1753,6 +1752,4 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errorInvalidToken => 'رمز التذكرة غير صالح.';
-=======
->>>>>>> 4232577aea98e0382a26228c8365eacbdfa1ccad
 }
