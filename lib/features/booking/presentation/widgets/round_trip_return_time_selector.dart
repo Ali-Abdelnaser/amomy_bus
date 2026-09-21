@@ -441,7 +441,6 @@ class _ReturnOptionCard extends StatelessWidget {
                   color: Color(0xFFD97706),
                 )
               else if (isLoading)
-              else if (isLoading)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
