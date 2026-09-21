@@ -133,10 +133,12 @@ class TrackingState extends Equatable {
   bool get isBetweenRuns => trackingStatus == LiveTrackingStatus.betweenRuns;
   bool get isStale => isGpsStale;
   bool get isOffline =>
-      trackingPhase == TrackingPhase.gpsOffline ||
-      trackingStatus == LiveTrackingStatus.offline ||
-      trackingStatus == LiveTrackingStatus.tripNotActive ||
-      trackingStatus == LiveTrackingStatus.outsideTrackingWindow;
+      !isCompleted &&
+      !isCancelled &&
+      (trackingPhase == TrackingPhase.gpsOffline ||
+          trackingStatus == LiveTrackingStatus.offline ||
+          trackingStatus == LiveTrackingStatus.tripNotActive ||
+          trackingStatus == LiveTrackingStatus.outsideTrackingWindow);
   bool get isAssignmentPending => isWaitingAssignment;
   bool get isProgressionUnavailable => isProgressionSyncing;
   bool get isQaPreview => trackingStatus == LiveTrackingStatus.qaPreview;

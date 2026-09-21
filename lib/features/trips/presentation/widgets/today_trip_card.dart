@@ -42,13 +42,20 @@ class TodayTripCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final isAr = locale.startsWith('ar');
     final isCheckedIn = trip.isCheckedIn;
-    final isBooked = trip.alreadyBooked && !isCheckedIn;
-    final isAvailable = trip.isBookable && !isCheckedIn;
+    final isCompleted = trip.status == 'completed';
+    final isDeparted = isCompleted ||
+        trip.availabilityStatus == TodayTripAvailabilityStatus.departed;
+    final isBooked =
+        trip.alreadyBooked && !isCheckedIn && !isCompleted && !isDeparted;
+    final isAvailable =
+        trip.isBookable && !isCheckedIn && !isCompleted && !isDeparted;
     final isFull =
         trip.availabilityStatus == TodayTripAvailabilityStatus.full ||
-        (!isBooked && !isCheckedIn && trip.availableSeats <= 0);
-    final isDeparted =
-        trip.availabilityStatus == TodayTripAvailabilityStatus.departed;
+        (!isBooked &&
+            !isCheckedIn &&
+            !isCompleted &&
+            !isDeparted &&
+            trip.availableSeats <= 0);
     final isReturn = trip.direction == BookingDirection.returnTrip;
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
@@ -103,7 +110,7 @@ class TodayTripCard extends StatelessWidget {
     final Color shadowColor;
     final Color timeDotColor;
 
-    if (isCheckedIn) {
+    if (isCheckedIn || isCompleted) {
       cardBackground = const Color(0xFFF8F9FA);
       cardBorder = const Color(0xFFE2E8F0);
       accentColor = AppColors.textTertiary;
@@ -136,7 +143,8 @@ class TodayTripCard extends StatelessWidget {
       timeDotColor = AppColors.primary;
     }
 
-    final cardHeight = (isDeparted || isCheckedIn) ? 102.0 : 144.0;
+    final cardHeight =
+        (isDeparted || isCheckedIn || isCompleted) ? 102.0 : 144.0;
 
     Widget cardContent = SizedBox(
       height: cardHeight,
@@ -191,6 +199,7 @@ class TodayTripCard extends StatelessWidget {
                             isAr: isAr,
                             isBooked: isBooked,
                             isCheckedIn: isCheckedIn,
+                            isCompleted: isCompleted,
                             isFull: isFull,
                             isDeparted: isDeparted,
                             isReturn: isReturn,
@@ -203,7 +212,7 @@ class TodayTripCard extends StatelessWidget {
                             children: [
                               _PulsingTimeDot(
                                 color: timeDotColor,
-                                isLive: !isDeparted,
+                                isLive: !isDeparted && !isCheckedIn,
                                 disableAnimations: disableAnimations,
                               ),
                               const SizedBox(width: 4),
@@ -853,6 +862,7 @@ class TodayTripCard extends StatelessWidget {
     required bool isAr,
     required bool isBooked,
     bool isCheckedIn = false,
+    bool isCompleted = false,
     required bool isFull,
     required bool isDeparted,
     required bool isReturn,
@@ -860,7 +870,7 @@ class TodayTripCard extends StatelessWidget {
     final String statusKey;
     final Widget badge;
 
-    if (isCheckedIn) {
+    if (isCheckedIn || isCompleted) {
       statusKey = 'checked_in';
       badge = Container(
         key: const ValueKey('badge_checked_in'),
@@ -871,7 +881,7 @@ class TodayTripCard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Text(
-          isAr ? 'تم تسجيل الصعود' : 'Boarded',
+          isAr ? 'منتهية' : 'Finished',
           style: AppTextStyles.labelSmall.copyWith(
             color: const Color(0xFF64748B),
             fontWeight: FontWeight.w700,

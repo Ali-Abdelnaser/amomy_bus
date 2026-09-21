@@ -374,10 +374,13 @@ enum TodayTripAvailabilityStatus {
   bookingClosed,
   departed,
   cancelled,
-  unavailable;
+  unavailable,
+  finished;
 
   static TodayTripAvailabilityStatus fromString(String val) {
     switch (val.toUpperCase()) {
+      case 'FINISHED':
+        return TodayTripAvailabilityStatus.finished;
       case 'ALREADY_BOOKED':
         return TodayTripAvailabilityStatus.alreadyBooked;
       case 'FULL':
@@ -420,8 +423,10 @@ class PassengerTodayTrip extends Equatable {
   final bool isBookable;
   final DateTime? checkedInAt;
 
-  bool get isCheckedIn => checkedInAt != null;
-  bool get isFinished => checkedInAt != null;
+  bool get isCheckedIn =>
+      checkedInAt != null ||
+      availabilityStatus == TodayTripAvailabilityStatus.finished;
+  bool get isFinished => isCheckedIn || status == 'completed';
 
   const PassengerTodayTrip({
     required this.tripId,

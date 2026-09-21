@@ -177,6 +177,17 @@ class HomeCubit extends Cubit<HomeState> {
     required List<PassengerTodayTrip> todayTrips,
     PassengerUpcomingTrip? summaryTrip,
   }) {
+    if (summaryTrip?.tripId.isNotEmpty == true && !summaryTrip!.isFinished) {
+      return summaryTrip.tripId;
+    }
+
+    final activeBookedTrips = todayTrips
+        .where((t) => t.alreadyBooked && !t.isCheckedIn)
+        .toList();
+    if (activeBookedTrips.isNotEmpty) {
+      return activeBookedTrips.first.tripId;
+    }
+
     if (summaryTrip?.tripId.isNotEmpty == true) {
       return summaryTrip!.tripId;
     }

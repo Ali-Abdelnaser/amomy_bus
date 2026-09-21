@@ -126,6 +126,14 @@ class TrackingCubit extends Cubit<TrackingState> {
         ),
       );
 
+      if (summary.trackingPhase == TrackingPhase.completed ||
+          summary.trackingPhase == TrackingPhase.cancelled ||
+          summary.trackingPhase == TrackingPhase.serviceDateEnded) {
+        _trackingInvalidationSubscription?.cancel();
+        _trackingInvalidationSubscription = null;
+        _revisionDebounce?.cancel();
+      }
+
       _checkApproachNotification(summary);
     } catch (e) {
       if (state.summary == null) {

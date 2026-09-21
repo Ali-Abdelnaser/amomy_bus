@@ -215,10 +215,9 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     if (_pinNormalIcon == null) {
       _resolveIcons();
     }
-    // Strict requirement: Never use BitmapDescriptor.defaultMarker (Google red pin)
-    if (_pinNormalIcon == null) {
-      return;
-    }
+    _pinNormalIcon ??= BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueAzure,
+    );
 
     final displayStops = LiveBusMapWidget.markerEligibleStops(
       widget.routeStops,
@@ -756,7 +755,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       final stopsWithCoords = widget.routeStops
           .where(LiveBusMapWidget.shouldRenderStopMarker)
           .toList();
-      if (stopsWithCoords.length > 5) {
+      if (stopsWithCoords.isNotEmpty) {
         _initialCameraFitted = true;
         _fitCameraToStops(stopsWithCoords);
       }
@@ -768,13 +767,6 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
 
     _isProgrammaticCameraMove = true;
 
-    if (_displayedPosition != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(_displayedPosition!, 14.6),
-      );
-      return;
-    }
-
     double minLat = stops.first.latitude!;
     double maxLat = stops.first.latitude!;
     double minLng = stops.first.longitude!;
@@ -785,6 +777,22 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       if (s.latitude! > maxLat) maxLat = s.latitude!;
       if (s.longitude! < minLng) minLng = s.longitude!;
       if (s.longitude! > maxLng) maxLng = s.longitude!;
+    }
+
+    // Include bus location only if it's reasonably close to route bounding box (< ~0.05 deg buffer)
+    if (_displayedPosition != null) {
+      final busLat = _displayedPosition!.latitude;
+      final busLng = _displayedPosition!.longitude;
+      const buffer = 0.05;
+      if (busLat >= minLat - buffer &&
+          busLat <= maxLat + buffer &&
+          busLng >= minLng - buffer &&
+          busLng <= maxLng + buffer) {
+        if (busLat < minLat) minLat = busLat;
+        if (busLat > maxLat) maxLat = busLat;
+        if (busLng < minLng) minLng = busLng;
+        if (busLng > maxLng) maxLng = busLng;
+      }
     }
 
     if (minLat == maxLat && minLng == maxLng) {
@@ -854,7 +862,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
                       final stopsWithCoords = widget.routeStops
                           .where(LiveBusMapWidget.shouldRenderStopMarker)
                           .toList();
-                      if (stopsWithCoords.length > 5) {
+                      if (stopsWithCoords.isNotEmpty) {
                         _fitCameraToStops(stopsWithCoords);
                       }
                     }

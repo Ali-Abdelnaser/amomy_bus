@@ -45,9 +45,7 @@ class TripHistoryCard extends StatelessWidget {
       shadowColor,
     ) = switch (booking.status.toLowerCase()) {
       _ when isFinished => (
-        isAr
-            ? (booking.checkedInAt != null ? 'تم تسجيل الصعود' : 'تمت الرحلة')
-            : (booking.checkedInAt != null ? 'Boarded' : 'Finished'),
+        isAr ? 'منتهية' : 'Finished',
         const Color(0xFF64748B),
         const Color(0xFFF1F5F9),
         const Color(0xFFE2E8F0),

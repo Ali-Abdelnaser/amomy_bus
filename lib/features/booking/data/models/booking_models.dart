@@ -332,7 +332,9 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
       isBookable: json['is_bookable'] as bool? ?? false,
       checkedInAt: json['checked_in_at'] != null
           ? DateTime.tryParse(json['checked_in_at'].toString())
-          : null,
+          : (json['is_checked_in'] == true
+              ? DateTime.now()
+              : null),
     );
   }
 }

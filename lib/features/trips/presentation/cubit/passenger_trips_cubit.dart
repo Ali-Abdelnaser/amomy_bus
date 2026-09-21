@@ -200,7 +200,10 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorFailure: failure));
+        emit(state.copyWith(
+          errorFailure: failure,
+          errorMessage: failure.message,
+        ));
         return false;
       },
     );
@@ -224,7 +227,10 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         return true;
       },
       onError: (failure) {
-        emit(state.copyWith(errorFailure: failure));
+        emit(state.copyWith(
+          errorFailure: failure,
+          errorMessage: failure.message,
+        ));
         return false;
       },
     );

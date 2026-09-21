@@ -44,18 +44,69 @@ class HomeLiveTrackingCard extends StatelessWidget {
         }
 
         final phase = state.trackingPhase;
-
-        // I. If trip is completed, cancelled or date ended, hide live tracking affordance
-        if (phase.isPostTrip ||
-            summary.tripStatus == 'completed' ||
-            summary.tripStatus == 'cancelled') {
-          return const SizedBox.shrink();
-        }
+        final isAr = locale.startsWith('ar');
 
         final directionLabel =
             summary.activeDirection == TrackingDirection.returnDirection
-            ? (locale == 'ar' ? 'رحلة العودة' : 'Return Trip')
-            : (locale == 'ar' ? 'رحلة الذهاب' : 'Outbound Trip');
+            ? (isAr ? 'رحلة العودة' : 'Return Trip')
+            : (isAr ? 'رحلة الذهاب' : 'Outbound Trip');
+
+        // Post-trip and terminal states remain visible as persistent calm cards
+        if (phase == TrackingPhase.completed ||
+            summary.tripStatus == 'completed') {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.check_circle_outline_rounded,
+            iconColor: const Color(0xFF64748B),
+            title: isAr ? 'انتهت الرحلة' : 'Trip Completed',
+            subtitle: isAr
+                ? 'وصلت الحافلة إلى المحطة الأخيرة.'
+                : 'The bus has arrived at the final stop.',
+            directionLabel: directionLabel,
+            statusPill: _buildStatusPill(
+              TrackingPhase.completed,
+              state.trackingStatus,
+              context,
+            ),
+          );
+        }
+
+        if (phase == TrackingPhase.cancelled ||
+            summary.tripStatus == 'cancelled') {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.cancel_outlined,
+            iconColor: AppColors.error,
+            title: isAr ? 'تم إلغاء الرحلة' : 'Trip Cancelled',
+            subtitle: isAr
+                ? 'تم إلغاء تشغيل هذه الرحلة.'
+                : 'This trip was cancelled.',
+            directionLabel: directionLabel,
+            statusPill: _buildStatusPill(
+              TrackingPhase.cancelled,
+              state.trackingStatus,
+              context,
+            ),
+          );
+        }
+
+        if (phase == TrackingPhase.serviceDateEnded) {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.event_busy_outlined,
+            iconColor: const Color(0xFF64748B),
+            title: isAr ? 'انتهى موعد الرحلة' : 'Service Day Concluded',
+            subtitle: isAr
+                ? 'انتهى وقت تشغيل هذه الرحلة لليوم.'
+                : 'Trip service hours for today have ended.',
+            directionLabel: directionLabel,
+            statusPill: _buildStatusPill(
+              TrackingPhase.serviceDateEnded,
+              state.trackingStatus,
+              context,
+            ),
+          );
+        }
 
         final isTripDeparted =
             summary.tripStatus == 'departed' ||
@@ -67,13 +118,16 @@ class HomeLiveTrackingCard extends StatelessWidget {
         if (!isTripDeparted &&
             (phase == TrackingPhase.waitingAssignment ||
                 (phase == TrackingPhase.unknown &&
-                    state.trackingStatus == LiveTrackingStatus.assignmentPending))) {
+                    state.trackingStatus ==
+                        LiveTrackingStatus.assignmentPending))) {
           return _buildPreTripCard(
             context: context,
             icon: Icons.check_circle_outline_rounded,
             iconColor: AppColors.primary,
-            title: l10n.trackingConfirmedTitle,
-            subtitle: l10n.trackingWaitingAssignmentSubtitle,
+            title: isAr ? 'جارٍ تجهيز الرحلة' : l10n.trackingConfirmedTitle,
+            subtitle: isAr
+                ? 'سيظهر موقع الحافلة بعد تجهيز الرحلة.'
+                : l10n.trackingWaitingAssignmentSubtitle,
             directionLabel: directionLabel,
             statusPill: _buildStatusPill(phase, state.trackingStatus, context),
           );
@@ -85,8 +139,10 @@ class HomeLiveTrackingCard extends StatelessWidget {
             context: context,
             icon: Icons.directions_bus_filled_outlined,
             iconColor: AppColors.primary,
-            title: l10n.trackingReadyTitle,
-            subtitle: l10n.trackingWaitingStartSubtitle,
+            title: isAr ? 'الحافلة جاهزة' : l10n.trackingReadyTitle,
+            subtitle: isAr
+                ? 'يبدأ التتبع المباشر عند بدء الرحلة.'
+                : l10n.trackingWaitingStartSubtitle,
             directionLabel: directionLabel,
             statusPill: _buildStatusPill(phase, state.trackingStatus, context),
           );
@@ -98,8 +154,10 @@ class HomeLiveTrackingCard extends StatelessWidget {
             context: context,
             icon: Icons.sync_rounded,
             iconColor: const Color(0xFFD97706),
-            title: l10n.trackingUpdatingBusTitle,
-            subtitle: l10n.trackingReassignmentPendingSubtitle,
+            title: isAr ? 'جارٍ تحديث الحافلة' : l10n.trackingUpdatingBusTitle,
+            subtitle: isAr
+                ? 'سيتم استئناف التتبع تلقائيًا.'
+                : l10n.trackingReassignmentPendingSubtitle,
             directionLabel: directionLabel,
             statusPill: _buildStatusPill(phase, state.trackingStatus, context),
           );
@@ -347,21 +405,19 @@ class HomeLiveTrackingCard extends StatelessWidget {
           : l10n.trackingGpsStaleTitle;
       lastUpdatedText = '$warning · $relative';
     } else if (isGpsOffline) {
-      lastUpdatedText = isTripDeparted
-          ? (locale == 'ar'
-              ? 'موقع الحافلة غير متاح حاليًا'
-              : 'Bus location currently unavailable')
-          : l10n.trackingGpsOfflineTitle;
+      lastUpdatedText = locale == 'ar'
+          ? 'موقع الحافلة غير متاح مؤقتًا'
+          : (isTripDeparted
+                ? 'Bus location currently unavailable'
+                : l10n.trackingGpsOfflineTitle);
     } else if (isProgressionSyncing) {
       lastUpdatedText = locale == 'ar'
-          ? 'جاري مزامنة تقدم الرحلة'
+          ? 'جارٍ مزامنة تقدم الرحلة'
           : l10n.trackingProgressionSyncing;
     } else if (state.isLive && telemetry != null) {
-      lastUpdatedText = _formatRelativeTime(
-        context,
-        telemetry.ageSeconds,
-        locale,
-      );
+      lastUpdatedText = locale == 'ar'
+          ? 'تتبع مباشر'
+          : _formatRelativeTime(context, telemetry.ageSeconds, locale);
     } else if (!isTripDeparted &&
         (state.trackingStatus == LiveTrackingStatus.offline ||
             summary.status == LiveTrackingStatus.offline ||
@@ -426,11 +482,11 @@ class HomeLiveTrackingCard extends StatelessWidget {
                             Text(
                               isTripDeparted
                                   ? (locale == 'ar'
-                                      ? 'بدأت الرحلة'
-                                      : 'Trip Started')
+                                        ? 'بدأت الرحلة'
+                                        : 'Trip Started')
                                   : (locale == 'ar'
-                                      ? 'تتبع الحافلة'
-                                      : 'Bus Tracking'),
+                                        ? 'تتبع الحافلة'
+                                        : 'Bus Tracking'),
                               style: AppTextStyles.titleMedium.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -557,8 +613,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       Text(
                                         isTripDeparted
                                             ? (locale == 'ar'
-                                                ? 'بدأت الرحلة، لكن موقع الحافلة غير متاح حاليًا'
-                                                : 'Trip started, but bus location is unavailable')
+                                                  ? 'بدأت الرحلة، لكن موقع الحافلة غير متاح حاليًا'
+                                                  : 'Trip started, but bus location is unavailable')
                                             : l10n.trackingUnavailable,
                                         style: AppTextStyles.titleSmall
                                             .copyWith(
@@ -572,8 +628,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                       Text(
                                         isTripDeparted
                                             ? (locale == 'ar'
-                                                ? 'جاري محاولة استعادة الاتصال بموقع الحافلة...'
-                                                : 'Attempting to reconnect bus location...')
+                                                  ? 'جاري محاولة استعادة الاتصال بموقع الحافلة...'
+                                                  : 'Attempting to reconnect bus location...')
                                             : (summary.nextWindowIsTomorrow ==
                                                       true
                                                   ? l10n.trackingResumesTomorrow
@@ -644,178 +700,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
                           ],
                         ],
                       ),
-                    ),
-                  ),
-                ),
-
-                AppSpacing.gapH12,
-
-                // 3. Last Stop & Next Stop Cards
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Last Stop Cell
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: AppRadius.radiusMd,
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: BoxDecoration(
-                                        color: isLastStopVerified
-                                            ? AppColors.accentYellow
-                                            : const Color(0xFFCBD5E1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      currentStopLabel,
-                                      style: AppTextStyles.caption.copyWith(
-                                        fontSize: 11,
-                                        color: isLastStopVerified
-                                            ? AppColors.textSecondary
-                                            : const Color(0xFF64748B),
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AppSpacing.gapH4,
-                                SizedBox(
-                                  height: 34,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
-                                      currentStopName,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: const Color(0xFF0F172A),
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                AppSpacing.gapH2,
-                                Text(
-                                  currentStopStatusText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Next Stop Cell
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: AppRadius.radiusMd,
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: BoxDecoration(
-                                        color: isNextStopVerified
-                                            ? AppColors.primary
-                                            : const Color(0xFFCBD5E1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      nextStopLabel,
-                                      style: AppTextStyles.caption.copyWith(
-                                        fontSize: 11,
-                                        color: isNextStopVerified
-                                            ? AppColors.primaryDark
-                                            : const Color(0xFF64748B),
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AppSpacing.gapH4,
-                                SizedBox(
-                                  height: 34,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
-                                      nextStopName,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: const Color(0xFF0F172A),
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                AppSpacing.gapH2,
-                                Text(
-                                  nextStopStatusText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: isNextStopVerified
-                                        ? AppColors.primary
-                                        : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -923,59 +807,60 @@ class HomeLiveTrackingCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final Color bg;
     final Color dotColor;
+    final isAr = locale.startsWith('ar');
     final String label;
 
     if (isAtStop &&
         (phase == TrackingPhase.live || status == LiveTrackingStatus.live)) {
       bg = const Color(0xFFE0F2FE);
       dotColor = const Color(0xFF0284C7);
-      label = locale == 'ar' ? 'بالمحطة' : 'AT STOP';
+      label = isAr ? 'بالمحطة' : 'AT STOP';
     } else if (phase == TrackingPhase.waitingAssignment ||
         status == LiveTrackingStatus.assignmentPending) {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
-      label = l10n.trackingPendingPill;
+      label = isAr ? 'جارٍ تجهيز الرحلة' : l10n.trackingPendingPill;
     } else if (phase == TrackingPhase.waitingStart) {
       bg = const Color(0xFFEFF6FF);
       dotColor = AppColors.primary;
-      label = l10n.trackingReadyPill;
+      label = isAr ? 'الحافلة جاهزة' : l10n.trackingReadyPill;
     } else if (phase == TrackingPhase.reassignmentPending) {
       bg = const Color(0xFFFEF3C7);
       dotColor = const Color(0xFFD97706);
-      label = l10n.trackingUpdatingPill;
+      label = isAr ? 'جارٍ تحديث الحافلة' : l10n.trackingUpdatingPill;
     } else if (phase == TrackingPhase.gpsStale ||
         status == LiveTrackingStatus.stale) {
       bg = const Color(0xFFFEF3C7);
       dotColor = const Color(0xFFD97706);
-      label = l10n.trackingDelayedPill;
+      label = isAr ? 'تحديث موقع الحافلة متأخر' : l10n.trackingDelayedPill;
     } else if (phase == TrackingPhase.gpsOffline ||
         status == LiveTrackingStatus.offline) {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
-      label = l10n.trackingOffline;
+      label = isAr ? 'موقع الحافلة غير متاح مؤقتًا' : l10n.trackingOffline;
     } else if (phase == TrackingPhase.progressionSyncing ||
         status == LiveTrackingStatus.progressionUnavailable) {
       bg = const Color(0xFFFEF3C7);
       dotColor = const Color(0xFFD97706);
-      label = l10n.trackingSyncingPill;
+      label = isAr ? 'جارٍ مزامنة تقدم الرحلة' : l10n.trackingSyncingPill;
     } else if (phase == TrackingPhase.completed) {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
-      label = l10n.trackingCompletedPill;
+      label = isAr ? 'انتهت الرحلة' : l10n.trackingCompletedPill;
     } else if (phase == TrackingPhase.cancelled) {
       bg = const Color(0xFFFEE2E2);
       dotColor = const Color(0xFFDC2626);
-      label = l10n.trackingCancelledPill;
+      label = isAr ? 'تم إلغاء الرحلة' : l10n.trackingCancelledPill;
     } else if (phase == TrackingPhase.serviceDateEnded) {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
-      label = l10n.trackingEndedPill;
+      label = isAr ? 'انتهى موعد الرحلة' : l10n.trackingEndedPill;
     } else if (phase == TrackingPhase.live ||
         status == LiveTrackingStatus.live ||
         status == LiveTrackingStatus.online) {
       bg = const Color(0xFFE8F5E9);
       dotColor = const Color(0xFF16A34A);
-      label = l10n.trackingLive;
+      label = isAr ? 'تتبع مباشر' : l10n.trackingLive;
     } else {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);

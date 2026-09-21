@@ -29,12 +29,11 @@ class StatusLocalizer {
       case 'departed':
         return l10n.bookingStatusCompleted;
       case 'finished':
-        return l10n.bookingStatusFinished;
       case 'checkedin':
       case 'boarded':
         return Localizations.localeOf(context).languageCode.startsWith('ar')
-            ? 'تم تسجيل الصعود'
-            : 'Boarded';
+            ? 'منتهية'
+            : l10n.bookingStatusFinished;
       case 'noshow':
         return l10n.bookingStatusNoShow;
       case 'pending':

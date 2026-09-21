@@ -409,7 +409,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('تمت الرحلة'), findsOneWidget);
+        expect(find.text('منتهية'), findsOneWidget);
       },
     );
 
