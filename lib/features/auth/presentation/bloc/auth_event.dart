@@ -129,3 +129,7 @@ final class AuthUserChangedInternal extends AuthEvent {
 final class AppResumedRequested extends AuthEvent {
   const AppResumedRequested();
 }
+
+final class RefreshWalletRequested extends AuthEvent {
+  const RefreshWalletRequested();
+}

@@ -17,7 +17,7 @@ import '../../domain/models/bus_seat_layout.dart';
 /// State representations:
 /// - Available: Neutral slate grey + seat number centered on cushion.
 /// - Selected: AMOMY Blue (#01589F) + luminous cyan contour + soft glow pulse.
-/// - Booked Male: Deep charcoal/black seat + male avatar silhouette + seat number below.
+/// - Booked Male: Deep dark navy blue seat + male avatar silhouette + seat number below.
 /// - Booked Female: Rose/pink seat + female avatar silhouette + seat number below.
 /// - Held: Warm amber/yellow seat + waiting timer cue + subtle breathing animation.
 /// - Unconfigured: Translucent wireframe for safe debug preview.
@@ -561,29 +561,54 @@ class _RealisticCoachSeatPainter extends CustomPainter {
   }
 
   // ===========================================================================
-  // FEMALE AVATAR (Top-down head + stylized shoulders/dress)
+  // FEMALE AVATAR (Top-down head with feminine hair silhouette + flared dress)
   // ===========================================================================
   void _drawFemaleAvatar(Canvas canvas, double cx, double cy, Color color) {
     final fillPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    final strokePaint = Paint()
+    // 1. Head circle
+    canvas.drawCircle(Offset(cx, cy - 4.8), 2.2, fillPaint);
+
+    // 2. Distinctive feminine hair locks framing head and cascading past ears
+    final hairPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
+      ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
 
-    // Head circle
-    canvas.drawCircle(Offset(cx, cy - 5.0), 2.8, fillPaint);
+    final hairPath = Path()
+      ..moveTo(cx - 3.7, cy - 1.5)
+      ..quadraticBezierTo(cx - 4.6, cy - 4.6, cx - 2.0, cy - 7.4)
+      ..quadraticBezierTo(cx, cy - 8.1, cx + 2.0, cy - 7.4)
+      ..quadraticBezierTo(cx + 4.6, cy - 4.6, cx + 3.7, cy - 1.5);
+    canvas.drawPath(hairPath, hairPaint);
 
-    // Torso / dress silhouette
-    final torsoPath = Path()
-      ..moveTo(cx - 6.0, cy + 4.5)
-      ..lineTo(cx - 3.8, cy - 0.5)
-      ..quadraticBezierTo(cx, cy - 1.6, cx + 3.8, cy - 0.5)
-      ..lineTo(cx + 6.0, cy + 4.5);
-    canvas.drawPath(torsoPath, strokePaint);
+    // 3. Stylized feminine dress with tapered waist and flared A-line skirt
+    final dressPath = Path()
+      ..moveTo(cx - 2.8, cy - 0.6) // Left shoulder
+      ..quadraticBezierTo(
+        cx - 1.8,
+        cy + 1.2,
+        cx - 5.8,
+        cy + 4.6,
+      ) // Tapered waist to flared left hem
+      ..quadraticBezierTo(
+        cx,
+        cy + 5.4,
+        cx + 5.8,
+        cy + 4.6,
+      ) // Gently curved bottom hem
+      ..quadraticBezierTo(
+        cx + 1.8,
+        cy + 1.2,
+        cx + 2.8,
+        cy - 0.6,
+      ) // Flared right hem to waist to shoulder
+      ..quadraticBezierTo(cx, cy - 1.2, cx - 2.8, cy - 0.6) // Curved neckline
+      ..close();
+    canvas.drawPath(dressPath, fillPaint);
   }
 
   // ===========================================================================
@@ -657,24 +682,23 @@ class _RealisticCoachSeatPainter extends CustomPainter {
         );
 
       // -----------------------------------------------------------------------
-      // BOOKED MALE: Deep charcoal upholstery with cyan male silhouette
+      // BOOKED MALE: Deep midnight dark navy blue upholstery (distinct from selected AMOMY blue)
       // -----------------------------------------------------------------------
       case SeatVisualState.bookedMale:
         return _CoachSeatStyle(
-          backrestColor: const Color(0xFF0F172A),
-          headrestColor: const Color(0xFF020617),
-          headrestBorderColor: const Color(0xFF1E293B),
-          cushionColor: const Color(0xFF0B1120),
-          centerCushionColor: const Color(0xFF020617),
-          bolsterColor: const Color(0xFF0F172A),
-          armrestColor: const Color(0xFF1E293B),
-          borderColor: const Color(0xFF1E293B),
+          backrestColor: const Color(0xFF23476C),
+          headrestColor: const Color(0xFF193550),
+          headrestBorderColor: const Color(0xFF2F5D8A),
+          cushionColor: const Color(0xFF1F4265),
+          centerCushionColor: const Color(0xFF17324D),
+          bolsterColor: const Color(0xFF23476C),
+          armrestColor: const Color(0xFF12283E),
+          borderColor: const Color(0xFF2F5D8A),
           borderWidth: 1.2,
-          seamColor: const Color(0xFF1E293B),
-          textColor: const Color(0xFF94A3B8),
-          shadowColor: Colors.black.withValues(alpha: 0.35),
+          seamColor: const Color(0xFF5E7FA3).withValues(alpha: 0.38),
+          textColor: const Color(0xFFF1F5F9),
+          shadowColor: const Color(0xFF102338).withValues(alpha: 0.32),
         );
-
       // -----------------------------------------------------------------------
       // BOOKED FEMALE: Rose/pink upholstery with female avatar
       // -----------------------------------------------------------------------

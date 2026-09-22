@@ -56,6 +56,16 @@ final class Authenticated extends AuthState {
   int get profileCompletionPercent => user.profileCompletionPercent;
   List<String> get missingProfileFields => user.missingProfileFields;
 
+  Authenticated copyWith({
+    AppUser? user,
+    WalletPreview? wallet,
+  }) {
+    return Authenticated(
+      user: user ?? this.user,
+      wallet: wallet ?? this.wallet,
+    );
+  }
+
   @override
   List<Object?> get props => [user, wallet];
 }

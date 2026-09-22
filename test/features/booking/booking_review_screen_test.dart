@@ -391,5 +391,65 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'Active hold (60 balance before hold, 20 fare -> 40 available after hold) enables confirm, shows 60 before and 40 after',
+      (tester) async {
+        bool confirmTapped = false;
+        final returnTrip = TripOption(
+          tripId: 'return-trip-1',
+          routeId: 'route-return-1',
+          direction: BookingDirection.returnTrip,
+          originNameAr: 'بوابة توشكى',
+          originNameEn: 'Toshka Gate',
+          destinationNameAr: 'كوبرى عزت',
+          destinationNameEn: 'Ezzat Bridge',
+          departureTime: '16:00',
+          departureAt: DateTime(2026, 9, 16, 16, 0),
+          farePoints: 20.0,
+          availableSeatsCount: 5,
+          status: 'scheduled',
+        );
+
+        final now = DateTime.now();
+        final activeHold = BookingHold(
+          holdId: 'hold-123',
+          tripId: returnTrip.tripId,
+          seatId: 'seat-5',
+          seatNumber: '5',
+          farePoints: 20.0,
+          initialRemainingSeconds: 300,
+          serverTime: now,
+          expiresAt: now.add(const Duration(minutes: 5)),
+        );
+
+        await tester.pumpWidget(
+          buildTestableWidget(
+            BookingReviewCard(
+              trip: returnTrip,
+              seat: sampleSeat,
+              activeHold: activeHold,
+              userAvailablePoints: 40.0, // 60 total before hold - 20 held = 40 remaining
+              initialHoldSecondsRemaining: 300,
+              onConfirm: () => confirmTapped = true,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // 1. Available balance displayed must be 60 points (40 + 20)
+        expect(find.text('60 Points'), findsOneWidget);
+        // 2. Balance after booking must be 40 points
+        expect(find.text('40 Points'), findsOneWidget);
+        // 3. Total fare is 20 points (shown in journey card badge and total fare hero)
+        expect(find.text('20 Points'), findsNWidgets(2));
+        // 4. Must not show insufficient points warning
+        expect(find.textContaining('Not enough points'), findsNothing);
+
+        // 5. Confirm button is enabled and taps successfully
+        await tester.tap(find.text('Confirm Booking'));
+        expect(confirmTapped, isTrue);
+      },
+    );
   });
 }

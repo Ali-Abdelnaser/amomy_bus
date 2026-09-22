@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as balanceAfterBooking;
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_time_formatter.dart';
@@ -26,6 +27,7 @@ class BookingReviewCard extends StatefulWidget {
   final TripSeat seat;
   final RouteStop? routeStop;
   final RouteStop? destinationRouteStop;
+  final BookingHold? activeHold;
   final RoundTripBundleHold? bundleHold;
   final TripSeat? returnSeat;
   final RoundTripReturnOption? returnOption;
@@ -41,6 +43,7 @@ class BookingReviewCard extends StatefulWidget {
     required this.seat,
     this.routeStop,
     this.destinationRouteStop,
+    this.activeHold,
     this.bundleHold,
     this.returnSeat,
     this.returnOption,
@@ -71,6 +74,13 @@ class _BookingReviewCardState extends State<BookingReviewCard>
     if (widget.bundleHold != null) {
       return widget.bundleHold!.remainingSeconds;
     }
+    if (widget.activeHold != null) {
+      final diff = widget.activeHold!.expiresAt
+          .toUtc()
+          .difference(DateTime.now().toUtc())
+          .inSeconds;
+      return diff > 0 ? diff : 0;
+    }
     if (widget.seat.heldExpiresAt != null) {
       final diff = widget.seat.heldExpiresAt!
           .toUtc()
@@ -85,6 +95,7 @@ class _BookingReviewCardState extends State<BookingReviewCard>
       _secondsRemaining <= 0 &&
       (widget.initialHoldSecondsRemaining != null ||
           widget.bundleHold != null ||
+          widget.activeHold != null ||
           widget.seat.heldExpiresAt != null);
 
   @override
@@ -235,16 +246,41 @@ class _BookingReviewCardState extends State<BookingReviewCard>
       );
     }
 
-    final totalFare = isBundle
-        ? totalPoints
-        : (widget.routeStop?.farePoints ?? widget.trip.farePoints);
+    final hasActiveHold = widget.activeHold != null && !_isExpired;
 
-    final hasEnoughPoints = widget.userAvailablePoints >= totalFare;
-    final balanceAfterBooking = (widget.userAvailablePoints - totalFare).clamp(
-      0,
-      double.infinity,
-    );
-    final deficitPoints = (totalFare - widget.userAvailablePoints).ceil();
+    final double totalFare;
+    final double displayAvailablePoints;
+    final double displayBalanceAfterBooking;
+    final bool hasEnoughPoints;
+    final int deficitPoints;
+
+    if (isBundle) {
+      totalFare = totalPoints;
+      hasEnoughPoints = widget.userAvailablePoints >= totalFare;
+      displayAvailablePoints = widget.userAvailablePoints;
+      displayBalanceAfterBooking = (widget.userAvailablePoints - totalFare)
+          .clamp(0, double.infinity);
+      deficitPoints = (totalFare - widget.userAvailablePoints).ceil();
+    } else if (hasActiveHold) {
+      // ACTIVE NORMAL HOLD:
+      // Backend has already reserved the fare.
+      // Do NOT double-deduct the hold. Do NOT perform second local balance check.
+      totalFare = widget.activeHold!.farePoints;
+      final availableAfterHold = widget.userAvailablePoints;
+      displayAvailablePoints = availableAfterHold + totalFare;
+      displayBalanceAfterBooking = availableAfterHold;
+      hasEnoughPoints = true;
+      deficitPoints = 0;
+    } else {
+      // NO ACTIVE HOLD OR HOLD EXPIRED:
+      totalFare = widget.routeStop?.farePoints ?? widget.trip.farePoints;
+      hasEnoughPoints = widget.userAvailablePoints >= totalFare;
+      displayAvailablePoints = widget.userAvailablePoints;
+      displayBalanceAfterBooking = (widget.userAvailablePoints - totalFare)
+          .clamp(0, double.infinity);
+      deficitPoints = (totalFare - widget.userAvailablePoints).ceil();
+    }
+
     final todayStr = _formatInformationalDate(DateTime.now(), isAr);
 
     final isOutbound = widget.trip.direction == BookingDirection.outbound;
@@ -543,7 +579,7 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                     ),
                   ),
                   Text(
-                    '${balanceAfterBooking.toInt()} ${l10n.pointsUnit}',
+                    '${displayAvailablePoints.toInt()} ${l10n.pointsUnit}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -636,7 +672,7 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                     ),
                   ),
                   Text(
-                    '${widget.userAvailablePoints.toInt()} ${l10n.pointsUnit}',
+                    '${displayAvailablePoints.toInt()} ${l10n.pointsUnit}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -662,7 +698,7 @@ class _BookingReviewCardState extends State<BookingReviewCard>
                     ),
                   ),
                   Text(
-                    '${balanceAfterBooking.toInt()} ${l10n.pointsUnit}',
+                    '${displayBalanceAfterBooking.toInt()} ${l10n.pointsUnit}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,

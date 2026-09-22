@@ -20,7 +20,8 @@ class WalletPreview extends Equatable {
   });
 
   int get totalPoints => cashPoints + subscriptionPoints;
-  int get availablePoints => (cashPoints + subscriptionPoints) - heldPoints;
+  int get availablePoints =>
+      ((cashPoints + subscriptionPoints) - heldPoints).clamp(0, 1000000);
 
   @override
   List<Object?> get props => [

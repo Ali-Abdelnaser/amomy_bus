@@ -342,7 +342,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       if (data == null) return null;
 
-      int cashPoints = (data['cached_available_balance'] as num?)?.toInt() ?? 0;
+      final cachedAvailable =
+          (data['cached_available_balance'] as num?)?.toInt() ?? 0;
+      final cachedHeld = (data['cached_held_balance'] as num?)?.toInt() ?? 0;
+
+      int cashPoints = cachedAvailable + cachedHeld;
       int subscriptionPoints = 0;
 
       try {
@@ -368,7 +372,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           subscriptionPoints = batchSub;
         }
       } catch (_) {
-        // Fallback: cached_available_balance serves as total points
+        // Fallback: cached_available_balance + cached_held_balance serves as total points
       }
 
       return WalletPreviewModel(
@@ -376,7 +380,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         userId: data['user_id'] as String? ?? userId,
         cashPoints: cashPoints,
         subscriptionPoints: subscriptionPoints,
-        heldPoints: (data['cached_held_balance'] as num?)?.toInt() ?? 0,
+        heldPoints: cachedHeld,
       );
     } catch (_) {
       return null;

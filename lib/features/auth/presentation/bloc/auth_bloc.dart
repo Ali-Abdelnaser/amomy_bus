@@ -93,6 +93,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     on<SignOutRequested>(_onSignOutRequested);
     on<AuthUserChangedInternal>(_onAuthUserChangedInternal);
     on<AppResumedRequested>(_onAppResumedRequested);
+    on<RefreshWalletRequested>(_onRefreshWalletRequested);
 
     _userSubscription = _getCurrentUserUseCase.userStream.listen((user) {
       add(AuthUserChangedInternal(user));
@@ -664,6 +665,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
       if (getIt.isRegistered<NotificationService>()) {
         unawaited(getIt<NotificationService>().syncDeviceToken());
       }
+    }
+  }
+
+  Future<void> _onRefreshWalletRequested(
+    RefreshWalletRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final currentUser = switch (state) {
+      Authenticated(:final user) => user,
+      ProfileCompletionRequired(:final user) => user,
+      _ => null,
+    };
+    if (currentUser == null) return;
+    final walletResult = await _getWalletPreviewUseCase(currentUser.id);
+    final newWallet = walletResult.dataOrNull;
+    if (state is Authenticated) {
+      emit((state as Authenticated).copyWith(wallet: newWallet));
+    }
+    if (getIt.isRegistered<WalletCubit>()) {
+      unawaited(getIt<WalletCubit>().loadWalletSummary(currentUser.id));
     }
   }
 

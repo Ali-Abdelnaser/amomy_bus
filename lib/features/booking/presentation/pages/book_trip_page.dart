@@ -1,3 +1,4 @@
+import 'package:amomy_bus/features/auth/presentation/bloc/auth_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -173,10 +174,21 @@ class _BookTripContentState extends State<_BookTripContent>
             current.autoTripAlert != null &&
             current.autoTripAlert!.isNotEmpty &&
             current.autoTripAlert != previous.autoTripAlert;
-        return hasNewError || hasNewAlert;
+        final holdOrStepChanged =
+            current.activeHold != previous.activeHold ||
+            current.bundleHold != previous.bundleHold ||
+            current.currentStep != previous.currentStep;
+        return hasNewError || hasNewAlert || holdOrStepChanged;
       },
       listener: (context, state) {
         final cubit = context.read<BookingCubit>();
+
+        // Reconcile wallet state when hold is created, cleared, or confirmed
+        if (state.activeHold != null ||
+            state.currentStep == BookingStep.review ||
+            state.currentStep == BookingStep.success) {
+          context.read<AuthBloc>().add(const RefreshWalletRequested());
+        }
 
         if (state.autoTripAlert != null && state.autoTripAlert!.isNotEmpty) {
           AppSnackBar.showInfo(context, state.autoTripAlert!);
@@ -335,6 +347,7 @@ class _BookTripContentState extends State<_BookTripContent>
                           seat: state.selectedSeat!,
                           routeStop: state.selectedRouteStop,
                           destinationRouteStop: state.selectedDestinationStop,
+                          activeHold: state.activeHold,
                           bundleHold: state.bundleHold,
                           returnSeat: state.selectedReturnSeat,
                           returnOption: state.selectedReturnOption,
@@ -364,12 +377,14 @@ class _BookTripContentState extends State<_BookTripContent>
     bool isAr,
   ) {
     if (state.isSingle) {
-      if (state.activeHold != null && state.selectedSeat != null) {
+      if (state.selectedSeat != null &&
+          (state.status == BookingStatus.holdingSeat ||
+              state.status == BookingStatus.seatHeld)) {
         return _SeatHoldBottomBanner(
           key: ValueKey('single_${state.selectedSeat!.seatId}'),
           selectedSeat: state.selectedSeat!,
           secondsRemaining: state.holdSecondsRemaining,
-          onProceed: cubit.proceedToReview,
+          onProceed: state.activeHold != null ? cubit.proceedToReview : null,
           buttonLabel: isAr ? 'متابعة' : 'Continue',
         );
       }
@@ -377,23 +392,29 @@ class _BookTripContentState extends State<_BookTripContent>
     } else {
       // Round Trip
       if (state.roundTripSeatStep == RoundTripSeatStep.outbound) {
-        if (state.bundleHold != null && state.selectedSeat != null) {
+        if (state.selectedSeat != null &&
+            (state.status == BookingStatus.holdingSeat ||
+                state.status == BookingStatus.seatHeld)) {
           return _SeatHoldBottomBanner(
             key: ValueKey('bundle_outbound_${state.selectedSeat!.seatId}'),
             selectedSeat: state.selectedSeat!,
             secondsRemaining: state.holdSecondsRemaining,
-            onProceed: cubit.proceedToReturnSeatMap,
+            onProceed:
+                state.bundleHold != null ? cubit.proceedToReturnSeatMap : null,
             buttonLabel: isAr ? 'مقعد العودة' : 'Return Seat',
           );
         }
       } else {
         // Return seat step
-        if (state.bundleHold != null && state.selectedReturnSeat != null) {
+        if (state.selectedReturnSeat != null &&
+            (state.status == BookingStatus.holdingSeat ||
+                state.status == BookingStatus.seatHeld)) {
           return _SeatHoldBottomBanner(
             key: ValueKey('bundle_return_${state.selectedReturnSeat!.seatId}'),
             selectedSeat: state.selectedReturnSeat!,
             secondsRemaining: state.holdSecondsRemaining,
-            onProceed: cubit.proceedToReview,
+            onProceed:
+                state.bundleHold != null ? cubit.proceedToReview : null,
             buttonLabel: isAr ? 'مراجعة الحجز' : 'Review',
           );
         }
@@ -660,7 +681,7 @@ class _ContinueBookingButtonState extends State<_ContinueBookingButton> {
 class _SeatHoldBottomBanner extends StatelessWidget {
   final TripSeat selectedSeat;
   final int secondsRemaining;
-  final VoidCallback onProceed;
+  final VoidCallback? onProceed;
   final String? buttonLabel;
 
   const _SeatHoldBottomBanner({
