@@ -51,8 +51,24 @@ class TrackingCubit extends Cubit<TrackingState> {
         silent: isRefresh && !tripChanged,
       );
       _subscribeToTripInvalidation(normalizedTripId);
+    } else if (tripId != null && tripId.trim().isEmpty) {
+      // Explicitly empty trip ID: No booking / clear tracking & set error
+      _stopFleetRefresh();
+      _trackedTripId = null;
+      await _trackingInvalidationSubscription?.cancel();
+      _trackingInvalidationSubscription = null;
+      emit(
+        state.copyWith(
+          uiStatus: TrackingUiStatus.error,
+          errorMessage: 'Trip tracking requires a booked trip.',
+          clearTrackingSnapshot: true,
+          clearLivePosition: true,
+          clearFleetSummary: true,
+          trackedTripId: null,
+        ),
+      );
     } else {
-      // Fleet tracking mode: no passenger booking required
+      // Fleet tracking mode: null tripId (no passenger booking required)
       _trackedTripId = null;
       await _trackingInvalidationSubscription?.cancel();
       _trackingInvalidationSubscription = null;

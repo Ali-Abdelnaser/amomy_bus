@@ -8,6 +8,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/localization/app_time_formatter.dart';
 import '../../domain/models/live_tracking_status.dart';
 import '../cubit/tracking_cubit.dart';
 import '../cubit/tracking_state.dart';
@@ -595,6 +596,35 @@ class HomeLiveTrackingCard extends StatelessWidget {
 
 
     
+    final lastStop = summary?.lastPassedStop;
+    final nextStop = state.nextStop;
+    final isLastStopVerified = lastStop?.hasCanonicalCoordinates ?? false;
+    final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
+
+    final currentStopLabel = l10n.trackingLastStop;
+    final currentStopName =
+        lastStop?.localizedName(locale) ??
+        (isProgressionSyncing
+            ? l10n.trackingProgressionSyncing
+            : l10n.trackingUnavailable);
+    final actualArrival = lastStop?.actualArrivalTime;
+    final currentStopTimingText = actualArrival == null
+        ? ''
+        : l10n.trackingReached(
+            AppTimeFormatter.formatDepartureTime(
+              departureAt: actualArrival,
+              locale: locale,
+            ),
+          );
+
+    final nextStopLabel = l10n.trackingNextStop;
+    final nextStopName =
+        nextStop?.localizedName(locale) ??
+        (isProgressionSyncing
+            ? l10n.trackingProgressionSyncing
+            : l10n.trackingUnavailable);
+    final nextStopTimingText = l10n.trackingEtaUnavailable;
+
     final isTripDeparted =
         summary.tripStatus == 'departed' ||
         summary.startedAt != null ||
@@ -919,6 +949,159 @@ class HomeLiveTrackingCard extends StatelessWidget {
                 ),
 
                 AppSpacing.gapH12,
+
+                // 3. Last Stop & Next Stop Information Cells
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      // Last Stop Cell
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: isLastStopVerified
+                                          ? AppColors.accentYellow
+                                          : const Color(0xFFCBD5E1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    currentStopLabel,
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontSize: 11,
+                                      color: isLastStopVerified
+                                          ? AppColors.textSecondary
+                                          : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AppSpacing.gapH4,
+                              Text(
+                                currentStopName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (currentStopTimingText.isNotEmpty) ...[
+                                AppSpacing.gapH2,
+                                Text(
+                                  currentStopTimingText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Next Stop Cell
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: AppRadius.radiusMd,
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: isNextStopVerified
+                                          ? AppColors.primary
+                                          : const Color(0xFFCBD5E1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    nextStopLabel,
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontSize: 11,
+                                      color: isNextStopVerified
+                                          ? AppColors.primaryDark
+                                          : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AppSpacing.gapH4,
+                              Text(
+                                nextStopName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (nextStopTimingText.isNotEmpty) ...[
+                                AppSpacing.gapH2,
+                                Text(
+                                  nextStopTimingText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: isNextStopVerified
+                                        ? AppColors.primary
+                                        : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 AppSpacing.gapH10,
 
