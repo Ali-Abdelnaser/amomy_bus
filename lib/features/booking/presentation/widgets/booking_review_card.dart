@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
@@ -6,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../shell/presentation/widgets/nav_svg_icon.dart';
 import '../../domain/entities/booking_entities.dart';
+import '../../domain/services/passenger_booking_availability.dart';
 
 /// Redesigned Premium AMOMY Review Booking Screen.
 ///
@@ -58,13 +60,14 @@ class BookingReviewCard extends StatefulWidget {
 }
 
 class _BookingReviewCardState extends State<BookingReviewCard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _animController;
   late final Animation<double> _cardFadeAnim;
   late final Animation<Offset> _cardSlideAnim;
   late final Animation<double> _countdownFadeAnim;
   late final Animation<double> _fareFadeAnim;
   late final Animation<double> _ctaFadeAnim;
+  Timer? _cutoffTimer;
 
   int get _secondsRemaining {
     if (widget.initialHoldSecondsRemaining != null) {
@@ -97,9 +100,20 @@ class _BookingReviewCardState extends State<BookingReviewCard>
           widget.activeHold != null ||
           widget.seat.heldExpiresAt != null);
 
+  bool get _isBookingClosed {
+    if (widget.trip.isBookingClosed()) return true;
+    if (widget.bundleHold != null &&
+        widget.returnOption?.isBookingClosed() == true) {
+      return true;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleCutoffTimer();
 
     _animController = AnimationController(
       vsync: this,
@@ -142,7 +156,56 @@ class _BookingReviewCardState extends State<BookingReviewCard>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void didUpdateWidget(BookingReviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trip.bookingCloseAt != widget.trip.bookingCloseAt ||
+        oldWidget.returnOption?.bookingCloseAt !=
+            widget.returnOption?.bookingCloseAt) {
+      _scheduleCutoffTimer();
+    }
+  }
+
+  void _scheduleCutoffTimer() {
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
+
+    final now = PassengerBookingAvailability.currentNow;
+    DateTime? earliestCutoff;
+
+    if (widget.trip.bookingCloseAt != null &&
+        widget.trip.bookingCloseAt!.isAfter(now)) {
+      earliestCutoff = widget.trip.bookingCloseAt;
+    }
+
+    final returnCutoff = widget.returnOption?.bookingCloseAt;
+    if (returnCutoff != null && returnCutoff.isAfter(now)) {
+      if (earliestCutoff == null || returnCutoff.isBefore(earliestCutoff)) {
+        earliestCutoff = returnCutoff;
+      }
+    }
+
+    if (earliestCutoff != null) {
+      final duration = earliestCutoff.difference(now);
+      _cutoffTimer = Timer(duration, () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cutoffTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -284,7 +347,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
 
     final isOutbound = widget.trip.direction == BookingDirection.outbound;
     final isConfirmEnabled =
-        hasEnoughPoints && !_isExpired && !widget.isConfirming;
+        hasEnoughPoints &&
+        !_isExpired &&
+        !_isBookingClosed &&
+        !widget.isConfirming;
     final disableAnim = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     // 1. SURFACE A: JOURNEY CARD(S)
@@ -314,11 +380,9 @@ class _BookingReviewCardState extends State<BookingReviewCard>
             originName:
                 widget.routeStop?.stopName(locale) ??
                 widget.trip.originName(locale),
-            originLocality: widget.routeStop?.locality(locale),
             destinationName:
                 widget.destinationRouteStop?.stopName(locale) ??
                 widget.trip.destinationName(locale),
-            destinationLocality: widget.destinationRouteStop?.locality(locale),
             seatNumber: widget.seat.seatNumber,
             seatLabel: l10n.tripDetailsSeat,
             fareLabel: '${outboundFare.toInt()} ${l10n.pointsUnit}',
@@ -335,11 +399,9 @@ class _BookingReviewCardState extends State<BookingReviewCard>
             originName:
                 widget.destinationRouteStop?.stopName(locale) ??
                 widget.trip.destinationName(locale),
-            originLocality: widget.destinationRouteStop?.locality(locale),
             destinationName:
                 widget.routeStop?.stopName(locale) ??
                 widget.trip.originName(locale),
-            destinationLocality: widget.routeStop?.locality(locale),
             seatNumber: returnSeatNumber,
             seatLabel: isAr ? 'مقعد العودة' : 'Return Seat',
             fareLabel: '${returnFare.toInt()} ${l10n.pointsUnit}',
@@ -360,11 +422,9 @@ class _BookingReviewCardState extends State<BookingReviewCard>
         originName:
             widget.routeStop?.stopName(locale) ??
             widget.trip.originName(locale),
-        originLocality: widget.routeStop?.locality(locale),
         destinationName:
             widget.destinationRouteStop?.stopName(locale) ??
             widget.trip.destinationName(locale),
-        destinationLocality: widget.destinationRouteStop?.locality(locale),
         seatNumber: widget.seat.seatNumber,
         seatLabel: l10n.tripDetailsSeat,
         fareLabel: '${totalFare.toInt()} ${l10n.pointsUnit}',
@@ -769,8 +829,10 @@ class _BookingReviewCardState extends State<BookingReviewCard>
 
     // 6. CONFIRM CTA
     Widget ctaButton = AppButton(
-      label: l10n.confirmBooking,
-      icon: AppIcons.check,
+      label: _isBookingClosed
+          ? (isAr ? 'الحجز مغلق' : 'Booking closed')
+          : l10n.confirmBooking,
+      icon: _isBookingClosed ? null : AppIcons.check,
       height: 54,
       isLoading: widget.isConfirming,
       onPressed: isConfirmEnabled ? widget.onConfirm : null,
@@ -833,9 +895,7 @@ class _SingleLegCard extends StatelessWidget {
   final String departureTime;
   final String timeLabel;
   final String originName;
-  final String? originLocality;
   final String destinationName;
-  final String? destinationLocality;
   final String seatNumber;
   final String seatLabel;
   final String fareLabel;
@@ -848,9 +908,7 @@ class _SingleLegCard extends StatelessWidget {
     required this.departureTime,
     required this.timeLabel,
     required this.originName,
-    this.originLocality,
     required this.destinationName,
-    this.destinationLocality,
     required this.seatNumber,
     required this.seatLabel,
     required this.fareLabel,
@@ -985,9 +1043,7 @@ class _SingleLegCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             child: _CompactRouteView(
               originName: originName,
-              originLocality: originLocality,
               destinationName: destinationName,
-              destinationLocality: destinationLocality,
               isAr: isAr,
             ),
           ),
@@ -1049,16 +1105,12 @@ class _SingleLegCard extends StatelessWidget {
 /// Compact Elegant Vertical Route Journey Path matching My Trips card style.
 class _CompactRouteView extends StatelessWidget {
   final String originName;
-  final String? originLocality;
   final String destinationName;
-  final String? destinationLocality;
   final bool isAr;
 
   const _CompactRouteView({
     required this.originName,
-    this.originLocality,
     required this.destinationName,
-    this.destinationLocality,
     required this.isAr,
   });
 
@@ -1166,19 +1218,6 @@ class _CompactRouteView extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (originLocality != null &&
-                                originLocality!.isNotEmpty &&
-                                originLocality != originName)
-                              Text(
-                                originLocality!,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF667085),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
                           ],
                         ),
                       ),
@@ -1219,19 +1258,6 @@ class _CompactRouteView extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (destinationLocality != null &&
-                                destinationLocality!.isNotEmpty &&
-                                destinationLocality != destinationName)
-                              Text(
-                                destinationLocality!,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF667085),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
                           ],
                         ),
                       ),

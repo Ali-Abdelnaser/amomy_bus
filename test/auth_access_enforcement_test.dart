@@ -12,6 +12,7 @@ import 'package:amomy_bus/features/auth/domain/usecases/get_current_user_usecase
 import 'package:amomy_bus/features/auth/domain/usecases/get_wallet_preview_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/resend_otp_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/send_password_reset_usecase.dart';
+import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_out_usecase.dart';
@@ -131,6 +132,11 @@ class FakeSignInWithGoogleUseCase implements SignInWithGoogleUseCase {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class FakeSignInWithAppleUseCase implements SignInWithAppleUseCase {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class FakeCompleteProfileUseCase implements CompleteProfileUseCase {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -196,6 +202,7 @@ void main() {
       verifyOtpUseCase: FakeVerifyOtpUseCase(),
       resendOtpUseCase: FakeResendOtpUseCase(),
       signInWithGoogleUseCase: FakeSignInWithGoogleUseCase(),
+      signInWithAppleUseCase: FakeSignInWithAppleUseCase(),
       completeProfileUseCase: FakeCompleteProfileUseCase(),
       sendPasswordResetUseCase: FakeSendPasswordResetUseCase(),
       updatePasswordUseCase: FakeUpdatePasswordUseCase(),

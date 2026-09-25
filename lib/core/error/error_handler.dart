@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../localization/app_locale_controller.dart';
 import 'exceptions.dart';
@@ -114,6 +115,16 @@ class ErrorHandler {
       return AuthenticationFailure(message: message);
     }
 
+    if (error is SignInWithAppleAuthorizationException) {
+      if (error.code == AuthorizationErrorCode.canceled) {
+        return const AuthCancelledFailure();
+      }
+      final message = AppLocaleController.instance.isArabic
+          ? 'تعذر إكمال تسجيل الدخول باستخدام Apple. حاول مرة أخرى.'
+          : 'Apple sign-in could not be completed. Please try again.';
+      return AuthenticationFailure(message: message);
+    }
+
     final errorStr = error?.toString() ?? '';
     final isGoogleError16 =
         errorStr.contains('Account reauth failed') ||
@@ -126,13 +137,19 @@ class ErrorHandler {
       return AuthenticationFailure(message: message);
     }
 
-    final isGoogleCancellation =
+    final isCancellation =
         errorStr.contains('sign_in_canceled') ||
         errorStr.contains('popup_closed_by_user') ||
         errorStr.contains('User canceled Google Sign-In') ||
-        errorStr.contains('The user canceled the sign-in flow');
+        errorStr.contains('The user canceled the sign-in flow') ||
+        errorStr.contains('AuthorizationErrorCode.canceled') ||
+        errorStr.contains('ASAuthorizationErrorCanceled') ||
+        errorStr.contains(
+          'The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1000.)',
+        ) ||
+        errorStr.contains('error 1000');
 
-    if (isGoogleCancellation) {
+    if (isCancellation) {
       return const AuthCancelledFailure();
     }
 

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:amomy_bus/features/booking/domain/entities/booking_entities.dart';
 import 'package:amomy_bus/features/home/domain/entities/home_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/models/bus_stop_model.dart';
+import 'package:amomy_bus/features/tracking/domain/models/fleet_tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
@@ -21,6 +22,16 @@ class _FakeTrackingRepo implements TrackingRepository {
   TrackingSummary? nextSummary;
   final StreamController<void> _invalidationController =
       StreamController<void>.broadcast();
+
+  @override
+  Future<FleetTrackingSummary> getPassengerFleetTracking() async {
+    return FleetTrackingSummary(
+      mapEnabled: false,
+      buses: const [],
+      routes: const [],
+      serverTime: DateTime.now().toUtc(),
+    );
+  }
 
   @override
   Future<TrackingSummary> getTripTracking({required String tripId}) async {

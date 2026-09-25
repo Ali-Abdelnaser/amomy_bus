@@ -235,20 +235,6 @@ class _RouteStopField extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (stop!.locality(locale).isNotEmpty) ...[
-                      const SizedBox(height: 1),
-                      Text(
-                        stop!.locality(locale),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                          height: 1.1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
                   ] else ...[
                     Text(
                       placeholder,
@@ -510,8 +496,8 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                     ),
                     decoration: InputDecoration(
                       hintText: isAr
-                          ? 'ابحث باسم المحطة أو المنطقة...'
-                          : 'Search stop name or locality...',
+                          ? 'ابحث باسم المحطة...'
+                          : 'Search stop name...',
                       hintStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -633,7 +619,7 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                   ),
                                   const SizedBox(width: 14),
 
-                                  // Stop Name + Disambiguated Locality
+                                  // Stop Name
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -655,21 +641,6 @@ class _StopPickerModalSheetState extends State<_StopPickerModalSheet> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (stop
-                                            .locality(widget.locale)
-                                            .isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            stop.locality(widget.locale),
-                                            style: const TextStyle(
-                                              fontSize: 12.5,
-                                              fontWeight: FontWeight.w500,
-                                              color: Color(0xFF64748B),
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
                                       ],
                                     ),
                                   ),

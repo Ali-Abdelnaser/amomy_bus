@@ -219,10 +219,14 @@ class _EmptyUpcomingTrip extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 148),
             child: AppButton(
               key: const Key('home-upcoming-book-now'),
-              label: l10n.bookNow,
+              label: (hasLoadedAvailability && !isBookingAvailable)
+                  ? (context.isArabic ? 'الحجز مغلق' : 'Booking closed')
+                  : l10n.bookNow,
               height: 46,
               padding: const EdgeInsets.symmetric(horizontal: 26),
-              onPressed: () => context.push(RoutePaths.bookTrip),
+              onPressed: (hasLoadedAvailability && !isBookingAvailable)
+                  ? null
+                  : () => context.push(RoutePaths.bookTrip),
             ),
           ),
         ],

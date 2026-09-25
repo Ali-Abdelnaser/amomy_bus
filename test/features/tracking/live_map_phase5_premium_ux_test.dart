@@ -35,7 +35,7 @@ Future<void> pumpAndAdvance(WidgetTester tester, [int count = 4]) async {
   }
 }
 
-class MockTrackingRepository implements TrackingRepository {
+class MockTrackingRepository extends TrackingRepository {
   TrackingSummary summary;
   final StreamController<BusTelemetry> _telemetryController =
       StreamController<BusTelemetry>.broadcast();

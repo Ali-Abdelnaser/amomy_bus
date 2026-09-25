@@ -534,6 +534,11 @@ class AppErrorMapper {
               : 'Please sign in to continue.');
     }
 
+    final backendCodeMapped = _mapBackendCode(upper, l10n: l10n, isAr: isAr);
+    if (backendCodeMapped != null) {
+      return backendCodeMapped;
+    }
+
     // Check if the string is raw technical exception
     if (raw.contains('Exception:') ||
         raw.contains('Error:') ||
@@ -723,11 +728,11 @@ class AppErrorMapper {
               ? 'رمز غير صالح أو منتهي الصلاحية.'
               : 'Invalid or expired boarding token.');
     }
-    if (code.contains('BOOKING_CLOSED')) {
+    if (code.contains('BOOKING_CLOSED') || code.contains('booking_closed')) {
       return l10n?.errorBookingClosed ??
           (isAr
-              ? 'تم إغلاق الحجز على هذه الرحلة.'
-              : 'Booking is closed for this trip.');
+              ? 'انتهى وقت الحجز لهذه الرحلة.'
+              : 'Booking for this trip is closed.');
     }
     if (code.contains('CHANGE_SEAT_WINDOW_CLOSED')) {
       return l10n?.errorChangeSeatWindowClosed ??

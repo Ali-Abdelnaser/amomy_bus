@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:amomy_bus/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../booking/domain/entities/booking_entities.dart';
+import '../../../booking/domain/services/passenger_booking_availability.dart';
 import '../../../shell/presentation/widgets/nav_svg_icon.dart';
 import '../cubit/passenger_trips_cubit.dart';
 import 'add_extra_seat_modal.dart';
@@ -25,7 +27,7 @@ import 'booked_trip_overflow_menu.dart';
 /// - Small Zone (~25.12%): Compact metadata stack (Status, Time with pulsing dot, Seat with Nav Trips SVG, Fare with Nav Wallet SVG). All text is strong dark.
 /// - Large Zone (~74.88%): Vertical From/To route with pins, labels, vertical dashed connector, and Action buttons.
 /// - Neither zone ever crosses into the other across the vertical perforation line.
-class TodayTripCard extends StatelessWidget {
+class TodayTripCard extends StatefulWidget {
   final PassengerTodayTrip trip;
   final PassengerTripPreference? preference;
   final int animationIndex;
@@ -38,7 +40,61 @@ class TodayTripCard extends StatelessWidget {
   });
 
   @override
+  State<TodayTripCard> createState() => _TodayTripCardState();
+}
+
+class _TodayTripCardState extends State<TodayTripCard>
+    with WidgetsBindingObserver {
+  Timer? _cutoffTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleCutoffTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant TodayTripCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trip.bookingCloseAt != widget.trip.bookingCloseAt) {
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _scheduleCutoffTimer();
+      setState(() {});
+    }
+  }
+
+  void _scheduleCutoffTimer() {
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
+    final closeAt = widget.trip.bookingCloseAt;
+    if (closeAt == null) return;
+    final diff = closeAt.difference(PassengerBookingAvailability.currentNow);
+    if (!diff.isNegative) {
+      _cutoffTimer = Timer(diff, () {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _cutoffTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final trip = widget.trip;
+    final preference = widget.preference;
+    final animationIndex = widget.animationIndex;
     final locale = Localizations.localeOf(context).languageCode;
     final isAr = locale.startsWith('ar');
     final isCheckedIn = trip.isCheckedIn;
@@ -48,8 +104,13 @@ class TodayTripCard extends StatelessWidget {
         trip.availabilityStatus == TodayTripAvailabilityStatus.departed;
     final isBooked =
         trip.alreadyBooked && !isCheckedIn && !isCompleted && !isDeparted;
+    final isBookingClosed = trip.isBookingClosed();
     final isAvailable =
-        trip.isBookable && !isCheckedIn && !isCompleted && !isDeparted;
+        trip.isBookable &&
+        !isCheckedIn &&
+        !isCompleted &&
+        !isDeparted &&
+        !isBookingClosed;
     final isFull =
         trip.availabilityStatus == TodayTripAvailabilityStatus.full ||
         (!isBooked &&
@@ -71,15 +132,15 @@ class TodayTripCard extends StatelessWidget {
       displayOrigin = trip.originName(locale);
       displayDest = trip.destinationName(locale);
     } else if (preference != null &&
-        preference!.originName(locale).trim().isNotEmpty &&
-        preference!.destinationName(locale).trim().isNotEmpty) {
+        preference.originName(locale).trim().isNotEmpty &&
+        preference.destinationName(locale).trim().isNotEmpty) {
       if (trip.direction == BookingDirection.outbound) {
-        displayOrigin = preference!.originName(locale);
-        displayDest = preference!.destinationName(locale);
+        displayOrigin = preference.originName(locale);
+        displayDest = preference.destinationName(locale);
       } else {
         // Return journey: Origin is passenger's destination (university) and Dest is boarding stop (home)
-        displayOrigin = preference!.destinationName(locale);
-        displayDest = preference!.originName(locale);
+        displayOrigin = preference.destinationName(locale);
+        displayDest = preference.originName(locale);
       }
     } else {
       displayOrigin = trip.originName(locale);
@@ -205,6 +266,7 @@ class TodayTripCard extends StatelessWidget {
                             isFull: isFull,
                             isDeparted: isDeparted,
                             isReturn: isReturn,
+                            isBookingClosed: isBookingClosed,
                           ),
 
                           // 2. TIME ROW WITH ANIMATED/PULSING DOT + DARK TIME TEXT
@@ -806,6 +868,7 @@ class TodayTripCard extends StatelessWidget {
                             _BookNowButton(
                               isAr: isAr,
                               isReturn: isReturn,
+                              isEnabled: true,
                               onTap: () {
                                 context.push(
                                   RoutePaths.bookTrip,
@@ -818,6 +881,17 @@ class TodayTripCard extends StatelessWidget {
                                   },
                                 );
                               },
+                            )
+                          else if (isBookingClosed &&
+                              !isDeparted &&
+                              !isCheckedIn &&
+                              !isCompleted &&
+                              !isBooked)
+                            _BookNowButton(
+                              isAr: isAr,
+                              isReturn: isReturn,
+                              isEnabled: false,
+                              onTap: () {},
                             )
                           else
                             const SizedBox.shrink(),
@@ -868,6 +942,7 @@ class TodayTripCard extends StatelessWidget {
     required bool isFull,
     required bool isDeparted,
     required bool isReturn,
+    bool isBookingClosed = false,
   }) {
     final String statusKey;
     final Widget badge;
@@ -952,6 +1027,26 @@ class TodayTripCard extends StatelessWidget {
           maxLines: 1,
         ),
       );
+    } else if (isBookingClosed) {
+      statusKey = 'booking_closed';
+      badge = Container(
+        key: const ValueKey('badge_booking_closed'),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Text(
+          isAr ? 'الحجز مغلق' : 'Closed',
+          style: AppTextStyles.labelSmall.copyWith(
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w700,
+            fontSize: 10,
+          ),
+          maxLines: 1,
+        ),
+      );
     } else if (isReturn) {
       statusKey = 'available_return';
       badge = Container(
@@ -1012,6 +1107,7 @@ class TodayTripCard extends StatelessWidget {
   }
 
   void _openQrModal(BuildContext context) {
+    final trip = widget.trip;
     if (trip.qrToken == null) return;
     final locale = Localizations.localeOf(context).languageCode;
     QrTicketModal.show(
@@ -1216,11 +1312,13 @@ class _VerticalDashedLinePainter extends CustomPainter {
 class _BookNowButton extends StatefulWidget {
   final bool isAr;
   final bool isReturn;
+  final bool isEnabled;
   final VoidCallback onTap;
 
   const _BookNowButton({
     required this.isAr,
     required this.isReturn,
+    this.isEnabled = true,
     required this.onTap,
   });
 
@@ -1233,20 +1331,27 @@ class _BookNowButtonState extends State<_BookNowButton> {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.isReturn
-        ? AppColors.accentYellow
-        : AppColors.primary;
-    final fgColor = widget.isReturn ? const Color(0xFF101828) : Colors.white;
+    final isEnabled = widget.isEnabled;
+    final bgColor = !isEnabled
+        ? const Color(0xFFF1F5F9)
+        : (widget.isReturn ? AppColors.accentYellow : AppColors.primary);
+    final fgColor = !isEnabled
+        ? const Color(0xFF64748B)
+        : (widget.isReturn ? const Color(0xFF101828) : Colors.white);
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isButtonDown = true),
-      onTapUp: (_) {
-        setState(() => _isButtonDown = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isButtonDown = false),
+      onTapDown: isEnabled ? (_) => setState(() => _isButtonDown = true) : null,
+      onTapUp: isEnabled
+          ? (_) {
+              setState(() => _isButtonDown = false);
+              widget.onTap();
+            }
+          : null,
+      onTapCancel: isEnabled
+          ? () => setState(() => _isButtonDown = false)
+          : null,
       child: AnimatedScale(
-        scale: _isButtonDown ? 0.975 : 1.0,
+        scale: (_isButtonDown && isEnabled) ? 0.975 : 1.0,
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         child: Container(
@@ -1255,8 +1360,11 @@ class _BookNowButtonState extends State<_BookNowButton> {
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(9),
+            border: !isEnabled
+                ? Border.all(color: const Color(0xFFCBD5E1))
+                : null,
             boxShadow: [
-              if (!widget.isReturn)
+              if (isEnabled && !widget.isReturn)
                 BoxShadow(
                   color: AppColors.primary.withValues(alpha: 0.20),
                   blurRadius: 6,
@@ -1267,10 +1375,16 @@ class _BookNowButtonState extends State<_BookNowButton> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(AppIcons.ticket, size: 14, color: fgColor),
+              Icon(
+                isEnabled ? AppIcons.ticket : Icons.lock_outline_rounded,
+                size: 14,
+                color: fgColor,
+              ),
               const SizedBox(width: 5),
               Text(
-                widget.isAr ? 'احجز الآن' : 'Book Now',
+                isEnabled
+                    ? (widget.isAr ? 'احجز الآن' : 'Book Now')
+                    : (widget.isAr ? 'الحجز مغلق' : 'Booking closed'),
                 style: AppTextStyles.labelMedium.copyWith(
                   color: fgColor,
                   fontWeight: FontWeight.bold,

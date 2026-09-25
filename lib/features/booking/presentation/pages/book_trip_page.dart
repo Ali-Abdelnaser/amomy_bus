@@ -155,6 +155,7 @@ class _BookTripContentState extends State<_BookTripContent>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
       context.read<BookingCubit>().resyncHoldOnResume();
+      context.read<BookingCubit>().checkCutoffOnResume();
     }
   }
 
@@ -376,6 +377,11 @@ class _BookTripContentState extends State<_BookTripContent>
     BookingCubit cubit,
     bool isAr,
   ) {
+    final isSingleCutoff = state.selectedTrip?.isBookingClosed() ?? false;
+    final isReturnCutoff =
+        state.selectedReturnOption?.isBookingClosed() ?? false;
+    final isCutoff = isSingleCutoff || (state.isRoundTrip && isReturnCutoff);
+
     if (state.isSingle) {
       if (state.selectedSeat != null &&
           (state.status == BookingStatus.holdingSeat ||
@@ -384,8 +390,12 @@ class _BookTripContentState extends State<_BookTripContent>
           key: ValueKey('single_${state.selectedSeat!.seatId}'),
           selectedSeat: state.selectedSeat!,
           secondsRemaining: state.holdSecondsRemaining,
-          onProceed: state.activeHold != null ? cubit.proceedToReview : null,
-          buttonLabel: isAr ? 'متابعة' : 'Continue',
+          onProceed: (!isCutoff && state.activeHold != null)
+              ? cubit.proceedToReview
+              : null,
+          buttonLabel: isCutoff
+              ? (isAr ? 'الحجز مغلق' : 'Booking closed')
+              : (isAr ? 'متابعة' : 'Continue'),
         );
       }
       return const SizedBox.shrink();
@@ -399,9 +409,12 @@ class _BookTripContentState extends State<_BookTripContent>
             key: ValueKey('bundle_outbound_${state.selectedSeat!.seatId}'),
             selectedSeat: state.selectedSeat!,
             secondsRemaining: state.holdSecondsRemaining,
-            onProceed:
-                state.bundleHold != null ? cubit.proceedToReturnSeatMap : null,
-            buttonLabel: isAr ? 'مقعد العودة' : 'Return Seat',
+            onProceed: (!isCutoff && state.bundleHold != null)
+                ? cubit.proceedToReturnSeatMap
+                : null,
+            buttonLabel: isCutoff
+                ? (isAr ? 'الحجز مغلق' : 'Booking closed')
+                : (isAr ? 'مقعد العودة' : 'Return Seat'),
           );
         }
       } else {
@@ -413,9 +426,12 @@ class _BookTripContentState extends State<_BookTripContent>
             key: ValueKey('bundle_return_${state.selectedReturnSeat!.seatId}'),
             selectedSeat: state.selectedReturnSeat!,
             secondsRemaining: state.holdSecondsRemaining,
-            onProceed:
-                state.bundleHold != null ? cubit.proceedToReview : null,
-            buttonLabel: isAr ? 'مراجعة الحجز' : 'Review',
+            onProceed: (!isCutoff && state.bundleHold != null)
+                ? cubit.proceedToReview
+                : null,
+            buttonLabel: isCutoff
+                ? (isAr ? 'الحجز مغلق' : 'Booking closed')
+                : (isAr ? 'مراجعة الحجز' : 'Review'),
           );
         }
       }
@@ -469,7 +485,7 @@ class _SmartBookingSetupView extends StatelessWidget {
     final canContinueRoundTrip =
         canContinueSingle &&
         state.selectedReturnOption != null &&
-        state.selectedReturnOption!.isBookable;
+        state.selectedReturnOption!.canBookReturn;
 
     final canContinue = isRoundTrip ? canContinueRoundTrip : canContinueSingle;
 
@@ -587,16 +603,28 @@ class _SmartBookingSetupView extends StatelessWidget {
       alertMsg = isAr
           ? 'يرجى اختيار موعد رحلة الذهاب المناسب'
           : 'Please select an outbound departure time';
+    } else if (state.selectedTrip!.isBookingClosed()) {
+      alertMsg = isAr
+          ? 'انتهى وقت الحجز لهذه الرحلة.'
+          : 'Booking for this trip is closed.';
     } else if (!state.selectedTrip!.canBook) {
       alertMsg = isAr
           ? 'رحلة الذهاب غير متاحة للحجز، يرجى اختيار موعد آخر'
           : 'This outbound trip is not available. Please choose another time.';
-    } else if (state.isRoundTrip &&
-        (state.selectedReturnOption == null ||
-            !state.selectedReturnOption!.isBookable)) {
+    } else if (state.isRoundTrip && state.selectedReturnOption == null) {
       alertMsg = isAr
           ? 'يرجى اختيار موعد رحلة العودة المناسب'
           : 'Please select a return departure time';
+    } else if (state.isRoundTrip &&
+        state.selectedReturnOption!.isBookingClosed()) {
+      alertMsg = isAr
+          ? 'انتهى وقت الحجز لهذه الرحلة.'
+          : 'Booking for this trip is closed.';
+    } else if (state.isRoundTrip &&
+        !state.selectedReturnOption!.canBookReturn) {
+      alertMsg = isAr
+          ? 'رحلة العودة غير متاحة للحجز، يرجى اختيار موعد آخر'
+          : 'This return trip is not available. Please choose another time.';
     }
 
     if (alertMsg.isNotEmpty) {

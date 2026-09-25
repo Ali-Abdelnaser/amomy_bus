@@ -98,11 +98,11 @@ void main() {
       expect(find.text('Outbound'), findsOneWidget);
       expect(find.text('8:00 AM'), findsOneWidget);
 
-      // Stops and Localities
+      // Canonical Stops (no separate localities)
       expect(find.text('Ezzat Bridge'), findsOneWidget);
-      expect(find.text('Mit Fadala'), findsOneWidget);
       expect(find.text('Toshka Gate'), findsOneWidget);
-      expect(find.text('Mansoura'), findsOneWidget);
+      expect(find.text('Mit Fadala'), findsNothing);
+      expect(find.text('Mansoura'), findsNothing);
 
       // Seat number
       expect(find.text('7'), findsOneWidget);

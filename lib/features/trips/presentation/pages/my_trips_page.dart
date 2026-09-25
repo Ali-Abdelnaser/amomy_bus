@@ -133,8 +133,10 @@ class _MyTripsView extends StatelessWidget {
                             _HeaderBookButton(
                               isAr: isAr,
                               disableAnimations: disableAnimations,
-                              isEnabled: true,
-                              disabledMessage: '',
+                              isEnabled: !state.shouldDisableBookingEntry,
+                              disabledMessage: isAr
+                                  ? 'الحجز مغلق'
+                                  : 'Booking closed',
                               onTap: () => context.push(RoutePaths.bookTrip),
                             ),
                           ],

@@ -21,10 +21,12 @@ class DeviceIdentityServiceImpl implements DeviceIdentityService {
   );
 
   final SecureStorageService _secureStorage;
-  final MethodChannel _channel;
+  MethodChannel _channel = _platformChannel;
 
-  DeviceIdentityServiceImpl(this._secureStorage, [MethodChannel? channel])
-    : _channel = channel ?? _platformChannel;
+  DeviceIdentityServiceImpl(this._secureStorage);
+
+  @visibleForTesting
+  set channelForTesting(MethodChannel channel) => _channel = channel;
 
   @override
   Future<String> getDeviceIdentifier() async {

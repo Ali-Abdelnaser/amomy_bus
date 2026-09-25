@@ -78,6 +78,13 @@ final class SignInWithGoogleRequested extends AuthEvent {
   List<Object?> get props => [webClientId];
 }
 
+final class SignInWithAppleRequested extends AuthEvent {
+  const SignInWithAppleRequested();
+
+  @override
+  List<Object?> get props => [];
+}
+
 final class CompleteProfileRequested extends AuthEvent {
   final String fullName;
   final String phone;

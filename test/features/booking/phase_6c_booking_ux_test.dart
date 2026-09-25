@@ -15,7 +15,7 @@ import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_cubit.da
 import 'package:amomy_bus/features/tracking/presentation/widgets/home_live_tracking_card.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 
-class _MockTrackingRepo implements TrackingRepository {
+class _MockTrackingRepo extends TrackingRepository {
   final TrackingSummary summary;
   _MockTrackingRepo(this.summary);
 
@@ -434,23 +434,30 @@ void main() {
     // =========================================================================
     // Item G: Zero is_bookable -> Home Book a Ride disabled
     // =========================================================================
-    testWidgets('G. Zero is_bookable -> Home Book a Ride CTA remains enabled', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        _buildTestApp(
-          const HomeBookRideCard(
-            points: 1500,
-            hasLoadedAvailability: true,
-            isBookingAvailable: false,
+    testWidgets(
+      'G. Zero is_bookable -> Home Book a Ride CTA shows booking closed and is disabled',
+      (tester) async {
+        await tester.pumpWidget(
+          _buildTestApp(
+            const HomeBookRideCard(
+              points: 1500,
+              hasLoadedAvailability: true,
+              isBookingAvailable: false,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('home-book-ride-cta')), findsOneWidget);
-      expect(find.text('Book Now'), findsOneWidget);
-    });
+        expect(find.byKey(const Key('home-book-ride-cta')), findsOneWidget);
+        expect(find.text('Booking closed'), findsOneWidget);
+        expect(find.text('Book Now'), findsNothing);
+
+        final gesture = tester.widget<GestureDetector>(
+          find.byKey(const Key('home-book-ride-cta')),
+        );
+        expect(gesture.onTap, isNull);
+      },
+    );
 
     // =========================================================================
     // Item H: Service-off / zero-trip response -> clean empty state

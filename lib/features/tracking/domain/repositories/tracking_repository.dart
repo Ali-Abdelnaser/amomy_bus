@@ -1,3 +1,4 @@
+import 'package:amomy_bus/features/tracking/domain/models/fleet_tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
 import '../models/tracking_summary.dart';
@@ -6,6 +7,18 @@ import '../models/tracking_summary.dart';
 abstract class TrackingRepository {
   /// Fetches the canonical passenger tracking snapshot for an exact booked trip.
   Future<TrackingSummary> getTripTracking({required String tripId});
+
+  /// Fetches the live fleet tracking snapshot for the passenger map.
+  Future<FleetTrackingSummary> getPassengerFleetTracking() {
+    return Future.value(
+      FleetTrackingSummary(
+        mapEnabled: false,
+        buses: const [],
+        routes: const [],
+        serverTime: DateTime.now().toUtc(),
+      ),
+    );
+  }
 
   /// Subscribes to trip-scoped tracking-state invalidation.
   Stream<void> subscribeToTripTrackingState({required String tripId});

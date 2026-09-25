@@ -139,6 +139,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueWithGoogle => 'Continue with Google';
 
   @override
+  String get signInWithGoogle => 'Continue with Google';
+
+  @override
+  String get signInWithApple => 'Continue with Apple';
+
+  @override
   String get dontHaveAccount => 'Don\'t have an account?';
 
   @override
@@ -1461,6 +1467,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackingEndedPill => 'ENDED';
 
   @override
+  String get trackingUnavailablePill => 'UNAVAILABLE';
+
+  @override
+  String get trackingMapDisabledTitle => 'Live map is currently unavailable';
+
+  @override
+  String get trackingMapDisabledSubtitle =>
+      'Live location display has been disabled by the administration.';
+
+  @override
+  String get trackingBusHiddenTitle =>
+      'Live location is unavailable for this trip';
+
+  @override
+  String get trackingBusHiddenSubtitle =>
+      'Live bus location display is currently turned off.';
+
+  @override
+  String get trackingNoTripSelectedTitle => 'Select a trip to view tracking';
+
+  @override
+  String get trackingNoTripSelectedSubtitle =>
+      'You can open live tracking from your trip details.';
+
+  @override
+  String get trackingViewMyTripsAction => 'View My Trips';
+
+  @override
   String get trackingLastUpdatedJustNow => 'Updated just now';
 
   @override
@@ -1496,8 +1530,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Seat hold expired. Please select a seat again.';
 
   @override
-  String get errorBookingClosed =>
-      'Booking is no longer available for this trip.';
+  String get errorBookingClosed => 'Booking for this trip is closed.';
 
   @override
   String get errorCancellationWindowClosed => 'Cancellation period has ended.';

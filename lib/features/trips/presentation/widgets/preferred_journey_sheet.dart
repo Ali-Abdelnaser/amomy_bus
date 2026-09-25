@@ -323,19 +323,6 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              if (_originStop != null &&
-                                  _originStop!.locality(locale).isNotEmpty) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  _originStop!.locality(locale),
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -444,19 +431,6 @@ class _PreferredJourneySheetState extends State<PreferredJourneySheet> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              if (_destStop != null &&
-                                  _destStop!.locality(locale).isNotEmpty) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  _destStop!.locality(locale),
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
                             ],
                           ),
                         ),

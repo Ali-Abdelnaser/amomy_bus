@@ -10,7 +10,7 @@ import 'package:amomy_bus/features/tracking/domain/services/stop_progression_eng
 import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_cubit.dart';
 import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_state.dart';
 
-class FakeTrackingRepository implements TrackingRepository {
+class FakeTrackingRepository extends TrackingRepository {
   TrackingSummary summary;
   final StreamController<void> _telemetryController =
       StreamController<void>.broadcast();

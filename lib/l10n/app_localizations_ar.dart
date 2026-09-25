@@ -137,6 +137,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get continueWithGoogle => 'المتابعة باستخدام Google';
 
   @override
+  String get signInWithGoogle => 'تسجيل الدخول باستخدام Google';
+
+  @override
+  String get signInWithApple => 'تسجيل الدخول باستخدام Apple';
+
+  @override
   String get dontHaveAccount => 'ليس لديك حساب؟';
 
   @override
@@ -1446,6 +1452,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trackingEndedPill => 'انتهت';
 
   @override
+  String get trackingUnavailablePill => 'غير متاح';
+
+  @override
+  String get trackingMapDisabledTitle => 'الخريطة غير متاحة حالياً';
+
+  @override
+  String get trackingMapDisabledSubtitle =>
+      'تم إيقاف عرض الموقع المباشر بواسطة الإدارة.';
+
+  @override
+  String get trackingBusHiddenTitle => 'الموقع المباشر غير متاح لهذه الرحلة';
+
+  @override
+  String get trackingBusHiddenSubtitle => 'عرض موقع الحافلة متوقف حالياً.';
+
+  @override
+  String get trackingNoTripSelectedTitle => 'اختر رحلة لعرض التتبع';
+
+  @override
+  String get trackingNoTripSelectedSubtitle =>
+      'يمكنك فتح التتبع المباشر من تفاصيل رحلتك.';
+
+  @override
+  String get trackingViewMyTripsAction => 'عرض رحلاتي';
+
+  @override
   String get trackingLastUpdatedJustNow => 'تم التحديث الآن';
 
   @override
@@ -1480,7 +1512,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorHoldExpired => 'انتهت مهلة حجز المقعد. يرجى اختيار مقعد آخر.';
 
   @override
-  String get errorBookingClosed => 'الحجز غير متاح حالياً لهذه الرحلة.';
+  String get errorBookingClosed => 'انتهى وقت الحجز لهذه الرحلة.';
 
   @override
   String get errorCancellationWindowClosed =>

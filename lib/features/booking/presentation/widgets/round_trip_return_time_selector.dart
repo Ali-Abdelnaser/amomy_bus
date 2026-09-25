@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../domain/entities/booking_entities.dart';
+import '../../domain/services/passenger_booking_availability.dart';
 import 'return_meeting_info_card.dart';
 
 /// Departure time selector for the RETURN leg in Round Trip booking.
-class RoundTripReturnTimeSelector extends StatelessWidget {
+class RoundTripReturnTimeSelector extends StatefulWidget {
   final List<RoundTripReturnOption> returnOptions;
   final RoundTripReturnOption? selectedReturnOption;
   final bool isLoading;
@@ -25,14 +27,94 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
   });
 
   @override
+  State<RoundTripReturnTimeSelector> createState() =>
+      _RoundTripReturnTimeSelectorState();
+}
+
+class _RoundTripReturnTimeSelectorState
+    extends State<RoundTripReturnTimeSelector>
+    with WidgetsBindingObserver {
+  Timer? _cutoffTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleCutoffTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant RoundTripReturnTimeSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.returnOptions != widget.returnOptions ||
+        oldWidget.selectedReturnOption != widget.selectedReturnOption) {
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cutoffTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleCutoffTimer() {
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
+
+    final now = PassengerBookingAvailability.currentNow;
+    DateTime? earliestCutoff;
+
+    for (final option in widget.returnOptions) {
+      final cutoff = option.bookingCloseAt;
+      if (cutoff != null && cutoff.isAfter(now)) {
+        if (earliestCutoff == null || cutoff.isBefore(earliestCutoff)) {
+          earliestCutoff = cutoff;
+        }
+      }
+    }
+
+    final selectedCutoff = widget.selectedReturnOption?.bookingCloseAt;
+    if (selectedCutoff != null && selectedCutoff.isAfter(now)) {
+      if (earliestCutoff == null || selectedCutoff.isBefore(earliestCutoff)) {
+        earliestCutoff = selectedCutoff;
+      }
+    }
+
+    if (earliestCutoff != null) {
+      final duration =
+          earliestCutoff.difference(now) + const Duration(milliseconds: 100);
+      _cutoffTimer = Timer(duration, () {
+        if (mounted) {
+          setState(() {});
+          _scheduleCutoffTimer();
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (kDebugMode) {
       debugPrint(
-        'ROUND_TRIP_DEBUG selector received options count ${returnOptions.length}',
+        'ROUND_TRIP_DEBUG selector received options count ${widget.returnOptions.length}',
       );
     }
     final l10n = context.l10n;
     final isAr = context.isArabic;
+    final isLoading = widget.isLoading;
+    final returnOptions = widget.returnOptions;
+    final errorMessage = widget.errorMessage;
+    final onRetry = widget.onRetry;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +246,7 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    errorMessage!,
+                    errorMessage,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -255,7 +337,7 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      errorMessage!,
+                      errorMessage,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -294,9 +376,10 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
             ),
           ],
           Column(
-            children: returnOptions.map((option) {
+            children: widget.returnOptions.map((option) {
               final isSelected =
-                  selectedReturnOption?.returnTripId == option.returnTripId;
+                  widget.selectedReturnOption?.returnTripId ==
+                  option.returnTripId;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -304,16 +387,18 @@ class RoundTripReturnTimeSelector extends StatelessWidget {
                   option: option,
                   isSelected: isSelected,
                   isAr: isAr,
-                  isLoading: isLoading,
-                  onTap: (!isLoading && option.isBookable)
-                      ? () => onOptionSelected(option)
+                  isLoading: widget.isLoading,
+                  onTap: (!widget.isLoading && option.canBookReturn)
+                      ? () => widget.onOptionSelected(option)
                       : null,
                 ),
               );
             }).toList(),
           ),
           const SizedBox(height: 12),
-          ReturnMeetingInfoCard(selectedReturnOption: selectedReturnOption),
+          ReturnMeetingInfoCard(
+            selectedReturnOption: widget.selectedReturnOption,
+          ),
         ],
       ],
     );
@@ -337,7 +422,8 @@ class _ReturnOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isNotBookable = !option.isBookable;
+    final isCutoff = option.isBookingClosed();
+    final isNotBookable = !option.canBookReturn;
     final isFewSeats = !isNotBookable && option.availableSeats <= 5;
 
     final formattedTime = AppTimeFormatter.formatDepartureTime(
@@ -412,11 +498,15 @@ class _ReturnOptionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isNotBookable
-                          ? (isAr ? 'غير متاح للحجز' : 'Unavailable')
-                          : (isFewSeats
-                                ? (isAr ? 'مقاعد محدودة' : 'Few seats left')
-                                : (isAr ? 'متاح للحجز' : 'Available')),
+                      isCutoff
+                          ? (isAr ? 'الحجز مغلق' : 'Booking closed')
+                          : (isNotBookable
+                                ? (isAr ? 'غير متاح للحجز' : 'Unavailable')
+                                : (isFewSeats
+                                      ? (isAr
+                                            ? 'مقاعد محدودة'
+                                            : 'Few seats left')
+                                      : (isAr ? 'متاح للحجز' : 'Available'))),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: isSelected
@@ -452,6 +542,25 @@ class _ReturnOptionCard extends StatelessWidget {
                   ),
                   child: Text(
                     isAr ? 'جارٍ التحقق' : 'Verifying',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                )
+              else if (isCutoff)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isAr ? 'الحجز مغلق' : 'Booking closed',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

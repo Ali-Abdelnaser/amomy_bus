@@ -13,6 +13,7 @@ class TrackingCubit extends Cubit<TrackingState> {
 
   StreamSubscription<void>? _trackingInvalidationSubscription;
   Timer? _revisionDebounce;
+  Timer? _fleetRefreshTimer;
   bool _refreshInFlight = false;
   bool _refreshQueued = false;
   String? _trackedTripId;
@@ -24,41 +25,121 @@ class TrackingCubit extends Cubit<TrackingState> {
     String? tripId,
     bool isRefresh = false,
   }) async {
-    if (tripId == null || tripId.trim().isEmpty) {
-      emit(
-        state.copyWith(
-          uiStatus: TrackingUiStatus.error,
-          errorMessage: 'Trip tracking requires a booked trip.',
-          clearTrackingSnapshot: true,
-        ),
+    final normalizedTripId = tripId?.trim();
+    if (normalizedTripId != null && normalizedTripId.isNotEmpty) {
+      _stopFleetRefresh();
+      final tripChanged = _trackedTripId != normalizedTripId;
+      _trackedTripId = normalizedTripId;
+
+      if (tripChanged) {
+        await _trackingInvalidationSubscription?.cancel();
+        _trackingInvalidationSubscription = null;
+        emit(
+          state.copyWith(
+            uiStatus: TrackingUiStatus.loading,
+            trackedTripId: normalizedTripId,
+            clearTrackingSnapshot: true,
+            clearSelectedStop: true,
+          ),
+        );
+      } else if (!isRefresh) {
+        emit(state.copyWith(uiStatus: TrackingUiStatus.loading));
+      }
+
+      await _fetchTripTracking(
+        normalizedTripId,
+        silent: isRefresh && !tripChanged,
       );
-      return;
-    }
-
-    final normalizedTripId = tripId.trim();
-    final tripChanged = _trackedTripId != normalizedTripId;
-    _trackedTripId = normalizedTripId;
-
-    if (tripChanged) {
+      _subscribeToTripInvalidation(normalizedTripId);
+    } else {
+      // Fleet tracking mode: no passenger booking required
+      _trackedTripId = null;
       await _trackingInvalidationSubscription?.cancel();
       _trackingInvalidationSubscription = null;
-      emit(
-        state.copyWith(
-          uiStatus: TrackingUiStatus.loading,
-          trackedTripId: normalizedTripId,
-          clearTrackingSnapshot: true,
-          clearSelectedStop: true,
-        ),
-      );
-    } else if (!isRefresh) {
+
+      if (!isRefresh && state.fleetSummary == null) {
+        emit(state.copyWith(uiStatus: TrackingUiStatus.loading));
+      } else if (isRefresh) {
+        emit(state.copyWith(isRefreshingSnapshot: true));
+      }
+
+      await _fetchFleetTracking(silent: isRefresh);
+      _startFleetRefresh();
+    }
+  }
+
+  void _startFleetRefresh() {
+    _fleetRefreshTimer?.cancel();
+    _fleetRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!isClosed && _trackedTripId == null) {
+        unawaited(_fetchFleetTracking(silent: true));
+      }
+    });
+  }
+
+  void _stopFleetRefresh() {
+    _fleetRefreshTimer?.cancel();
+    _fleetRefreshTimer = null;
+  }
+
+  Future<void> _fetchFleetTracking({required bool silent}) async {
+    if (_refreshInFlight) {
+      _refreshQueued = true;
+      return;
+    }
+    _refreshInFlight = true;
+    if (!silent) {
       emit(state.copyWith(uiStatus: TrackingUiStatus.loading));
+    } else {
+      emit(state.copyWith(isRefreshingSnapshot: true));
     }
 
-    await _fetchTripTracking(
-      normalizedTripId,
-      silent: isRefresh && !tripChanged,
-    );
-    _subscribeToTripInvalidation(normalizedTripId);
+    try {
+      final fleet = await repository.getPassengerFleetTracking();
+      if (_trackedTripId != null) return;
+
+      final summary = fleet.toTrackingSummary();
+      final routeGeom = fleet.primaryGeometry;
+      final telemetry = fleet.busesWithValidLocation.isNotEmpty
+          ? fleet.busesWithValidLocation.first.toBusTelemetry()
+          : null;
+
+      emit(
+        state.copyWith(
+          uiStatus: TrackingUiStatus.loaded,
+          fleetSummary: fleet,
+          summary: summary,
+          routeGeometry: routeGeom,
+          latestTelemetry: telemetry,
+          clearLivePosition: telemetry == null,
+          errorMessage: null,
+          isRefreshingSnapshot: false,
+        ),
+      );
+    } catch (e) {
+      if (state.summary == null && state.fleetSummary == null) {
+        emit(
+          state.copyWith(
+            uiStatus: TrackingUiStatus.error,
+            errorMessage: 'TRACKING_LOAD_FAILED',
+            isRefreshingSnapshot: false,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            uiStatus: TrackingUiStatus.loaded,
+            isRefreshingSnapshot: false,
+          ),
+        );
+      }
+    } finally {
+      _refreshInFlight = false;
+      if (_refreshQueued && _trackedTripId == null) {
+        _refreshQueued = false;
+        unawaited(_fetchFleetTracking(silent: true));
+      }
+    }
   }
 
   Future<void> refreshTrackedTrip() async {
@@ -94,6 +175,8 @@ class TrackingCubit extends Cubit<TrackingState> {
           summary.status == LiveTrackingStatus.qaPreview;
 
       final isTelemetrySuppressed =
+          summary.trackingPhase == TrackingPhase.mapDisabled ||
+          summary.trackingPhase == TrackingPhase.busHidden ||
           summary.trackingPhase == TrackingPhase.gpsOffline ||
           summary.trackingPhase == TrackingPhase.reassignmentPending ||
           summary.trackingPhase == TrackingPhase.waitingAssignment ||
@@ -288,6 +371,7 @@ class TrackingCubit extends Cubit<TrackingState> {
 
   @override
   Future<void> close() {
+    _stopFleetRefresh();
     _revisionDebounce?.cancel();
     _trackingInvalidationSubscription?.cancel();
     return super.close();

@@ -32,6 +32,9 @@ abstract class AuthRepository {
   /// Native Google Sign-In with Google ID Token exchange
   ResultFuture<AppUser> signInWithGoogle({String? webClientId});
 
+  /// Native Apple Sign-In with Apple ID Token exchange
+  ResultFuture<AppUser> signInWithApple();
+
   /// Complete missing profile fields (for Google authenticated users)
   ResultFuture<AppUser> completeProfile({
     required String userId,

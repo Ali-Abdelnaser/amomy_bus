@@ -338,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Continue with Google'**
   String get continueWithGoogle;
 
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @signInWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get signInWithApple;
+
   /// No description provided for @dontHaveAccount.
   ///
   /// In en, this message translates to:
@@ -2816,6 +2828,54 @@ abstract class AppLocalizations {
   /// **'ENDED'**
   String get trackingEndedPill;
 
+  /// No description provided for @trackingUnavailablePill.
+  ///
+  /// In en, this message translates to:
+  /// **'UNAVAILABLE'**
+  String get trackingUnavailablePill;
+
+  /// No description provided for @trackingMapDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live map is currently unavailable'**
+  String get trackingMapDisabledTitle;
+
+  /// No description provided for @trackingMapDisabledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live location display has been disabled by the administration.'**
+  String get trackingMapDisabledSubtitle;
+
+  /// No description provided for @trackingBusHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live location is unavailable for this trip'**
+  String get trackingBusHiddenTitle;
+
+  /// No description provided for @trackingBusHiddenSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live bus location display is currently turned off.'**
+  String get trackingBusHiddenSubtitle;
+
+  /// No description provided for @trackingNoTripSelectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a trip to view tracking'**
+  String get trackingNoTripSelectedTitle;
+
+  /// No description provided for @trackingNoTripSelectedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You can open live tracking from your trip details.'**
+  String get trackingNoTripSelectedSubtitle;
+
+  /// No description provided for @trackingViewMyTripsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View My Trips'**
+  String get trackingViewMyTripsAction;
+
   /// No description provided for @trackingLastUpdatedJustNow.
   ///
   /// In en, this message translates to:
@@ -2879,7 +2939,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorBookingClosed.
   ///
   /// In en, this message translates to:
-  /// **'Booking is no longer available for this trip.'**
+  /// **'Booking for this trip is closed.'**
   String get errorBookingClosed;
 
   /// No description provided for @errorCancellationWindowClosed.

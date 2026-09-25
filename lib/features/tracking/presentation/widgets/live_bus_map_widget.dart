@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/bus_stop_model.dart';
 import '../../domain/models/bus_telemetry.dart';
+import '../../domain/models/fleet_bus.dart';
 import '../../domain/models/live_tracking_status.dart';
 import '../../domain/models/route_geometry.dart';
 import 'amomy_map_icons.dart';
@@ -20,10 +21,12 @@ import 'amomy_map_icons.dart';
 /// - Follow Bus camera tracking with user-pan disengagement
 class LiveBusMapWidget extends StatefulWidget {
   final BusTelemetry? telemetry;
+  final List<FleetBus>? fleetBuses;
   final List<BusStopModel> routeStops;
   final LiveTrackingStatus status;
   final BusStopModel? selectedStop;
   final ValueChanged<BusStopModel>? onStopTap;
+  final ValueChanged<FleetBus>? onFleetBusTap;
   final VoidCallback? onBusTap;
   final bool isCompactPreview;
   final bool followBus;
@@ -33,10 +36,12 @@ class LiveBusMapWidget extends StatefulWidget {
   const LiveBusMapWidget({
     super.key,
     this.telemetry,
+    this.fleetBuses,
     this.routeStops = const [],
     this.status = LiveTrackingStatus.offline,
     this.selectedStop,
     this.onStopTap,
+    this.onFleetBusTap,
     this.onBusTap,
     this.isCompactPreview = false,
     this.followBus = true,
@@ -57,8 +62,55 @@ class LiveBusMapWidget extends StatefulWidget {
     return isCompactPreview ? eligible.take(4).toList() : eligible.toList();
   }
 
+  @visibleForTesting
+  static bool canShowBusMarker({
+    required BusTelemetry? telemetry,
+    required LiveTrackingStatus status,
+  }) {
+    return telemetry != null &&
+        (status == LiveTrackingStatus.live ||
+            status == LiveTrackingStatus.online ||
+            status == LiveTrackingStatus.stale ||
+            status == LiveTrackingStatus.progressionUnavailable);
+  }
+
+  @visibleForTesting
+  static BusMapPrivacyState resolveMapStateOnTelemetryChange({
+    required LatLng? currentDisplayedPosition,
+    required BusTelemetry? oldTelemetry,
+    required BusTelemetry? newTelemetry,
+    required LiveTrackingStatus status,
+  }) {
+    if (newTelemetry == null ||
+        !canShowBusMarker(telemetry: newTelemetry, status: status)) {
+      return const BusMapPrivacyState(
+        displayedPosition: null,
+        shouldShowMarker: false,
+        isCleared: true,
+      );
+    }
+    return BusMapPrivacyState(
+      displayedPosition: LatLng(newTelemetry.latitude, newTelemetry.longitude),
+      shouldShowMarker: true,
+      isCleared: false,
+    );
+  }
+
   @override
   State<LiveBusMapWidget> createState() => _LiveBusMapWidgetState();
+}
+
+/// State model tracking coordinate privacy lifecycle on LiveBusMapWidget
+class BusMapPrivacyState {
+  final LatLng? displayedPosition;
+  final bool shouldShowMarker;
+  final bool isCleared;
+
+  const BusMapPrivacyState({
+    required this.displayedPosition,
+    required this.shouldShowMarker,
+    required this.isCleared,
+  });
 }
 
 class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
@@ -97,6 +149,7 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
 
   Set<Marker> _stopMarkers = {};
   Marker? _busMarker;
+  Set<Marker> _fleetBusMarkers = {};
   Set<Marker> _combinedMarkers = {};
   Set<Polyline> _cachedPolylines = {};
 
@@ -132,6 +185,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     );
 
     _resolveIcons();
+    _rebuildStopMarkers();
+    _updateBusMarker(_displayedPosition);
     _initMarkerIcons();
 
     _positionController = AnimationController(
@@ -162,8 +217,12 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
 
   void _resolveIcons() {
     final busState = _resolveBusVisualState();
-    _busMarkerIcon = AmomyMapIcons.getCachedBusIcon(busState);
-    _pinNormalIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.normal);
+    _busMarkerIcon =
+        AmomyMapIcons.getCachedBusIcon(busState) ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+    _pinNormalIcon =
+        AmomyMapIcons.getCachedStopIcon(StopPinVisualState.normal) ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
     _pinPassedIcon = AmomyMapIcons.getCachedStopIcon(StopPinVisualState.passed);
     _pinCurrentIcon = AmomyMapIcons.getCachedStopIcon(
       StopPinVisualState.current,
@@ -287,19 +346,13 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     if (_busMarkerIcon == null) {
       _resolveIcons();
     }
-    final canShowVehicle =
-        widget.status == LiveTrackingStatus.live ||
-        widget.status == LiveTrackingStatus.online ||
-        widget.status == LiveTrackingStatus.stale ||
-        widget.status == LiveTrackingStatus.progressionUnavailable;
+    final canShowVehicle = LiveBusMapWidget.canShowBusMarker(
+      telemetry: widget.telemetry,
+      status: widget.status,
+    );
     final busCoord = canShowVehicle
-        ? pos ??
-              (widget.telemetry != null
-                  ? LatLng(
-                      widget.telemetry!.latitude,
-                      widget.telemetry!.longitude,
-                    )
-                  : null)
+        ? (pos ??
+              LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude))
         : null;
     if (busCoord != null && _busMarkerIcon != null) {
       _busMarker = Marker(
@@ -314,19 +367,51 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
     } else {
       _busMarker = null;
     }
+
+    // Render fleet buses if provided
+    final fleet = widget.fleetBuses;
+    if (fleet != null && fleet.isNotEmpty && _busMarkerIcon != null) {
+      final Set<Marker> newFleetMarkers = {};
+      for (final bus in fleet) {
+        // Only buses with valid GPS locations
+        if (bus.hasValidCoordinates) {
+          final busLatLng = LatLng(bus.latitude!, bus.longitude!);
+          newFleetMarkers.add(
+            Marker(
+              markerId: MarkerId('fleet_bus_${bus.busId}'),
+              position: busLatLng,
+              icon: _busMarkerIcon!,
+              anchor: AmomyMapIcons.busMarkerAnchor,
+              rotation: 0.0,
+              infoWindow: bus.label.isNotEmpty
+                  ? InfoWindow(title: bus.label)
+                  : InfoWindow.noText,
+              onTap: () => widget.onFleetBusTap?.call(bus),
+            ),
+          );
+        }
+      }
+      _fleetBusMarkers = newFleetMarkers;
+    } else {
+      _fleetBusMarkers = {};
+    }
+
     _updateCombinedMarkers();
   }
 
   void _updateCombinedMarkers() {
-    _combinedMarkers = {..._stopMarkers, ?_busMarker};
+    _combinedMarkers = {
+      ..._stopMarkers,
+      ?_busMarker,
+      ..._fleetBusMarkers,
+    };
   }
 
   void _rebuildPolylines() {
-    final busCoord =
-        _displayedPosition ??
-        (widget.telemetry != null
-            ? LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude)
-            : null);
+    final busCoord = widget.telemetry != null
+        ? (_displayedPosition ??
+              LatLng(widget.telemetry!.latitude, widget.telemetry!.longitude))
+        : null;
 
     final Set<Polyline> newPolylines = {};
     final geom = widget.routeGeometry;
@@ -519,79 +604,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         );
       }
     } else {
-      // Fallback only uses verified canonical stop coordinates.
-      final eligibleStops = widget.routeStops
-          .where(LiveBusMapWidget.shouldRenderStopMarker)
-          .toList();
-
-      if (eligibleStops.length >= 2) {
-        final splitIdx = eligibleStops.indexWhere(
-          (s) =>
-              s.semanticState == TrackingStopSemanticState.active ||
-              s.semanticState == TrackingStopSemanticState.next,
-        );
-
-        if (splitIdx > 0) {
-          final passedPoints = eligibleStops
-              .sublist(0, splitIdx + 1)
-              .map((s) => LatLng(s.latitude!, s.longitude!))
-              .toList();
-          final upcomingPoints = eligibleStops
-              .sublist(splitIdx)
-              .map((s) => LatLng(s.latitude!, s.longitude!))
-              .toList();
-
-          newPolylines.add(
-            Polyline(
-              polylineId: const PolylineId('fallback_passed'),
-              points: passedPoints,
-              color: passedColor,
-              width: 4,
-              zIndex: 1,
-            ),
-          );
-          newPolylines.add(
-            Polyline(
-              polylineId: const PolylineId('fallback_casing'),
-              points: upcomingPoints,
-              color: casingColor,
-              width: 7,
-              zIndex: 2,
-            ),
-          );
-          newPolylines.add(
-            Polyline(
-              polylineId: const PolylineId('fallback_upcoming'),
-              points: upcomingPoints,
-              color: upcomingBlue,
-              width: 5,
-              zIndex: 3,
-            ),
-          );
-        } else {
-          final allPoints = eligibleStops
-              .map((s) => LatLng(s.latitude!, s.longitude!))
-              .toList();
-          newPolylines.add(
-            Polyline(
-              polylineId: const PolylineId('fallback_full_casing'),
-              points: allPoints,
-              color: casingColor,
-              width: 7,
-              zIndex: 2,
-            ),
-          );
-          newPolylines.add(
-            Polyline(
-              polylineId: const PolylineId('fallback_full'),
-              points: allPoints,
-              color: upcomingBlue,
-              width: 5,
-              zIndex: 3,
-            ),
-          );
-        }
-      }
+      // Per contract: Do NOT fabricate a route polyline or connect stops with straight lines.
+      // If route geometry is null, handle gracefully without creating artificial polylines.
     }
 
     _cachedPolylines = newPolylines;
@@ -706,10 +720,22 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
             oldTel.latitude != newTel.latitude ||
             oldTel.longitude != newTel.longitude)) {
       _animateToPosition(newTel);
+    } else if (newTel == null &&
+        (oldTel != null || _displayedPosition != null)) {
+      _positionController.stop();
+      _latTween = null;
+      _lngTween = null;
+      _lastTelemetryRecordedAt = null;
+      _displayedPosition = null;
+      _busMarker = null;
+      _updateCombinedMarkers();
+      _rebuildPolylines();
+      if (mounted) setState(() {});
     }
 
     if (widget.followBus &&
         !oldWidget.followBus &&
+        widget.telemetry != null &&
         _displayedPosition != null &&
         !_isCameraMoving &&
         !_isPointerDown) {
@@ -728,6 +754,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         oldTel?.currentStopId != newTel?.currentStopId ||
         oldTel?.nextStopId != newTel?.nextStopId;
 
+    final fleetChanged = widget.fleetBuses != oldWidget.fleetBuses;
+
     if (statusChanged) {
       _resolveIcons();
     }
@@ -736,7 +764,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
         stopsChanged ||
         selectedChanged ||
         compactChanged ||
-        stopIdChanged) {
+        stopIdChanged ||
+        fleetChanged) {
       _rebuildStopMarkers();
       _updateBusMarker(_displayedPosition);
     }
@@ -747,19 +776,60 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       _rebuildPolylines();
     }
 
-    // Camera fitting on initial stops load
+    // Camera fitting on initial stops load or fleet buses load
     if (!widget.isCompactPreview &&
         !_initialCameraFitted &&
-        _isMapReady &&
-        widget.routeStops.isNotEmpty) {
+        _isMapReady) {
       final stopsWithCoords = widget.routeStops
           .where(LiveBusMapWidget.shouldRenderStopMarker)
           .toList();
       if (stopsWithCoords.isNotEmpty) {
         _initialCameraFitted = true;
         _fitCameraToStops(stopsWithCoords);
+      } else if (widget.fleetBuses != null && widget.fleetBuses!.isNotEmpty) {
+        final busesWithCoords = widget.fleetBuses!
+            .where((b) => b.hasValidCoordinates)
+            .toList();
+        if (busesWithCoords.isNotEmpty) {
+          _initialCameraFitted = true;
+          _fitCameraToFleetBuses(busesWithCoords);
+        }
       }
     }
+  }
+
+  void _fitCameraToFleetBuses(List<FleetBus> buses) {
+    if (_mapController == null || buses.isEmpty) return;
+    _isProgrammaticCameraMove = true;
+
+    double minLat = buses.first.latitude!;
+    double maxLat = buses.first.latitude!;
+    double minLng = buses.first.longitude!;
+    double maxLng = buses.first.longitude!;
+
+    for (final b in buses) {
+      if (b.latitude! < minLat) minLat = b.latitude!;
+      if (b.latitude! > maxLat) maxLat = b.latitude!;
+      if (b.longitude! < minLng) minLng = b.longitude!;
+      if (b.longitude! > maxLng) maxLng = b.longitude!;
+    }
+
+    if (minLat == maxLat && minLng == maxLng) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(minLat, minLng), 14.6),
+      );
+      return;
+    }
+
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        48.0,
+      ),
+    );
   }
 
   void _fitCameraToStops(List<BusStopModel> stops) {
@@ -779,8 +849,8 @@ class _LiveBusMapWidgetState extends State<LiveBusMapWidget>
       if (s.longitude! > maxLng) maxLng = s.longitude!;
     }
 
-    // Include bus location only if it's reasonably close to route bounding box (< ~0.05 deg buffer)
-    if (_displayedPosition != null) {
+    // Include bus location only if telemetry is valid and reasonably close to route bounding box (< ~0.05 deg buffer)
+    if (widget.telemetry != null && _displayedPosition != null) {
       final busLat = _displayedPosition!.latitude;
       final busLng = _displayedPosition!.longitude;
       const buffer = 0.05;

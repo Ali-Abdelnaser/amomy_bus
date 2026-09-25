@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/models/bus_stop_model.dart';
 import '../../domain/models/bus_telemetry.dart';
+import '../../domain/models/fleet_bus.dart';
+import '../../domain/models/fleet_tracking_summary.dart';
 import '../../domain/models/live_tracking_status.dart';
 import '../../domain/models/route_geometry.dart';
 import '../../domain/models/stop_progression.dart';
@@ -12,6 +14,7 @@ enum TrackingUiStatus { initial, loading, loaded, error }
 class TrackingState extends Equatable {
   final TrackingUiStatus uiStatus;
   final TrackingSummary? summary;
+  final FleetTrackingSummary? fleetSummary;
   final RouteGeometry? routeGeometry;
   final BusTelemetry? latestTelemetry;
   final StopProgression? progression;
@@ -28,6 +31,7 @@ class TrackingState extends Equatable {
   const TrackingState({
     this.uiStatus = TrackingUiStatus.initial,
     this.summary,
+    this.fleetSummary,
     this.routeGeometry,
     this.latestTelemetry,
     this.progression,
@@ -76,6 +80,10 @@ class TrackingState extends Equatable {
 
   TrackingPhase get trackingPhase {
     final phase = summary?.trackingPhase ?? TrackingPhase.unknown;
+    if (phase == TrackingPhase.mapDisabled ||
+        phase == TrackingPhase.busHidden) {
+      return phase;
+    }
     if (isDeparted &&
         (phase == TrackingPhase.waitingStart ||
             phase == TrackingPhase.waitingAssignment ||
@@ -89,6 +97,10 @@ class TrackingState extends Equatable {
 
   bool get trackingEnabled {
     if (summary == null) return false;
+    if (trackingPhase == TrackingPhase.mapDisabled ||
+        trackingPhase == TrackingPhase.busHidden) {
+      return false;
+    }
     if (isDeparted) return true;
     if (summary!.trackingPhase != TrackingPhase.unknown) {
       return summary!.trackingEnabled;
@@ -100,6 +112,20 @@ class TrackingState extends Equatable {
         trackingStatus == LiveTrackingStatus.stale ||
         trackingStatus == LiveTrackingStatus.progressionUnavailable;
   }
+
+  bool get isFleetMode =>
+      fleetSummary != null && (trackedTripId == null || trackedTripId!.isEmpty);
+
+  List<FleetBus> get fleetBuses => fleetSummary?.buses ?? const [];
+  List<FleetBus> get visibleFleetBuses =>
+      fleetSummary?.busesWithValidLocation ?? const [];
+  bool get hasVisibleFleetBuses => visibleFleetBuses.isNotEmpty;
+
+  bool get isMapDisabled =>
+      (fleetSummary != null && !fleetSummary!.mapEnabled) ||
+      trackingPhase == TrackingPhase.mapDisabled;
+  bool get isBusHidden => trackingPhase == TrackingPhase.busHidden;
+  bool get isAdminDisabled => isMapDisabled || isBusHidden;
 
   bool get isWaitingAssignment =>
       !isDeparted &&
@@ -135,6 +161,7 @@ class TrackingState extends Equatable {
   bool get isOffline =>
       !isCompleted &&
       !isCancelled &&
+      !isAdminDisabled &&
       (trackingPhase == TrackingPhase.gpsOffline ||
           trackingStatus == LiveTrackingStatus.offline ||
           trackingStatus == LiveTrackingStatus.tripNotActive ||
@@ -161,6 +188,7 @@ class TrackingState extends Equatable {
   TrackingState copyWith({
     TrackingUiStatus? uiStatus,
     TrackingSummary? summary,
+    FleetTrackingSummary? fleetSummary,
     RouteGeometry? routeGeometry,
     BusTelemetry? latestTelemetry,
     StopProgression? progression,
@@ -176,10 +204,14 @@ class TrackingState extends Equatable {
     bool? isRefreshingSnapshot,
     bool? clearTrackingSnapshot,
     bool? clearLivePosition,
+    bool? clearFleetSummary,
   }) {
     return TrackingState(
       uiStatus: uiStatus ?? this.uiStatus,
       summary: clearTrackingSnapshot == true ? null : (summary ?? this.summary),
+      fleetSummary: clearFleetSummary == true || clearTrackingSnapshot == true
+          ? null
+          : (fleetSummary ?? this.fleetSummary),
       routeGeometry: clearTrackingSnapshot == true
           ? null
           : (routeGeometry ?? this.routeGeometry),
@@ -213,6 +245,7 @@ class TrackingState extends Equatable {
   List<Object?> get props => [
     uiStatus,
     summary,
+    fleetSummary,
     routeGeometry,
     latestTelemetry,
     progression,

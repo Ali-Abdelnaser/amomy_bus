@@ -106,6 +106,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  ResultFuture<AppUser> signInWithApple() async {
+    try {
+      final user = await _remoteDataSource.signInWithApple();
+      return Success(user.toEntity());
+    } catch (e) {
+      return Error(ErrorHandler.handle(e));
+    }
+  }
+
+  @override
   ResultFuture<AppUser> completeProfile({
     required String userId,
     required String fullName,

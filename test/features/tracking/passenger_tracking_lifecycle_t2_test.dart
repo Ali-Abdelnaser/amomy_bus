@@ -7,7 +7,7 @@ import 'package:amomy_bus/features/tracking/domain/repositories/tracking_reposit
 import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_cubit.dart';
 import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_state.dart';
 
-class _MockTrackingRepository implements TrackingRepository {
+class _MockTrackingRepository extends TrackingRepository {
   final List<String> requestedTripIds = [];
   final List<String> subscribedTripIds = [];
   final List<String> cancelledTripIds = [];

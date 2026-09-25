@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:amomy_bus/features/tracking/domain/models/fleet_tracking_summary.dart';
 import 'package:amomy_bus/features/tracking/domain/models/route_geometry.dart';
 
 import '../../domain/models/tracking_summary.dart';
@@ -13,6 +14,11 @@ class TrackingRepositoryImpl implements TrackingRepository {
   @override
   Future<TrackingSummary> getTripTracking({required String tripId}) {
     return remoteDataSource.getTripTracking(tripId: tripId);
+  }
+
+  @override
+  Future<FleetTrackingSummary> getPassengerFleetTracking() {
+    return remoteDataSource.getPassengerFleetTracking();
   }
 
   @override

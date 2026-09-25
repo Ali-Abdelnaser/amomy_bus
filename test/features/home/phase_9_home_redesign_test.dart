@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _MockTrackingRepository implements TrackingRepository {
+class _MockTrackingRepository extends TrackingRepository {
   @override
   Future<TrackingSummary> getTripTracking({required String tripId}) async =>
       const TrackingSummary(
@@ -183,7 +183,7 @@ void main() {
     });
 
     testWidgets(
-      'shows a compact empty state and always offers Book Now entry point',
+      'shows a compact empty state and respects booking availability',
       (tester) async {
         await tester.pumpWidget(
           buildApp(
@@ -198,10 +198,18 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('No upcoming trips'), findsOneWidget);
-        expect(find.text('Book Now'), findsOneWidget);
+        expect(find.text('Booking closed'), findsOneWidget);
+        expect(find.text('Book Now'), findsNothing);
 
         await tester.pumpWidget(
-          buildApp(const Scaffold(body: HomeUpcomingTripCard())),
+          buildApp(
+            const Scaffold(
+              body: HomeUpcomingTripCard(
+                isBookingAvailable: true,
+                hasLoadedAvailability: true,
+              ),
+            ),
+          ),
         );
         await tester.pumpAndSettle();
         expect(find.text('Book Now'), findsOneWidget);

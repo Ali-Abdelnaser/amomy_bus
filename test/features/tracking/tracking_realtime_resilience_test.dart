@@ -11,7 +11,7 @@ import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_state.da
 // ---------------------------------------------------------------------------
 // Fake repository with controllable telemetry stream
 // ---------------------------------------------------------------------------
-class FakeResilienceTrackingRepository implements TrackingRepository {
+class FakeResilienceTrackingRepository extends TrackingRepository {
   TrackingSummary summary;
   StreamController<void> _controller = StreamController<void>.broadcast();
 

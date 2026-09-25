@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'bus_stop_model.dart';
 import 'bus_telemetry.dart';
+import 'fleet_bus.dart';
 import 'live_tracking_status.dart';
 
 /// Complete tracking context and backend contract for AMOMY Live Bus.
@@ -30,6 +31,7 @@ class TrackingSummary extends Equatable {
 
   // Telemetry & Route
   final BusTelemetry? busLocation;
+  final List<FleetBus> fleetBuses;
   final int stopsCount;
   final int stopsWithCoordsCount;
   final bool hasStopCoordinates;
@@ -55,6 +57,11 @@ class TrackingSummary extends Equatable {
   final String? passengerTargetSource; // 'booking' | 'preference'
   final bool approachAlertsEnabled;
   final bool isQaPreviewActive;
+
+  // Admin Map Visibility Controls (Phase P1)
+  final bool passengerMapEnabled;
+  final bool busVisibleOnPassengerMap;
+  final String mapVisibilityState;
 
   const TrackingSummary({
     required this.status,
@@ -90,6 +97,7 @@ class TrackingSummary extends Equatable {
     this.nextWindowMessageAr,
     this.nextWindowMessageEn,
     this.busLocation,
+    this.fleetBuses = const [],
     this.stopsCount = 34,
     this.stopsWithCoordsCount = 0,
     this.hasStopCoordinates = false,
@@ -98,6 +106,9 @@ class TrackingSummary extends Equatable {
     this.passengerTargetSource,
     this.approachAlertsEnabled = true,
     this.isQaPreviewActive = false,
+    this.passengerMapEnabled = true,
+    this.busVisibleOnPassengerMap = true,
+    this.mapVisibilityState = 'visible',
   });
 
   String localizedActiveRouteName(String locale) {
@@ -164,6 +175,10 @@ class TrackingSummary extends Equatable {
     String? passengerTargetSource,
     bool? approachAlertsEnabled,
     bool? isQaPreviewActive,
+    bool? passengerMapEnabled,
+    bool? busVisibleOnPassengerMap,
+    String? mapVisibilityState,
+    List<FleetBus>? fleetBuses,
   }) {
     return TrackingSummary(
       status: status ?? this.status,
@@ -199,6 +214,7 @@ class TrackingSummary extends Equatable {
       nextWindowMessageAr: nextWindowMessageAr ?? this.nextWindowMessageAr,
       nextWindowMessageEn: nextWindowMessageEn ?? this.nextWindowMessageEn,
       busLocation: busLocation ?? this.busLocation,
+      fleetBuses: fleetBuses ?? this.fleetBuses,
       stopsCount: stopsCount ?? this.stopsCount,
       stopsWithCoordsCount: stopsWithCoordsCount ?? this.stopsWithCoordsCount,
       hasStopCoordinates: hasStopCoordinates ?? this.hasStopCoordinates,
@@ -209,6 +225,10 @@ class TrackingSummary extends Equatable {
       approachAlertsEnabled:
           approachAlertsEnabled ?? this.approachAlertsEnabled,
       isQaPreviewActive: isQaPreviewActive ?? this.isQaPreviewActive,
+      passengerMapEnabled: passengerMapEnabled ?? this.passengerMapEnabled,
+      busVisibleOnPassengerMap:
+          busVisibleOnPassengerMap ?? this.busVisibleOnPassengerMap,
+      mapVisibilityState: mapVisibilityState ?? this.mapVisibilityState,
     );
   }
 
@@ -227,9 +247,30 @@ class TrackingSummary extends Equatable {
     final tripStatus = (json['trip_status'] as String?)?.toLowerCase();
     final isDeparted = tripStatus == 'departed' || startedAt != null;
 
+    final passengerMapEnabled =
+        (json['passenger_map_enabled'] as bool?) ?? true;
+    final busVisibleOnPassengerMap =
+        (json['bus_visible_on_passenger_map'] as bool?) ?? true;
+    final mapVisibilityState =
+        (json['map_visibility_state'] as String?)?.toLowerCase() ?? 'visible';
+
+    final isExplicitlyDisabled =
+        phaseStr == 'map_disabled' ||
+        mapVisibilityState == 'global_disabled' ||
+        !passengerMapEnabled;
+    final isExplicitlyBusHidden =
+        phaseStr == 'bus_hidden' ||
+        mapVisibilityState == 'bus_hidden' ||
+        !busVisibleOnPassengerMap;
+    final isAdminHidden = isExplicitlyDisabled || isExplicitlyBusHidden;
+
     TrackingPhase trackingPhase;
     if (phaseStr != null) {
       trackingPhase = TrackingPhase.fromString(phaseStr);
+    } else if (isExplicitlyDisabled) {
+      trackingPhase = TrackingPhase.mapDisabled;
+    } else if (isExplicitlyBusHidden) {
+      trackingPhase = TrackingPhase.busHidden;
     } else if (statusStr == 'live' || statusStr == 'online') {
       trackingPhase = TrackingPhase.live;
     } else if (statusStr == 'stale') {
@@ -251,7 +292,8 @@ class TrackingSummary extends Equatable {
     }
 
     // Crucial rule: If the trip has departed, it can NEVER be waiting_start or waiting_assignment
-    if (isDeparted) {
+    // BUT Admin-hidden states (mapDisabled, busHidden) are authoritative and must NEVER be converted to gpsOffline!
+    if (isDeparted && !isAdminHidden && !trackingPhase.isAdminDisabled) {
       if (trackingPhase == TrackingPhase.waitingStart ||
           trackingPhase == TrackingPhase.waitingAssignment ||
           trackingPhase == TrackingPhase.unknown) {
@@ -262,17 +304,22 @@ class TrackingSummary extends Equatable {
       }
     }
 
-    final trackingEnabled =
-        isDeparted ||
-        (json['tracking_enabled'] as bool? ?? false) ||
-        (trackingPhase == TrackingPhase.live ||
-            trackingPhase == TrackingPhase.gpsStale ||
-            trackingPhase == TrackingPhase.gpsOffline ||
-            trackingPhase == TrackingPhase.progressionSyncing ||
-            statusStr == 'live' ||
-            statusStr == 'online' ||
-            statusStr == 'stale' ||
-            statusStr == 'progression_unavailable');
+    final bool trackingEnabled;
+    if (isAdminHidden || trackingPhase.isAdminDisabled) {
+      trackingEnabled = false;
+    } else {
+      trackingEnabled =
+          isDeparted ||
+          (json['tracking_enabled'] as bool? ?? false) ||
+          (trackingPhase == TrackingPhase.live ||
+              trackingPhase == TrackingPhase.gpsStale ||
+              trackingPhase == TrackingPhase.gpsOffline ||
+              trackingPhase == TrackingPhase.progressionSyncing ||
+              statusStr == 'live' ||
+              statusStr == 'online' ||
+              statusStr == 'stale' ||
+              statusStr == 'progression_unavailable');
+    }
     final isQaPreview = (json['is_qa_preview_active'] as bool?) ?? false;
 
     final LiveTrackingStatus status;
@@ -425,6 +472,9 @@ class TrackingSummary extends Equatable {
       passengerTargetSource: targetRaw?['source'] as String?,
       approachAlertsEnabled: (json['approach_alerts_enabled'] as bool?) ?? true,
       isQaPreviewActive: isQaPreview,
+      passengerMapEnabled: passengerMapEnabled,
+      busVisibleOnPassengerMap: busVisibleOnPassengerMap,
+      mapVisibilityState: mapVisibilityState,
     );
   }
 
@@ -463,6 +513,7 @@ class TrackingSummary extends Equatable {
     nextWindowMessageAr,
     nextWindowMessageEn,
     busLocation,
+    fleetBuses,
     stopsCount,
     stopsWithCoordsCount,
     hasStopCoordinates,
@@ -471,6 +522,9 @@ class TrackingSummary extends Equatable {
     passengerTargetSource,
     approachAlertsEnabled,
     isQaPreviewActive,
+    passengerMapEnabled,
+    busVisibleOnPassengerMap,
+    mapVisibilityState,
   ];
 
   @override

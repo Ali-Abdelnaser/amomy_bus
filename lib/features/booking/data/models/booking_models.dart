@@ -11,6 +11,7 @@ class TripOptionModel extends TripOption {
     required super.destinationNameEn,
     required super.departureTime,
     required super.departureAt,
+    super.bookingCloseAt,
     required super.farePoints,
     required super.availableSeatsCount,
     required super.status,
@@ -28,6 +29,15 @@ class TripOptionModel extends TripOption {
           DateTime.tryParse('${sDate}T$dTime:00') ?? DateTime.now();
     } else {
       departureDateTime = DateTime.now();
+    }
+
+    DateTime? bookingCloseAt;
+    if (json['booking_close_at'] != null) {
+      if (json['booking_close_at'] is DateTime) {
+        bookingCloseAt = json['booking_close_at'] as DateTime;
+      } else {
+        bookingCloseAt = DateTime.tryParse(json['booking_close_at'].toString());
+      }
     }
 
     final availableSeats =
@@ -61,6 +71,7 @@ class TripOptionModel extends TripOption {
       destinationNameEn: json['destination_name_en'] as String? ?? '',
       departureTime: json['departure_time'] as String? ?? '',
       departureAt: departureDateTime,
+      bookingCloseAt: bookingCloseAt,
       farePoints: (farePts as num).toDouble(),
       availableSeatsCount: (availableSeats as num).toInt(),
       status: statusStr,
@@ -283,7 +294,7 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
     required super.destinationNameEn,
     required super.departureTime,
     required super.departureAt,
-    required super.bookingCloseAt,
+    super.bookingCloseAt,
     required super.farePoints,
     required super.totalSeats,
     required super.availableSeats,
@@ -316,8 +327,10 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
           ? DateTime.parse(json['departure_at'] as String)
           : DateTime.now(),
       bookingCloseAt: json['booking_close_at'] != null
-          ? DateTime.parse(json['booking_close_at'] as String)
-          : DateTime.now(),
+          ? (json['booking_close_at'] is DateTime
+                ? json['booking_close_at'] as DateTime
+                : DateTime.tryParse(json['booking_close_at'].toString()))
+          : null,
       farePoints: ((json['fare_points'] ?? 0) as num).toDouble(),
       totalSeats: (json['total_seats'] as num? ?? 14).toInt(),
       availableSeats: (json['available_seats'] as num? ?? 0).toInt(),
@@ -380,6 +393,7 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
     required super.returnTripId,
     required super.departureTime,
     required super.departureAt,
+    super.bookingCloseAt,
     required super.availableSeats,
     required super.outboundBaseFarePoints,
     required super.returnBaseFarePoints,
@@ -409,6 +423,15 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
       departureDateTime = DateTime.now();
     }
 
+    DateTime? bookingCloseAt;
+    if (json['booking_close_at'] != null) {
+      if (json['booking_close_at'] is DateTime) {
+        bookingCloseAt = json['booking_close_at'] as DateTime;
+      } else {
+        bookingCloseAt = DateTime.tryParse(json['booking_close_at'].toString());
+      }
+    }
+
     final rawSeats =
         json['available_seats'] ?? json['available_seats_count'] ?? 0;
     final int availableSeats = rawSeats is num
@@ -436,6 +459,7 @@ class RoundTripReturnOptionModel extends RoundTripReturnOption {
       returnTripId: returnTripId,
       departureTime: departureTime,
       departureAt: departureDateTime,
+      bookingCloseAt: bookingCloseAt,
       availableSeats: availableSeats,
       outboundBaseFarePoints: toDouble(json['outbound_base_fare_points']),
       returnBaseFarePoints: toDouble(json['return_base_fare_points']),

@@ -84,6 +84,15 @@ class _TestPassengerTripsCubit extends PassengerTripsCubit {
 
 void main() {
   group('Phase 9 schedule timezone and availability regressions', () {
+    setUp(() {
+      PassengerBookingAvailability.nowProvider =
+          () => DateTime.utc(2026, 9, 16, 4, 0);
+    });
+
+    tearDown(() {
+      PassengerBookingAvailability.nowProvider = null;
+    });
+
     test('S. UTC timestamptz for 08:00 Africa/Cairo displays 8:00 AM', () {
       final display = AppTimeFormatter.formatDepartureTime(
         departureAt: DateTime.utc(2026, 9, 16, 5),
@@ -225,7 +234,36 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('X. All server isBookable false keeps Home Book CTA enabled', (
+    test('A. future/bookable trip before cutoff -> can book', () {
+      final trip = _todayTrip(
+        tripId: 'future-open',
+        departureAt: DateTime.utc(2026, 9, 16, 6),
+        direction: BookingDirection.outbound,
+        isBookable: true,
+      );
+      expect(trip.canBookTrip(), isTrue);
+      expect(
+        PassengerBookingAvailability.canCreateBooking(trip.bookingCloseAt),
+        isTrue,
+      );
+    });
+
+    test('B. bookingCloseAt passed -> cannot book', () {
+      final trip = _todayTrip(
+        tripId: 'passed-cutoff',
+        departureAt: DateTime.utc(2026, 9, 16, 4, 15),
+        direction: BookingDirection.outbound,
+        isBookable: true,
+      );
+      expect(trip.canBookTrip(), isFalse);
+      expect(
+        PassengerBookingAvailability.canCreateBooking(trip.bookingCloseAt),
+        isFalse,
+      );
+      expect(trip.isBookingClosed(), isTrue);
+    });
+
+    testWidgets('X. All server isBookable false renders Home CTA as closed', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -240,11 +278,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('home-book-ride-cta')), findsOneWidget);
-      expect(find.text('Book Now'), findsOneWidget);
+      expect(find.text('Booking closed'), findsOneWidget);
+      expect(find.text('Book Now'), findsNothing);
     });
 
     testWidgets(
-      'X2. All server isBookable false keeps My Trips Book entry CTA enabled',
+      'X2. All server isBookable false keeps My Trips Book entry CTA disabled with booking closed tooltip',
       (tester) async {
         final state = PassengerTripsState(
           status: PassengerTripsStatus.loaded,
@@ -265,8 +304,9 @@ void main() {
         await tester.pump(const Duration(milliseconds: 350));
 
         expect(find.text('Book'), findsOneWidget);
-        expect(find.byTooltip('Book a New Trip'), findsOneWidget);
-        expect(find.byTooltip('No trips available today'), findsNothing);
+        expect(find.byTooltip('Booking closed'), findsOneWidget);
+        expect(find.byTooltip('Book a New Trip'), findsNothing);
+        expect(state.shouldDisableBookingEntry, isTrue);
 
         await cubit.close();
       },

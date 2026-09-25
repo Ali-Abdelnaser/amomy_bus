@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:injectable/injectable.dart';
 import 'package:intl/intl.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/auth_config.dart';
 import '../../domain/entities/user_access_status.dart';
@@ -33,6 +36,8 @@ abstract class AuthRemoteDataSource {
   Future<void> resendVerificationOtp({required String email});
 
   Future<AppUserModel> signInWithGoogle({String? webClientId});
+
+  Future<AppUserModel> signInWithApple();
 
   Future<AppUserModel> completeProfile({
     required String userId,
@@ -261,6 +266,145 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'Supabase user session authenticated: ${user.id} (${user.email})',
       name: 'AUTH',
     );
+    return _fetchFullUserModel(user);
+  }
+
+  @override
+  Future<AppUserModel> signInWithApple() async {
+    developer.log('Initiating native Apple authentication...', name: 'AUTH');
+
+    // A. Generate raw nonce
+    final rawNonce = _supabase.auth.generateRawNonce();
+
+    // B. SHA-256 hash it
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    // C. Request Apple credential
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+      developer.log('Apple ID credential received successfully', name: 'AUTH');
+    } catch (e, st) {
+      developer.log(
+        'Apple native authentication failed or was cancelled: $e',
+        name: 'AUTH',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
+
+    // D. Validate identityToken
+    final idToken = credential.identityToken;
+    if (idToken == null || idToken.isEmpty) {
+      developer.log(
+        'Failed to retrieve Apple identityToken (null or empty)',
+        name: 'AUTH',
+      );
+      throw const AuthException('Failed to retrieve Apple Identity Token.');
+    }
+
+    // E. Sign into Supabase with idToken and rawNonce
+    developer.log('Exchanging Apple ID token with Supabase...', name: 'AUTH');
+    final AuthResponse response;
+    try {
+      response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+    } catch (e, st) {
+      developer.log(
+        'Supabase signInWithIdToken threw exception for Apple: $e',
+        name: 'AUTH',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
+
+    // F. Validate response.user is not null
+    final user = response.user;
+    if (user == null) {
+      developer.log(
+        'Supabase returned null user session after Apple ID token exchange',
+        name: 'AUTH',
+      );
+      throw const AuthException(
+        'Apple Sign-In failed: no Supabase user session created.',
+      );
+    }
+
+    developer.log(
+      'Supabase user session authenticated with Apple: ${user.id} (${user.email})',
+      name: 'AUTH',
+    );
+
+    // Apple Name Handling:
+    // Apple only returns givenName/familyName during the FIRST authorization.
+    final givenName = credential.givenName?.trim();
+    final familyName = credential.familyName?.trim();
+    final nameParts = [
+      if (givenName != null && givenName.isNotEmpty) givenName,
+      if (familyName != null && familyName.isNotEmpty) familyName,
+    ];
+    final fullName = nameParts.join(' ').trim();
+
+    if (fullName.isNotEmpty) {
+      developer.log(
+        'Updating auth metadata and profile with Apple name info: $fullName',
+        name: 'AUTH',
+      );
+
+      try {
+        await _supabase.auth.updateUser(
+          UserAttributes(
+            data: {
+              'full_name': fullName,
+              if (givenName != null && givenName.isNotEmpty)
+                'given_name': givenName,
+              if (familyName != null && familyName.isNotEmpty)
+                'family_name': familyName,
+            },
+          ),
+        );
+      } catch (e) {
+        developer.log(
+          'Non-critical: failed to update auth metadata for Apple name: $e',
+          name: 'AUTH',
+        );
+      }
+
+      // Safely persist full_name into public.profiles ONLY when appropriate.
+      // Do NOT overwrite an existing meaningful public.profiles.full_name with null, empty, or partial bad data.
+      try {
+        final currentProfile = await _supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        final existingName = (currentProfile?['full_name'] as String?)?.trim();
+        if (existingName == null || existingName.isEmpty) {
+          await _supabase
+              .from('profiles')
+              .update({'full_name': fullName})
+              .eq('id', user.id);
+        }
+      } catch (e) {
+        developer.log(
+          'Non-critical: failed to persist full_name to profiles: $e',
+          name: 'AUTH',
+        );
+      }
+    }
+
     return _fetchFullUserModel(user);
   }
 

@@ -18,7 +18,7 @@ import 'package:amomy_bus/features/tracking/presentation/widgets/home_live_track
 import 'package:amomy_bus/features/tracking/presentation/widgets/live_bus_map_widget.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 
-class MockTrackingRepository implements TrackingRepository {
+class MockTrackingRepository extends TrackingRepository {
   TrackingSummary summary;
   final StreamController<BusTelemetry> _telemetryController =
       StreamController<BusTelemetry>.broadcast();

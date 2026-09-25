@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/models/fleet_tracking_summary.dart';
 import '../../domain/models/route_geometry.dart';
 import '../../domain/models/tracking_summary.dart';
 
 abstract class TrackingRemoteDataSource {
   Future<TrackingSummary> getTripTracking({required String tripId});
+  Future<FleetTrackingSummary> getPassengerFleetTracking();
   Future<RouteGeometry?> getActiveRouteGeometry({
     required String routeId,
     required String direction,
@@ -34,6 +36,22 @@ class TrackingRemoteDataSourceImpl implements TrackingRemoteDataSource {
 
   TrackingRemoteDataSourceImpl({SupabaseClient? client})
     : _client = client ?? Supabase.instance.client;
+
+  @override
+  Future<FleetTrackingSummary> getPassengerFleetTracking() async {
+    try {
+      final response = await _client.rpc('get_passenger_fleet_tracking');
+      if (response == null) {
+        throw Exception('Fleet tracking returned null');
+      }
+      final data = response is Map<String, dynamic>
+          ? response
+          : Map<String, dynamic>.from(response as Map);
+      return FleetTrackingSummary.fromJson(data);
+    } catch (_) {
+      rethrow;
+    }
+  }
 
   @override
   Future<TrackingSummary> getTripTracking({required String tripId}) async {

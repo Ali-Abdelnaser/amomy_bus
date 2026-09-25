@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-/// Reusable Google Sign-In button following official Google Brand Guidelines:
-/// - Maintains standard Google "G" multicolored logo
-/// - White background with subtle border
-/// - Consistent touch target and typography
+/// Reusable Google Sign-In button following brand and design guidelines:
+/// - Uses project SVG asset assets/google.svg
+/// - Pure white background with subtle border
+/// - Consistent touch target (48dp height), typography, and loading state
 class GoogleSignInButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
@@ -28,10 +29,10 @@ class GoogleSignInButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: const Color(0xFFF1F5F9),
+          backgroundColor: Colors.white,
           foregroundColor: AppColors.textPrimary,
           disabledBackgroundColor: AppColors.surfaceSoft,
-          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
           padding: AppSpacing.edgeInsetsH16,
           elevation: 0,
@@ -49,7 +50,7 @@ class GoogleSignInButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const GoogleLogoWidget(size: 20),
+                  SvgPicture.asset('assets/google.svg', width: 20, height: 20),
                   AppSpacing.gapW12,
                   Text(
                     label ?? 'Continue with Google',

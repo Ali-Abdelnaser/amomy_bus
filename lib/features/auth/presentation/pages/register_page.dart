@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import '../widgets/apple_sign_in_button.dart';
 import '../widgets/auth_header_widget.dart';
 import '../widgets/google_sign_in_button.dart';
 
@@ -56,6 +58,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _onGooglePressed() {
     context.read<AuthBloc>().add(const SignInWithGoogleRequested());
+  }
+
+  void _onApplePressed() {
+    context.read<AuthBloc>().add(const SignInWithAppleRequested());
   }
 
   @override
@@ -212,12 +218,24 @@ class _RegisterPageState extends State<RegisterPage> {
 
                             // Google Sign-In Button
                             GoogleSignInButton(
-                              label: l10n.continueWithGoogle,
+                              label: l10n.signInWithGoogle,
                               isLoading: isLoading,
                               onPressed: _onGooglePressed,
                             ).appSlideUp(
                               delay: const Duration(milliseconds: 350),
                             ),
+
+                            // Apple Sign-In Button (iOS only)
+                            if (Platform.isIOS) ...[
+                              AppSpacing.gapH12,
+                              AppleSignInButton(
+                                label: l10n.signInWithApple,
+                                isLoading: isLoading,
+                                onPressed: _onApplePressed,
+                              ).appSlideUp(
+                                delay: const Duration(milliseconds: 400),
+                              ),
+                            ],
                             AppSpacing.gapH16,
 
                             // Already have account? Sign in

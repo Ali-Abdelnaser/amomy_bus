@@ -85,11 +85,6 @@ class PassengerUpcomingTrip extends Equatable {
 
   String? get boardingStopDisplayName {
     if (stopNameAr == null || stopNameAr!.isEmpty) return null;
-    if (localityAr != null &&
-        localityAr!.isNotEmpty &&
-        localityAr != stopNameAr) {
-      return '$stopNameAr — $localityAr';
-    }
     return stopNameAr;
   }
 

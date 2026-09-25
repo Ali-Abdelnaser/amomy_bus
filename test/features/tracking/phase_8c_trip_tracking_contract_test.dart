@@ -9,7 +9,7 @@ import 'package:amomy_bus/features/tracking/domain/models/tracking_summary.dart'
 import 'package:amomy_bus/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:amomy_bus/features/tracking/presentation/cubit/tracking_cubit.dart';
 
-class _FakeTripTrackingRepository implements TrackingRepository {
+class _FakeTripTrackingRepository extends TrackingRepository {
   final List<String> requestedTripIds = [];
   final List<String> subscribedTripIds = [];
   final List<String> cancelledTripIds = [];

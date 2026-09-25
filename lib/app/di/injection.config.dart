@@ -41,6 +41,8 @@ import '../../features/auth/domain/usecases/get_wallet_preview_usecase.dart'
 import '../../features/auth/domain/usecases/resend_otp_usecase.dart' as _i613;
 import '../../features/auth/domain/usecases/send_password_reset_usecase.dart'
     as _i71;
+import '../../features/auth/domain/usecases/sign_in_with_apple_usecase.dart'
+    as _i379;
 import '../../features/auth/domain/usecases/sign_in_with_email_usecase.dart'
     as _i744;
 import '../../features/auth/domain/usecases/sign_in_with_google_usecase.dart'
@@ -91,12 +93,12 @@ import '../../features/topup/domain/usecases/get_my_topup_requests_usecase.dart'
     as _i317;
 import '../../features/topup/domain/usecases/get_payment_config_usecase.dart'
     as _i567;
+import '../../features/topup/domain/usecases/submit_new_topup_request_usecase.dart'
+    as _i920;
 import '../../features/topup/domain/usecases/submit_topup_proof_usecase.dart'
     as _i27;
 import '../../features/topup/domain/usecases/upload_topup_proof_usecase.dart'
     as _i542;
-import '../../features/topup/domain/usecases/submit_new_topup_request_usecase.dart'
-    as _i999;
 import '../../features/topup/presentation/cubit/topup_cubit.dart' as _i809;
 import '../../features/topup/presentation/cubit/topup_history_cubit.dart'
     as _i1020;
@@ -232,14 +234,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i567.GetPaymentConfigUseCase>(
       () => _i567.GetPaymentConfigUseCase(gh<_i806.TopUpRepository>()),
     );
+    gh.lazySingleton<_i920.SubmitNewTopUpRequestUseCase>(
+      () => _i920.SubmitNewTopUpRequestUseCase(gh<_i806.TopUpRepository>()),
+    );
     gh.lazySingleton<_i27.SubmitTopUpProofUseCase>(
       () => _i27.SubmitTopUpProofUseCase(gh<_i806.TopUpRepository>()),
     );
     gh.lazySingleton<_i542.UploadTopUpProofUseCase>(
       () => _i542.UploadTopUpProofUseCase(gh<_i806.TopUpRepository>()),
-    );
-    gh.lazySingleton<_i999.SubmitNewTopUpRequestUseCase>(
-      () => _i999.SubmitNewTopUpRequestUseCase(gh<_i806.TopUpRepository>()),
     );
     gh.lazySingleton<_i178.ClaimWelcomeGiftUseCase>(
       () => _i178.ClaimWelcomeGiftUseCase(gh<_i787.AuthRepository>()),
@@ -258,6 +260,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i71.SendPasswordResetUseCase>(
       () => _i71.SendPasswordResetUseCase(gh<_i787.AuthRepository>()),
+    );
+    gh.lazySingleton<_i379.SignInWithAppleUseCase>(
+      () => _i379.SignInWithAppleUseCase(gh<_i787.AuthRepository>()),
     );
     gh.lazySingleton<_i744.SignInWithEmailUseCase>(
       () => _i744.SignInWithEmailUseCase(gh<_i787.AuthRepository>()),
@@ -280,15 +285,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i892.NetworkInfo>(
       () => _i892.NetworkInfoImpl(gh<_i820.ConnectivityService>()),
     );
-    gh.factory<_i809.TopUpCubit>(
-      () => _i809.TopUpCubit(
-        gh<_i567.GetPaymentConfigUseCase>(),
-        gh<_i170.GetActivePaymentMethodsUseCase>(),
-        gh<_i688.CreateTopUpRequestUseCase>(),
-        gh<_i27.SubmitTopUpProofUseCase>(),
-        submitNewUseCase: gh<_i999.SubmitNewTopUpRequestUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i572.DioClient>(
       () => _i572.DioClient(gh<_i267.AuthInterceptor>()),
     );
@@ -299,6 +295,15 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i265.BookingRepositoryImpl(
         gh<_i774.BookingRemoteDataSource>(),
         gh<_i892.NetworkInfo>(),
+      ),
+    );
+    gh.factory<_i809.TopUpCubit>(
+      () => _i809.TopUpCubit(
+        gh<_i567.GetPaymentConfigUseCase>(),
+        gh<_i170.GetActivePaymentMethodsUseCase>(),
+        gh<_i688.CreateTopUpRequestUseCase>(),
+        gh<_i27.SubmitTopUpProofUseCase>(),
+        submitNewUseCase: gh<_i920.SubmitNewTopUpRequestUseCase>(),
       ),
     );
     gh.factory<_i1020.TopUpHistoryCubit>(
@@ -312,12 +317,14 @@ extension GetItInjectableX on _i174.GetIt {
         verifyOtpUseCase: gh<_i503.VerifyOtpUseCase>(),
         resendOtpUseCase: gh<_i613.ResendOtpUseCase>(),
         signInWithGoogleUseCase: gh<_i673.SignInWithGoogleUseCase>(),
+        signInWithAppleUseCase: gh<_i379.SignInWithAppleUseCase>(),
         completeProfileUseCase: gh<_i1010.CompleteProfileUseCase>(),
         sendPasswordResetUseCase: gh<_i71.SendPasswordResetUseCase>(),
         updatePasswordUseCase: gh<_i387.UpdatePasswordUseCase>(),
         getWalletPreviewUseCase: gh<_i442.GetWalletPreviewUseCase>(),
         claimWelcomeGiftUseCase: gh<_i178.ClaimWelcomeGiftUseCase>(),
         deviceIdentityService: gh<_i925.DeviceIdentityService>(),
+        authRepository: gh<_i787.AuthRepository>(),
         signOutUseCase: gh<_i915.SignOutUseCase>(),
       ),
     );
@@ -360,6 +367,32 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i1015.ChangeBookingSeatUseCase>(
       () => _i1015.ChangeBookingSeatUseCase(gh<_i912.BookingRepository>()),
     );
+    gh.lazySingleton<_i1015.GetRoundTripReturnOptionsUseCase>(
+      () => _i1015.GetRoundTripReturnOptionsUseCase(
+        gh<_i912.BookingRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i1015.CreateRoundTripBundleHoldUseCase>(
+      () => _i1015.CreateRoundTripBundleHoldUseCase(
+        gh<_i912.BookingRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i1015.SetRoundTripReturnSeatUseCase>(
+      () => _i1015.SetRoundTripReturnSeatUseCase(gh<_i912.BookingRepository>()),
+    );
+    gh.lazySingleton<_i1015.ReleaseRoundTripBundleHoldUseCase>(
+      () => _i1015.ReleaseRoundTripBundleHoldUseCase(
+        gh<_i912.BookingRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i1015.ConfirmRoundTripBundleUseCase>(
+      () => _i1015.ConfirmRoundTripBundleUseCase(gh<_i912.BookingRepository>()),
+    );
+    gh.lazySingleton<_i1015.GetRoundTripBundleContextUseCase>(
+      () => _i1015.GetRoundTripBundleContextUseCase(
+        gh<_i912.BookingRepository>(),
+      ),
+    );
     gh.lazySingleton<_i81.AppRouter>(
       () => _i81.AppRouter(gh<_i797.AuthBloc>()),
     );
@@ -376,6 +409,16 @@ extension GetItInjectableX on _i174.GetIt {
         confirmBookingUseCase: gh<_i1015.ConfirmBookingUseCase>(),
         getMyTripPreferencesUseCase: gh<_i1015.GetMyTripPreferencesUseCase>(),
         getPassengerBookingsUseCase: gh<_i1015.GetPassengerBookingsUseCase>(),
+        getRoundTripReturnOptionsUseCase:
+            gh<_i1015.GetRoundTripReturnOptionsUseCase>(),
+        createRoundTripBundleHoldUseCase:
+            gh<_i1015.CreateRoundTripBundleHoldUseCase>(),
+        setRoundTripReturnSeatUseCase:
+            gh<_i1015.SetRoundTripReturnSeatUseCase>(),
+        releaseRoundTripBundleHoldUseCase:
+            gh<_i1015.ReleaseRoundTripBundleHoldUseCase>(),
+        confirmRoundTripBundleUseCase:
+            gh<_i1015.ConfirmRoundTripBundleUseCase>(),
         bookingRepository: gh<_i912.BookingRepository>(),
       ),
     );

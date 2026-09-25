@@ -33,7 +33,7 @@ class ProfileIncompleteFailure extends Failure {
 
 class BookingClosedFailure extends Failure {
   const BookingClosedFailure({
-    super.message = 'Booking has closed for this departure.',
+    super.message = 'Booking for this trip is closed.',
   });
 }
 

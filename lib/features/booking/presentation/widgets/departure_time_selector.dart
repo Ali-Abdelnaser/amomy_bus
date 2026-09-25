@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/booking_entities.dart';
+import '../../domain/services/passenger_booking_availability.dart';
 
 /// Clean, vertical radio-list departure time selector for today's trips.
 ///
@@ -19,7 +22,7 @@ import '../../domain/entities/booking_entities.dart';
 /// - Subtle availability cues ("Available", "Few seats left") without
 ///   raw seat count noise.
 /// - End-of-day empty state when no bookable trips remain.
-class DepartureTimeSelector extends StatelessWidget {
+class DepartureTimeSelector extends StatefulWidget {
   final List<TripOption> trips;
   final TripOption? selectedTrip;
   final BookingDirection direction;
@@ -36,6 +39,80 @@ class DepartureTimeSelector extends StatelessWidget {
     this.isLoading = false,
     required this.onTripSelected,
   });
+
+  @override
+  State<DepartureTimeSelector> createState() => _DepartureTimeSelectorState();
+}
+
+class _DepartureTimeSelectorState extends State<DepartureTimeSelector>
+    with WidgetsBindingObserver {
+  Timer? _cutoffTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleCutoffTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant DepartureTimeSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trips != widget.trips ||
+        oldWidget.selectedTrip != widget.selectedTrip) {
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+      _scheduleCutoffTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cutoffTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleCutoffTimer() {
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
+
+    final now = PassengerBookingAvailability.currentNow;
+    DateTime? earliestCutoff;
+
+    for (final trip in widget.trips) {
+      final cutoff = trip.bookingCloseAt;
+      if (cutoff != null && cutoff.isAfter(now)) {
+        if (earliestCutoff == null || cutoff.isBefore(earliestCutoff)) {
+          earliestCutoff = cutoff;
+        }
+      }
+    }
+
+    final selectedCutoff = widget.selectedTrip?.bookingCloseAt;
+    if (selectedCutoff != null && selectedCutoff.isAfter(now)) {
+      if (earliestCutoff == null || selectedCutoff.isBefore(earliestCutoff)) {
+        earliestCutoff = selectedCutoff;
+      }
+    }
+
+    if (earliestCutoff != null) {
+      final duration =
+          earliestCutoff.difference(now) + const Duration(milliseconds: 100);
+      _cutoffTimer = Timer(duration, () {
+        if (mounted) {
+          setState(() {});
+          _scheduleCutoffTimer();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +135,7 @@ class DepartureTimeSelector extends StatelessWidget {
         const SizedBox(height: 12),
 
         // 1. Loading State: Vertical Skeleton Placeholders
-        if (isLoading)
+        if (widget.isLoading)
           Column(
             children: List.generate(
               3,
@@ -120,17 +197,17 @@ class DepartureTimeSelector extends StatelessWidget {
             ),
           )
         // 2. Specific Trip Entry: Locked single selected trip row
-        else if (isTripLocked && selectedTrip != null)
+        else if (widget.isTripLocked && widget.selectedTrip != null)
           _DepartureTimeCard(
-            trip: selectedTrip!,
-            direction: direction,
+            trip: widget.selectedTrip!,
+            direction: widget.direction,
             isSelected: true,
             isLocked: true,
             isAr: isAr,
             onTap: null,
           )
         // 3. No Available Trips Left
-        else if (trips.isEmpty)
+        else if (widget.trips.isEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
@@ -185,18 +262,20 @@ class DepartureTimeSelector extends StatelessWidget {
         // 4. Vertical Radio List of Trips
         else
           Column(
-            children: trips.map((trip) {
-              final isSelected = selectedTrip?.tripId == trip.tripId;
+            children: widget.trips.map((trip) {
+              final isSelected = widget.selectedTrip?.tripId == trip.tripId;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _DepartureTimeCard(
                   trip: trip,
-                  direction: direction,
+                  direction: widget.direction,
                   isSelected: isSelected,
                   isLocked: false,
                   isAr: isAr,
-                  onTap: trip.canBook ? () => onTripSelected(trip) : null,
+                  onTap: trip.canBook
+                      ? () => widget.onTripSelected(trip)
+                      : null,
                 ),
               );
             }).toList(),
@@ -225,8 +304,9 @@ class _DepartureTimeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isClosed = trip.isClosed || !trip.isBookable;
-    final isFull = !isClosed && trip.isFull;
+    final isCutoff = trip.isBookingClosed();
+    final isClosed = trip.isClosed || !trip.isBookable || isCutoff;
+    final isFull = !isCutoff && !isClosed && trip.isFull;
     final isNotBookable = !trip.canBook;
     final isFewSeats = !isNotBookable && trip.availableSeatsCount <= 5;
     final isReturn =
@@ -237,7 +317,9 @@ class _DepartureTimeCard extends StatelessWidget {
 
     // Status text determination
     String statusText;
-    if (isClosed) {
+    if (isCutoff) {
+      statusText = isAr ? 'الحجز مغلق' : 'Booking closed';
+    } else if (isClosed) {
       statusText = isAr ? 'الرحلة مغلقة' : 'Trip closed';
     } else if (isFull) {
       statusText = l10n.departureFullyBooked;
@@ -248,6 +330,10 @@ class _DepartureTimeCard extends StatelessWidget {
     } else {
       statusText = l10n.departureAvailable;
     }
+
+    final cutoffInfo = (!isCutoff && trip.bookingCloseAt != null)
+        ? ' · ${(isAr ? "الحجز حتى " : "Booking until ") + DateFormat("HH:mm").format(trip.bookingCloseAt!)}'
+        : '';
 
     return Material(
       color: Colors.transparent,
@@ -285,7 +371,10 @@ class _DepartureTimeCard extends StatelessWidget {
           child: Row(
             children: [
               // 1. Radio Button Indicator
-              _RadioIndicator(isSelected: isSelected, isFull: isFull),
+              _RadioIndicator(
+                isSelected: isSelected,
+                isFull: isFull || isNotBookable,
+              ),
 
               const SizedBox(width: 14),
 
@@ -301,7 +390,7 @@ class _DepartureTimeCard extends StatelessWidget {
                               : FontWeight.w700,
                           color: isSelected
                               ? AppColors.primaryDark
-                              : (isFull
+                              : (isFull || isNotBookable
                                     ? const Color(0xFF94A3B8)
                                     : const Color(0xFF101828)),
                           letterSpacing: -0.3,
@@ -323,7 +412,7 @@ class _DepartureTimeCard extends StatelessWidget {
                                   : FontWeight.w700,
                               color: isSelected
                                   ? AppColors.primaryDark
-                                  : (isFull
+                                  : (isFull || isNotBookable
                                         ? const Color(0xFF94A3B8)
                                         : const Color(0xFF101828)),
                               letterSpacing: -0.3,
@@ -341,7 +430,7 @@ class _DepartureTimeCard extends StatelessWidget {
                                   : FontWeight.w500,
                               color: isSelected
                                   ? const Color(0xFF0284C7)
-                                  : (isFull
+                                  : (isFull || isNotBookable
                                         ? const Color(0xFF94A3B8)
                                         : const Color(0xFF64748B)),
                             ),
@@ -361,7 +450,7 @@ class _DepartureTimeCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  '${l10n.firstStopLabel} · $statusText',
+                                  '${l10n.firstStopLabel} · $statusText$cutoffInfo',
                                   style: AppTextStyles.labelSmall.copyWith(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -380,7 +469,26 @@ class _DepartureTimeCard extends StatelessWidget {
               ),
 
               // 3. Subtle Non-Intrusive Metadata Badge
-              if (isFull)
+              if (isCutoff)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isAr ? 'الحجز مغلق' : 'Booking closed',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                )
+              else if (isFull)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 9,

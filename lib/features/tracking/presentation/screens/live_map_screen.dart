@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/di/injection.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/app_time_formatter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -11,6 +13,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_snack_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/models/bus_stop_model.dart';
+import '../../domain/models/fleet_bus.dart';
 import '../../domain/models/live_tracking_status.dart';
 import '../cubit/tracking_cubit.dart';
 import '../cubit/tracking_state.dart';
@@ -39,6 +42,7 @@ class LiveMapScreen extends StatefulWidget {
 
 class _LiveMapScreenState extends State<LiveMapScreen> {
   bool _isBusSheetOpen = false;
+  FleetBus? _selectedFleetBus;
   String? _loadedExternalTripId;
 
   @override
@@ -90,9 +94,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
 
         final tripId = widget.tripId;
 
-        if (tripId != null && tripId.isNotEmpty) {
-          cubit.loadTrackingData(tripId: tripId);
-        }
+        cubit.loadTrackingData(tripId: tripId);
 
         return cubit;
       },
@@ -113,6 +115,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
             listenWhen: (previous, current) {
               return current.isError &&
                   current.summary == null &&
+                  current.fleetSummary == null &&
                   (!previous.isError ||
                       previous.errorMessage != current.errorMessage);
             },
@@ -125,7 +128,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               );
             },
             builder: (context, state) {
-              if (state.isLoading && state.summary == null) {
+              if (state.isLoading && state.summary == null && state.fleetSummary == null) {
                 return const Scaffold(
                   backgroundColor: Color(0xFFF8FAFC),
                   body: Center(
@@ -134,7 +137,13 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                 );
               }
 
-              final summary = state.summary;
+              final summary = state.summary ?? state.fleetSummary?.toTrackingSummary();
+
+              if (summary == null &&
+                  !state.isFleetMode &&
+                  (widget.tripId == null || widget.tripId!.isEmpty)) {
+                return _buildNoTripSelectedView(context, locale);
+              }
 
               if (state.isError && summary == null) {
                 final isAr = locale.startsWith('ar');
@@ -209,14 +218,23 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   state.isDeparted ||
                   state.trackingEnabled;
 
+              final isAdminDisabled =
+                  state.isMapDisabled ||
+                  (!state.isFleetMode &&
+                      (state.trackingPhase == TrackingPhase.busHidden ||
+                          summary.mapVisibilityState == 'bus_hidden' ||
+                          !summary.busVisibleOnPassengerMap));
+
               final isTerminalLifecycle =
-                  state.trackingPhase == TrackingPhase.completed ||
-                  state.trackingPhase == TrackingPhase.cancelled ||
-                  state.trackingPhase == TrackingPhase.serviceDateEnded;
+                  isAdminDisabled ||
+                  (!state.isFleetMode &&
+                      (state.trackingPhase == TrackingPhase.completed ||
+                          state.trackingPhase == TrackingPhase.cancelled ||
+                          state.trackingPhase == TrackingPhase.serviceDateEnded));
 
               final shouldShowLifecycle =
                   isTerminalLifecycle ||
-                  (summary.routeStops.isEmpty && !isTripDeparted);
+                  (!state.isFleetMode && summary.routeStops.isEmpty && !isTripDeparted);
 
               if (shouldShowLifecycle) {
                 return _buildPreTripLifecycleView(
@@ -249,8 +267,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                       status: state.trackingStatus,
                       selectedStop: selectedStop,
                       isCompactPreview: false,
-                      followBus: state.followBus,
+                      followBus: state.followBus && !state.isFleetMode,
                       routeGeometry: state.routeGeometry,
+                      fleetBuses: state.fleetBuses,
                       onPanStart: () {
                         if (state.followBus) {
                           context.read<TrackingCubit>().toggleFollowBus(false);
@@ -262,6 +281,15 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                         }
 
                         setState(() {
+                          _selectedFleetBus = null;
+                          _isBusSheetOpen = true;
+                        });
+
+                        context.read<TrackingCubit>().selectStop(null);
+                      },
+                      onFleetBusTap: (bus) {
+                        setState(() {
+                          _selectedFleetBus = bus;
                           _isBusSheetOpen = true;
                         });
 
@@ -269,6 +297,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                       },
                       onStopTap: (stop) {
                         setState(() {
+                          _selectedFleetBus = null;
                           _isBusSheetOpen = false;
                         });
 
@@ -510,6 +539,42 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
         iconBg = const Color(0xFFF1F5F9);
         break;
 
+      case TrackingPhase.mapDisabled:
+        title =
+            l10n?.trackingMapDisabledTitle ??
+            (isAr
+                ? 'الخريطة غير متاحة حالياً'
+                : 'Live map is currently unavailable');
+
+        subtitle =
+            l10n?.trackingMapDisabledSubtitle ??
+            (isAr
+                ? 'تم إيقاف عرض الموقع المباشر بواسطة الإدارة.'
+                : 'Live location display has been disabled by the administration.');
+
+        icon = Icons.map_outlined;
+        iconColor = const Color(0xFF64748B);
+        iconBg = const Color(0xFFF1F5F9);
+        break;
+
+      case TrackingPhase.busHidden:
+        title =
+            l10n?.trackingBusHiddenTitle ??
+            (isAr
+                ? 'الموقع المباشر غير متاح لهذه الرحلة'
+                : 'Live location is unavailable for this trip');
+
+        subtitle =
+            l10n?.trackingBusHiddenSubtitle ??
+            (isAr
+                ? 'عرض موقع الحافلة متوقف حالياً.'
+                : 'Live bus location display is currently turned off.');
+
+        icon = Icons.directions_bus_outlined;
+        iconColor = const Color(0xFF64748B);
+        iconBg = const Color(0xFFF1F5F9);
+        break;
+
       default:
         title =
             l10n?.trackingTripNotActive ??
@@ -599,6 +664,116 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: const Color(0xFF64748B),
                     height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoTripSelectedView(BuildContext context, String locale) {
+    final l10n = AppLocalizations.of(context);
+    final isAr = locale.startsWith('ar');
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            isAr ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+            color: const Color(0xFF0F172A),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(
+          l10n?.trackingLive ?? (isAr ? 'التتبع المباشر' : 'Live Tracking'),
+          style: AppTextStyles.titleMedium.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF0F172A),
+          ),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: AppShadows.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    size: 32,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  l10n?.trackingNoTripSelectedTitle ??
+                      (isAr
+                          ? 'اختر رحلة لعرض التتبع'
+                          : 'Select a trip to view tracking'),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n?.trackingNoTripSelectedSubtitle ??
+                      (isAr
+                          ? 'يمكنك فتح التتبع المباشر من تفاصيل رحلتك.'
+                          : 'You can open live tracking from your trip details.'),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: const Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () {
+                      context.go(RoutePaths.trips);
+                    },
+                    child: Text(
+                      l10n?.trackingViewMyTripsAction ??
+                          (isAr ? 'عرض رحلاتي' : 'View My Trips'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -787,6 +962,15 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
           dotColor = const Color(0xFF64748B);
           label =
               l10n?.trackingEndedPill ?? (locale == 'ar' ? 'منتهية' : 'ENDED');
+          break;
+
+        case TrackingPhase.mapDisabled:
+        case TrackingPhase.busHidden:
+          bg = const Color(0xFFF1F5F9);
+          dotColor = const Color(0xFF64748B);
+          label =
+              l10n?.trackingUnavailablePill ??
+              (locale == 'ar' ? 'غير متاح' : 'UNAVAILABLE');
           break;
 
         case TrackingPhase.unknown:
@@ -1098,17 +1282,6 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               color: Color(0xFF0F172A),
             ),
           ),
-          if (stop.localizedLocality(locale).isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              stop.localizedLocality(locale),
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1427,34 +1600,45 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
 
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.directions_bus_rounded,
-                        size: 14,
-                        color: Color(0xFF64748B),
+                Builder(
+                  builder: (context) {
+                    final safeBusName = _selectedFleetBus?.label.isNotEmpty == true
+                        ? _selectedFleetBus!.label
+                        : (state.visibleFleetBuses.isNotEmpty &&
+                                state.visibleFleetBuses.first.label.isNotEmpty
+                            ? state.visibleFleetBuses.first.label
+                            : (locale == 'ar' ? 'أتوبيس عمومي' : 'AMOMY Bus'));
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        locale == 'ar' ? 'أتوبيس عمومي' : 'AMOMY Bus',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF334155),
-                        ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.directions_bus_rounded,
+                            size: 14,
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            safeBusName,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const Spacer(),
                 Flexible(

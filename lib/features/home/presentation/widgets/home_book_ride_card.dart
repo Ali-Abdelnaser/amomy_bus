@@ -219,50 +219,75 @@ class HomeBookRideCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
 
-                            // CTA Button: Book Now -> (always enabled entry CTA)
-                            GestureDetector(
-                              key: const Key('home-book-ride-cta'),
-                              onTap: () => context.push('/book-trip'),
-                              child: Container(
-                                height: 40,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF01589F),
-                                  borderRadius: BorderRadius.circular(22),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF01589F,
-                                      ).withValues(alpha: 0.28),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
+                            // CTA Button: Book Now -> respects booking cutoff availability
+                            Builder(
+                              builder: (context) {
+                                final isBookingClosed =
+                                    hasLoadedAvailability &&
+                                    !isBookingAvailable;
+                                final isEnabled = !isBookingClosed;
+                                final buttonColor = isEnabled
+                                    ? const Color(0xFF01589F)
+                                    : const Color(0xFFCBD5E1);
+
+                                return GestureDetector(
+                                  key: const Key('home-book-ride-cta'),
+                                  onTap: isEnabled
+                                      ? () => context.push('/book-trip')
+                                      : null,
+                                  child: Container(
+                                    height: 40,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
                                     ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      l10n.bookNow,
-                                      style: const TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                    decoration: BoxDecoration(
+                                      color: buttonColor,
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: isEnabled
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFF01589F,
+                                                ).withValues(alpha: 0.28),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            isEnabled
+                                                ? l10n.bookNow
+                                                : (context.isArabic
+                                                      ? 'الحجز مغلق'
+                                                      : 'Booking closed'),
+                                            style: const TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          if (isEnabled) ...[
+                                            AppSpacing.gapW8,
+                                            Icon(
+                                              isRtl
+                                                  ? AppIcons.arrowBack
+                                                  : AppIcons.arrowForward,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
-                                    AppSpacing.gapW8,
-                                    Icon(
-                                      isRtl
-                                          ? AppIcons.arrowBack
-                                          : AppIcons.arrowForward,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

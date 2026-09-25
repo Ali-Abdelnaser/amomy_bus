@@ -1,4 +1,4 @@
-import 'package:amomy_bus/core/localization/app_time_formatter.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,16 +35,108 @@ class HomeLiveTrackingCard extends StatelessWidget {
 
     return BlocBuilder<TrackingCubit, TrackingState>(
       builder: (context, state) {
+        final isAr = locale.startsWith('ar');
+
+        // 1. Loading Skeleton
+        if (state.isLoading &&
+            state.summary == null &&
+            state.fleetSummary == null) {
+          return _buildSkeletonCard();
+        }
+
+        // 2. Admin Global Map Disabled
+        if (state.isMapDisabled) {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.map_outlined,
+            iconColor: const Color(0xFF64748B),
+            title: isAr
+                ? 'الخريطة غير متاحة حالياً'
+                : l10n.trackingMapDisabledTitle,
+            subtitle: isAr
+                ? 'تم إيقاف عرض الموقع المباشر بواسطة الإدارة.'
+                : l10n.trackingMapDisabledSubtitle,
+            directionLabel: isAr ? 'غير متوفر' : 'Unavailable',
+            statusPill: _buildStatusPill(
+              TrackingPhase.mapDisabled,
+              LiveTrackingStatus.offline,
+              context,
+            ),
+          );
+        }
+
+        // 3. Fleet Mode (No active booking trip required)
+        if (state.isFleetMode) {
+          final fleet = state.fleetSummary!;
+
+          // 3a. No buses returned at all
+          if (fleet.buses.isEmpty) {
+            return _buildPreTripCard(
+              context: context,
+              icon: Icons.directions_bus_outlined,
+              iconColor: const Color(0xFF64748B),
+              title: isAr ? 'لا توجد حافلات متاحة' : 'No Buses Available',
+              subtitle: isAr
+                  ? 'لا توجد حافلات تعمل في الأسطول حالياً.'
+                  : 'There are no active buses in the fleet at this time.',
+              directionLabel: isAr ? 'الأسطول العام' : 'Public Fleet',
+              statusPill: _buildStatusPill(
+                TrackingPhase.unknown,
+                LiveTrackingStatus.offline,
+                context,
+              ),
+            );
+          }
+
+          // 3b. Buses returned but NONE have valid GPS
+          if (!state.hasVisibleFleetBuses) {
+            return _buildPreTripCard(
+              context: context,
+              icon: Icons.location_off_outlined,
+              iconColor: const Color(0xFF64748B),
+              title: isAr ? 'الحافلات غير متصلة حالياً' : 'Buses Offline',
+              subtitle: isAr
+                  ? 'بانتظار استقبال إشارة الموقع من حافلات الأسطول...'
+                  : 'Waiting for GPS signal from fleet buses...',
+              directionLabel: isAr ? 'الأسطول العام' : 'Public Fleet',
+              statusPill: _buildStatusPill(
+                TrackingPhase.gpsOffline,
+                LiveTrackingStatus.offline,
+                context,
+              ),
+            );
+          }
+
+          // 3c. Valid fleet buses exist -> render active tracking card
+          return _buildActiveTrackingCard(
+            context: context,
+            state: state,
+            summary: state.summary ?? fleet.toTrackingSummary(),
+            directionLabel: isAr ? 'الأسطول المباشر' : 'Live Fleet',
+            locale: locale,
+          );
+        }
+
         final summary = state.summary;
         if (summary == null) {
-          if (state.isLoading) {
-            return _buildSkeletonCard();
-          }
-          return const SizedBox.shrink();
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.directions_bus_outlined,
+            iconColor: const Color(0xFF64748B),
+            title: isAr ? 'لا توجد رحلة نشطة' : l10n.trackingTripNotActive,
+            subtitle: isAr
+                ? 'ستظهر تفاصيل تتبع الحافلة هنا عند بدء رحلتك القادمة.'
+                : 'Live bus tracking will appear here when your next trip begins.',
+            directionLabel: isAr ? 'غير متصل' : l10n.trackingOffline,
+            statusPill: _buildStatusPill(
+              TrackingPhase.unknown,
+              LiveTrackingStatus.offline,
+              context,
+            ),
+          );
         }
 
         final phase = state.trackingPhase;
-        final isAr = locale.startsWith('ar');
 
         final directionLabel =
             summary.activeDirection == TrackingDirection.returnDirection
@@ -102,6 +194,47 @@ class HomeLiveTrackingCard extends StatelessWidget {
             directionLabel: directionLabel,
             statusPill: _buildStatusPill(
               TrackingPhase.serviceDateEnded,
+              state.trackingStatus,
+              context,
+            ),
+          );
+        }
+
+        // Dedicated Calm Lifecycle for Admin-controlled map visibility
+        if (phase == TrackingPhase.mapDisabled) {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.map_outlined,
+            iconColor: const Color(0xFF64748B),
+            title: isAr
+                ? 'الخريطة غير متاحة حالياً'
+                : l10n.trackingMapDisabledTitle,
+            subtitle: isAr
+                ? 'تم إيقاف عرض الموقع المباشر بواسطة الإدارة.'
+                : l10n.trackingMapDisabledSubtitle,
+            directionLabel: directionLabel,
+            statusPill: _buildStatusPill(
+              TrackingPhase.mapDisabled,
+              state.trackingStatus,
+              context,
+            ),
+          );
+        }
+
+        if (phase == TrackingPhase.busHidden) {
+          return _buildPreTripCard(
+            context: context,
+            icon: Icons.location_off_outlined,
+            iconColor: const Color(0xFF64748B),
+            title: isAr
+                ? 'الموقع المباشر غير متاح لهذه الرحلة'
+                : l10n.trackingBusHiddenTitle,
+            subtitle: isAr
+                ? 'عرض موقع الحافلة متوقف حالياً.'
+                : l10n.trackingBusHiddenSubtitle,
+            directionLabel: directionLabel,
+            statusPill: _buildStatusPill(
+              TrackingPhase.busHidden,
               state.trackingStatus,
               context,
             ),
@@ -194,7 +327,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
     );
   }
 
-  /// Calm state card for pre-trip and reassignment states (no map, no bus marker, no error styling)
+  /// Calm state card with visual continuity matching the live map card shell.
+  /// Shows a visual-only decorative map background with subtle blur, calm translucent scrim,
+  /// and high-contrast message card. No fake bus marker, ETA, or stops are shown.
   Widget _buildPreTripCard({
     required BuildContext context,
     required IconData icon,
@@ -205,126 +340,236 @@ class HomeLiveTrackingCard extends StatelessWidget {
     required Widget statusPill,
   }) {
     final locale = Localizations.localeOf(context).languageCode;
+    final l10n = context.l10n;
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: AppRadius.radiusXl,
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: AppShadows.md,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: AppRadius.radiusMd,
-                    ),
-                    child: const Icon(
-                      Icons.directions_bus_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          locale == 'ar' ? 'تتبع الحافلة' : 'Bus Tracking',
-                          style: AppTextStyles.titleMedium.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF0F172A),
-                            height: 1.35,
-                          ),
-                        ),
-                        AppSpacing.gapH2,
-                        Text(
-                          directionLabel,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                            height: 1.35,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  AppSpacing.gapW10,
-                  statusPill,
-                ],
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 360;
+        final mapHeight = isNarrow ? 204.0 : 220.0;
+
+        return Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadius.radiusXl,
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: AppShadows.md,
             ),
-
-            // Content Container
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: AppRadius.radiusLg,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: iconColor.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Header (identical structure and dimensions to live card)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.s16,
+                    isNarrow ? AppSpacing.s12 : 14,
+                    AppSpacing.s16,
+                    AppSpacing.s12,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          borderRadius: AppRadius.radiusMd,
+                        ),
+                        child: const Icon(
+                          Icons.directions_bus_rounded,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
                       ),
-                      child: Icon(icon, color: iconColor, size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              locale == 'ar' ? 'تتبع الحافلة' : 'Bus Tracking',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF0F172A),
+                                height: 1.35,
+                              ),
+                            ),
+                            AppSpacing.gapH2,
+                            Text(
+                              directionLabel,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                                height: 1.35,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppSpacing.gapW10,
+                      statusPill,
+                    ],
+                  ),
+                ),
+
+                // 2. Map-Style Background with Blur, Translucent Scrim & Calm Status Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Container(
+                    height: mapHeight,
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadius.radiusLg,
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: ClipRRect(
+                      borderRadius: AppRadius.radiusLg,
+                      child: Stack(
+                        fit: StackFit.expand,
                         children: [
-                          Text(
-                            title,
-                            style: AppTextStyles.titleSmall.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF0F172A),
-                              fontSize: 14,
+                          // Visual-only decorative map background (no fake coordinates or bus location)
+                          const RepaintBoundary(
+                            key: Key('home_tracking_offline_map_background'),
+                            child: CustomPaint(
+                              painter: _DecorativeMapPainter(),
+                              size: Size.infinite,
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            subtitle,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: const Color(0xFF64748B),
-                              fontSize: 12,
-                              height: 1.35,
+
+                          // Subtle blur + calm translucent scrim overlay for contrast
+                          Positioned.fill(
+                            key: const Key('home_tracking_offline_scrim'),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: 2.5,
+                                sigmaY: 2.5,
+                              ),
+                              child: Container(
+                                color: Colors.white.withValues(alpha: 0.82),
+                              ),
+                            ),
+                          ),
+
+                          // Calm foreground status message container
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  borderRadius: AppRadius.radiusLg,
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF0F172A,
+                                      ).withValues(alpha: 0.08),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: iconColor.withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        icon,
+                                        color: iconColor,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      title,
+                                      style: AppTextStyles.titleSmall.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF0F172A),
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      subtitle,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: const Color(0xFF64748B),
+                                        fontSize: 12,
+                                        height: 1.35,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+
+                AppSpacing.gapH12,
+
+                // 3. Action Button: Disabled in Offline/No Active Trip State
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                  child: Container(
+                    key: const Key('home_tracking_disabled_action_button'),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: AppRadius.radiusMd,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.map_rounded,
+                          size: 18,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.viewLiveMap,
+                          style: AppTextStyles.buttonMedium.copyWith(
+                            color: const Color(0xFF94A3B8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -348,35 +593,8 @@ class HomeLiveTrackingCard extends StatelessWidget {
         (state.isLive || isGpsStale || isGpsOffline || isProgressionSyncing);
     final isActionDisabled = !isLiveMapAvailable;
 
-    final lastStop = summary?.lastPassedStop;
-    final nextStop = state.nextStop;
-    final isLastStopVerified = lastStop?.hasCanonicalCoordinates ?? false;
-    final isNextStopVerified = nextStop?.hasCanonicalCoordinates ?? false;
 
-    final currentStopLabel = l10n.trackingLastStop;
-    final currentStopName =
-        lastStop?.localizedName(locale) ??
-        (isProgressionSyncing
-            ? l10n.trackingProgressionSyncing
-            : l10n.trackingUnavailable);
-    final actualArrival = lastStop?.actualArrivalTime;
-    final currentStopTimingText = actualArrival == null
-        ? ''
-        : l10n.trackingReached(
-            AppTimeFormatter.formatDepartureTime(
-              departureAt: actualArrival,
-              locale: locale,
-            ),
-          );
-
-    final nextStopLabel = l10n.trackingNextStop;
-    final nextStopName =
-        nextStop?.localizedName(locale) ??
-        (isProgressionSyncing
-            ? l10n.trackingProgressionSyncing
-            : l10n.trackingUnavailable);
-    final nextStopTimingText = l10n.trackingEtaUnavailable;
-
+    
     final isTripDeparted =
         summary.tripStatus == 'departed' ||
         summary.startedAt != null ||
@@ -552,8 +770,9 @@ class HomeLiveTrackingCard extends StatelessWidget {
                                   ? LiveTrackingStatus.stale
                                   : trackingStatus,
                               isCompactPreview: true,
-                              followBus: !isGpsOffline,
+                              followBus: !isGpsOffline && !state.isFleetMode,
                               routeGeometry: state.routeGeometry,
+                              fleetBuses: state.fleetBuses,
                             ),
                           ],
                           if ((isGpsOffline && telemetry == null) ||
@@ -701,159 +920,6 @@ class HomeLiveTrackingCard extends StatelessWidget {
 
                 AppSpacing.gapH12,
 
-                // 3. Last Stop & Next Stop Information Cells
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
-                    children: [
-                      // Last Stop Cell
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: AppRadius.radiusMd,
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: isLastStopVerified
-                                          ? AppColors.accentYellow
-                                          : const Color(0xFFCBD5E1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    currentStopLabel,
-                                    style: AppTextStyles.caption.copyWith(
-                                      fontSize: 11,
-                                      color: isLastStopVerified
-                                          ? AppColors.textSecondary
-                                          : const Color(0xFF64748B),
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              AppSpacing.gapH4,
-                              Text(
-                                currentStopName,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: const Color(0xFF0F172A),
-                                  height: 1.3,
-                                ),
-                              ),
-                              if (currentStopTimingText.isNotEmpty) ...[
-                                AppSpacing.gapH2,
-                                Text(
-                                  currentStopTimingText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Next Stop Cell
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: AppRadius.radiusMd,
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: isNextStopVerified
-                                          ? AppColors.primary
-                                          : const Color(0xFFCBD5E1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    nextStopLabel,
-                                    style: AppTextStyles.caption.copyWith(
-                                      fontSize: 11,
-                                      color: isNextStopVerified
-                                          ? AppColors.primaryDark
-                                          : const Color(0xFF64748B),
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              AppSpacing.gapH4,
-                              Text(
-                                nextStopName,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: const Color(0xFF0F172A),
-                                  height: 1.3,
-                                ),
-                              ),
-                              if (nextStopTimingText.isNotEmpty) ...[
-                                AppSpacing.gapH2,
-                                Text(
-                                  nextStopTimingText,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: isNextStopVerified
-                                        ? AppColors.primary
-                                        : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 AppSpacing.gapH10,
 
                 // 4. Action Button: View Live Map
@@ -867,6 +933,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
                           },
                     borderRadius: AppRadius.radiusMd,
                     child: Container(
+                      key: const Key('home_tracking_active_action_button'),
                       padding: const EdgeInsets.symmetric(
                         vertical: 12,
                         horizontal: 16,
@@ -983,8 +1050,12 @@ class HomeLiveTrackingCard extends StatelessWidget {
       bg = const Color(0xFFFEF3C7);
       dotColor = const Color(0xFFD97706);
       label = isAr ? 'تحديث موقع الحافلة متأخر' : l10n.trackingDelayedPill;
-    } else if (phase == TrackingPhase.gpsOffline ||
-        status == LiveTrackingStatus.offline) {
+    } else if (phase == TrackingPhase.mapDisabled ||
+        phase == TrackingPhase.busHidden) {
+      bg = const Color(0xFFF1F5F9);
+      dotColor = const Color(0xFF64748B);
+      label = isAr ? 'غير متاح' : l10n.trackingUnavailablePill;
+    } else if (phase == TrackingPhase.gpsOffline) {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
       label = isAr ? 'موقع الحافلة غير متاح مؤقتًا' : l10n.trackingOffline;
@@ -1014,7 +1085,7 @@ class HomeLiveTrackingCard extends StatelessWidget {
     } else {
       bg = const Color(0xFFF1F5F9);
       dotColor = const Color(0xFF64748B);
-      label = l10n.trackingOffline;
+      label = isAr ? 'غير متصل' : l10n.trackingOffline;
     }
 
     return ConstrainedBox(
@@ -1056,4 +1127,169 @@ class HomeLiveTrackingCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lightweight, visual-only decorative map painter for offline and pre-trip states.
+/// Draws an abstract urban road/transit network with terrain accents.
+/// Displays NO fake bus markers, coordinates, stops, or route progress.
+class _DecorativeMapPainter extends CustomPainter {
+  const _DecorativeMapPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 1. Terrain base
+    final bgPaint = Paint()..color = const Color(0xFFF1F5F9);
+    canvas.drawRect(Offset.zero & size, bgPaint);
+
+    // 2. Soft water body accent
+    final waterPaint = Paint()
+      ..color = const Color(0xFFE0F2FE)
+      ..style = PaintingStyle.fill;
+    final waterPath = Path()
+      ..moveTo(0, size.height * 0.72)
+      ..cubicTo(
+        size.width * 0.25,
+        size.height * 0.65,
+        size.width * 0.45,
+        size.height * 0.85,
+        size.width * 0.75,
+        size.height * 0.78,
+      )
+      ..cubicTo(
+        size.width * 0.9,
+        size.height * 0.74,
+        size.width * 0.95,
+        size.height * 0.82,
+        size.width,
+        size.height * 0.8,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(waterPath, waterPaint);
+
+    // 3. Soft green area patches
+    final greenPaint = Paint()
+      ..color = const Color(0xFFF0FDF4)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.08,
+          size.height * 0.1,
+          size.width * 0.26,
+          size.height * 0.32,
+        ),
+        const Radius.circular(8),
+      ),
+      greenPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.66,
+          size.height * 0.16,
+          size.width * 0.26,
+          size.height * 0.3,
+        ),
+        const Radius.circular(8),
+      ),
+      greenPaint,
+    );
+
+    // 4. Subtle urban grid blocks
+    final blockPaint = Paint()
+      ..color = const Color(0xFFE2E8F0).withValues(alpha: 0.65)
+      ..style = PaintingStyle.fill;
+
+    for (double x = size.width * 0.12; x < size.width * 0.9; x += 40) {
+      for (double y = size.height * 0.14; y < size.height * 0.65; y += 32) {
+        if ((x + y) % 3 == 0) continue;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, y, 24, 18),
+            const Radius.circular(3),
+          ),
+          blockPaint,
+        );
+      }
+    }
+
+    // 5. Secondary street network
+    final secRoadPaint = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      Offset(0, size.height * 0.36),
+      Offset(size.width, size.height * 0.36),
+      secRoadPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * 0.6),
+      Offset(size.width, size.height * 0.6),
+      secRoadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.22, 0),
+      Offset(size.width * 0.22, size.height),
+      secRoadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.58, 0),
+      Offset(size.width * 0.58, size.height),
+      secRoadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.82, 0),
+      Offset(size.width * 0.82, size.height),
+      secRoadPaint,
+    );
+
+    // 6. Main arterial transit avenues
+    final mainRoadBorder = Paint()
+      ..color = const Color(0xFFCBD5E1)
+      ..strokeWidth = 8.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final mainRoadFill = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final arterialPath = Path()
+      ..moveTo(-10, size.height * 0.48)
+      ..cubicTo(
+        size.width * 0.3,
+        size.height * 0.44,
+        size.width * 0.5,
+        size.height * 0.24,
+        size.width + 10,
+        size.height * 0.22,
+      );
+
+    canvas.drawPath(arterialPath, mainRoadBorder);
+    canvas.drawPath(arterialPath, mainRoadFill);
+
+    final diagonalAvenue = Path()
+      ..moveTo(size.width * 0.42, -10)
+      ..cubicTo(
+        size.width * 0.46,
+        size.height * 0.38,
+        size.width * 0.54,
+        size.height * 0.62,
+        size.width * 0.62,
+        size.height + 10,
+      );
+
+    canvas.drawPath(diagonalAvenue, mainRoadBorder);
+    canvas.drawPath(diagonalAvenue, mainRoadFill);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

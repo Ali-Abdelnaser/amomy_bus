@@ -14,6 +14,7 @@ import 'package:amomy_bus/features/auth/domain/usecases/get_current_user_usecase
 import 'package:amomy_bus/features/auth/domain/usecases/get_wallet_preview_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/resend_otp_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/send_password_reset_usecase.dart';
+import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_apple_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_email_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
 import 'package:amomy_bus/features/auth/domain/usecases/sign_out_usecase.dart';
@@ -78,6 +79,12 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   ResultFuture<AppUser> signInWithGoogle({String? webClientId}) async {
+    if (failure != null) return Error(failure!);
+    return Success(currentUserResult!);
+  }
+
+  @override
+  ResultFuture<AppUser> signInWithApple() async {
     if (failure != null) return Error(failure!);
     return Success(currentUserResult!);
   }
@@ -173,6 +180,7 @@ void main() {
       verifyOtpUseCase: VerifyOtpUseCase(fakeRepo),
       resendOtpUseCase: ResendOtpUseCase(fakeRepo),
       signInWithGoogleUseCase: SignInWithGoogleUseCase(fakeRepo),
+      signInWithAppleUseCase: SignInWithAppleUseCase(fakeRepo),
       completeProfileUseCase: CompleteProfileUseCase(fakeRepo),
       sendPasswordResetUseCase: SendPasswordResetUseCase(fakeRepo),
       updatePasswordUseCase: UpdatePasswordUseCase(fakeRepo),

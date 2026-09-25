@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../services/passenger_booking_availability.dart';
 
 enum BookingDirection {
   outbound,
@@ -49,6 +50,7 @@ class TripOption extends Equatable {
   final String destinationNameEn;
   final String departureTime;
   final DateTime departureAt;
+  final DateTime? bookingCloseAt;
   final double farePoints;
   final int availableSeatsCount;
   final String status;
@@ -64,16 +66,24 @@ class TripOption extends Equatable {
     required this.destinationNameEn,
     required this.departureTime,
     required this.departureAt,
+    this.bookingCloseAt,
     required this.farePoints,
     required this.availableSeatsCount,
     required this.status,
     this.isBookable = true,
   });
 
+  bool isBookingClosed({DateTime? now}) =>
+      status == 'closed' ||
+      status == 'booking_closed' ||
+      PassengerBookingAvailability.isBookingClosed(bookingCloseAt, now: now);
+
   bool get isClosed =>
       status == 'closed' || status == 'departed' || status == 'cancelled';
   bool get isFull => availableSeatsCount <= 0;
-  bool get canBook => isBookable && !isClosed && !isFull;
+  bool get canBook => isBookable && !isClosed && !isFull && !isBookingClosed();
+  bool canBookAt({DateTime? now}) =>
+      isBookable && !isClosed && !isFull && !isBookingClosed(now: now);
 
   String originName(String locale) => locale.startsWith('ar')
       ? (originNameAr.trim().isNotEmpty ? originNameAr : originNameEn)
@@ -97,6 +107,7 @@ class TripOption extends Equatable {
     destinationNameEn,
     departureTime,
     departureAt,
+    bookingCloseAt,
     farePoints,
     availableSeatsCount,
     status,
@@ -182,12 +193,7 @@ class RouteStop extends Equatable {
       : localityEn!;
 
   String displayName(String locale) {
-    final name = stopName(locale);
-    final loc = locality(locale);
-    if (loc.isNotEmpty && name != loc) {
-      return '$name — $loc';
-    }
-    return name;
+    return stopName(locale);
   }
 
   @override
@@ -410,7 +416,7 @@ class PassengerTodayTrip extends Equatable {
   final String destinationNameEn;
   final String departureTime;
   final DateTime departureAt;
-  final DateTime bookingCloseAt;
+  final DateTime? bookingCloseAt;
   final double farePoints;
   final int totalSeats;
   final int availableSeats;
@@ -428,6 +434,20 @@ class PassengerTodayTrip extends Equatable {
       availabilityStatus == TodayTripAvailabilityStatus.finished;
   bool get isFinished => isCheckedIn || status == 'completed';
 
+  bool isBookingClosed({DateTime? now}) =>
+      availabilityStatus == TodayTripAvailabilityStatus.bookingClosed ||
+      PassengerBookingAvailability.isBookingClosed(bookingCloseAt, now: now);
+
+  bool canBookTrip({DateTime? now}) =>
+      isBookable &&
+      !alreadyBooked &&
+      !isCheckedIn &&
+      !isFinished &&
+      availabilityStatus != TodayTripAvailabilityStatus.bookingClosed &&
+      availabilityStatus != TodayTripAvailabilityStatus.departed &&
+      availabilityStatus != TodayTripAvailabilityStatus.cancelled &&
+      !isBookingClosed(now: now);
+
   const PassengerTodayTrip({
     required this.tripId,
     required this.routeId,
@@ -439,7 +459,7 @@ class PassengerTodayTrip extends Equatable {
     required this.destinationNameEn,
     required this.departureTime,
     required this.departureAt,
-    required this.bookingCloseAt,
+    this.bookingCloseAt,
     required this.farePoints,
     required this.totalSeats,
     required this.availableSeats,
@@ -571,6 +591,7 @@ class RoundTripReturnOption extends Equatable {
   final String returnTripId;
   final String departureTime;
   final DateTime departureAt;
+  final DateTime? bookingCloseAt;
   final int availableSeats;
   final double outboundBaseFarePoints;
   final double returnBaseFarePoints;
@@ -584,6 +605,7 @@ class RoundTripReturnOption extends Equatable {
     required this.returnTripId,
     required this.departureTime,
     required this.departureAt,
+    this.bookingCloseAt,
     required this.availableSeats,
     required this.outboundBaseFarePoints,
     required this.returnBaseFarePoints,
@@ -594,11 +616,19 @@ class RoundTripReturnOption extends Equatable {
     required this.isBookable,
   });
 
+  bool isBookingClosed({DateTime? now}) =>
+      PassengerBookingAvailability.isBookingClosed(bookingCloseAt, now: now);
+
+  bool get canBookReturn => isBookable && !isBookingClosed();
+  bool canBookReturnAt({DateTime? now}) =>
+      isBookable && !isBookingClosed(now: now);
+
   @override
   List<Object?> get props => [
     returnTripId,
     departureTime,
     departureAt,
+    bookingCloseAt,
     availableSeats,
     outboundBaseFarePoints,
     returnBaseFarePoints,

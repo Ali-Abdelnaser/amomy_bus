@@ -115,12 +115,10 @@ class _PassengerHomePageState extends State<PassengerHomePage>
           .summary
           ?.upcomingTrip
           ?.tripId;
-      if (tripId != null && tripId.isNotEmpty) {
-        context.read<TrackingCubit>().loadTrackingData(
-          tripId: tripId,
-          isRefresh: true,
-        );
-      }
+      context.read<TrackingCubit>().loadTrackingData(
+        tripId: tripId,
+        isRefresh: true,
+      );
     } catch (_) {}
   }
 
@@ -150,8 +148,8 @@ class _PassengerHomePageState extends State<PassengerHomePage>
           create: (context) =>
               widget.trackingCubit ??
               (getIt.isRegistered<TrackingCubit>()
-                  ? getIt<TrackingCubit>()
-                  : TrackingCubit(repository: getIt())),
+                  ? (getIt<TrackingCubit>()..loadTrackingData())
+                  : (TrackingCubit(repository: getIt())..loadTrackingData())),
         ),
         if (hasNotificationRealtime)
           BlocProvider<NotificationCubit>(
@@ -241,14 +239,12 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                   final trackingTripId =
                       state.trackableTripId ??
                       state.summary?.upcomingTrip?.tripId;
-                  if (trackingTripId != null && trackingTripId.isNotEmpty) {
-                    futures.add(
-                      context.read<TrackingCubit>().loadTrackingData(
-                        tripId: trackingTripId,
-                        isRefresh: true,
-                      ),
-                    );
-                  }
+                  futures.add(
+                    context.read<TrackingCubit>().loadTrackingData(
+                      tripId: trackingTripId,
+                      isRefresh: true,
+                    ),
+                  );
                   try {
                     final cubit =
                         widget.walletCubit ?? context.read<WalletCubit>();
@@ -342,22 +338,21 @@ class _PassengerHomePageState extends State<PassengerHomePage>
                           AppSpacing.gapH20,
                         ],
                         HomeLiveTrackingCard(
-                          onViewMapTap:
-                              (state.trackableTripId?.isNotEmpty == true ||
-                                  summary.upcomingTrip?.tripId.isNotEmpty ==
-                                      true)
-                              ? () {
-                                  final id =
-                                      state.trackableTripId ??
-                                      summary.upcomingTrip!.tripId;
-                                  context.push(
-                                    RoutePaths.liveTracking.replaceFirst(
-                                      ':tripId',
-                                      id,
-                                    ),
-                                  );
-                                }
-                              : null,
+                          onViewMapTap: () {
+                            final id =
+                                state.trackableTripId ??
+                                summary.upcomingTrip?.tripId;
+                            if (id != null && id.isNotEmpty) {
+                              context.push(
+                                RoutePaths.liveTracking.replaceFirst(
+                                  ':tripId',
+                                  id,
+                                ),
+                              );
+                            } else {
+                              context.push(RoutePaths.liveBusMap);
+                            }
+                          },
                         ),
                         AppSpacing.gapH24,
                         HomeUpcomingTripCard(

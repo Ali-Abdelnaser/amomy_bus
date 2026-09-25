@@ -191,11 +191,19 @@ class HomeUpcomingTripSection extends StatelessWidget {
                       ),
                       AppSpacing.gapH16,
                       AppButton(
-                        label: l10n.bookTripCta,
-                        icon: AppIcons.ticket,
+                        label: state.shouldDisableBookingEntry
+                            ? (locale.startsWith('ar')
+                                  ? 'الحجز مغلق'
+                                  : 'Booking closed')
+                            : l10n.bookTripCta,
+                        icon: state.shouldDisableBookingEntry
+                            ? null
+                            : AppIcons.ticket,
                         variant: AppButtonVariant.outline,
                         height: 38,
-                        onPressed: () => context.push('/book-trip'),
+                        onPressed: state.shouldDisableBookingEntry
+                            ? null
+                            : () => context.push('/book-trip'),
                       ),
                     ],
                   ),

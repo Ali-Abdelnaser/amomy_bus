@@ -42,10 +42,16 @@ enum TrackingPhase {
   completed,
   cancelled,
   serviceDateEnded,
+  mapDisabled,
+  busHidden,
   unknown;
 
   static TrackingPhase fromString(String? value) {
     switch (value?.toLowerCase()) {
+      case 'map_disabled':
+        return TrackingPhase.mapDisabled;
+      case 'bus_hidden':
+        return TrackingPhase.busHidden;
       case 'waiting_assignment':
       case 'assignment_pending':
         return TrackingPhase.waitingAssignment;
@@ -84,6 +90,9 @@ enum TrackingPhase {
       this == TrackingPhase.completed ||
       this == TrackingPhase.cancelled ||
       this == TrackingPhase.serviceDateEnded;
+
+  bool get isAdminDisabled =>
+      this == TrackingPhase.mapDisabled || this == TrackingPhase.busHidden;
 
   bool get isOperational =>
       this == TrackingPhase.live ||
