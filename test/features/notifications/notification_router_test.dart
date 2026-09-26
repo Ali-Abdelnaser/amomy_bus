@@ -195,6 +195,10 @@ void main() {
           RoutePaths.wallet,
         );
         expect(
+          NotificationRouter.resolveRoute({'type': 'points_adjusted'}),
+          RoutePaths.wallet,
+        );
+        expect(
           NotificationRouter.resolveRoute({'screen': 'add_points'}),
           RoutePaths.wallet,
         );

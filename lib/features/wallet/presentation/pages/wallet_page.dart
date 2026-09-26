@@ -12,6 +12,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../notifications/presentation/services/notification_router.dart';
 import '../../../topup/domain/entities/topup_entities.dart';
 import '../../../topup/presentation/cubit/topup_history_cubit.dart';
 import '../../../topup/presentation/cubit/topup_history_state.dart';
@@ -35,15 +36,19 @@ class WalletPage extends StatefulWidget {
 }
 
 class _WalletPageState extends State<WalletPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _animController;
   late final Animation<double> _cardFadeAnim;
   late final Animation<Offset> _cardSlideAnim;
   late final Animation<double> _contentFadeAnim;
+  String? _lastPath;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    NotificationRouter.onWalletDestinationTriggered = _refreshWalletData;
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 360),
@@ -68,12 +73,39 @@ class _WalletPageState extends State<WalletPage>
     );
 
     _animController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshWalletData();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (NotificationRouter.onWalletDestinationTriggered == _refreshWalletData) {
+      NotificationRouter.onWalletDestinationTriggered = null;
+    }
     _animController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      _refreshWalletData();
+    }
+  }
+
+  void _refreshWalletData() {
+    if (!mounted) return;
+    try {
+      final authState = context.read<AuthBloc>().state;
+      final userId = authState is Authenticated ? authState.user.id : '';
+      if (userId.isNotEmpty) {
+        context.read<WalletCubit>().loadWalletSummary(userId);
+        context.read<TopUpHistoryCubit>().loadRequests();
+      }
+    } catch (_) {}
   }
 
   Future<void> _navigateToAddPoints(BuildContext context, String userId) async {
@@ -105,6 +137,23 @@ class _WalletPageState extends State<WalletPage>
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
     final disableAnim = MediaQuery.of(context).disableAnimations;
+
+    final currentPath = () {
+      try {
+        return GoRouterState.of(context).uri.path;
+      } catch (_) {
+        return null;
+      }
+    }();
+
+    if (currentPath == RoutePaths.wallet &&
+        _lastPath != null &&
+        _lastPath != RoutePaths.wallet) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _refreshWalletData();
+      });
+    }
+    _lastPath = currentPath;
 
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {

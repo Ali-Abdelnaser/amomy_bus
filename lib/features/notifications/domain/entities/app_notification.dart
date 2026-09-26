@@ -12,6 +12,7 @@ enum NotificationType {
   topupRejected,
   walletCredit,
   walletRefund,
+  pointsAdjusted,
   tripUpdate,
   tripDelayed,
   busApproaching,
@@ -41,6 +42,8 @@ enum NotificationType {
         return NotificationType.walletCredit;
       case 'wallet_refund':
         return NotificationType.walletRefund;
+      case 'points_adjusted':
+        return NotificationType.pointsAdjusted;
       case 'trip_update':
         return NotificationType.tripUpdate;
       case 'trip_delayed':
@@ -81,6 +84,8 @@ enum NotificationType {
         return 'wallet_credit';
       case NotificationType.walletRefund:
         return 'wallet_refund';
+      case NotificationType.pointsAdjusted:
+        return 'points_adjusted';
       case NotificationType.tripUpdate:
         return 'trip_update';
       case NotificationType.tripDelayed:

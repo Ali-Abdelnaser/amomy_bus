@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:amomy_bus/core/icons/app_icons.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 
 class _MockNotificationRepo implements NotificationRepository {
@@ -193,4 +194,61 @@ void main() {
 
     expect(find.text('Mark all as read'), findsNothing);
   });
+
+  testWidgets(
+    'renders points_adjusted notification with backend English title/body and wallet icon',
+    (tester) async {
+      mockRepo.notifications = [
+        AppNotification(
+          id: 'p1',
+          userId: 'u1',
+          type: NotificationType.pointsAdjusted,
+          titleAr: 'تعديل الرصيد',
+          bodyAr: 'تم إضافة 50 نقطة بواسطة الإدارة.',
+          titleEn: 'Points Adjusted',
+          bodyEn: '50 points were added to your account by admin.',
+          createdAt: DateTime.now(),
+        ),
+      ];
+      mockRepo.unread = 1;
+
+      await tester.pumpWidget(createWidgetUnderTest(const Locale('en')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationTile), findsOneWidget);
+      expect(find.text('Points Adjusted'), findsOneWidget);
+      expect(
+        find.text('50 points were added to your account by admin.'),
+        findsOneWidget,
+      );
+      expect(find.byIcon(AppIcons.wallet), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'renders points_adjusted notification with backend Arabic title/body and wallet icon',
+    (tester) async {
+      mockRepo.notifications = [
+        AppNotification(
+          id: 'p2',
+          userId: 'u1',
+          type: NotificationType.pointsAdjusted,
+          titleAr: 'تعديل النقاط',
+          bodyAr: 'تم خصم 20 نقطة لتسوية الحساب.',
+          titleEn: 'Points Adjusted',
+          bodyEn: '20 points deducted for account settlement.',
+          createdAt: DateTime.now(),
+        ),
+      ];
+      mockRepo.unread = 1;
+
+      await tester.pumpWidget(createWidgetUnderTest(const Locale('ar')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationTile), findsOneWidget);
+      expect(find.text('تعديل النقاط'), findsOneWidget);
+      expect(find.text('تم خصم 20 نقطة لتسوية الحساب.'), findsOneWidget);
+      expect(find.byIcon(AppIcons.wallet), findsOneWidget);
+    },
+  );
 }

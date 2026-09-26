@@ -618,9 +618,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> with WidgetsBindingObserver {
     SignOutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    // ignore: avoid_print
-    print(
-      'DEBUG: _onSignOutRequested started! service=$_effectiveIdentityService',
+    developer.log(
+      'AuthBloc: _onSignOutRequested started with service=$_effectiveIdentityService',
+      name: 'AUTH',
     );
     emit(const AuthLoading());
     _hasAttemptedSessionWelcomeGift = false;

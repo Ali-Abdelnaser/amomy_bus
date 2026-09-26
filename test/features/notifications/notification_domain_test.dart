@@ -45,6 +45,10 @@ void main() {
         NotificationType.walletRefund,
       );
       expect(
+        NotificationType.fromString('points_adjusted'),
+        NotificationType.pointsAdjusted,
+      );
+      expect(
         NotificationType.fromString('trip_update'),
         NotificationType.tripUpdate,
       );
@@ -103,6 +107,7 @@ void main() {
       expect(NotificationType.topupRejected.toDbString(), 'topup_rejected');
       expect(NotificationType.walletCredit.toDbString(), 'wallet_credit');
       expect(NotificationType.walletRefund.toDbString(), 'wallet_refund');
+      expect(NotificationType.pointsAdjusted.toDbString(), 'points_adjusted');
       expect(NotificationType.tripUpdate.toDbString(), 'trip_update');
       expect(NotificationType.tripDelayed.toDbString(), 'trip_delayed');
       expect(NotificationType.busApproaching.toDbString(), 'bus_approaching');

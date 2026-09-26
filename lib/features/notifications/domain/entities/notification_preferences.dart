@@ -42,6 +42,7 @@ enum NotificationPreferenceCategory {
       case NotificationType.topupRejected:
       case NotificationType.walletCredit:
       case NotificationType.walletRefund:
+      case NotificationType.pointsAdjusted:
         return NotificationPreferenceCategory.walletUpdates;
       case NotificationType.busApproaching:
       case NotificationType.busArrivedAtBoardingStop:

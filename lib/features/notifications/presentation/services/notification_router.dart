@@ -25,6 +25,7 @@ class NotificationRouter {
   static DateTime? _lastNavigatedTime;
   static String? _lastNavigatedRoute;
   static Map<String, dynamic>? _pendingPayload;
+  static VoidCallback? onWalletDestinationTriggered;
 
   @visibleForTesting
   static void resetDeduplication() {
@@ -33,6 +34,7 @@ class NotificationRouter {
     _lastNavigatedTime = null;
     _lastNavigatedRoute = null;
     _pendingPayload = null;
+    onWalletDestinationTriggered = null;
   }
 
   static String? _extractNotificationId(Map<String, dynamic>? data) {
@@ -117,6 +119,7 @@ class NotificationRouter {
         case 'wallet':
         case 'wallet_credit':
         case 'wallet_refund':
+        case 'points_adjusted':
           return RoutePaths.wallet;
 
         case 'topup':
@@ -234,6 +237,9 @@ class NotificationRouter {
         debugPrint(
           '[NotificationRouter] Already at target destination: $route. Skipping navigation.',
         );
+        if (route == RoutePaths.wallet) {
+          onWalletDestinationTriggered?.call();
+        }
         if (notifId != null) _rememberNotificationId(notifId);
         _lastNavigatedTime = now;
         _lastNavigatedRoute = route;
@@ -244,6 +250,9 @@ class NotificationRouter {
       if (isShellRoute(route)) {
         // Shell routes MUST use go() to switch branches cleanly, clearing any modal overlay without duplicate key assertion
         router.go(route);
+        if (route == RoutePaths.wallet) {
+          onWalletDestinationTriggered?.call();
+        }
       } else {
         // Non-shell routes are full-screen pages on root navigator
         router.push(route);

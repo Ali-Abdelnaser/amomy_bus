@@ -26,6 +26,7 @@ class NotificationTile extends StatelessWidget {
       case NotificationType.topupRejected:
       case NotificationType.walletCredit:
       case NotificationType.walletRefund:
+      case NotificationType.pointsAdjusted:
         return AppIcons.wallet;
       case NotificationType.busApproaching:
       case NotificationType.tripUpdate:
@@ -47,6 +48,7 @@ class NotificationTile extends StatelessWidget {
       case NotificationType.topupApproved:
       case NotificationType.walletCredit:
       case NotificationType.busArrivedAtBoardingStop:
+      case NotificationType.pointsAdjusted:
         return AppColors.success;
       case NotificationType.bookingCancelled:
       case NotificationType.topupRejected:
@@ -103,7 +105,9 @@ class NotificationTile extends StatelessWidget {
           if (isUnread) {
             onMarkRead?.call();
           }
-          NotificationRouter.navigateToDestination(notification.data);
+          final navData = Map<String, dynamic>.from(notification.data);
+          navData.putIfAbsent('type', () => notification.type.toDbString());
+          NotificationRouter.navigateToDestination(navData);
         },
         child: Container(
           padding: const EdgeInsets.all(16),
