@@ -1784,4 +1784,79 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errorInvalidToken => 'رمز التذكرة غير صالح.';
+
+  @override
+  String get newUpdateAvailable => 'تحديث جديد متاح';
+
+  @override
+  String get updateNow => 'تحديث الآن';
+
+  @override
+  String get updateLater => 'لاحقًا';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get defaultUpdateMessage =>
+      'يتوفر إصدار جديد من تطبيق عمومي يتضمن تحسينات ومزايا جديدة.';
+
+  @override
+  String get forceUpdateMessage =>
+      'يجب تحديث التطبيق إلى آخر إصدار لمتابعة الاستخدام.';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountSubtitle => 'حذف حسابك وبياناتك نهائيًا';
+
+  @override
+  String get deleteAccountPermanentWarning =>
+      'هذا الإجراء نهائي ولا يمكن التراجع عنه.';
+
+  @override
+  String get deleteAccountBookingsWarning =>
+      'سيتم إلغاء وإزالة سجل الحجوزات والمعاملات المرتبطة بحسابك.';
+
+  @override
+  String get deleteAccountDataWarning =>
+      'سيتم حذف حسابك وجميع بياناتك الشخصية نهائيًا.';
+
+  @override
+  String get currentAccountEmail => 'البريد الإلكتروني الحالي';
+
+  @override
+  String get typeEmailToConfirm => 'أدخل بريدك الإلكتروني للتأكيد';
+
+  @override
+  String get deleteAccountDialogTitle => 'هل أنت متأكد من حذف حسابك نهائيًا؟';
+
+  @override
+  String get deleteAccountDialogMessage =>
+      'سيتم حذف جميع بياناتك فورًا ولن تتمكن من استعادة الحساب.';
+
+  @override
+  String get deleteAccountSuccess => 'تم حذف الحساب بنجاح.';
+
+  @override
+  String get errorEmailConfirmationRequired =>
+      'يرجى كتابة البريد الإلكتروني لتأكيد الحذف.';
+
+  @override
+  String get errorEmailConfirmationMismatch =>
+      'البريد الإلكتروني المدخل لا يتطابق مع بريد حسابك.';
+
+  @override
+  String get errorProtectedOperationalAccount =>
+      'لا يمكن حذف الحسابات التشغيلية أو الإدارية المحمية من التطبيق.';
+
+  @override
+  String get errorAccountNotFound => 'الحساب غير موجود أو تم حذفه مسبقًا.';
+
+  @override
+  String get errorAuthUserDeleteFailed =>
+      'تعذر إتمام عملية حذف الحساب حاليًا. حاول مرة أخرى.';
 }

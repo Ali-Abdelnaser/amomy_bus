@@ -128,6 +128,13 @@ class NotificationRouter {
         case 'add_points':
           return RoutePaths.wallet;
 
+        case 'referral_reward':
+        case 'referral':
+        case 'referrals':
+        case 'invite':
+        case 'invite_friends':
+          return RoutePaths.inviteFriends;
+
         case 'tracking':
         case 'live_map':
         case 'live_tracking':

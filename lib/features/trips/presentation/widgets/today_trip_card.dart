@@ -317,6 +317,8 @@ class _TodayTripCardState extends State<TodayTripCard>
                                 void showSeatsDialog() {
                                   showDialog(
                                     context: context,
+                                    barrierColor:
+                                        Colors.black.withValues(alpha: 0.36),
                                     builder: (ctx) => AppDialog(
                                       title: isAr
                                           ? 'المقاعد المحجوزة'
@@ -341,49 +343,81 @@ class _TodayTripCardState extends State<TodayTripCard>
                                             runSpacing: 8,
                                             alignment: WrapAlignment.center,
                                             children: seatsList.map((seat) {
-                                              return Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 14,
-                                                      vertical: 8,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFFEFF6FC,
-                                                  ),
+                                              return Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    Navigator.of(ctx).pop();
+                                                    _openQrModal(
+                                                      context,
+                                                      initialSeat: seat,
+                                                    );
+                                                  },
                                                   borderRadius:
                                                       BorderRadius.circular(10),
-                                                  border: Border.all(
-                                                    color: AppColors.primary
-                                                        .withValues(alpha: 0.3),
-                                                  ),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    const NavSvgIcon(
-                                                      type: NavSvgType.trip,
-                                                      color: AppColors.primary,
-                                                      size: 14,
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      isAr
-                                                          ? 'مقعد $seat'
-                                                          : 'Seat $seat',
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                        fontSize: 13,
-                                                        color: AppColors
-                                                            .primaryDarker,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(
+                                                        0xFFEFF6FC,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(10),
+                                                      border: Border.all(
+                                                        color: AppColors.primary
+                                                            .withValues(alpha: 0.3),
                                                       ),
                                                     ),
-                                                  ],
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        const NavSvgIcon(
+                                                          type: NavSvgType.trip,
+                                                          color: AppColors.primary,
+                                                          size: 14,
+                                                        ),
+                                                        const SizedBox(width: 6),
+                                                        Text(
+                                                          isAr
+                                                              ? 'مقعد $seat'
+                                                              : 'Seat $seat',
+                                                          style: const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w800,
+                                                            fontSize: 13,
+                                                            color: AppColors
+                                                                .primaryDarker,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 6),
+                                                        const Icon(
+                                                          AppIcons.qrCode,
+                                                          size: 14,
+                                                          color: AppColors.primary,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
                                               );
                                             }).toList(),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            isAr
+                                                ? 'اضغط على المقعد لعرض رمز الـ QR الخاص به'
+                                                : 'Tap a seat to view its own QR code',
+                                            style: AppTextStyles.labelSmall
+                                                .copyWith(
+                                                  color: AppColors.textTertiary,
+                                                  fontSize: 11,
+                                                ),
+                                            textAlign: TextAlign.center,
                                           ),
                                         ],
                                       ),
@@ -453,7 +487,7 @@ class _TodayTripCardState extends State<TodayTripCard>
                                   );
                                 }
 
-                                return Row(
+                                final seatContent = Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -506,6 +540,22 @@ class _TodayTripCardState extends State<TodayTripCard>
                                     ),
                                   ],
                                 );
+
+                                if (isMulti) {
+                                  return InkWell(
+                                    onTap: showSeatsDialog,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                        vertical: 1,
+                                      ),
+                                      child: seatContent,
+                                    ),
+                                  );
+                                }
+
+                                return seatContent;
                               },
                             )
                           else if (isDeparted)
@@ -1106,22 +1156,76 @@ class _TodayTripCardState extends State<TodayTripCard>
     );
   }
 
-  void _openQrModal(BuildContext context) {
+  List<PassengerBooking> _resolveTripBookings(BuildContext context) {
+    if (widget.trip.bookings.isNotEmpty) {
+      return widget.trip.bookings;
+    }
+    try {
+      final cubit = context.read<PassengerTripsCubit>();
+      final cubitBookings = cubit.getCachedBookingsForTrip(widget.trip.tripId);
+      if (cubitBookings.isNotEmpty) {
+        return cubitBookings;
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  void _openQrModal(BuildContext context, {String? initialSeat}) {
     final trip = widget.trip;
-    if (trip.qrToken == null) return;
     final locale = Localizations.localeOf(context).languageCode;
+    final departureTime = AppTimeFormatter.formatPassengerTodayTrip(
+      trip,
+      locale: locale,
+    );
+    final originName = trip.originName(locale);
+    final destinationName = trip.destinationName(locale);
+
+    final resolvedBookings = _resolveTripBookings(context);
+
+    final items = <QrTicketItem>[];
+    for (int i = 0; i < resolvedBookings.length; i++) {
+      final b = resolvedBookings[i];
+      if (b.qrToken.isEmpty) continue;
+      items.add(
+        QrTicketItem.fromBooking(
+          b,
+          locale: locale,
+          isExtraSeat: i > 0,
+        ),
+      );
+    }
+
+    if (items.isEmpty && trip.qrToken != null && trip.qrToken!.isNotEmpty) {
+      items.add(
+        QrTicketItem(
+          bookingId: trip.bookingId,
+          departureTime: departureTime,
+          originName: originName,
+          destinationName: destinationName,
+          seatNumber: trip.seatNumber ?? '—',
+          farePoints: trip.farePoints,
+          qrToken: trip.qrToken!,
+          isExtraSeat: false,
+        ),
+      );
+    }
+
+    if (items.isEmpty) return;
+
+    int initialIndex = 0;
+    if (initialSeat != null) {
+      final idx = items.indexWhere(
+        (item) => item.seatNumber.trim() == initialSeat.trim(),
+      );
+      if (idx != -1) {
+        initialIndex = idx;
+      }
+    }
+
     QrTicketModal.show(
       context,
-      bookingId: trip.bookingId,
-      departureTime: AppTimeFormatter.formatPassengerTodayTrip(
-        trip,
-        locale: locale,
-      ),
-      originName: trip.originName(locale),
-      destinationName: trip.destinationName(locale),
-      seatNumber: trip.seatNumber ?? '—',
-      farePoints: trip.farePoints,
-      qrToken: trip.qrToken!,
+      tickets: items,
+      initialIndex: initialIndex,
     );
   }
 }

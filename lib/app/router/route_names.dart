@@ -35,6 +35,7 @@ class RouteNames {
   static const String termsAndConditions = 'termsAndConditions';
   static const String liveTracking = 'liveTracking';
   static const String liveBusMap = 'liveBusMap';
+  static const String inviteFriends = 'inviteFriends';
 
   // Admin routes
   static const String adminDashboard = 'adminDashboard';

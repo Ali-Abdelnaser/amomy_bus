@@ -94,9 +94,21 @@
 					<string>com.googleusercontent.apps.133458950988-t4vgheihpqper0v884pv1vmckeknqdcg</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>amomy-referral-invite</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>amomy</string>
+				</array>
+			</dict>
 		</array>
 		<key>GIDClientID</key>
 		<string>133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com</string>
+		<key>NSCameraUsageDescription</key>
+		<string>AMOMY needs camera access to scan referral QR codes.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>AMOMY needs access to your photos to upload payment proof screenshots for top-up verification.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

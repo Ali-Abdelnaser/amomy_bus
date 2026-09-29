@@ -17,6 +17,10 @@ import 'package:amomy_bus/features/profile/presentation/pages/profile_page.dart'
 import 'package:amomy_bus/features/profile/presentation/pages/support_center_page.dart';
 import 'package:amomy_bus/features/profile/presentation/pages/terms_and_conditions_page.dart';
 import 'package:amomy_bus/features/profile/presentation/widgets/profile_identity_header.dart';
+import 'package:amomy_bus/features/referral/domain/entities/referral_entities.dart';
+import 'package:amomy_bus/features/referral/domain/repositories/referral_repository.dart';
+import 'package:amomy_bus/features/referral/domain/usecases/referral_usecases.dart';
+import 'package:amomy_bus/features/referral/presentation/cubit/referral_cubit.dart';
 import 'package:amomy_bus/l10n/app_localizations.dart';
 
 class MockAuthBloc extends Bloc<AuthEvent, AuthState>
@@ -54,6 +58,81 @@ class FakeProfileRepository implements ProfileRepository {
     removeCalled = true;
     return const Success(null);
   }
+
+  @override
+  ResultFuture<void> deleteAccount({
+    required String confirmationEmail,
+  }) async {
+    return const Success(null);
+  }
+
+  @override
+  ResultFuture<void> deleteAppleAccount({
+    required String confirmationEmail,
+    required String authorizationCode,
+  }) async {
+    return const Success(null);
+  }
+
+  @override
+  bool get isAppleUser => false;
+}
+
+class FakeReferralRepository implements ReferralRepository {
+  final bool enabled;
+
+  FakeReferralRepository({this.enabled = true});
+
+  @override
+  ResultFuture<ReferralDashboard> getMyReferralDashboard() async {
+    return Success(
+      ReferralDashboard(
+        program: ReferralProgramSettings(
+          enabled: enabled,
+          monthlyInviteLimit: 5,
+          milestoneTripCount: 3,
+          inviterFirstRewardPoints: 20,
+          inviteeFirstRewardPoints: 5,
+          inviterMilestoneRewardPoints: 30,
+        ),
+        myCode: 'CODE123',
+        inviterStats: const InviterStats(
+          acceptedThisMonth: 1,
+          remainingThisMonth: 4,
+          totalInvited: 1,
+          totalRewardPointsEarned: 20,
+        ),
+      ),
+    );
+  }
+
+  @override
+  ResultFuture<ReferralCodePreview> previewReferralCode(String code) async {
+    return const Success(ReferralCodePreview(valid: true, programEnabled: true));
+  }
+
+  @override
+  ResultFuture<BindReferralResult> bindReferralCode({
+    required String code,
+    required String source,
+  }) async {
+    return const Success(
+      BindReferralResult(
+        success: true,
+        referralId: 'r1',
+        inviterUserId: 'u1',
+        inviterName: 'Ali',
+        inviteeFirstRewardPoints: 5,
+        milestoneTripCount: 3,
+      ),
+    );
+  }
+
+  @override
+  Stream<void> subscribeToReferralSettingsUpdates() => const Stream.empty();
+
+  @override
+  Stream<void> subscribeToReferralDashboardUpdates() => const Stream.empty();
 }
 
 void main() {
@@ -233,6 +312,61 @@ void main() {
     });
 
     testWidgets(
+      'completely hides Invite Friends tile when referral program is disabled',
+      (tester) async {
+        final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
+        final refRepo = FakeReferralRepository(enabled: false);
+        final refCubit = ReferralCubit(
+          getDashboardUseCase: GetMyReferralDashboardUseCase(refRepo),
+          previewCodeUseCase: PreviewReferralCodeUseCase(refRepo),
+          bindCodeUseCase: BindReferralCodeUseCase(refRepo),
+        );
+
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: ProfilePage(profileBloc: profileBloc, referralCubit: refCubit),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Invite Friends'), findsNothing);
+        expect(find.text('ادعُ أصدقاءك'), findsNothing);
+        expect(find.text('Personal Information'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows Invite Friends tile normally when referral program is enabled',
+      (tester) async {
+        final authBloc = MockAuthBloc(Authenticated(user: testUserWithoutAvatar));
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
+        final refRepo = FakeReferralRepository(enabled: true);
+        final refCubit = ReferralCubit(
+          getDashboardUseCase: GetMyReferralDashboardUseCase(refRepo),
+          previewCodeUseCase: PreviewReferralCodeUseCase(refRepo),
+          bindCodeUseCase: BindReferralCodeUseCase(refRepo),
+        );
+
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: ProfilePage(profileBloc: profileBloc, referralCubit: refCubit),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Invite Friends'), findsOneWidget);
+        expect(find.text('Personal Information'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'tapping Sign Out shows confirmation sheet with AMOMY blue action',
       (tester) async {
         final authBloc = MockAuthBloc(
@@ -294,6 +428,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Language tile
+      await tester.ensureVisible(find.text('Language'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
 

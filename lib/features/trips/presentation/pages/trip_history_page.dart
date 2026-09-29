@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../core/assets/app_assets.dart';
-import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/amomy_bus_loading.dart';
@@ -133,25 +132,7 @@ class _TripHistoryView extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 28),
-                  Center(
-                    child: OutlinedButton.icon(
-                      onPressed: () =>
-                          context.read<PassengerTripsCubit>().loadTripsHub(),
-                      icon: const Icon(AppIcons.refresh, size: 16),
-                      label: Text(isAr ? 'تحديث السجل' : 'Refresh History'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
+                  
                 ],
               ),
             );

@@ -42,6 +42,7 @@ class _WalletPageState extends State<WalletPage>
   late final Animation<Offset> _cardSlideAnim;
   late final Animation<double> _contentFadeAnim;
   String? _lastPath;
+  bool _isPullToRefresh = false;
 
   @override
   void initState() {
@@ -250,31 +251,46 @@ class _WalletPageState extends State<WalletPage>
                                 : RefreshIndicator(
                                     onRefresh: () async {
                                       if (userId.isNotEmpty) {
-                                        await Future.wait([
-                                          context
-                                              .read<WalletCubit>()
-                                              .loadWalletSummary(userId),
-                                          context
-                                              .read<TopUpHistoryCubit>()
-                                              .loadRequests(),
-                                        ]);
+                                        if (mounted) {
+                                          setState(() {
+                                            _isPullToRefresh = true;
+                                          });
+                                        }
+                                        try {
+                                          await Future.wait([
+                                            context
+                                                .read<WalletCubit>()
+                                                .loadWalletSummary(userId),
+                                            context
+                                                .read<TopUpHistoryCubit>()
+                                                .loadRequests(),
+                                          ]);
+                                        } finally {
+                                          if (mounted) {
+                                            setState(() {
+                                              _isPullToRefresh = false;
+                                            });
+                                          }
+                                        }
                                       }
                                     },
-                                    child: Skeletonizer(
-                                      enabled: isLoading,
-                                      child: SingleChildScrollView(
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            // A. Hero Wallet Card: Wide, almost full width
-                                            disableAnim
+                                    child: SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          // A. Hero Wallet Card: Wide, almost full width
+                                          // On pull-to-refresh: keep top wallet/card image exactly visible as-is without skeletonization
+                                          // On initial loading: skeletonize normally
+                                          Skeletonizer(
+                                            enabled: isLoading && !_isPullToRefresh,
+                                            child: disableAnim
                                                 ? const WalletCardWidget()
                                                 : FadeTransition(
                                                     opacity: _cardFadeAnim,
@@ -284,99 +300,109 @@ class _WalletPageState extends State<WalletPage>
                                                           const WalletCardWidget(),
                                                     ),
                                                   ),
+                                          ),
 
-                                            AppSpacing.gapH16,
+                                          AppSpacing.gapH16,
 
-                                            // B. Separate Secondary Points Summary Card
-                                            disableAnim
-                                                ? WalletPointsSummaryCard(
-                                                    points: totalPoints,
-                                                    onAddPoints: () =>
-                                                        _navigateToAddPoints(
-                                                          context,
-                                                          userId,
-                                                        ),
-                                                  )
-                                                : FadeTransition(
-                                                    opacity: _contentFadeAnim,
-                                                    child: WalletPointsSummaryCard(
-                                                      points: totalPoints,
-                                                      onAddPoints: () =>
-                                                          _navigateToAddPoints(
-                                                            context,
-                                                            userId,
-                                                          ),
-                                                    ),
-                                                  ),
-
-                                            // C. Pending / Rejected Top-Ups Section
-                                            BlocBuilder<
-                                              TopUpHistoryCubit,
-                                              TopUpHistoryState
-                                            >(
-                                              builder: (context, historyState) {
-                                                final requests =
-                                                    walletState
-                                                        .topUpRequests
-                                                        .isNotEmpty
-                                                    ? walletState.topUpRequests
-                                                    : historyState.requests;
-                                                return Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        top: 14,
-                                                      ),
-                                                  child:
-                                                      WalletPendingPointsSection(
-                                                        requests: requests,
-                                                        onResubmit: (req) =>
-                                                            _navigateToResubmit(
+                                          // Skeleton/loading effect applies to content below the card during refresh and initial loading
+                                          Skeletonizer(
+                                            enabled: isLoading || _isPullToRefresh,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                // B. Separate Secondary Points Summary Card
+                                                disableAnim
+                                                    ? WalletPointsSummaryCard(
+                                                        points: totalPoints,
+                                                        onAddPoints: () =>
+                                                            _navigateToAddPoints(
                                                               context,
-                                                              req,
                                                               userId,
                                                             ),
+                                                      )
+                                                    : FadeTransition(
+                                                        opacity: _contentFadeAnim,
+                                                        child: WalletPointsSummaryCard(
+                                                          points: totalPoints,
+                                                          onAddPoints: () =>
+                                                              _navigateToAddPoints(
+                                                                context,
+                                                                userId,
+                                                              ),
+                                                        ),
                                                       ),
-                                                );
-                                              },
+
+                                                // C. Pending / Rejected Top-Ups Section
+                                                BlocBuilder<
+                                                  TopUpHistoryCubit,
+                                                  TopUpHistoryState
+                                                >(
+                                                  builder: (context, historyState) {
+                                                    final requests =
+                                                        walletState
+                                                            .topUpRequests
+                                                            .isNotEmpty
+                                                        ? walletState.topUpRequests
+                                                        : historyState.requests;
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            top: 14,
+                                                          ),
+                                                      child:
+                                                          WalletPendingPointsSection(
+                                                            requests: requests,
+                                                            onResubmit: (req) =>
+                                                                _navigateToResubmit(
+                                                                  context,
+                                                                  req,
+                                                                  userId,
+                                                                ),
+                                                          ),
+                                                    );
+                                                  },
+                                                ),
+
+                                                AppSpacing.gapH24,
+
+                                                // D. Recent Transactions Header
+                                                disableAnim
+                                                    ? _buildTransactionsHeader(
+                                                        context,
+                                                      )
+                                                    : FadeTransition(
+                                                        opacity: _contentFadeAnim,
+                                                        child:
+                                                            _buildTransactionsHeader(
+                                                              context,
+                                                            ),
+                                                      ),
+
+                                                const SizedBox(height: 12),
+
+                                                // E. Transactions List or Empty State
+                                                disableAnim
+                                                    ? _buildTransactionsContent(
+                                                        context,
+                                                        isLoading || _isPullToRefresh,
+                                                        walletState,
+                                                      )
+                                                    : FadeTransition(
+                                                        opacity: _contentFadeAnim,
+                                                        child:
+                                                            _buildTransactionsContent(
+                                                              context,
+                                                              isLoading || _isPullToRefresh,
+                                                              walletState,
+                                                            ),
+                                                      ),
+                                              ],
                                             ),
+                                          ),
 
-                                            AppSpacing.gapH24,
-
-                                            // D. Recent Transactions Header
-                                            disableAnim
-                                                ? _buildTransactionsHeader(
-                                                    context,
-                                                  )
-                                                : FadeTransition(
-                                                    opacity: _contentFadeAnim,
-                                                    child:
-                                                        _buildTransactionsHeader(
-                                                          context,
-                                                        ),
-                                                  ),
-
-                                            const SizedBox(height: 12),
-
-                                            // E. Transactions List or Empty State
-                                            disableAnim
-                                                ? _buildTransactionsContent(
-                                                    context,
-                                                    isLoading,
-                                                    walletState,
-                                                  )
-                                                : FadeTransition(
-                                                    opacity: _contentFadeAnim,
-                                                    child:
-                                                        _buildTransactionsContent(
-                                                          context,
-                                                          isLoading,
-                                                          walletState,
-                                                        ),
-                                                  ),
-
-                                            AppSpacing.gapBottomNav,
-                                          ],
-                                        ),
+                                          AppSpacing.gapBottomNav,
+                                        ],
                                       ),
                                     ),
                                   ),

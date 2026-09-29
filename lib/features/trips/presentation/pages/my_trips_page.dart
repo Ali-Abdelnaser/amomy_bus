@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../../../app/di/injection.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/assets/app_assets.dart';
-import '../../../../core/icons/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -200,7 +199,7 @@ class _MyTripsView extends StatelessWidget {
                           color: AppColors.primary,
                           onRefresh: () => context
                               .read<PassengerTripsCubit>()
-                              .loadTripsHub(),
+                              .loadTripsHub(isRefresh: true),
                           child: ListView(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 30,
@@ -235,30 +234,7 @@ class _MyTripsView extends StatelessWidget {
                                 textAlign: TextAlign.center,
                               ),
                               AppSpacing.gapH20,
-                              Center(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => context
-                                      .read<PassengerTripsCubit>()
-                                      .loadTripsHub(),
-                                  icon: const Icon(AppIcons.refresh, size: 16),
-                                  label: Text(
-                                    isAr ? 'تحديث الجدول' : 'Refresh Schedule',
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.primary,
-                                    side: const BorderSide(
-                                      color: AppColors.border,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 10,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                ),
-                              ),
+
                             ],
                           ),
                         );
@@ -271,8 +247,9 @@ class _MyTripsView extends StatelessWidget {
 
                       return RefreshIndicator(
                         color: AppColors.primary,
-                        onRefresh: () =>
-                            context.read<PassengerTripsCubit>().loadTripsHub(),
+                        onRefresh: () => context
+                            .read<PassengerTripsCubit>()
+                            .loadTripsHub(isRefresh: true),
                         child: ListView(
                           padding: const EdgeInsets.fromLTRB(
                             20,

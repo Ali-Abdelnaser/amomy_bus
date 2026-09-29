@@ -18,6 +18,7 @@ enum NotificationType {
   busApproaching,
   busArrivedAtBoardingStop,
   nextStopUpdate,
+  referralReward,
   unknown;
 
   static NotificationType fromString(String? value) {
@@ -57,6 +58,10 @@ enum NotificationType {
       case 'next_stop_update':
       case 'next_stop':
         return NotificationType.nextStopUpdate;
+      case 'referral_reward':
+      case 'referral':
+      case 'referrals':
+        return NotificationType.referralReward;
       default:
         return NotificationType.unknown;
     }
@@ -96,6 +101,8 @@ enum NotificationType {
         return 'bus_arrived_at_boarding_stop';
       case NotificationType.nextStopUpdate:
         return 'next_stop_update';
+      case NotificationType.referralReward:
+        return 'referral_reward';
       case NotificationType.unknown:
         return 'system';
     }

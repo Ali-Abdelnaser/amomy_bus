@@ -21,6 +21,8 @@ class ProfileSettingTile extends StatelessWidget {
   final bool showChevron;
   final Color? iconColor;
   final Color? iconBackgroundColor;
+  final Color? titleColor;
+  final bool isDestructive;
 
   const ProfileSettingTile({
     super.key,
@@ -33,11 +35,22 @@ class ProfileSettingTile extends StatelessWidget {
     this.showChevron = true,
     this.iconColor,
     this.iconBackgroundColor,
+    this.titleColor,
+    this.isDestructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final effectiveIconBgColor = iconBackgroundColor ??
+        (isDestructive ? AppColors.errorLight : AppColors.primaryLight);
+    final effectiveIconColor =
+        iconColor ?? (isDestructive ? AppColors.error : AppColors.primary);
+    final effectiveTitleColor =
+        titleColor ?? (isDestructive ? AppColors.error : AppColors.textPrimary);
+    final effectiveChevronColor = isDestructive
+        ? AppColors.error.withValues(alpha: 0.5)
+        : AppColors.textTertiary;
 
     return Material(
       color: Colors.transparent,
@@ -55,14 +68,14 @@ class ProfileSettingTile extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: iconBackgroundColor ?? AppColors.primaryLight,
+                    color: effectiveIconBgColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     icon,
                     size: 20,
-                    color: iconColor ?? AppColors.primary,
+                    color: effectiveIconColor,
                   ),
                 ),
                 AppSpacing.gapW14,
@@ -77,7 +90,7 @@ class ProfileSettingTile extends StatelessWidget {
                         title,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: effectiveTitleColor,
                           fontSize: 15,
                         ),
                       ),
@@ -86,7 +99,9 @@ class ProfileSettingTile extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+                            color: isDestructive
+                                ? AppColors.error.withValues(alpha: 0.75)
+                                : AppColors.textSecondary,
                             fontSize: 12.5,
                             height: 1.2,
                           ),
@@ -113,7 +128,7 @@ class ProfileSettingTile extends StatelessWidget {
                   Icon(
                     isRtl ? AppIcons.chevronLeft : AppIcons.chevronRight,
                     size: 18,
-                    color: AppColors.textTertiary,
+                    color: effectiveChevronColor,
                   ),
               ],
             ),

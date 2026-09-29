@@ -7,6 +7,7 @@ import '../../../../core/icons/app_icons.dart';
 import '../../../../core/localization/app_locale_controller.dart';
 import '../../../../core/localization/localization_helpers.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
@@ -22,6 +23,13 @@ import '../bloc/profile_state.dart';
 import '../widgets/profile_identity_header.dart';
 import '../widgets/profile_section.dart';
 import '../widgets/profile_setting_tile.dart';
+import '../widgets/delete_account_bottom_sheet.dart';
+import '../../../referral/data/datasources/referral_remote_data_source.dart';
+import '../../../referral/data/repositories/referral_repository_impl.dart';
+import '../../../referral/domain/repositories/referral_repository.dart';
+import '../../../referral/domain/usecases/referral_usecases.dart';
+import '../../../referral/presentation/cubit/referral_cubit.dart';
+import '../../../referral/presentation/cubit/referral_state.dart';
 
 /// Redesigned Passenger Profile Page.
 ///
@@ -32,10 +40,13 @@ import '../widgets/profile_setting_tile.dart';
 /// - Dedicated navigation to Personal Information, Notifications, Support, About, Privacy, and Terms
 /// - Instant in-app language switching via modal bottom sheet
 /// - Elegant non-destructive AMOMY Blue sign-out action with confirmation
+/// - Pull-to-refresh to reload profile and referral program status
+/// - Realtime referral settings listener (live toggle of "ادعُ أصدقاءك")
 class ProfilePage extends StatefulWidget {
   final ProfileBloc? profileBloc;
+  final ReferralCubit? referralCubit;
 
-  const ProfilePage({super.key, this.profileBloc});
+  const ProfilePage({super.key, this.profileBloc, this.referralCubit});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -44,6 +55,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late final ProfileBloc _profileBloc;
   bool _createdBloc = false;
+  late final ReferralCubit? _referralCubit;
+  bool _createdReferralCubit = false;
 
   @override
   void initState() {
@@ -60,6 +73,46 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       _createdBloc = true;
     }
+
+    if (widget.referralCubit != null) {
+      _referralCubit = widget.referralCubit;
+    } else if (getIt.isRegistered<ReferralCubit>()) {
+      _referralCubit = getIt<ReferralCubit>();
+    } else {
+      try {
+        final repo = getIt.isRegistered<ReferralRepository>()
+            ? getIt<ReferralRepository>()
+            : ReferralRepositoryImpl(
+                remoteDataSource: getIt.isRegistered<ReferralRemoteDataSource>()
+                    ? getIt<ReferralRemoteDataSource>()
+                    : ReferralRemoteDataSourceImpl(),
+              );
+        _referralCubit = ReferralCubit(
+          getDashboardUseCase: getIt.isRegistered<GetMyReferralDashboardUseCase>()
+              ? getIt<GetMyReferralDashboardUseCase>()
+              : GetMyReferralDashboardUseCase(repo),
+          previewCodeUseCase: getIt.isRegistered<PreviewReferralCodeUseCase>()
+              ? getIt<PreviewReferralCodeUseCase>()
+              : PreviewReferralCodeUseCase(repo),
+          bindCodeUseCase: getIt.isRegistered<BindReferralCodeUseCase>()
+              ? getIt<BindReferralCodeUseCase>()
+              : BindReferralCodeUseCase(repo),
+          repository: repo,
+        );
+        _createdReferralCubit = true;
+      } catch (_) {
+        _referralCubit = null;
+      }
+    }
+
+    final referralCubit = _referralCubit;
+    if (referralCubit != null) {
+      referralCubit.startListeningToSettings();
+      if (referralCubit.state.dashboard == null &&
+          referralCubit.state.status != ReferralStatus.loading) {
+        referralCubit.loadDashboard();
+      }
+    }
   }
 
   @override
@@ -67,7 +120,26 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_createdBloc) {
       _profileBloc.close();
     }
+    if (_createdReferralCubit) {
+      _referralCubit?.close();
+    }
     super.dispose();
+  }
+
+  Future<void> _handleRefresh(BuildContext context) async {
+    final futures = <Future<dynamic>>[];
+    try {
+      context.read<AuthBloc>().add(const AppResumedRequested());
+    } catch (_) {}
+
+    final referralCubit = _referralCubit;
+    if (referralCubit != null) {
+      futures.add(referralCubit.loadDashboard(isRefresh: true));
+    }
+
+    if (futures.isNotEmpty) {
+      await Future.wait(futures);
+    }
   }
 
   void _showLanguageSelector(BuildContext context) {
@@ -263,8 +335,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: () => Navigator.of(sheetCtx).pop(),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.border),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMd,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
@@ -287,8 +359,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMd,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
@@ -305,6 +377,22 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount(BuildContext context, String currentEmail) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: false,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => BlocProvider.value(
+        value: _profileBloc,
+        child: DeleteAccountBottomSheet(
+          currentEmail: currentEmail,
         ),
       ),
     );
@@ -357,169 +445,240 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 body: SafeArea(
                   bottom: false,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Centered Identity Header directly on surface
-                        ProfileIdentityHeader(user: user),
-                        AppSpacing.gapH24,
+                  child: RefreshIndicator(
+                    color: AppColors.primary,
+                    onRefresh: () => _handleRefresh(context),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Centered Identity Header directly on surface
+                          ProfileIdentityHeader(user: user),
+                          AppSpacing.gapH24,
 
-                        // SECTION 1: ACCOUNT
-                        ProfileSection(
-                          title: isAr ? 'الحساب' : 'ACCOUNT',
-                          children: [
-                            ProfileSettingTile(
-                              icon: AppIcons.userRound,
-                              title: l10n.personalInfo,
-                              subtitle: isAr
-                                  ? 'تحديث بياناتك وتفاصيل الاتصال'
-                                  : 'Update your personal details',
-                              iconBackgroundColor: const Color(0xFFE8F1FA),
-                              iconColor: AppColors.primary,
-                              onTap: () =>
-                                  context.push(RoutePaths.personalInformation),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.gapH18,
+                          // SECTION 1: ACCOUNT
+                          if (_referralCubit != null)
+                            BlocBuilder<ReferralCubit, ReferralState>(
+                              bloc: _referralCubit,
+                              builder: (context, refState) {
+                                final isReferralEnabled =
+                                    refState.dashboard?.program.enabled ?? false;
 
-                        // SECTION 2: PREFERENCES
-                        ProfileSection(
-                          title: isAr ? 'التفضيلات' : 'PREFERENCES',
-                          children: [
-                            ProfileSettingTile(
-                              icon: AppIcons.notification,
-                              title: l10n.notificationSettings,
-                              subtitle: isAr
-                                  ? 'إدارة التنبيهات وتحديثات الرحلات'
-                                  : 'Manage alerts and trip updates',
-                              iconBackgroundColor: const Color(0xFFFEF3EB),
-                              iconColor: const Color(0xFFE06D14),
-                              onTap: () =>
-                                  context.push(RoutePaths.notificationSettings),
-                            ),
-                            ProfileSettingTile(
-                              icon: AppIcons.languages,
-                              title: l10n.language,
-                              subtitle: isAr
-                                  ? 'اختر لغة التطبيق المفضلة'
-                                  : 'Choose your preferred app language',
-                              trailingText: isAr ? 'العربية' : 'English',
-                              iconBackgroundColor: const Color(0xFFEEF4FF),
-                              iconColor: const Color(0xFF3538CD),
-                              onTap: () => _showLanguageSelector(context),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.gapH18,
-
-                        // SECTION 3: HELP & SUPPORT
-                        ProfileSection(
-                          title: isAr ? 'المساعدة والدعم' : 'HELP & SUPPORT',
-                          children: [
-                            ProfileSettingTile(
-                              icon: AppIcons.headphones,
-                              title: l10n.supportCenter,
-                              subtitle: isAr
-                                  ? 'تحتاج مساعدة؟ تواصل معنا'
-                                  : 'Need help? Contact us',
-                              iconBackgroundColor: const Color(0xFFECFDF3),
-                              iconColor: const Color(0xFF027A48),
-                              onTap: () => context.push(RoutePaths.support),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.gapH18,
-
-                        // SECTION 4: ABOUT & LEGAL
-                        ProfileSection(
-                          title: isAr
-                              ? 'حول التطبيق والقانونية'
-                              : 'ABOUT & LEGAL',
-                          children: [
-                            ProfileSettingTile(
-                              icon: AppIcons.info,
-                              title: l10n.aboutAmomyApp,
-                              subtitle: isAr
-                                  ? 'إصدار التطبيق ومعلومات المطور'
-                                  : 'App version and developer info',
-                              iconBackgroundColor: const Color(0xFFF4F3FF),
-                              iconColor: const Color(0xFF5925DC),
-                              onTap: () => context.push(RoutePaths.aboutApp),
-                            ),
-                            ProfileSettingTile(
-                              icon: AppIcons.shield,
-                              title: l10n.privacyPolicy,
-                              subtitle: isAr
-                                  ? 'حماية وأمان بياناتك الشخصية'
-                                  : 'Data privacy and security standards',
-                              iconBackgroundColor: const Color(0xFFF8F9FC),
-                              iconColor: const Color(0xFF475467),
-                              onTap: () =>
-                                  context.push(RoutePaths.privacyPolicy),
-                            ),
-                            ProfileSettingTile(
-                              icon: AppIcons.fileText,
-                              title: l10n.termsAndConditions,
-                              subtitle: isAr
-                                  ? 'شروط الاستخدام وقواعد الخدمة'
-                                  : 'Terms of use and service rules',
-                              iconBackgroundColor: const Color(0xFFF8F9FC),
-                              iconColor: const Color(0xFF475467),
-                              onTap: () =>
-                                  context.push(RoutePaths.termsAndConditions),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.gapH24,
-
-                        // LOGOUT / DESTRUCTIVE ACTION: Distinct full-width soft red outlined style
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => _confirmSignOut(context),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF3F2),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFFFECDCA),
-                                  width: 1.2,
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    AppIcons.logOut,
-                                    size: 19,
-                                    color: AppColors.error,
-                                  ),
-                                  AppSpacing.gapW8,
-                                  Text(
-                                    l10n.signOut,
-                                    style: AppTextStyles.labelLarge.copyWith(
-                                      color: AppColors.error,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
+                                return ProfileSection(
+                                  title: isAr ? 'الحساب' : 'ACCOUNT',
+                                  children: [
+                                    ProfileSettingTile(
+                                      icon: AppIcons.userRound,
+                                      title: l10n.personalInfo,
+                                      subtitle: isAr
+                                          ? 'تحديث بياناتك وتفاصيل الاتصال'
+                                          : 'Update your personal details',
+                                      iconBackgroundColor: const Color(0xFFE8F1FA),
+                                      iconColor: AppColors.primary,
+                                      onTap: () =>
+                                          context.push(RoutePaths.personalInformation),
                                     ),
+                                    if (isReferralEnabled)
+                                      ProfileSettingTile(
+                                        icon: AppIcons.userPlus,
+                                        title: isAr ? 'ادعُ أصدقاءك' : 'Invite Friends',
+                                        subtitle: isAr
+                                            ? 'شارك كود الدعوة واكسب نقاط مكافآت'
+                                            : 'Share your referral code and earn points',
+                                        iconBackgroundColor: const Color(0xFFECFDF3),
+                                        iconColor: const Color(0xFF027A48),
+                                        onTap: () =>
+                                            context.push(RoutePaths.inviteFriends),
+                                      ),
+                                    ProfileSettingTile(
+                                      icon: AppIcons.trash,
+                                      title: isAr ? 'حذف الحساب' : 'Delete Account',
+                                      subtitle: isAr
+                                          ? 'حذف حسابك وبياناتك نهائيًا'
+                                          : 'Permanently delete your account and data',
+                                      iconBackgroundColor: const Color(0xFFFEF3F2),
+                                      iconColor: AppColors.error,
+                                      isDestructive: true,
+                                      onTap: () => _confirmDeleteAccount(
+                                        context,
+                                        user.email,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            )
+                          else
+                            ProfileSection(
+                              title: isAr ? 'الحساب' : 'ACCOUNT',
+                              children: [
+                                ProfileSettingTile(
+                                  icon: AppIcons.userRound,
+                                  title: l10n.personalInfo,
+                                  subtitle: isAr
+                                      ? 'تحديث بياناتك وتفاصيل الاتصال'
+                                      : 'Update your personal details',
+                                  iconBackgroundColor: const Color(0xFFE8F1FA),
+                                  iconColor: AppColors.primary,
+                                  onTap: () =>
+                                      context.push(RoutePaths.personalInformation),
+                                ),
+                                ProfileSettingTile(
+                                  icon: AppIcons.trash,
+                                  title: isAr ? 'حذف الحساب' : 'Delete Account',
+                                  subtitle: isAr
+                                      ? 'حذف حسابك وبياناتك نهائيًا'
+                                      : 'Permanently delete your account and data',
+                                  iconBackgroundColor: const Color(0xFFFEF3F2),
+                                  iconColor: AppColors.error,
+                                  isDestructive: true,
+                                  onTap: () => _confirmDeleteAccount(
+                                    context,
+                                    user.email,
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          AppSpacing.gapH18,
+
+                          // SECTION 2: PREFERENCES
+                          ProfileSection(
+                            title: isAr ? 'التفضيلات' : 'PREFERENCES',
+                            children: [
+                              ProfileSettingTile(
+                                icon: AppIcons.notification,
+                                title: l10n.notificationSettings,
+                                subtitle: isAr
+                                    ? 'إدارة التنبيهات وتحديثات الرحلات'
+                                    : 'Manage alerts and trip updates',
+                                iconBackgroundColor: const Color(0xFFFEF3EB),
+                                iconColor: const Color(0xFFE06D14),
+                                onTap: () =>
+                                    context.push(RoutePaths.notificationSettings),
+                              ),
+                              ProfileSettingTile(
+                                icon: AppIcons.languages,
+                                title: l10n.language,
+                                subtitle: isAr
+                                    ? 'اختر لغة التطبيق المفضلة'
+                                    : 'Choose your preferred app language',
+                                trailingText: isAr ? 'العربية' : 'English',
+                                iconBackgroundColor: const Color(0xFFEEF4FF),
+                                iconColor: const Color(0xFF3538CD),
+                                onTap: () => _showLanguageSelector(context),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.gapH18,
+
+                          // SECTION 3: HELP & SUPPORT
+                          ProfileSection(
+                            title: isAr ? 'المساعدة والدعم' : 'HELP & SUPPORT',
+                            children: [
+                              ProfileSettingTile(
+                                icon: AppIcons.headphones,
+                                title: l10n.supportCenter,
+                                subtitle: isAr
+                                    ? 'تحتاج مساعدة؟ تواصل معنا'
+                                    : 'Need help? Contact us',
+                                iconBackgroundColor: const Color(0xFFECFDF3),
+                                iconColor: const Color(0xFF027A48),
+                                onTap: () => context.push(RoutePaths.support),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.gapH18,
+
+                          // SECTION 4: ABOUT & LEGAL
+                          ProfileSection(
+                            title: isAr
+                                ? 'حول التطبيق والقانونية'
+                                : 'ABOUT & LEGAL',
+                            children: [
+                              ProfileSettingTile(
+                                icon: AppIcons.info,
+                                title: l10n.aboutAmomyApp,
+                                subtitle: isAr
+                                    ? 'إصدار التطبيق ومعلومات المطور'
+                                    : 'App version and developer info',
+                                iconBackgroundColor: const Color(0xFFF4F3FF),
+                                iconColor: const Color(0xFF5925DC),
+                                onTap: () => context.push(RoutePaths.aboutApp),
+                              ),
+                              ProfileSettingTile(
+                                icon: AppIcons.shield,
+                                title: l10n.privacyPolicy,
+                                subtitle: isAr
+                                    ? 'حماية وأمان بياناتك الشخصية'
+                                    : 'Data privacy and security standards',
+                                iconBackgroundColor: const Color(0xFFF8F9FC),
+                                iconColor: const Color(0xFF475467),
+                                onTap: () =>
+                                    context.push(RoutePaths.privacyPolicy),
+                              ),
+                              ProfileSettingTile(
+                                icon: AppIcons.fileText,
+                                title: l10n.termsAndConditions,
+                                subtitle: isAr
+                                    ? 'شروط الاستخدام وقواعد الخدمة'
+                                    : 'Terms of use and service rules',
+                                iconBackgroundColor: const Color(0xFFF8F9FC),
+                                iconColor: const Color(0xFF475467),
+                                onTap: () =>
+                                    context.push(RoutePaths.termsAndConditions),
+                              ),
+                            ],
+                          ),
+                          AppSpacing.gapH24,
+
+                          // LOGOUT / DESTRUCTIVE ACTION: Distinct full-width soft red outlined style
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _confirmSignOut(context),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3F2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(0xFFFECDCA),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      AppIcons.logOut,
+                                      size: 19,
+                                      color: AppColors.error,
+                                    ),
+                                    AppSpacing.gapW8,
+                                    Text(
+                                      l10n.signOut,
+                                      style: AppTextStyles.labelLarge.copyWith(
+                                        color: AppColors.error,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 32),
-                        AppSpacing.gapBottomNav,
-                      ],
+                          const SizedBox(height: 32),
+                          AppSpacing.gapBottomNav,
+                        ],
+                      ),
                     ),
                   ),
                 ),

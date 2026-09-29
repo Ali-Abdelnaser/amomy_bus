@@ -39,6 +39,8 @@ class NotificationTile extends StatelessWidget {
       case NotificationType.generalAnnouncement:
       case NotificationType.serviceUpdate:
         return AppIcons.notification;
+      case NotificationType.referralReward:
+        return AppIcons.gift;
     }
   }
 
@@ -49,6 +51,7 @@ class NotificationTile extends StatelessWidget {
       case NotificationType.walletCredit:
       case NotificationType.busArrivedAtBoardingStop:
       case NotificationType.pointsAdjusted:
+      case NotificationType.referralReward:
         return AppColors.success;
       case NotificationType.bookingCancelled:
       case NotificationType.topupRejected:

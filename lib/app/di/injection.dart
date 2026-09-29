@@ -2,6 +2,12 @@ import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'injection.config.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../features/app_update/data/datasources/app_update_remote_datasource.dart';
+import '../../features/app_update/data/repositories/app_update_repository_impl.dart';
+import '../../features/app_update/domain/repositories/app_update_repository.dart';
+import '../../features/app_update/domain/usecases/check_app_update_usecase.dart';
+import '../../features/app_update/presentation/bloc/app_update_bloc.dart';
 import '../../features/booking/domain/repositories/booking_repository.dart';
 import '../../features/booking/domain/usecases/booking_usecases.dart';
 import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
@@ -14,6 +20,11 @@ import '../../features/profile/data/datasources/profile_remote_datasource.dart';
 import '../../features/profile/data/repositories/profile_repository_impl.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
+import '../../features/referral/data/datasources/referral_remote_data_source.dart';
+import '../../features/referral/data/repositories/referral_repository_impl.dart';
+import '../../features/referral/domain/repositories/referral_repository.dart';
+import '../../features/referral/domain/usecases/referral_usecases.dart';
+import '../../features/referral/presentation/cubit/referral_cubit.dart';
 import '../../features/tracking/data/datasources/tracking_remote_datasource.dart';
 import '../../features/tracking/data/repositories/tracking_repository_impl.dart';
 import '../../features/tracking/domain/repositories/tracking_repository.dart';
@@ -104,6 +115,44 @@ Future<void> configureDependencies() async {
     );
   }
 
+  // Register referral dependencies
+  if (!getIt.isRegistered<ReferralRemoteDataSource>()) {
+    getIt.registerLazySingleton<ReferralRemoteDataSource>(
+      () => ReferralRemoteDataSourceImpl(),
+    );
+  }
+  if (!getIt.isRegistered<ReferralRepository>()) {
+    getIt.registerLazySingleton<ReferralRepository>(
+      () => ReferralRepositoryImpl(
+        remoteDataSource: getIt<ReferralRemoteDataSource>(),
+      ),
+    );
+  }
+  if (!getIt.isRegistered<GetMyReferralDashboardUseCase>()) {
+    getIt.registerLazySingleton<GetMyReferralDashboardUseCase>(
+      () => GetMyReferralDashboardUseCase(getIt<ReferralRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<PreviewReferralCodeUseCase>()) {
+    getIt.registerLazySingleton<PreviewReferralCodeUseCase>(
+      () => PreviewReferralCodeUseCase(getIt<ReferralRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<BindReferralCodeUseCase>()) {
+    getIt.registerLazySingleton<BindReferralCodeUseCase>(
+      () => BindReferralCodeUseCase(getIt<ReferralRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<ReferralCubit>()) {
+    getIt.registerLazySingleton<ReferralCubit>(
+      () => ReferralCubit(
+        getDashboardUseCase: getIt<GetMyReferralDashboardUseCase>(),
+        previewCodeUseCase: getIt<PreviewReferralCodeUseCase>(),
+        bindCodeUseCase: getIt<BindReferralCodeUseCase>(),
+      ),
+    );
+  }
+
   // Register Round Trip booking dependencies
   if (getIt.isRegistered<BookingRepository>()) {
     final bookingRepo = getIt<BookingRepository>();
@@ -133,4 +182,27 @@ Future<void> configureDependencies() async {
       );
     }
   }
+
+  // Register App Update dependencies
+  if (!getIt.isRegistered<AppUpdateRemoteDataSource>()) {
+    getIt.registerLazySingleton<AppUpdateRemoteDataSource>(
+      () => AppUpdateRemoteDataSourceImpl(getIt<SupabaseClient>()),
+    );
+  }
+  if (!getIt.isRegistered<AppUpdateRepository>()) {
+    getIt.registerLazySingleton<AppUpdateRepository>(
+      () => AppUpdateRepositoryImpl(getIt<AppUpdateRemoteDataSource>()),
+    );
+  }
+  if (!getIt.isRegistered<CheckAppUpdateUseCase>()) {
+    getIt.registerLazySingleton<CheckAppUpdateUseCase>(
+      () => CheckAppUpdateUseCase(getIt<AppUpdateRepository>()),
+    );
+  }
+  if (!getIt.isRegistered<AppUpdateBloc>()) {
+    getIt.registerFactory<AppUpdateBloc>(
+      () => AppUpdateBloc(getIt<CheckAppUpdateUseCase>()),
+    );
+  }
 }
+

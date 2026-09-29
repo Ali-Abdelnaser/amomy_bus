@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:label="Amomy Bus"
@@ -35,6 +36,15 @@
                 <data
                     android:scheme="com.aliabdelnaser.amomy"
                     android:host="login-callback" />
+            </intent-filter>
+            <!-- Deep linking for Referral Invites (amomy://invite?code=...) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="amomy"
+                    android:host="invite" />
             </intent-filter>
         </activity>
         <!-- Google Maps Android SDK API Key (injected via secrets.properties / manifestPlaceholders) -->

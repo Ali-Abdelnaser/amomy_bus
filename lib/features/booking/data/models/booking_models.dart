@@ -306,9 +306,18 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
     required super.availabilityStatus,
     required super.isBookable,
     super.checkedInAt,
+    super.bookings,
   });
 
   factory PassengerTodayTripModel.fromJson(Map<String, dynamic> json) {
+    List<PassengerBookingModel> bookingsList = const [];
+    if (json['bookings'] is List) {
+      bookingsList = (json['bookings'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map(PassengerBookingModel.fromJson)
+          .toList();
+    }
+
     return PassengerTodayTripModel(
       tripId: (json['trip_id'] ?? json['id'] ?? '') as String,
       routeId: (json['route_id'] ?? '') as String,
@@ -346,6 +355,7 @@ class PassengerTodayTripModel extends PassengerTodayTrip {
       checkedInAt: json['checked_in_at'] != null
           ? DateTime.tryParse(json['checked_in_at'].toString())
           : (json['is_checked_in'] == true ? DateTime.now() : null),
+      bookings: bookingsList,
     );
   }
 }

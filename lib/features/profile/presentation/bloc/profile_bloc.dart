@@ -9,6 +9,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc({required this.repository}) : super(const ProfileInitial()) {
     on<ProfileAvatarUploadRequested>(_onAvatarUploadRequested);
     on<ProfileAvatarRemoveRequested>(_onAvatarRemoveRequested);
+    on<ProfileDeleteAccountRequested>(_onDeleteAccountRequested);
     on<ProfileResetState>((event, emit) => emit(const ProfileInitial()));
   }
 
@@ -50,4 +51,29 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           emit(const ProfileAvatarSuccess(avatarUrl: null, isRemoved: true)),
     );
   }
+
+  Future<void> _onDeleteAccountRequested(
+    ProfileDeleteAccountRequested event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(const ProfileDeleteAccountLoading());
+
+    final code = event.authorizationCode;
+    final result = (code != null && code.isNotEmpty)
+        ? await repository.deleteAppleAccount(
+            confirmationEmail: event.confirmationEmail,
+            authorizationCode: code,
+          )
+        : await repository.deleteAccount(
+            confirmationEmail: event.confirmationEmail,
+          );
+
+    result.fold(
+      onError: (failure) =>
+          emit(ProfileDeleteAccountFailure(message: failure.message)),
+      onSuccess: (_) =>
+          emit(const ProfileDeleteAccountSuccess()),
+    );
+  }
 }
+

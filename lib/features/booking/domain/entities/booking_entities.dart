@@ -448,6 +448,8 @@ class PassengerTodayTrip extends Equatable {
       availabilityStatus != TodayTripAvailabilityStatus.cancelled &&
       !isBookingClosed(now: now);
 
+  final List<PassengerBooking> bookings;
+
   const PassengerTodayTrip({
     required this.tripId,
     required this.routeId,
@@ -471,7 +473,88 @@ class PassengerTodayTrip extends Equatable {
     required this.availabilityStatus,
     required this.isBookable,
     this.checkedInAt,
+    this.bookings = const [],
   });
+
+  /// Resolves the individual booking tickets for this trip.
+  List<PassengerBooking> get effectiveBookings {
+    if (bookings.isNotEmpty) return bookings;
+    if (bookingId != null && qrToken != null && qrToken!.isNotEmpty) {
+      return [
+        PassengerBooking(
+          bookingId: bookingId!,
+          tripId: tripId,
+          direction: direction,
+          originNameAr: originNameAr,
+          originNameEn: originNameEn,
+          destinationNameAr: destinationNameAr,
+          destinationNameEn: destinationNameEn,
+          serviceDate: serviceDate,
+          departureTime: departureTime,
+          departureAt: departureAt,
+          seatNumber: seatNumber ?? '',
+          farePoints: farePoints,
+          status: status,
+          qrToken: qrToken!,
+          bookedAt: DateTime.now(),
+          checkedInAt: checkedInAt,
+        ),
+      ];
+    }
+    return const [];
+  }
+
+  PassengerTodayTrip copyWith({
+    String? tripId,
+    String? routeId,
+    BookingDirection? direction,
+    DateTime? serviceDate,
+    String? originNameAr,
+    String? originNameEn,
+    String? destinationNameAr,
+    String? destinationNameEn,
+    String? departureTime,
+    DateTime? departureAt,
+    DateTime? bookingCloseAt,
+    double? farePoints,
+    int? totalSeats,
+    int? availableSeats,
+    String? status,
+    bool? alreadyBooked,
+    String? bookingId,
+    String? seatNumber,
+    String? qrToken,
+    TodayTripAvailabilityStatus? availabilityStatus,
+    bool? isBookable,
+    DateTime? checkedInAt,
+    List<PassengerBooking>? bookings,
+  }) {
+    return PassengerTodayTrip(
+      tripId: tripId ?? this.tripId,
+      routeId: routeId ?? this.routeId,
+      direction: direction ?? this.direction,
+      serviceDate: serviceDate ?? this.serviceDate,
+      originNameAr: originNameAr ?? this.originNameAr,
+      originNameEn: originNameEn ?? this.originNameEn,
+      destinationNameAr: destinationNameAr ?? this.destinationNameAr,
+      destinationNameEn: destinationNameEn ?? this.destinationNameEn,
+      departureTime: departureTime ?? this.departureTime,
+      departureAt: departureAt ?? this.departureAt,
+      bookingCloseAt: bookingCloseAt ?? this.bookingCloseAt,
+      farePoints: farePoints ?? this.farePoints,
+      totalSeats: totalSeats ?? this.totalSeats,
+      availableSeats: availableSeats ?? this.availableSeats,
+      status: status ?? this.status,
+      alreadyBooked: alreadyBooked ?? this.alreadyBooked,
+      bookingId: bookingId ?? this.bookingId,
+      seatNumber: seatNumber ?? this.seatNumber,
+      qrToken: qrToken ?? this.qrToken,
+      availabilityStatus: availabilityStatus ?? this.availabilityStatus,
+      isBookable: isBookable ?? this.isBookable,
+      checkedInAt: checkedInAt ?? this.checkedInAt,
+      bookings: bookings ?? this.bookings,
+    );
+  }
 
   String originName(String locale) {
     if (locale.startsWith('ar')) {
@@ -517,6 +600,7 @@ class PassengerTodayTrip extends Equatable {
     availabilityStatus,
     isBookable,
     checkedInAt,
+    bookings,
   ];
 }
 

@@ -6,11 +6,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../booking/domain/entities/booking_entities.dart';
 import '../../../booking/presentation/widgets/app_qr_ticket_widget.dart';
+import '../../../shell/presentation/widgets/nav_svg_icon.dart';
 import '../cubit/passenger_trips_cubit.dart';
 import '../cubit/passenger_trips_state.dart';
 
-class QrTicketModal extends StatelessWidget {
+class QrTicketItem {
   final String? bookingId;
   final String departureTime;
   final String originName;
@@ -18,9 +20,9 @@ class QrTicketModal extends StatelessWidget {
   final String seatNumber;
   final double farePoints;
   final String qrToken;
+  final bool isExtraSeat;
 
-  const QrTicketModal({
-    super.key,
+  const QrTicketItem({
     this.bookingId,
     required this.departureTime,
     required this.originName,
@@ -28,22 +30,89 @@ class QrTicketModal extends StatelessWidget {
     required this.seatNumber,
     required this.farePoints,
     required this.qrToken,
+    this.isExtraSeat = false,
   });
+
+  factory QrTicketItem.fromBooking(
+    PassengerBooking booking, {
+    String? locale,
+    bool isExtraSeat = false,
+  }) {
+    final lang = locale ?? 'ar';
+    return QrTicketItem(
+      bookingId: booking.id,
+      departureTime: AppTimeFormatter.formatPassengerBooking(
+        booking,
+        locale: lang,
+      ),
+      originName: booking.originName(lang),
+      destinationName: booking.destinationName(lang),
+      seatNumber: booking.seatNumber,
+      farePoints: booking.farePoints,
+      qrToken: booking.qrToken,
+      isExtraSeat: isExtraSeat,
+    );
+  }
+}
+
+class QrTicketModal extends StatefulWidget {
+  final List<QrTicketItem> tickets;
+  final int initialIndex;
+
+  QrTicketModal({
+    super.key,
+    List<QrTicketItem>? tickets,
+    this.initialIndex = 0,
+    String? bookingId,
+    String departureTime = '',
+    String originName = '',
+    String destinationName = '',
+    String seatNumber = '',
+    double farePoints = 0,
+    String qrToken = '',
+  }) : tickets = tickets ??
+            [
+              QrTicketItem(
+                bookingId: bookingId,
+                departureTime: departureTime,
+                originName: originName,
+                destinationName: destinationName,
+                seatNumber: seatNumber,
+                farePoints: farePoints,
+                qrToken: qrToken,
+              ),
+            ];
 
   static void show(
     BuildContext context, {
+    List<QrTicketItem>? tickets,
+    int initialIndex = 0,
     String? bookingId,
-    required String departureTime,
-    required String originName,
-    required String destinationName,
-    required String seatNumber,
-    required double farePoints,
-    required String qrToken,
+    String? departureTime,
+    String? originName,
+    String? destinationName,
+    String? seatNumber,
+    double? farePoints,
+    String? qrToken,
   }) {
     PassengerTripsCubit? tripsCubit;
     try {
       tripsCubit = context.read<PassengerTripsCubit>();
     } catch (_) {}
+
+    final effectiveTickets = (tickets != null && tickets.isNotEmpty)
+        ? tickets
+        : [
+            QrTicketItem(
+              bookingId: bookingId,
+              departureTime: departureTime ?? '',
+              originName: originName ?? '',
+              destinationName: destinationName ?? '',
+              seatNumber: seatNumber ?? '',
+              farePoints: farePoints ?? 0,
+              qrToken: qrToken ?? '',
+            ),
+          ];
 
     showModalBottomSheet(
       context: context,
@@ -56,41 +125,49 @@ class QrTicketModal extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (modalContext) {
         final content = QrTicketModal(
-          bookingId: bookingId,
-          departureTime: departureTime,
-          originName: originName,
-          destinationName: destinationName,
-          seatNumber: seatNumber,
-          farePoints: farePoints,
-          qrToken: qrToken,
+          tickets: effectiveTickets,
+          initialIndex: initialIndex,
         );
 
-        if (tripsCubit != null && bookingId != null) {
-          return BlocProvider.value(
-            value: tripsCubit,
-            child: BlocListener<PassengerTripsCubit, PassengerTripsState>(
-              listenWhen: (prev, curr) {
-                final isHistoryCheckedIn = curr.historyTrips.any(
-                  (b) => b.id == bookingId && b.checkedInAt != null,
-                );
-                final isTodayCheckedIn = curr.todayTrips.any(
-                  (t) => t.bookingId == bookingId && t.isCheckedIn,
-                );
-                final isRemovedFromUpcoming = !curr.upcomingTrips.any(
-                  (b) => b.id == bookingId,
-                );
-                return isHistoryCheckedIn ||
-                    isTodayCheckedIn ||
-                    isRemovedFromUpcoming;
-              },
-              listener: (ctx, state) {
-                if (Navigator.of(modalContext).canPop()) {
-                  Navigator.of(modalContext).pop();
-                }
-              },
-              child: content,
-            ),
-          );
+        if (tripsCubit != null) {
+          final targetBookingIds = effectiveTickets
+              .map((t) => t.bookingId)
+              .whereType<String>()
+              .toSet();
+
+          if (targetBookingIds.isNotEmpty) {
+            return BlocProvider.value(
+              value: tripsCubit,
+              child: BlocListener<PassengerTripsCubit, PassengerTripsState>(
+                listenWhen: (prev, curr) {
+                  final allCheckedIn = targetBookingIds.every((id) {
+                    final isHistoryCheckedIn = curr.historyTrips.any(
+                      (b) => b.id == id && b.checkedInAt != null,
+                    );
+                    final isTodayCheckedIn = curr.todayTrips.any(
+                      (t) =>
+                          (t.bookingId == id ||
+                              t.bookings.any((b) => b.id == id)) &&
+                          t.isCheckedIn,
+                    );
+                    final isRemovedFromUpcoming = !curr.upcomingTrips.any(
+                      (b) => b.id == id,
+                    );
+                    return isHistoryCheckedIn ||
+                        isTodayCheckedIn ||
+                        isRemovedFromUpcoming;
+                  });
+                  return allCheckedIn;
+                },
+                listener: (ctx, state) {
+                  if (Navigator.of(modalContext).canPop()) {
+                    Navigator.of(modalContext).pop();
+                  }
+                },
+                child: content,
+              ),
+            );
+          }
         }
 
         return content;
@@ -99,8 +176,33 @@ class QrTicketModal extends StatelessWidget {
   }
 
   @override
+  State<QrTicketModal> createState() => _QrTicketModalState();
+}
+
+class _QrTicketModalState extends State<QrTicketModal> {
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.tickets.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.tickets.length - 1);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
+    final currentTicket = widget.tickets.isNotEmpty
+        ? widget.tickets[_currentIndex]
+        : const QrTicketItem(
+            departureTime: '',
+            originName: '',
+            destinationName: '',
+            seatNumber: '—',
+            farePoints: 0,
+            qrToken: '',
+          );
 
     return AmomySheetContainer(
       hasBottomNav: true,
@@ -114,7 +216,13 @@ class QrTicketModal extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  isAr ? 'تذكرة الصعود الإلكترونية' : 'Digital Boarding Ticket',
+                  widget.tickets.length > 1
+                      ? (isAr
+                          ? 'تذاكر الصعود الإلكترونية (${widget.tickets.length})'
+                          : 'Digital Boarding Tickets (${widget.tickets.length})')
+                      : (isAr
+                          ? 'تذكرة الصعود الإلكترونية'
+                          : 'Digital Boarding Ticket'),
                   style: AppTextStyles.titleMedium.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -138,6 +246,83 @@ class QrTicketModal extends StatelessWidget {
             ),
             AppSpacing.gapH12,
 
+            // Multi-ticket seat selector tabs
+            if (widget.tickets.length > 1) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: List.generate(widget.tickets.length, (index) {
+                    final item = widget.tickets[index];
+                    final isSelected = index == _currentIndex;
+                    final isExtra = item.isExtraSeat || index > 0;
+                    return Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _currentIndex = index),
+                        borderRadius: BorderRadius.circular(10),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.06,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              NavSvgIcon(
+                                type: NavSvgType.trip,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textTertiary,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  isAr
+                                      ? 'مقعد ${item.seatNumber}${isExtra ? " (إضافي)" : ""}'
+                                      : 'Seat ${item.seatNumber}${isExtra ? " (Extra)" : ""}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+
             // QR Ticket Container
             Container(
               padding: const EdgeInsets.all(16),
@@ -148,12 +333,16 @@ class QrTicketModal extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  AppQrTicketWidget(data: qrToken, size: 180),
+                  AppQrTicketWidget(data: currentTicket.qrToken, size: 180),
                   AppSpacing.gapH12,
                   Text(
-                    isAr
-                        ? 'أظهر هذا الرمز للسائق عند الصعود'
-                        : 'Show this QR code to the driver upon boarding',
+                    widget.tickets.length > 1
+                        ? (isAr
+                            ? 'رمز صعود خاص بمقعد ${currentTicket.seatNumber} فقط — أظهره للسائق'
+                            : 'Dedicated QR for Seat ${currentTicket.seatNumber} only — show upon boarding')
+                        : (isAr
+                            ? 'أظهر هذا الرمز للسائق عند الصعود'
+                            : 'Show this QR code to the driver upon boarding'),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
@@ -174,19 +363,20 @@ class QrTicketModal extends StatelessWidget {
                   icon: AppIcons.clock,
                   label: isAr ? 'الموعد' : 'Time',
                   value: AppTimeFormatter.formatDepartureTime(
-                    departureTime: departureTime,
+                    departureTime: currentTicket.departureTime,
                     isArabic: isAr,
                   ),
                 ),
                 _TicketDetailItem(
                   icon: AppIcons.seat,
                   label: isAr ? 'المقعد' : 'Seat',
-                  value: seatNumber,
+                  value: currentTicket.seatNumber,
                 ),
                 _TicketDetailItem(
                   icon: AppIcons.ticket,
                   label: isAr ? 'القيمة' : 'Fare',
-                  value: '${farePoints.toInt()} ${isAr ? "نقطة" : "pts"}',
+                  value:
+                      '${currentTicket.farePoints.toInt()} ${isAr ? "نقطة" : "pts"}',
                 ),
               ],
             ),
@@ -204,7 +394,7 @@ class QrTicketModal extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      originName,
+                      currentTicket.originName,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: AppColors.primaryDark,
                         fontWeight: FontWeight.bold,
@@ -224,7 +414,7 @@ class QrTicketModal extends StatelessWidget {
                   ),
                   Flexible(
                     child: Text(
-                      destinationName,
+                      currentTicket.destinationName,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: AppColors.primaryDark,
                         fontWeight: FontWeight.bold,

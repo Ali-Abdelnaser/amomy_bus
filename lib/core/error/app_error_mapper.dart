@@ -577,6 +577,66 @@ class AppErrorMapper {
               ? 'يرجى تسجيل الدخول للمتابعة.'
               : 'Please sign in to continue.');
     }
+    if (code.contains('EMAIL_CONFIRMATION_REQUIRED')) {
+      return l10n?.errorEmailConfirmationRequired ??
+          (isAr
+              ? 'يرجى كتابة البريد الإلكتروني لتأكيد الحذف.'
+              : 'Please enter your email to confirm deletion.');
+    }
+    if (code.contains('EMAIL_CONFIRMATION_MISMATCH')) {
+      return l10n?.errorEmailConfirmationMismatch ??
+          (isAr
+              ? 'البريد الإلكتروني المدخل لا يتطابق مع بريد حسابك.'
+              : 'The confirmation email does not match your account email.');
+    }
+    if (code.contains('PROTECTED_OPERATIONAL_ACCOUNT')) {
+      return l10n?.errorProtectedOperationalAccount ??
+          (isAr
+              ? 'لا يمكن حذف الحسابات التشغيلية أو الإدارية المحمية من التطبيق.'
+              : 'Protected operational or administrative accounts cannot be deleted.');
+    }
+    if (code.contains('ACCOUNT_NOT_FOUND')) {
+      return l10n?.errorAccountNotFound ??
+          (isAr
+              ? 'الحساب غير موجود أو تم حذفه مسبقًا.'
+              : 'Account not found or already deleted.');
+    }
+    if (code.contains('AUTH_USER_DELETE_FAILED')) {
+      return l10n?.errorAuthUserDeleteFailed ??
+          (isAr
+              ? 'تعذر إتمام عملية حذف الحساب حاليًا. حاول مرة أخرى.'
+              : 'Failed to delete account. Please try again later.');
+    }
+    if (code.contains('APPLE_AUTHORIZATION_CODE_REQUIRED')) {
+      return isAr
+          ? 'رمز تفويض Apple مطلوب لإتمام الحذف.'
+          : 'Apple authorization code is required to complete account deletion.';
+    }
+    if (code.contains('APPLE_IDENTITY_NOT_LINKED')) {
+      return isAr
+          ? 'هذا الحساب غير مرتبط بحساب Apple.'
+          : 'This account is not linked to an Apple ID.';
+    }
+    if (code.contains('APPLE_IDENTITY_MISMATCH')) {
+      return isAr
+          ? 'حساب Apple المستخدم لا يطابق الحساب المرتبط بهذا المستخدم.'
+          : 'The Apple ID used does not match the account linked to this user.';
+    }
+    if (code.contains('APPLE_TOKEN_EXCHANGE_FAILED')) {
+      return isAr
+          ? 'فشل التحقق من تفويض Apple لدى الخادم. حاول مرة أخرى.'
+          : 'Failed to verify Apple authorization with server. Please try again.';
+    }
+    if (code.contains('APPLE_TOKEN_REVOKE_FAILED')) {
+      return isAr
+          ? 'تعذر إلغاء الربط مع Apple حاليًا. حاول مرة أخرى.'
+          : 'Failed to revoke Apple account authorization. Please try again.';
+    }
+    if (code.contains('APPLE_REVOKE_TOKEN_MISSING')) {
+      return isAr
+          ? 'تعذر إتمام إلغاء الربط مع Apple. حاول مرة أخرى.'
+          : 'Apple revocation token is missing. Please try again.';
+    }
     if (code.contains('TRACKING_ACCESS_DENIED')) {
       return l10n?.errorTrackingAccessDenied ??
           (isAr

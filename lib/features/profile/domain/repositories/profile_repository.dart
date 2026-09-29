@@ -14,4 +14,19 @@ abstract class ProfileRepository {
     required String userId,
     String? currentAvatarUrl,
   });
+
+  /// Permanently deletes user account via backend RPC delete_my_account.
+  ResultFuture<void> deleteAccount({
+    required String confirmationEmail,
+  });
+
+  /// Permanently deletes Apple-linked account via Edge Function apple-delete-account.
+  ResultFuture<void> deleteAppleAccount({
+    required String confirmationEmail,
+    required String authorizationCode,
+  });
+
+  /// Whether current logged-in user is authenticated with Apple
+  bool get isAppleUser;
 }
+

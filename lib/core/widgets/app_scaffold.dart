@@ -61,6 +61,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       elevation: elevation,
       surfaceTintColor: Colors.transparent,
+      bottom: bottom,
     );
   }
 

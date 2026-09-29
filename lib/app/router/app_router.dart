@@ -23,6 +23,9 @@ import '../../features/profile/presentation/pages/privacy_policy_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/profile/presentation/pages/support_center_page.dart';
 import '../../features/profile/presentation/pages/terms_and_conditions_page.dart';
+import '../../features/referral/presentation/cubit/referral_cubit.dart';
+import '../../features/referral/presentation/pages/invite_friends_page.dart';
+import '../di/injection.dart';
 import '../../features/shell/presentation/pages/passenger_shell_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/topup/domain/entities/topup_entities.dart';
@@ -68,13 +71,19 @@ class GoRouterRefreshStream extends ChangeNotifier {
 @lazySingleton
 class AppRouter {
   final AuthBloc _authBloc;
+  final ReferralCubit? _referralCubit;
 
-  AppRouter(this._authBloc);
+  AppRouter(this._authBloc, [this._referralCubit]);
 
   late final GoRouter router = GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: RoutePaths.splash,
-    refreshListenable: GoRouterRefreshStream(_authBloc.stream),
+    refreshListenable: _referralCubit != null
+        ? Listenable.merge([
+            GoRouterRefreshStream(_authBloc.stream),
+            GoRouterRefreshStream(_referralCubit.stream),
+          ])
+        : GoRouterRefreshStream(_authBloc.stream),
     debugLogDiagnostics: false,
     routes: [
       // Splash
@@ -443,6 +452,53 @@ class AppRouter {
         ),
       ),
 
+      // Profile: Invite Friends
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutePaths.inviteFriends,
+        name: RouteNames.inviteFriends,
+        redirect: (context, state) {
+          final cubit = _referralCubit ??
+              (getIt.isRegistered<ReferralCubit>() ? getIt<ReferralCubit>() : null);
+          if (cubit?.state.isProgramDisabled ?? false) {
+            return RoutePaths.home;
+          }
+          return null;
+        },
+        pageBuilder: (context, state) {
+          final code = state.uri.queryParameters['code'] ??
+              (state.extra is Map ? (state.extra as Map)['code'] as String? : null);
+          return AppPageTransitions.standardPage(
+            key: state.pageKey,
+            name: state.name,
+            child: InviteFriendsPage(initialCode: code),
+          );
+        },
+      ),
+
+      // Deep link alias for /invite?code=...
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: RoutePaths.inviteAlias,
+        redirect: (context, state) {
+          final cubit = _referralCubit ??
+              (getIt.isRegistered<ReferralCubit>() ? getIt<ReferralCubit>() : null);
+          if (cubit?.state.isProgramDisabled ?? false) {
+            return RoutePaths.home;
+          }
+          return null;
+        },
+        pageBuilder: (context, state) {
+          final code = state.uri.queryParameters['code'] ??
+              (state.extra is Map ? (state.extra as Map)['code'] as String? : null);
+          return AppPageTransitions.standardPage(
+            key: state.pageKey,
+            name: state.name,
+            child: InviteFriendsPage(initialCode: code),
+          );
+        },
+      ),
+
       // Legacy/deep-link trip-linked live tracking path
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -457,11 +513,53 @@ class AppRouter {
 
       // Debug: Design System Gallery (ONLY in debug mode)
     ],
-    redirect: (context, state) =>
-        redirectLogic(_authBloc.state, state.matchedLocation),
+    redirect: (context, state) {
+      final uri = state.uri;
+      String location = state.matchedLocation;
+      final isAmomyInviteScheme = uri.scheme == 'amomy' &&
+          (uri.host == 'invite' || uri.path == '/invite');
+      if (isAmomyInviteScheme) {
+        final code = uri.queryParameters['code'];
+        location = code != null && code.isNotEmpty
+            ? '${RoutePaths.inviteFriends}?code=$code'
+            : RoutePaths.inviteFriends;
+      }
+
+      final cubit = _referralCubit ??
+          (getIt.isRegistered<ReferralCubit>() ? getIt<ReferralCubit>() : null);
+      final isReferralDisabled = cubit?.state.isProgramDisabled ?? false;
+
+      final cleanLocation =
+          location.contains('?') ? location.split('?').first : location;
+
+      if (isReferralDisabled &&
+          (cleanLocation == RoutePaths.inviteFriends ||
+              cleanLocation == RoutePaths.inviteAlias ||
+              isAmomyInviteScheme)) {
+        return RoutePaths.home;
+      }
+
+      final redirect = redirectLogic(
+        _authBloc.state,
+        cleanLocation,
+        isReferralDisabled: isReferralDisabled,
+      );
+      if (redirect != null) return redirect;
+      if (location != state.matchedLocation) return location;
+      return null;
+    },
   );
 
-  static String? redirectLogic(AuthState authState, String location) {
+  static String? redirectLogic(
+    AuthState authState,
+    String location, {
+    bool isReferralDisabled = false,
+  }) {
+    if (isReferralDisabled &&
+        (location == RoutePaths.inviteFriends ||
+            location == RoutePaths.inviteAlias)) {
+      return RoutePaths.home;
+    }
     final isSplash = location == RoutePaths.splash;
     final isOnboarding = location == RoutePaths.onboarding;
     final isDesignSystem = location == RoutePaths.designSystemPreview;

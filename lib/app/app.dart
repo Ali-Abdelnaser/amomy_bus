@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../features/app_update/presentation/bloc/app_update_bloc.dart';
+import '../features/app_update/presentation/widgets/app_update_listener.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../l10n/app_localizations.dart';
 import '../core/config/app_config.dart';
@@ -16,8 +18,15 @@ class AmomyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final appRouter = getIt<AppRouter>();
 
-    return BlocProvider<AuthBloc>(
-      create: (_) => getIt<AuthBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (_) => getIt<AuthBloc>(),
+        ),
+        BlocProvider<AppUpdateBloc>(
+          create: (_) => getIt<AppUpdateBloc>(),
+        ),
+      ],
       child: ListenableBuilder(
         listenable: AppLocaleController.instance,
         builder: (context, _) {
@@ -32,9 +41,15 @@ class AmomyApp extends StatelessWidget {
             locale: locale,
             supportedLocales: LocalizationHelper.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
+            builder: (context, child) {
+              return AppUpdateListener(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           );
         },
       ),
     );
   }
 }
+

@@ -1805,4 +1805,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorInvalidToken => 'Invalid ticket code.';
+
+  @override
+  String get newUpdateAvailable => 'New update available';
+
+  @override
+  String get updateNow => 'Update now';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get defaultUpdateMessage =>
+      'A new version of AMOMY is available with new features and performance improvements.';
+
+  @override
+  String get forceUpdateMessage =>
+      'You must update the app to the latest version to continue using it.';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Permanently delete your account and data';
+
+  @override
+  String get deleteAccountPermanentWarning =>
+      'This action is permanent and cannot be undone.';
+
+  @override
+  String get deleteAccountBookingsWarning =>
+      'All your bookings and account history will be removed.';
+
+  @override
+  String get deleteAccountDataWarning =>
+      'Your account and personal data will be completely deleted.';
+
+  @override
+  String get currentAccountEmail => 'Current Account Email';
+
+  @override
+  String get typeEmailToConfirm => 'Type your email to confirm';
+
+  @override
+  String get deleteAccountDialogTitle =>
+      'Are you sure you want to permanently delete your account?';
+
+  @override
+  String get deleteAccountDialogMessage =>
+      'All your data will be deleted immediately and cannot be recovered.';
+
+  @override
+  String get deleteAccountSuccess => 'Account deleted successfully.';
+
+  @override
+  String get errorEmailConfirmationRequired =>
+      'Please enter your email to confirm deletion.';
+
+  @override
+  String get errorEmailConfirmationMismatch =>
+      'The confirmation email does not match your account email.';
+
+  @override
+  String get errorProtectedOperationalAccount =>
+      'Protected operational or administrative accounts cannot be deleted.';
+
+  @override
+  String get errorAccountNotFound => 'Account not found or already deleted.';
+
+  @override
+  String get errorAuthUserDeleteFailed =>
+      'Failed to delete account. Please try again later.';
 }

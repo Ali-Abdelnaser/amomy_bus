@@ -35,6 +35,8 @@ class RoutePaths {
   static const String termsAndConditions = '/terms-and-conditions';
   static const String liveTracking = '/trips/:tripId/tracking';
   static const String liveBusMap = '/live-map';
+  static const String inviteFriends = '/invite-friends';
+  static const String inviteAlias = '/invite';
 
   // Admin paths
   static const String admin = '/admin';

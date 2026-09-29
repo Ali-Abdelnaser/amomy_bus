@@ -774,7 +774,7 @@ class _BookingTicket extends StatelessWidget {
     final fare = booking != null
         ? '${booking!.farePoints.toInt()} ${l10n.pointsUnit}'
         : '';
-    final qrData = booking?.qrToken ?? bundle?.bundleId ?? '';
+    final qrData = booking?.qrToken ?? '';
 
     return Directionality(
       textDirection: TextDirection.ltr,

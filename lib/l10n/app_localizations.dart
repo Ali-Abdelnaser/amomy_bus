@@ -3427,6 +3427,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid ticket code.'**
   String get errorInvalidToken;
+
+  /// No description provided for @newUpdateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'New update available'**
+  String get newUpdateAvailable;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersionLabel(String version);
+
+  /// No description provided for @defaultUpdateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of AMOMY is available with new features and performance improvements.'**
+  String get defaultUpdateMessage;
+
+  /// No description provided for @forceUpdateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You must update the app to the latest version to continue using it.'**
+  String get forceUpdateMessage;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete your account and data'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @deleteAccountPermanentWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This action is permanent and cannot be undone.'**
+  String get deleteAccountPermanentWarning;
+
+  /// No description provided for @deleteAccountBookingsWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'All your bookings and account history will be removed.'**
+  String get deleteAccountBookingsWarning;
+
+  /// No description provided for @deleteAccountDataWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and personal data will be completely deleted.'**
+  String get deleteAccountDataWarning;
+
+  /// No description provided for @currentAccountEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Account Email'**
+  String get currentAccountEmail;
+
+  /// No description provided for @typeEmailToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your email to confirm'**
+  String get typeEmailToConfirm;
+
+  /// No description provided for @deleteAccountDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to permanently delete your account?'**
+  String get deleteAccountDialogTitle;
+
+  /// No description provided for @deleteAccountDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All your data will be deleted immediately and cannot be recovered.'**
+  String get deleteAccountDialogMessage;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @errorEmailConfirmationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email to confirm deletion.'**
+  String get errorEmailConfirmationRequired;
+
+  /// No description provided for @errorEmailConfirmationMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The confirmation email does not match your account email.'**
+  String get errorEmailConfirmationMismatch;
+
+  /// No description provided for @errorProtectedOperationalAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected operational or administrative accounts cannot be deleted.'**
+  String get errorProtectedOperationalAccount;
+
+  /// No description provided for @errorAccountNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Account not found or already deleted.'**
+  String get errorAccountNotFound;
+
+  /// No description provided for @errorAuthUserDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account. Please try again later.'**
+  String get errorAuthUserDeleteFailed;
 }
 
 class _AppLocalizationsDelegate

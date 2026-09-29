@@ -15,6 +15,8 @@ class PassengerTripsState extends Equatable {
   final String? errorMessage;
   final Failure? errorFailure;
 
+  final bool isRefreshing;
+
   const PassengerTripsState({
     this.status = PassengerTripsStatus.initial,
     this.todayTrips = const [],
@@ -24,6 +26,7 @@ class PassengerTripsState extends Equatable {
     this.availableStops = const [],
     this.errorMessage,
     this.errorFailure,
+    this.isRefreshing = false,
   });
 
   List<PassengerTodayTrip> get outboundTodayTrips => todayTrips
@@ -41,7 +44,10 @@ class PassengerTripsState extends Equatable {
     return available.first;
   }
 
-  bool get hasLoadedTodayTrips => status == PassengerTripsStatus.loaded;
+  bool get hasLoadedTodayTrips =>
+      status == PassengerTripsStatus.loaded ||
+      isRefreshing ||
+      todayTrips.isNotEmpty;
 
   bool get hasAnyBookableTrip =>
       PassengerBookingAvailability.hasAnyBookableTrip(todayTrips);
@@ -63,6 +69,7 @@ class PassengerTripsState extends Equatable {
     String? errorMessage,
     Failure? errorFailure,
     bool clearError = false,
+    bool? isRefreshing,
   }) {
     return PassengerTripsState(
       status: status ?? this.status,
@@ -75,6 +82,7 @@ class PassengerTripsState extends Equatable {
       availableStops: availableStops ?? this.availableStops,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       errorFailure: clearError ? null : (errorFailure ?? this.errorFailure),
+      isRefreshing: isRefreshing ?? this.isRefreshing,
     );
   }
 
@@ -88,5 +96,6 @@ class PassengerTripsState extends Equatable {
     availableStops,
     errorMessage,
     errorFailure,
+    isRefreshing,
   ];
 }

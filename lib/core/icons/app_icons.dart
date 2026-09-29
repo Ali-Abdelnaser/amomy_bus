@@ -74,4 +74,10 @@ abstract final class AppIcons {
   static const IconData copy = LucideIcons.copy;
   static const IconData messageCircle = LucideIcons.messageCircle;
   static const IconData externalLink = LucideIcons.externalLink;
+  static const IconData userPlus = LucideIcons.userPlus;
+  static const IconData gift = LucideIcons.gift;
+  static const IconData share = LucideIcons.share2;
+  static const IconData arrowUpCircle = LucideIcons.arrowUpCircle;
+  static const IconData flash = LucideIcons.zap;
+  static const IconData flashOff = LucideIcons.zapOff;
 }

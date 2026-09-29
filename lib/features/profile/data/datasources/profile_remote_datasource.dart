@@ -9,7 +9,17 @@ abstract class ProfileRemoteDataSource {
   });
 
   Future<void> removeAvatar({required String userId, String? currentAvatarUrl});
+
+  Future<void> deleteAccount({required String confirmationEmail});
+
+  Future<void> deleteAppleAccount({
+    required String confirmationEmail,
+    required String authorizationCode,
+  });
+
+  bool get isAppleUser;
 }
+
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final SupabaseClient? _customClient;
@@ -100,4 +110,66 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       // Non-critical background cleanup failure
     }
   }
+
+  @override
+  bool get isAppleUser {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
+    final appMetadata = user.appMetadata;
+    final provider = appMetadata['provider']?.toString().toLowerCase();
+    if (provider == 'apple') return true;
+    final providers = appMetadata['providers'];
+    if (providers is List &&
+        providers.any((p) => p.toString().toLowerCase() == 'apple')) {
+      return true;
+    }
+    final identities = user.identities;
+    if (identities != null &&
+        identities.any((id) => id.provider.toLowerCase() == 'apple')) {
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  Future<void> deleteAccount({required String confirmationEmail}) async {
+    await _supabase.rpc(
+      'delete_my_account',
+      params: {'p_confirmation_email': confirmationEmail},
+    );
+  }
+
+  @override
+  Future<void> deleteAppleAccount({
+    required String confirmationEmail,
+    required String authorizationCode,
+  }) async {
+    final response = await _supabase.functions.invoke(
+      'apple-delete-account',
+      body: {
+        'confirmation_email': confirmationEmail,
+        'authorization_code': authorizationCode,
+      },
+    );
+
+    final rawData = response.data;
+    if (response.status != 200 ||
+        (rawData is Map &&
+            (rawData['error'] != null || rawData['success'] == false))) {
+      String? errorMessage;
+      if (rawData is Map) {
+        errorMessage = rawData['error']?.toString() ??
+            rawData['message']?.toString();
+      } else if (rawData is String && rawData.isNotEmpty) {
+        errorMessage = rawData;
+      }
+      throw FunctionException(
+        status: response.status,
+        details: rawData,
+        reasonPhrase: errorMessage ??
+            'Failed to delete Apple account (${response.status})',
+      );
+    }
+  }
 }
+

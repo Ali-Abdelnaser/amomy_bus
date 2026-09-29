@@ -38,3 +38,20 @@ final class ProfileAvatarFailure extends ProfileState {
   @override
   List<Object?> get props => [message];
 }
+
+final class ProfileDeleteAccountLoading extends ProfileState {
+  const ProfileDeleteAccountLoading();
+}
+
+final class ProfileDeleteAccountSuccess extends ProfileState {
+  const ProfileDeleteAccountSuccess();
+}
+
+final class ProfileDeleteAccountFailure extends ProfileState {
+  final String message;
+
+  const ProfileDeleteAccountFailure({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}

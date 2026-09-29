@@ -36,10 +36,24 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
   /// - Passenger's preferred journey (From -> To)
   /// - Booking history
   /// - Route stops for editing preferred journey
-  Future<void> loadTripsHub() async {
-    emit(
-      state.copyWith(status: PassengerTripsStatus.loading, clearError: true),
-    );
+  Future<void> loadTripsHub({bool isRefresh = false}) async {
+    final isAlreadyLoaded = state.status == PassengerTripsStatus.loaded ||
+        state.todayTrips.isNotEmpty ||
+        state.upcomingTrips.isNotEmpty ||
+        state.historyTrips.isNotEmpty;
+    final isPullToRefresh = isRefresh || isAlreadyLoaded;
+
+    if (isPullToRefresh) {
+      emit(state.copyWith(isRefreshing: true, clearError: true));
+    } else {
+      emit(
+        state.copyWith(
+          status: PassengerTripsStatus.loading,
+          isRefreshing: false,
+          clearError: true,
+        ),
+      );
+    }
 
     final repo = _repo;
     final bookingsUseCase =
@@ -124,18 +138,33 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
         }),
     ]);
 
+    final allUserBookings = [...upcomingTrips, ...historyTrips];
+    final enrichedTodayTrips = todayTrips.map((trip) {
+      final matchingBookings = allUserBookings
+          .where((b) => b.tripId == trip.tripId && b.status == 'confirmed')
+          .toList()
+        ..sort((a, b) => a.bookedAt.compareTo(b.bookedAt));
+      if (matchingBookings.isNotEmpty) {
+        return trip.copyWith(bookings: matchingBookings);
+      }
+      return trip;
+    }).toList();
+
     emit(
       state.copyWith(
         status:
-            errorFailure != null && todayTrips.isEmpty && historyTrips.isEmpty
+            errorFailure != null &&
+                enrichedTodayTrips.isEmpty &&
+                historyTrips.isEmpty
             ? PassengerTripsStatus.error
             : PassengerTripsStatus.loaded,
-        todayTrips: todayTrips,
+        todayTrips: enrichedTodayTrips,
         preferredJourney: preferredJourney,
         historyTrips: historyTrips,
         upcomingTrips: upcomingTrips,
         availableStops: availableStops,
         errorFailure: errorFailure,
+        isRefreshing: false,
       ),
     );
 
@@ -240,6 +269,39 @@ class PassengerTripsCubit extends Cubit<PassengerTripsState> {
 
     final result = await repo.getRoundTripBundleContext(bookingId: bookingId);
     return result.fold(onSuccess: (context) => context, onError: (_) => null);
+  }
+
+  /// Returns confirmed bookings for a trip already held in the current cubit state.
+  List<PassengerBooking> getCachedBookingsForTrip(String tripId) {
+    return [
+      ...state.upcomingTrips,
+      ...state.historyTrips,
+    ].where((b) => b.tripId == tripId && (b.status == 'confirmed' || b.status == 'active')).toList()
+      ..sort((a, b) => a.bookedAt.compareTo(b.bookedAt));
+  }
+
+  /// Gets all confirmed passenger bookings for a specific trip.
+  Future<List<PassengerBooking>> getBookingsForTrip(String tripId) async {
+    final stateBookings = getCachedBookingsForTrip(tripId);
+    if (stateBookings.isNotEmpty) {
+      return stateBookings;
+    }
+
+    final bookingsUseCase = _getPassengerBookingsUseCase ??
+        (getIt.isRegistered<GetPassengerBookingsUseCase>()
+            ? getIt<GetPassengerBookingsUseCase>()
+            : null);
+    if (bookingsUseCase != null) {
+      final result = await bookingsUseCase();
+      return result.fold(
+        onSuccess: (bookings) => bookings
+            .where((b) => b.tripId == tripId && b.status == 'confirmed')
+            .toList()
+          ..sort((a, b) => a.bookedAt.compareTo(b.bookedAt)),
+        onError: (_) => const [],
+      );
+    }
+    return const [];
   }
 
   @override

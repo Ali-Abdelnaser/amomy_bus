@@ -667,5 +667,33 @@
   "errorAlreadyCheckedIn": "Already checked in.",
   "errorTooEarly": "Trip time is too early.",
   "errorWrongTrip": "Ticket is for another trip.",
-  "errorInvalidToken": "Invalid ticket code."
+  "errorInvalidToken": "Invalid ticket code.",
+  "newUpdateAvailable": "New update available",
+  "updateNow": "Update now",
+  "updateLater": "Later",
+  "appVersionLabel": "Version {version}",
+  "@appVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "defaultUpdateMessage": "A new version of AMOMY is available with new features and performance improvements.",
+  "forceUpdateMessage": "You must update the app to the latest version to continue using it.",
+  "deleteAccount": "Delete Account",
+  "deleteAccountSubtitle": "Permanently delete your account and data",
+  "deleteAccountPermanentWarning": "This action is permanent and cannot be undone.",
+  "deleteAccountBookingsWarning": "All your bookings and account history will be removed.",
+  "deleteAccountDataWarning": "Your account and personal data will be completely deleted.",
+  "currentAccountEmail": "Current Account Email",
+  "typeEmailToConfirm": "Type your email to confirm",
+  "deleteAccountDialogTitle": "Are you sure you want to permanently delete your account?",
+  "deleteAccountDialogMessage": "All your data will be deleted immediately and cannot be recovered.",
+  "deleteAccountSuccess": "Account deleted successfully.",
+  "errorEmailConfirmationRequired": "Please enter your email to confirm deletion.",
+  "errorEmailConfirmationMismatch": "The confirmation email does not match your account email.",
+  "errorProtectedOperationalAccount": "Protected operational or administrative accounts cannot be deleted.",
+  "errorAccountNotFound": "Account not found or already deleted.",
+  "errorAuthUserDeleteFailed": "Failed to delete account. Please try again later."
 }

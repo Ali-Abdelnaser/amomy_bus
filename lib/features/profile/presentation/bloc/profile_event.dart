@@ -38,3 +38,17 @@ final class ProfileAvatarRemoveRequested extends ProfileEvent {
 final class ProfileResetState extends ProfileEvent {
   const ProfileResetState();
 }
+
+final class ProfileDeleteAccountRequested extends ProfileEvent {
+  final String confirmationEmail;
+  final String? authorizationCode;
+
+  const ProfileDeleteAccountRequested({
+    required this.confirmationEmail,
+    this.authorizationCode,
+  });
+
+  @override
+  List<Object?> get props => [confirmationEmail, authorizationCode];
+}
+
