@@ -269,6 +269,39 @@ void main() {
         expect(find.text('Remove Photo'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'tapping Take Photo dismisses sheet cleanly without crashing',
+      (tester) async {
+        final authBloc = MockAuthBloc(Authenticated(user: testUserWithAvatar));
+        final fakeRepo = FakeProfileRepository();
+        final profileBloc = ProfileBloc(repository: fakeRepo);
+
+        await tester.pumpWidget(
+          createTestWidget(
+            authBloc: authBloc,
+            profileBloc: profileBloc,
+            child: Scaffold(
+              body: ProfileIdentityHeader(user: testUserWithAvatar),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Tap camera badge
+        await tester.tap(find.byKey(const ValueKey('profile_camera_badge')));
+        await tester.pumpAndSettle();
+
+        // Tap Take Photo
+        final takePhotoFinder = find.text('Take Photo');
+        expect(takePhotoFinder, findsOneWidget);
+        await tester.tap(takePhotoFinder);
+        await tester.pumpAndSettle();
+
+        // Bottom sheet is dismissed cleanly
+        expect(find.text('Take Photo'), findsNothing);
+      },
+    );
   });
 
   group('ProfilePage hierarchy, sections and sign-out', () {

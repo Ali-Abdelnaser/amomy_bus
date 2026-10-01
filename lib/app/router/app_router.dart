@@ -154,7 +154,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
           key: state.pageKey,
           name: state.name,
-          child: const CompleteProfilePage(),
+          child: const CompleteProfilePage(isInitialCompletion: true),
         ),
       ),
 
@@ -400,7 +400,7 @@ class AppRouter {
         pageBuilder: (context, state) => AppPageTransitions.standardPage(
           key: state.pageKey,
           name: state.name,
-          child: const CompleteProfilePage(),
+          child: const CompleteProfilePage(isInitialCompletion: false),
         ),
       ),
 

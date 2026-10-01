@@ -87,15 +87,15 @@ final class SignInWithAppleRequested extends AuthEvent {
 
 final class CompleteProfileRequested extends AuthEvent {
   final String fullName;
-  final String phone;
-  final String gender;
-  final DateTime dateOfBirth;
+  final String? phone;
+  final String? gender;
+  final DateTime? dateOfBirth;
 
   const CompleteProfileRequested({
     required this.fullName,
-    required this.phone,
-    required this.gender,
-    required this.dateOfBirth,
+    this.phone,
+    this.gender,
+    this.dateOfBirth,
   });
 
   @override

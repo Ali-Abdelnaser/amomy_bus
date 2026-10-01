@@ -93,9 +93,9 @@ class _FakeAuthRepository implements AuthRepository {
   ResultFuture<AppUser> completeProfile({
     required String userId,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
     if (failure != null) return Error(failure!);
     return Success(currentUserResult!);
@@ -222,7 +222,7 @@ void main() {
       );
 
       fakeRepo.currentUserResult = incompleteUser;
-      authBloc.emit(const Authenticated(user: incompleteUser));
+      authBloc.emit(const ProfileCompletionRequired(incompleteUser));
 
       await tester.pumpWidget(buildTestWidget(bloc: authBloc));
       await tester.pumpAndSettle();
@@ -412,6 +412,45 @@ void main() {
         ),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'Save & Continue succeeds with only required account data (Full Name) without phone, gender, or date of birth',
+    (tester) async {
+      const initialUser = AppUser(
+        id: 'test-user-id-3',
+        email: 'minimal@amomy.com',
+        fullName: 'New Passenger',
+        roles: [AppRole.passenger],
+        isEmailVerified: true,
+      );
+
+      fakeRepo.currentUserResult = initialUser;
+      authBloc.emit(const ProfileCompletionRequired(initialUser));
+
+      await tester.pumpWidget(buildTestWidget(bloc: authBloc));
+      await tester.pumpAndSettle();
+
+      // Full Name is pre-filled, phone is empty, gender unselected, dob empty
+      expect(find.text('New Passenger'), findsOneWidget);
+
+      final saveButton = find.text('Save & Continue');
+      await tester.ensureVisible(saveButton);
+      await tester.tap(saveButton);
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+
+      // Must NOT show warning about gender or date of birth
+      expect(find.text('Please select your gender'), findsNothing);
+      expect(find.text('Please select date of birth'), findsNothing);
+      expect(find.text('This field is required'), findsNothing);
+
+      // Successfully transitions to Authenticated
+      expect(authBloc.state, isA<Authenticated>());
     },
   );
 }

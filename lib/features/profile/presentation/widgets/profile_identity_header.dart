@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/extensions/context_extensions.dart';
@@ -12,6 +13,8 @@ import '../../../auth/domain/entities/app_user.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
+
+enum _AvatarOption { camera, gallery, remove }
 
 /// Centered identity header for Passenger Profile.
 ///
@@ -33,12 +36,12 @@ class ProfileIdentityHeader extends StatelessWidget {
   bool get hasAvatar =>
       user.avatarUrl != null && user.avatarUrl!.trim().isNotEmpty;
 
-  void _showAvatarOptionsSheet(BuildContext context) {
+  Future<void> _showAvatarOptionsSheet(BuildContext context) async {
     final l10n = context.l10n;
+    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
     final profileBloc = context.read<ProfileBloc>();
-    final picker = ImagePicker();
 
-    showModalBottomSheet<void>(
+    final action = await showModalBottomSheet<_AvatarOption>(
       context: context,
       useSafeArea: false,
       useRootNavigator: true,
@@ -71,34 +74,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
-              onTap: () async {
-                Navigator.of(sheetCtx).pop();
-                try {
-                  final file = await picker.pickImage(
-                    source: ImageSource.camera,
-                    maxWidth: 1024,
-                    maxHeight: 1024,
-                    imageQuality: 85,
-                  );
-                  if (file != null) {
-                    final bytes = await file.readAsBytes();
-                    final ext = file.name.contains('.')
-                        ? file.name.split('.').last
-                        : 'jpg';
-                    profileBloc.add(
-                      ProfileAvatarUploadRequested(
-                        userId: user.id,
-                        imageBytes: bytes,
-                        fileExtension: ext,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    AppSnackBar.showError(context, e);
-                  }
-                }
-              },
+              onTap: () => Navigator.of(sheetCtx).pop(_AvatarOption.camera),
             ),
             const Divider(height: 1, indent: 64, color: AppColors.borderSubtle),
             ListTile(
@@ -122,34 +98,7 @@ class ProfileIdentityHeader extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
-              onTap: () async {
-                Navigator.of(sheetCtx).pop();
-                try {
-                  final file = await picker.pickImage(
-                    source: ImageSource.gallery,
-                    maxWidth: 1024,
-                    maxHeight: 1024,
-                    imageQuality: 85,
-                  );
-                  if (file != null) {
-                    final bytes = await file.readAsBytes();
-                    final ext = file.name.contains('.')
-                        ? file.name.split('.').last
-                        : 'jpg';
-                    profileBloc.add(
-                      ProfileAvatarUploadRequested(
-                        userId: user.id,
-                        imageBytes: bytes,
-                        fileExtension: ext,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    AppSnackBar.showError(context, e);
-                  }
-                }
-              },
+              onTap: () => Navigator.of(sheetCtx).pop(_AvatarOption.gallery),
             ),
             if (hasAvatar) ...[
               const Divider(
@@ -178,21 +127,93 @@ class ProfileIdentityHeader extends StatelessWidget {
                     color: AppColors.error,
                   ),
                 ),
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  profileBloc.add(
-                    ProfileAvatarRemoveRequested(
-                      userId: user.id,
-                      currentAvatarUrl: user.avatarUrl,
-                    ),
-                  );
-                },
+                onTap: () => Navigator.of(sheetCtx).pop(_AvatarOption.remove),
               ),
             ],
           ],
         ),
       ),
     );
+
+    if (action == null || !context.mounted) return;
+
+    if (action == _AvatarOption.remove) {
+      profileBloc.add(
+        ProfileAvatarRemoveRequested(
+          userId: user.id,
+          currentAvatarUrl: user.avatarUrl,
+        ),
+      );
+      return;
+    }
+
+    final picker = ImagePicker();
+    final source = action == _AvatarOption.camera
+        ? ImageSource.camera
+        : ImageSource.gallery;
+
+    try {
+      final file = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      if (file == null) {
+        // User cancelled picker - safe no-op
+        return;
+      }
+      final bytes = await file.readAsBytes();
+      final ext = file.name.contains('.') ? file.name.split('.').last : 'jpg';
+      if (!context.mounted) return;
+      profileBloc.add(
+        ProfileAvatarUploadRequested(
+          userId: user.id,
+          imageBytes: bytes,
+          fileExtension: ext,
+        ),
+      );
+    } on PlatformException catch (pe) {
+      if (!context.mounted) return;
+      final code = pe.code.toLowerCase();
+      final message = (pe.message ?? '').toLowerCase();
+
+      if (code == 'camera_access_denied' ||
+          code == 'camera_access_restricted' ||
+          message.contains('camera access')) {
+        AppSnackBar.showError(
+          context,
+          isAr
+              ? 'تم رفض إذن الوصول إلى الكاميرا. يُرجى السماح بالوصول من إعدادات جهازك.'
+              : 'Camera access was denied. Please allow camera access in your device settings to take a photo.',
+        );
+      } else if (code == 'no_available_camera' ||
+          message.contains('no camera') ||
+          message.contains('camera not available')) {
+        AppSnackBar.showError(
+          context,
+          isAr
+              ? 'الكاميرا غير متوفرة على هذا الجهاز.'
+              : 'Camera is not available on this device.',
+        );
+      } else if (code == 'photo_access_denied' ||
+          code == 'photo_access_restricted' ||
+          message.contains('photo access')) {
+        AppSnackBar.showError(
+          context,
+          isAr
+              ? 'تم رفض إذن الوصول إلى الصور. يُرجى السماح بالوصول من إعدادات جهازك.'
+              : 'Photo library access was denied. Please allow access in your device settings.',
+        );
+      } else {
+        AppSnackBar.showError(context, pe);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppSnackBar.showError(context, e);
+      }
+    }
   }
 
   @override

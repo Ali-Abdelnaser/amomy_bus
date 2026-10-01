@@ -108,9 +108,11 @@
 		<key>GIDClientID</key>
 		<string>133458950988-t4vgheihpqper0v884pv1vmckeknqdcg.apps.googleusercontent.com</string>
 		<key>NSCameraUsageDescription</key>
-		<string>AMOMY needs camera access to scan referral QR codes.</string>
+		<string>AMOMY needs camera access to take profile photos and scan referral QR codes.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>AMOMY needs access to your photos to upload payment proof screenshots for top-up verification.</string>
+		<string>AMOMY needs access to your photos to choose profile photos and upload payment verification receipts.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>AMOMY needs permission to save photos to your photo library.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>AMOMY Bus may use your location to support map-related features and help you identify nearby stops.</string>
 		<key>GoogleMapsApiKey</key>

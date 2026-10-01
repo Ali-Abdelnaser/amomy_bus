@@ -42,9 +42,9 @@ abstract class AuthRemoteDataSource {
   Future<AppUserModel> completeProfile({
     required String userId,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   });
 
   Future<void> sendPasswordResetEmail({required String email});
@@ -412,33 +412,36 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AppUserModel> completeProfile({
     required String userId,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
-    final dobFormatted = DateFormat('yyyy-MM-dd').format(dateOfBirth);
+    final dobFormatted = dateOfBirth != null
+        ? DateFormat('yyyy-MM-dd').format(dateOfBirth)
+        : null;
+    final cleanPhone = phone?.trim();
+    final cleanGender = gender?.trim().toLowerCase();
+
+    final updatePayload = <String, dynamic>{
+      'full_name': fullName.trim(),
+      'phone':
+          (cleanPhone != null && cleanPhone.isNotEmpty) ? cleanPhone : null,
+      'gender':
+          (cleanGender != null && cleanGender.isNotEmpty) ? cleanGender : null,
+      'date_of_birth': dobFormatted,
+    };
 
     // Update public.profiles row
     await _supabase
         .from('profiles')
-        .update({
-          'full_name': fullName.trim(),
-          'phone': phone.trim(),
-          'gender': gender.trim().toLowerCase(),
-          'date_of_birth': dobFormatted,
-        })
+        .update(updatePayload)
         .eq('id', userId);
 
     // Also sync to auth user metadata
     try {
       await _supabase.auth.updateUser(
         UserAttributes(
-          data: {
-            'full_name': fullName.trim(),
-            'phone': phone.trim(),
-            'gender': gender.trim().toLowerCase(),
-            'date_of_birth': dobFormatted,
-          },
+          data: updatePayload,
         ),
       );
     } catch (_) {

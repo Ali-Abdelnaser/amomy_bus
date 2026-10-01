@@ -16,6 +16,7 @@ class AppDatePickerField extends StatelessWidget {
   final DateTime? lastDate;
   final Widget? prefixIcon;
   final void Function(DateTime) onDateSelected;
+  final VoidCallback? onClear;
   final String? Function(DateTime?)? validator;
   final bool enabled;
 
@@ -29,6 +30,7 @@ class AppDatePickerField extends StatelessWidget {
     this.lastDate,
     this.prefixIcon,
     required this.onDateSelected,
+    this.onClear,
     this.validator,
     this.enabled = true,
   });
@@ -94,11 +96,23 @@ class AppDatePickerField extends StatelessWidget {
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
-                  suffixIcon: const Icon(
-                    AppIcons.calendar,
-                    color: AppColors.textSecondary,
-                    size: 20,
-                  ),
+                  suffixIcon: selectedDate != null && onClear != null && enabled
+                      ? IconButton(
+                          icon: const Icon(
+                            AppIcons.close,
+                            color: AppColors.textSecondary,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            formFieldState.didChange(null);
+                            onClear!();
+                          },
+                        )
+                      : const Icon(
+                          AppIcons.calendar,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
                   enabled: enabled,
                   errorText: formFieldState.errorText,
                 ),

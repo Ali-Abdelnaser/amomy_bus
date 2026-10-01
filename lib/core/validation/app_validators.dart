@@ -56,11 +56,13 @@ class AppValidators {
   /// Validates Phone number (Egyptian format initially, extensible)
   static String? validatePhone(
     String? value, {
+    bool isRequired = true,
     String? requiredMessage,
     String? invalidMessage,
   }) {
     final trimmed = value?.trim().replaceAll(RegExp(r'[\s\-]'), '') ?? '';
     if (trimmed.isEmpty) {
+      if (!isRequired) return null;
       return requiredMessage ?? 'Phone number is required';
     }
     if (!_egyptianPhoneRegex.hasMatch(trimmed)) {
@@ -124,8 +126,13 @@ class AppValidators {
   }
 
   /// Validates Gender selection ('male' or 'female')
-  static String? validateGender(String? value, {String? requiredMessage}) {
+  static String? validateGender(
+    String? value, {
+    bool isRequired = true,
+    String? requiredMessage,
+  }) {
     if (value == null || value.trim().isEmpty) {
+      if (!isRequired) return null;
       return requiredMessage ?? 'Please select your gender';
     }
     final lower = value.trim().toLowerCase();
@@ -138,11 +145,13 @@ class AppValidators {
   /// Validates Date of Birth
   static String? validateDateOfBirth(
     DateTime? value, {
+    bool isRequired = true,
     String? requiredMessage,
     String? futureDateMessage,
     String? unreasonableMessage,
   }) {
     if (value == null) {
+      if (!isRequired) return null;
       return requiredMessage ?? 'Date of birth is required';
     }
     final now = DateTime.now();

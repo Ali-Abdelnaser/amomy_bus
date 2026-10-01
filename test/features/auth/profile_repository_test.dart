@@ -19,9 +19,9 @@ class _FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   Future<AppUserModel> completeProfile({
     required String userId,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
     if (exceptionToThrow != null) {
       throw exceptionToThrow!;

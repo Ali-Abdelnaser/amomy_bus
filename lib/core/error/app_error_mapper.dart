@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../localization/app_locale_controller.dart';
@@ -71,7 +72,34 @@ class AppErrorMapper {
       return _mapFailure(error, l10n: l10n, isAr: isAr);
     }
 
-    // 6. String or general exception
+    // 6. PlatformException (e.g. camera, photos)
+    if (error is PlatformException) {
+      final code = error.code.toLowerCase();
+      final msg = (error.message ?? '').toLowerCase();
+      if (code == 'camera_access_denied' ||
+          code == 'camera_access_restricted' ||
+          msg.contains('camera access')) {
+        return isAr
+            ? 'تم رفض إذن الوصول إلى الكاميرا. يُرجى السماح بالوصول من إعدادات جهازك.'
+            : 'Camera access was denied. Please allow camera access in your device settings to take a photo.';
+      }
+      if (code == 'no_available_camera' ||
+          msg.contains('no camera') ||
+          msg.contains('camera not available')) {
+        return isAr
+            ? 'الكاميرا غير متوفرة على هذا الجهاز.'
+            : 'Camera is not available on this device.';
+      }
+      if (code == 'photo_access_denied' ||
+          code == 'photo_access_restricted' ||
+          msg.contains('photo access')) {
+        return isAr
+            ? 'تم رفض إذن الوصول إلى مكتبة الصور. يُرجى السماح بالوصول من إعدادات جهازك.'
+            : 'Photo library access was denied. Please allow access in your device settings.';
+      }
+    }
+
+    // 7. String or general exception
     final errorString = error.toString();
     return _mapStringOrCode(errorString, l10n: l10n, isAr: isAr);
   }

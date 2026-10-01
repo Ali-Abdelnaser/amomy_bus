@@ -24,7 +24,12 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
 class CompleteProfilePage extends StatefulWidget {
-  const CompleteProfilePage({super.key});
+  final bool? isInitialCompletion;
+
+  const CompleteProfilePage({
+    super.key,
+    this.isInitialCompletion,
+  });
 
   @override
   State<CompleteProfilePage> createState() => _CompleteProfilePageState();
@@ -54,8 +59,15 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
         user = state.user;
       }
 
-      if (user != null) {
+      if (widget.isInitialCompletion != null) {
+        _isInitialCompletion = widget.isInitialCompletion!;
+      } else if (state is ProfileCompletionRequired) {
+        _isInitialCompletion = true;
+      } else if (user != null) {
         _isInitialCompletion = !user.isProfileComplete;
+      }
+
+      if (user != null) {
         if (_fullNameController.text.isEmpty && user.fullName.isNotEmpty) {
           _fullNameController.text = user.fullName;
         }
@@ -91,21 +103,20 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
 
   void _onSavePressed() {
     if (_formKey.currentState?.validate() ?? false) {
-      if (_selectedGender == null) {
-        AppSnackBar.showWarning(context, context.l10n.selectGender);
-        return;
-      }
-      if (_selectedDateOfBirth == null) {
-        AppSnackBar.showWarning(context, context.l10n.selectDateOfBirth);
-        return;
-      }
+      final phoneText = _phoneController.text.trim();
+      final normalizedPhone = phoneText.isNotEmpty
+          ? AppValidators.normalizeEgyptianPhone(phoneText)
+          : null;
+      final gender = _selectedGender?.trim().isNotEmpty == true
+          ? _selectedGender!.toLowerCase()
+          : null;
 
       context.read<AuthBloc>().add(
         CompleteProfileRequested(
           fullName: _fullNameController.text.trim(),
-          phone: AppValidators.normalizeEgyptianPhone(_phoneController.text),
-          gender: _selectedGender!.toLowerCase(),
-          dateOfBirth: _selectedDateOfBirth!,
+          phone: normalizedPhone,
+          gender: gender,
+          dateOfBirth: _selectedDateOfBirth,
         ),
       );
     }
@@ -294,7 +305,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               prefixIcon: AppIcons.phone,
                               validator: (val) => AppValidators.validatePhone(
                                 val,
-                                requiredMessage: l10n.validationRequired,
+                                isRequired: false,
                                 invalidMessage: l10n.validationPhoneInvalid,
                               ),
                             ).appSlideUp(
@@ -311,7 +322,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               },
                               validator: (val) => AppValidators.validateGender(
                                 val ?? _selectedGender,
-                                requiredMessage: l10n.validationRequired,
+                                isRequired: false,
                               ),
                             ).appSlideUp(
                               delay: const Duration(milliseconds: 280),
@@ -334,10 +345,13 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                               onDateSelected: (date) {
                                 setState(() => _selectedDateOfBirth = date);
                               },
+                              onClear: () {
+                                setState(() => _selectedDateOfBirth = null);
+                              },
                               validator: (val) =>
                                   AppValidators.validateDateOfBirth(
                                     val ?? _selectedDateOfBirth,
-                                    requiredMessage: l10n.validationRequired,
+                                    isRequired: false,
                                   ),
                             ).appSlideUp(
                               delay: const Duration(milliseconds: 300),

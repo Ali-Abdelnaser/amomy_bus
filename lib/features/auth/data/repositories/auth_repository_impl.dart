@@ -119,9 +119,9 @@ class AuthRepositoryImpl implements AuthRepository {
   ResultFuture<AppUser> completeProfile({
     required String userId,
     required String fullName,
-    required String phone,
-    required String gender,
-    required DateTime dateOfBirth,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
   }) async {
     try {
       final user = await _remoteDataSource.completeProfile(

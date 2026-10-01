@@ -52,9 +52,6 @@ class AppUser extends Equatable {
   static const List<String> requiredProfileFields = [
     'full_name',
     'email',
-    'phone',
-    'gender',
-    'date_of_birth',
   ];
 
   /// List of missing required profile field keys
@@ -62,11 +59,6 @@ class AppUser extends Equatable {
     final missing = <String>[];
     if (fullName.trim().isEmpty) missing.add('full_name');
     if (email.trim().isEmpty) missing.add('email');
-    if (phone == null || phone!.trim().isEmpty) missing.add('phone');
-    if (gender == null || (gender != 'male' && gender != 'female')) {
-      missing.add('gender');
-    }
-    if (dateOfBirth == null) missing.add('date_of_birth');
     return missing;
   }
 
@@ -75,9 +67,13 @@ class AppUser extends Equatable {
 
   /// Profile completion percentage as a double from 0.0 to 1.0
   double get profileCompletionPercentage {
-    final completed =
-        requiredProfileFields.length - missingProfileFields.length;
-    return completed / requiredProfileFields.length;
+    int completed = 0;
+    if (fullName.trim().isNotEmpty) completed++;
+    if (email.trim().isNotEmpty) completed++;
+    if (phone != null && phone!.trim().isNotEmpty) completed++;
+    if (gender != null && (gender == 'male' || gender == 'female')) completed++;
+    if (dateOfBirth != null) completed++;
+    return completed / 5.0;
   }
 
   /// Profile completion percentage as an integer from 0 to 100

@@ -9,7 +9,7 @@ import '../theme/app_text_styles.dart';
 class AppGenderSelector extends StatelessWidget {
   final String? label;
   final String? selectedGender;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String?> onChanged;
   final String? Function(String?)? validator;
   final bool enabled;
 
@@ -56,8 +56,11 @@ class AppGenderSelector extends StatelessWidget {
                     enabled: enabled,
                     onTap: () {
                       if (!enabled) return;
-                      formFieldState.didChange('male');
-                      onChanged('male');
+                      final next = currentSelection?.toLowerCase() == 'male'
+                          ? null
+                          : 'male';
+                      formFieldState.didChange(next);
+                      onChanged(next);
                     },
                   ),
                 ),
@@ -70,8 +73,11 @@ class AppGenderSelector extends StatelessWidget {
                     enabled: enabled,
                     onTap: () {
                       if (!enabled) return;
-                      formFieldState.didChange('female');
-                      onChanged('female');
+                      final next = currentSelection?.toLowerCase() == 'female'
+                          ? null
+                          : 'female';
+                      formFieldState.didChange(next);
+                      onChanged(next);
                     },
                   ),
                 ),
