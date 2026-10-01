@@ -663,16 +663,16 @@ void main() {
 
   group('Success Routing Flow', () {
     testWidgets(
-      'successful verify with incomplete profile routes to /complete-profile after success delay',
+      'successful verify with truly incomplete profile (missing full_name) routes to /complete-profile after success delay',
       (tester) async {
         setTestViewport(tester);
         final routes = <String>[];
         fakeRepo.verifySuccessUser = const AppUser(
           id: 'u1',
           email: 'user@amomy.com',
-          fullName: 'New User',
+          fullName: '', // truly incomplete required profile missing full_name
           roles: [AppRole.passenger],
-          phone: null, // incomplete profile
+          phone: null,
           isEmailVerified: true,
         );
 
@@ -701,6 +701,50 @@ void main() {
 
         expect(routes, contains(RoutePaths.completeProfile));
         expect(find.text('Complete Profile Route'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'successful verify with only optional fields missing routes to /home after success delay',
+      (tester) async {
+        setTestViewport(tester);
+        final routes = <String>[];
+        fakeRepo.verifySuccessUser = const AppUser(
+          id: 'u1',
+          email: 'user@amomy.com',
+          fullName: 'New User',
+          roles: [AppRole.passenger],
+          phone: null,
+          gender: null,
+          dateOfBirth: null,
+          isEmailVerified: true,
+        );
+
+        await tester.pumpWidget(
+          buildTestRouter(email: 'user@amomy.com', navigatedRoutes: routes),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.enterText(find.byType(TextField), '123456');
+        await tester.pump();
+
+        // Tap button
+        final buttonFinder = find.byType(AppButton);
+        await tester.ensureVisible(buttonFinder);
+        await tester.tap(buttonFinder);
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump();
+
+        // Wait 450ms for staggered success animation
+        await tester.pump(const Duration(milliseconds: 450));
+        await tester.pump();
+
+        expect(routes, contains(RoutePaths.home));
+        expect(find.text('Home Route'), findsOneWidget);
       },
     );
 

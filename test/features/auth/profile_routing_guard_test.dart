@@ -10,7 +10,18 @@ void main() {
   const incompleteUser = AppUser(
     id: 'user-incomplete',
     email: 'incomplete@amomy.com',
-    fullName: 'Incomplete User',
+    fullName: '',
+    phone: null,
+    gender: null,
+    dateOfBirth: null,
+    roles: [AppRole.passenger],
+    isEmailVerified: true,
+  );
+
+  const userMissingOnlyOptionalFields = AppUser(
+    id: 'user-optional-missing',
+    email: 'optional@amomy.com',
+    fullName: 'Valid Commuter',
     phone: null,
     gender: null,
     dateOfBirth: null,
@@ -111,6 +122,50 @@ void main() {
       );
       expect(redirect, isNull);
     });
+
+    test(
+      'Authenticated user missing only optional fields attempting /home is allowed (no redirect)',
+      () {
+        final redirect = AppRouter.redirectLogic(
+          const Authenticated(user: userMissingOnlyOptionalFields),
+          RoutePaths.home,
+        );
+        expect(redirect, isNull);
+      },
+    );
+
+    test(
+      'Authenticated user missing only optional fields attempting /profile is allowed (no redirect)',
+      () {
+        final redirect = AppRouter.redirectLogic(
+          const Authenticated(user: userMissingOnlyOptionalFields),
+          RoutePaths.profile,
+        );
+        expect(redirect, isNull);
+      },
+    );
+
+    test(
+      'Authenticated user missing only optional fields attempting /trips is allowed (no redirect)',
+      () {
+        final redirect = AppRouter.redirectLogic(
+          const Authenticated(user: userMissingOnlyOptionalFields),
+          RoutePaths.trips,
+        );
+        expect(redirect, isNull);
+      },
+    );
+
+    test(
+      'Authenticated user missing only optional fields attempting /wallet is allowed (no redirect)',
+      () {
+        final redirect = AppRouter.redirectLogic(
+          const Authenticated(user: userMissingOnlyOptionalFields),
+          RoutePaths.wallet,
+        );
+        expect(redirect, isNull);
+      },
+    );
 
     test(
       'Complete user on /complete-profile in edit mode is allowed (no redirect)',
